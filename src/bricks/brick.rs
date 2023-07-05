@@ -1,10 +1,26 @@
-use serde::{Serialize, Deserialize};
+pub mod brick {
+  use std::iter::Map;
+  use serde::{Deserialize, Serialize};
 
-mod brick {
+  pub trait Param<'de>: Serialize + Deserialize<'de> {}
+
+  // consider https://github.com/rust-phf/rust-phf for SplitterBrick
+  pub enum Brick<'de, Split, const ConsumesSize: usize>
+    where Split: Sized
+  {
+    LinearBrick { name: String, consumes: [Box<dyn Param<'de>>; ConsumesSize], brick_type: BrickType },
+    SplitterBrick { name: String, consumes: Map<Split, Box<dyn Param<'de>>>, brick_type: BrickType },
+  }
 
 
-  trait Brick<ERROR> {
-    fn name(&self) -> str;
-    fn consumes(&self) -> Vec<T, T: Serialize + Deserialize>;
+  // mix it into brick enum????
+  pub enum BrickType {
+    FollowingBrick,
+    FinalBrick(FinalBrick),
+  }
+
+  pub enum FinalBrick {
+    ResultBrickType,
+    RedirectionBrickType,
   }
 }
