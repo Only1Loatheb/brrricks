@@ -1,0 +1,17 @@
+[package]
+name = "bricks"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+path = "src/bricks/lib.rs"
+
+[dev-dependencies]
+serde_json = "1.0.100"
+
+[dependencies]
+serde_json = "1.0.100"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+#https://github.com/slog-rs/example-lib/blob/master/Cargo.toml
+#https://github.com/rust-lang/cargo/blob/master/Cargo.toml
