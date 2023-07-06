@@ -1,5 +1,53 @@
+use crate::bricks::brick::brick::{Brick, Param, ParamDeserializationError, ParamSerializationError};
+
 pub mod bricks;
+
+struct A;
+
+impl Param for A {
+
+    fn name() -> String {
+        "AParamName".to_string()
+    }
+
+    fn serialize(&self) -> Result<String, ParamSerializationError> {
+        Ok("A".to_string())
+    }
+
+    fn deserialize(serialized: &str) -> Result<A, ParamDeserializationError> {
+        match serialized {
+            "A" => Ok(A),
+            _ => Err(ParamDeserializationError),
+        }
+    }
+}
+
+struct B;
+
+impl Param for B {
+
+    fn name() -> String {
+        "BParamName".to_string()
+    }
+
+    fn serialize(&self) -> Result<String, ParamSerializationError> {
+        Ok("B".to_string())
+    }
+
+    fn deserialize(serialized: &str) -> Result<B, ParamDeserializationError> {
+        match serialized {
+            "B" => Ok(B),
+            _ => Err(ParamDeserializationError),
+        }
+    }
+}
+
 fn main() {
+    let _b: Brick<A> = Brick::LinearBrick{
+        name: "Brrrick".to_string(),
+        consumes: vec![Box::new(A)],
+        produces: vec![Box::new(B), Box::new(A)],
+    };
     println!("Hello, world!");
 }
 
