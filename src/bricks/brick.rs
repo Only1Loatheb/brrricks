@@ -9,8 +9,7 @@ pub mod brick {
   pub trait Param {
     fn name() -> String where Self: Sized;
     fn serialize(&self) -> Result<String, ParamSerializationError>;
-    fn deserialize(serialized: &str) -> Result<Self, ParamDeserializationError>
-      where Self: Sized;
+    fn deserialize(serialized: &str) -> Result<Self, ParamDeserializationError> where Self: Sized;
   }
 
   // consider https://github.com/rust-phf/rust-phf for SplitterBrick
@@ -20,15 +19,18 @@ pub mod brick {
       name: String,
       consumes: Vec<Box<dyn Param>>,
       produces: Vec<Box<dyn Param>>,
-    },
-    FinalBrick {
-      name: String,
-      consumes: Vec<Box<dyn Param>>,
+      not_produced_before: Vec<Box<dyn Param>>,
     },
     SplitterBrick {
       name: String,
       consumes: Vec<Box<dyn Param>>,
       produces: Map<SplitParam, Vec<Box<dyn Param>>>,
+      not_produced_before: Vec<Box<dyn Param>>,
+    },
+    FinalBrick { // consider not using it?
+      name: String,
+      consumes: Vec<Box<dyn Param>>,
+      not_produced_before: Vec<Box<dyn Param>>,
     },
   }
 }

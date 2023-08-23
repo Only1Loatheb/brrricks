@@ -1,6 +1,7 @@
 use crate::bricks::brick::brick::{Brick, Param, ParamDeserializationError, ParamSerializationError};
 
 pub mod bricks;
+pub mod process;
 
 struct A;
 
