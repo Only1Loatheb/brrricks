@@ -1,4 +1,4 @@
-use crate::bricks::brick::brick::{Brick, Param, ParamDeserializationError, ParamSerializationError};
+use crate::bricks::brick::brick::{BrickKind, Param, ParamDeserializationError, ParamSerializationError};
 
 pub mod bricks;
 pub mod process;
@@ -44,10 +44,11 @@ impl Param for B {
 }
 
 fn main() {
-    let _b: Brick<A> = Brick::LinearBrick{
+    let _b: BrickKind<A> = BrickKind::LinearBrick{
         name: "Brrrick".to_string(),
         consumes: vec![Box::new(A)],
         produces: vec![Box::new(B), Box::new(A)],
+        not_produced_before: vec![],
     };
     println!("Hello, world!");
 }

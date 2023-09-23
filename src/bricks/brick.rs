@@ -1,3 +1,4 @@
+#![feature(generic_const_exprs)]
 pub mod brick {
   use std::iter::Map;
   // use serde::{Deserialize, Serialize}; serde(l)
@@ -13,7 +14,7 @@ pub mod brick {
   }
 
   // consider https://github.com/rust-phf/rust-phf for SplitterBrick
-  pub enum Brick<SplitParam: Param>
+  pub enum BrickKind<SplitParam: Param>
   {
     LinearBrick {
       name: String,
@@ -27,10 +28,7 @@ pub mod brick {
       produces: Map<SplitParam, Vec<Box<dyn Param>>>,
       not_produced_before: Vec<Box<dyn Param>>,
     },
-    FinalBrick { // consider not using it?
-      name: String,
-      consumes: Vec<Box<dyn Param>>,
-      not_produced_before: Vec<Box<dyn Param>>,
-    },
   }
+
+
 }

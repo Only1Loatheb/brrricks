@@ -1,22 +1,31 @@
 pub mod process {
   use crate::bricks::brick::brick::{Param};
-  use crate::bricks::brick::brick::Brick::{LinearBrick, SplitterBrick};
+  use crate::bricks::brick::brick::BrickKind::{LinearBrick, SplitterBrick};
 
   // think about brick <Error>
   pub enum Process<SplitParam: Param> {
-    ContinuationProcess {
+    StartedProcess {
       brick: LinearBrick,
-      process_before_brick: Process<SplitParam>
+    },
+    LinearProcess {
+      brick: LinearBrick,
+      process_before_brick: Process<SplitParam>,
     },
     SplitProcess {
       brick: SplitterBrick<SplitParam>,
-      process_before_brick: Process<SplitParam>
+      process_before_brick: Process<SplitParam>,
     },
   }
 
   impl<SplitParam: Param> Process<SplitParam> {
+    fn new() -> Process<SplitParam> {
+      Process::StartedProcess {
+        brick,
+      }
+    }
+
     fn and_then(self, brick: LinearBrick) -> Process<SplitParam> {
-      Process::ContinuationProcess {
+      Process::LinearProcess {
         brick,
         process_before_brick: self,
       }
@@ -28,6 +37,5 @@ pub mod process {
         process_before_brick: self,
       }
     }
-
   }
 }
