@@ -1,11 +1,11 @@
-use crate::bricks::brick::brick::{BrickKind, Param, ParamDeserializationError, ParamSerializationError};
+use crate::bricks::brick::brick::{BrickData, LinearBrick, LinearBrickData, Param, ParamDeserializationError, ParamSerializationError};
 
 pub mod bricks;
 pub mod process;
 
-struct A;
+struct AParam;
 
-impl Param for A {
+impl Param for AParam {
   fn name() -> String {
     "AParamName".to_string()
   }
@@ -14,10 +14,10 @@ impl Param for A {
     Ok("A".to_string())
   }
 
-  fn deserialize(serialized: &str) -> Result<A, ParamDeserializationError> {
+  fn deserialize(serialized: &str) -> Result<AParam, ParamDeserializationError> {
     match serialized {
-      "A" => Ok(A),
-      _ => Err(ParamDeserializationError),
+      "A" => Ok(AParam),
+      _ => Err(ParamDeserializationError { value: "ParamDeserializationError".to_string() }),
     }
   }
 }
@@ -36,38 +36,27 @@ impl Param for BParam {
   fn deserialize(serialized: &str) -> Result<BParam, ParamDeserializationError> {
     match serialized {
       "B" => Ok(BParam),
-      _ => Err(ParamDeserializationError),
+      _ => Err(ParamDeserializationError { value: "ParamDeserializationError".to_string() }),
     }
   }
 }
 
 struct LBrick;
 
-
-impl Brick for LBrick {
-  type Kind = ();
-
-  fn name() -> String {
-    "LBrick".to_string()
-  }
-
-  fn consumes() -> Vec<Box<dyn Param>> {
-    vec![]
-  }
-
-  fn not_produced_before() -> Vec<Box<dyn Param>> {
-    vec![]
-  }
-}
-
 impl LinearBrick for LBrick {
-  fn produces() -> Vec<Box<dyn Param>> {
-    vec![]
+  fn data(&self) -> LinearBrickData {
+    LinearBrickData {
+      brick_data: BrickData {
+        name: "LBrick".to_string(),
+        consumes: vec![],
+        not_produced_before: vec![],
+      },
+      produces: vec![],
+    }
   }
 }
 
 fn main() {
-
   println!("Hello, world!");
 }
 
@@ -77,7 +66,6 @@ mod tests {
 
   #[test]
   fn it_works() {
-    let b: dyn Brick = LBrick;
-    assert_eq!(b, 4);
+    assert_eq!(LBrick.data().brick_data.name, "LBrick".to_string());
   }
 }
