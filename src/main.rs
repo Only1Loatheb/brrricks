@@ -1,4 +1,5 @@
-use crate::bricks::brick::brick::{Brick, LinearBrick, Param, ParamDeserializationError, ParamSerializationError};
+use crate::bricks::brick::brick::{BrickKind, Param, ParamDeserializationError, ParamSerializationError};
+
 pub mod bricks;
 pub mod process;
 
