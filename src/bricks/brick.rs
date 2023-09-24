@@ -1,6 +1,5 @@
 pub mod brick {
-  use std::iter::Map;
-
+  use std::collections::HashMap;
 // use serde::{Deserialize, Serialize}; serde(l)
 
   pub struct ParamSerializationError {
@@ -24,7 +23,7 @@ pub mod brick {
   }
 
   pub struct LinearBrickData {
-    pub brick_data: BrickData,
+    pub data: BrickData,
     pub produces: Vec<Box<dyn Param>>,
   }
 
@@ -34,8 +33,8 @@ pub mod brick {
 
   // consider https://github.com/rust-phf/rust-phf for SplitterBrick
   pub struct SplitterBrickData<SplitParam: Param> {
-    pub brick_data: BrickData,
-    pub produces: Map<SplitParam, Vec<Box<dyn Param>>>,
+    pub data: BrickData,
+    pub produces: HashMap<SplitParam, Vec<Box<dyn Param>>>,
   }
 
   pub trait SplitterBrick<SplitParam: Param> {

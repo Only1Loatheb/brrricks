@@ -1,4 +1,6 @@
-use crate::bricks::brick::brick::{BrickData, LinearBrick, LinearBrickData, Param, ParamDeserializationError, ParamSerializationError};
+use std::collections::HashMap;
+use crate::bricks::brick::brick::{BrickData, LinearBrick, LinearBrickData, Param, ParamDeserializationError, ParamSerializationError, SplitterBrick, SplitterBrickData};
+use crate::process::process::process::Process;
 
 pub mod bricks;
 pub mod process;
@@ -46,7 +48,7 @@ struct LBrick;
 impl LinearBrick for LBrick {
   fn data(&self) -> LinearBrickData {
     LinearBrickData {
-      brick_data: BrickData {
+      data: BrickData {
         name: "LBrick".to_string(),
         consumes: vec![],
         not_produced_before: vec![],
@@ -56,7 +58,25 @@ impl LinearBrick for LBrick {
   }
 }
 
+struct SBrick;
+
+impl SplitterBrick<BParam> for SBrick {
+  fn data(&self) -> SplitterBrickData<BParam> {
+    SplitterBrickData {
+      data: BrickData {
+        name: "LBrick".to_string(),
+        consumes: vec![],
+        not_produced_before: vec![],
+      },
+      produces: HashMap::new(),
+    }
+  }
+}
+
 fn main() {
+  Process::new("Process".to_string(),&LBrick)
+    .and_then(&LBrick)
+    .split(&SBrick);
   println!("Hello, world!");
 }
 
@@ -66,6 +86,6 @@ mod tests {
 
   #[test]
   fn it_works() {
-    assert_eq!(LBrick.data().brick_data.name, "LBrick".to_string());
+    assert_eq!(LBrick.data().data.name, "LBrick".to_string());
   }
 }
