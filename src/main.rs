@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 use crate::bricks::brick::brick::{BrickData, LinearBrick, LinearBrickData, Param, ParamDeserializationError, ParamSerializationError, SplitterBrick, SplitterBrickData};
-use crate::process::process::process::Process;
 
 pub mod bricks;
 pub mod process;
@@ -74,9 +73,9 @@ impl SplitterBrick<BParam> for SBrick {
 }
 
 fn main() {
-  Process::new("Process".to_string(),&LBrick)
-    .and_then(&LBrick)
-    .split(&SBrick);
+  // Following::new("Process".to_string(), &LBrick)
+  //   .and_then(&LBrick)
+  //   .split(&SBrick);
   println!("Hello, world!");
 }
 

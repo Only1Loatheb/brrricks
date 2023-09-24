@@ -27,6 +27,8 @@ pub mod brick {
     pub produces: Vec<Box<dyn Param>>,
   }
 
+  // add fn handle()
+
   pub trait LinearBrick {
     fn data(&self) -> LinearBrickData;
   }
@@ -39,5 +41,9 @@ pub mod brick {
 
   pub trait SplitterBrick<SplitParam: Param> {
     fn data(&self) -> SplitterBrickData<SplitParam>;
+  }
+
+  pub trait FinalBrick {
+    fn data(&self) -> BrickData;
   }
 }
