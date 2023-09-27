@@ -27,16 +27,17 @@ pub mod brick {
     pub produces: Vec<Box<dyn Param>>,
   }
 
-  // add fn handle()
-
-  pub trait LinearBrick {
-    fn data(&self) -> LinearBrickData;
-  }
-
   // consider https://github.com/rust-phf/rust-phf for SplitterBrick
   pub struct SplitterBrickData<SplitParam: Param> {
     pub data: BrickData,
     pub produces: HashMap<SplitParam, Vec<Box<dyn Param>>>,
+  }
+
+
+  // add fn handle()
+
+  pub trait LinearBrick {
+    fn data(&self) -> LinearBrickData;
   }
 
   pub trait SplitterBrick<SplitParam: Param> {
