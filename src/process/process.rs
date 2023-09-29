@@ -1,15 +1,14 @@
 pub mod process {
   use std::collections::HashMap;
   use crate::bricks::brick::brick::{FinalBrick, LinearBrick, Param, SplitterBrick};
-  use crate::process::process::process::sealed::{Finalized, Following, Started};
+  use crate::process::process::process::sealed::{Finalized, Following};
 
   // think about brick <Error>
   pub struct OneBrickProcess<'a> {
-    path: String,
     brick: &'a dyn FinalBrick,
   }
+
   pub struct StartedLinearProcess<'a> {
-    path: String,
     brick: &'a dyn LinearBrick,
   }
 
@@ -24,13 +23,11 @@ pub mod process {
   }
 
   pub struct StartedSplitProcess<'a, SplitParam: Param> {
-    path: String,
     brick: &'a dyn SplitterBrick<SplitParam>,
     cases: HashMap<SplitParam, dyn Following>,
   }
 
   pub struct OneSplitProcess<'a, SplitParam: Param> {
-    path: String,
     brick: &'a dyn SplitterBrick<SplitParam>,
     cases: HashMap<SplitParam, dyn Finalized>,
   }
@@ -47,38 +44,57 @@ pub mod process {
     process_before_brick: &'a dyn Following,
   }
 
+  pub struct Closed<'a> {
+    pub path: &'a str,
+    pub process: &'a dyn Finalized,
+  }
+
   mod sealed {
     use std::collections::HashMap;
     use crate::bricks::brick::brick::{FinalBrick, LinearBrick, Param, SplitterBrick};
+    use crate::process::process::process::*;
 
-    pub trait Finalized {}
+    pub trait Finalized {
+      fn close(&self, path: &str) -> Closed;
+    }
 
     pub trait Following {
-      fn and_then(&self, brick: &dyn LinearBrick) -> &dyn Following;
-      fn finnish(&self, brick: &dyn FinalBrick) -> &dyn Finalized;
+      fn and_then(&self, brick: &dyn LinearBrick) -> LinearProcess;
+      fn finnish(&self, brick: &dyn FinalBrick) -> FinalizedProcess;
       fn split<SplitParam: Param>(
         &self,
         brick: &dyn SplitterBrick<SplitParam>,
         cases: HashMap<SplitParam, dyn Following>,
       ) -> dyn Following;
     }
+  }
 
-    pub trait Started: Following {
-      fn path(&self) -> &String;
+  impl<'a> Finalized for OneBrickProcess<'a> {
+    fn close(&self, path: &str) -> Closed {
+      Closed { path, process: self }
     }
   }
 
-  impl<'a> Finalized for OneBrickProcess {}
+  impl<'a> Finalized for FinalizedProcess<'a> {
+    fn close(&self, path: &str) -> Closed {
+      Closed { path, process: self }
+    }
+  }
 
-  impl<'a> Finalized for FinalizedProcess {}
+  impl<'a, SplitParam: Param> Finalized for OneSplitProcess<SplitParam> {
+    fn close(&self, path: &str) -> Closed {
+        Closed { path, process: self }
+    }
+  }
 
-  impl<'a, SplitParam: Param> Finalized for OneSplitProcess<SplitParam> {}
-
-  impl<'a, SplitParam: Param> Finalized for FinalizedSplitProcess<SplitParam> {}
+  impl<'a, SplitParam: Param> Finalized for FinalizedSplitProcess<SplitParam> {
+    fn close(&self, path: &str) -> Closed {
+      Closed { path, process: self }
+    }
+  }
 
   // todo:
   impl<SplitParam: Param> Following for StartedSplitProcess<SplitParam> {
-
     fn and_then(&self, brick: &dyn LinearBrick) -> LinearProcess {
       LinearProcess {
         brick,
@@ -90,7 +106,7 @@ pub mod process {
       todo!()
     }
 
-    fn split(&self, brick: &dyn SplitterBrick<SplitParam>, cases: HashMap<SplitParam, Following<dyn Param>>) -> Following<'a, dyn Param> {
+    fn split<NextSplit: Param>(&self, brick: &dyn SplitterBrick<NextSplit>, cases: HashMap<NextSplit, dyn Following>) -> Box<dyn Following> {
       Following::SplitProcess {
         brick,
         cases,
@@ -98,11 +114,4 @@ pub mod process {
       }
     }
   }
-
-  impl Started for StartedLinearProcess {
-    fn path(&self) -> &String {
-      &self.path
-    }
-  }
-
 }
