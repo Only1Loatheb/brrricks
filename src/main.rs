@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use crate::bricks::brick::brick::{BrickBase, LinearBrick, LinearBrickData, Param, ParamDeserializationError, ParamSerializationError, SplitterBrick, SplitterBrickData};
+use crate::bricks::brick::brick::{BrickData, LinearBrick, LinearBrickData, Param, ParamDeserializationError, ParamSerializationError, SplitterBrick, SplitterBrickData};
 
 pub mod bricks;
 pub mod process;
@@ -47,7 +47,7 @@ struct LBrick;
 impl LinearBrick for LBrick {
   fn data(&self) -> LinearBrickData {
     LinearBrickData {
-      base: BrickBase {
+      base: BrickData {
         name: "LBrick",
         consumes: vec![],
         not_produced_before: vec![],
@@ -62,7 +62,7 @@ struct SBrick;
 impl SplitterBrick<BParam> for SBrick {
   fn data(&self) -> SplitterBrickData<BParam> {
     SplitterBrickData {
-      base: BrickBase {
+      base: BrickData {
         name: "LBrick",
         consumes: vec![],
         not_produced_before: vec![],

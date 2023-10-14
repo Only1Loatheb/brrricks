@@ -11,25 +11,25 @@ pub mod brick {
   }
 
   pub trait Param {
-    fn name() -> & 'static str;
+    fn name() -> & 'static str where Self: Sized;
     fn serialize(&self) -> Result<String, ParamSerializationError>;
     fn deserialize(serialized: &str) -> Result<Self, ParamDeserializationError> where Self: Sized;
   }
 
-  pub struct BrickBase {
+  pub struct BrickData {
     pub name: & 'static str,
     pub consumes: Vec<& 'static dyn Param>,
     pub not_produced_before: Vec<& 'static dyn Param>,
   }
 
   pub struct LinearBrickData {
-    pub base: BrickBase,
+    pub base: BrickData,
     pub produces: Vec<& 'static dyn Param>,
   }
 
   // consider https://github.com/rust-phf/rust-phf for SplitterBrick
   pub struct SplitterBrickData<SplitParam: Param> {
-    pub base: BrickBase,
+    pub base: BrickData,
     pub produces: HashMap<SplitParam, Vec<& 'static dyn Param>>,
   }
 
@@ -45,6 +45,6 @@ pub mod brick {
   }
 
   pub trait FinalBrick {
-    fn data(&self) -> BrickBase;
+    fn data(&self) -> BrickData;
   }
 }
