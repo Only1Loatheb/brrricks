@@ -1,5 +1,6 @@
 use std::collections::HashMap;
-use crate::bricks::brick::brick::{BrickData, LinearBrick, LinearBrickData, Param, ParamDeserializationError, ParamSerializationError, SplitterBrick, SplitterBrickData};
+use crate::bricks::brick::brick::{BrickData, FinalBrick, LinearBrick, LinearBrickData, Param, ParamDeserializationError, ParamSerializationError, SplitterBrick, SplitterBrickData};
+use crate::process::process::process::*;
 
 pub mod bricks;
 pub mod process;
@@ -23,9 +24,12 @@ impl Param for AParam {
   }
 }
 
-struct BParam;
+pub enum SplitP {
+  Bar,
+  Foo,
+}
 
-impl Param for BParam {
+impl Param for SplitP {
   fn name() -> String {
     "BParamName".to_string()
   }
@@ -34,21 +38,21 @@ impl Param for BParam {
     Ok("B".to_string())
   }
 
-  fn deserialize(serialized: &str) -> Result<BParam, ParamDeserializationError> {
+  fn deserialize(serialized: &str) -> Result<SplitP, ParamDeserializationError> {
     match serialized {
-      "B" => Ok(BParam),
+      "B" => Ok(SplitP::Bar),
       _ => Err(ParamDeserializationError { value: "ParamDeserializationError".to_string() }),
     }
   }
 }
 
-struct LBrick;
+struct Linear;
 
-impl LinearBrick for LBrick {
+impl LinearBrick for Linear {
   fn data(&self) -> LinearBrickData {
     LinearBrickData {
       base: BrickData {
-        name: "LBrick",
+        name: "Linear",
         consumes: vec![],
         not_produced_before: vec![],
       },
@@ -57,26 +61,54 @@ impl LinearBrick for LBrick {
   }
 }
 
-struct SBrick;
+struct Splitter;
 
-impl SplitterBrick<BParam> for SBrick {
-  fn data(&self) -> SplitterBrickData<BParam> {
+impl SplitterBrick<SplitP> for Splitter {
+  fn data(&self) -> SplitterBrickData<SplitP> {
     SplitterBrickData {
       base: BrickData {
-        name: "LBrick",
+        name: "Splitter",
         consumes: vec![],
         not_produced_before: vec![],
       },
-      produces: HashMap::new(),
+      produces: HashMap::from([
+        (SplitP::Bar, vec![]),
+        (SplitP::Foo, vec![]),
+      ]),
+    }
+  }
+}
+
+struct Final;
+
+impl FinalBrick for Final {
+  fn data(&self) -> BrickData {
+    BrickData {
+      name: "Final",
+      consumes: vec![],
+      not_produced_before: vec![],
     }
   }
 }
 
 fn main() {
-  // Following::new("Process".to_string(), &LBrick)
-  //   .and_then(&LBrick)
-  //   .split(&SBrick);
-  println!("Hello, world!");
+  let a = process(&Linear)
+    .and_then(&Linear)
+    .split(
+      &Splitter,
+      HashMap::from([
+        (SplitP::Bar, empty_process()),
+        (SplitP::Foo, process(&Linear)),
+      ]),
+    )
+    .split_finalized(
+      &Splitter,
+      HashMap::from([
+        (SplitP::Bar, finnish(&Final)),
+        (SplitP::Foo, process(&Linear).finnish(&Final)),
+      ]),
+    );
+  dbg!("{}", a);
 }
 
 #[cfg(test)]
@@ -85,6 +117,6 @@ mod tests {
 
   #[test]
   fn it_works() {
-    assert_eq!(LBrick.data().base.name, "LBrick".to_string());
+    assert_eq!(Linear.data().base.name, "Linear".to_string());
   }
 }

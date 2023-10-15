@@ -33,9 +33,7 @@ pub mod brick {
     pub produces: HashMap<SplitParam, Vec<& 'static dyn Param>>,
   }
 
-
   // add fn handle()
-
   pub trait LinearBrick {
     fn data(&self) -> LinearBrickData;
   }
