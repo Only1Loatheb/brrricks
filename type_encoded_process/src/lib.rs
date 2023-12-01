@@ -111,12 +111,20 @@
 //   dbg!("{}", a);
 // }
 //
+// use frunk::{HCons, hlist, HNil};
 // #[cfg(test)]
 // mod tests {
+//   use std::ops::Index;
+//   use frunk::{HCons, HNil};
+//   use frunk::hlist::Plucker;
+//   use frunk::labelled::chars::T;
 //   use super::*;
+//
 //
 //   #[test]
 //   fn it_works() {
-//     assert_eq!(Linear.data().base.name, "Linear".to_string());
+//     let list: HCons<i32, HCons<&str, HCons<bool, HCons<f32, HNil>>>> = hlist![1, "hello", true, 42f32];
+//     let (b, list): (bool, _) = list.pluck();
+//     assert!(b);
 //   }
 // }

@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::io::BufRead;
 use crate::bricks::brick::brick::{BrickData, FinalBrick, LinearBrick, LinearBrickData, Param, ParamDeserializationError, ParamSerializationError, SplitIndex, SplitParam, SplitterBrick, SplitterBrickData};
 use crate::process::process::process::*;
 
@@ -105,24 +106,25 @@ impl FinalBrick for Final {
     }
   }
 }
-
-pub fn get_simple_process() {
-  let _ = process(&Linear)
-    .and_then(&Linear)
+// pub const fn
+pub fn get_simple_process() -> NamedProcess {
+  process(Box::new(Linear))
+    .and_then(Box::new(Linear))
     .split(
-      &Splitter,
+      Box::new(Splitter),
       HashMap::from([
         (SplitP::Bar, empty_process()),
-        (SplitP::Foo, process(&Linear)),
+        (SplitP::Foo, process(Box::new(Linear))),
       ]),
     )
     .split_finalized(
-      &Splitter,
+      Box::new(Splitter),
       HashMap::from([
-        (SplitP::Bar, finnish(&Final)),
-        (SplitP::Foo, process(&Linear).finnish(&Final)),
+        (SplitP::Bar, finnish(Box::new(Final))),
+        (SplitP::Foo, process(Box::new(Linear)).finnish(Box::new(Final))),
       ]),
-    );
+    )
+    .close("aa")
 
 }
 
