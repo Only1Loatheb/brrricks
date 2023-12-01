@@ -4,46 +4,48 @@ pub mod process {
 
   // think about brick <Error>
 
-  pub fn empty_process() -> FlowingProcess {
+  const FLOWING_PROCESS_NO_OP: FlowingProcess = FlowingProcess::NoOp;
+
+  pub const fn empty_process() -> FlowingProcess {
     FlowingProcess::NoOp
   }
 
-  pub fn process(brick: Box<dyn LinearBrick>) -> FlowingProcess {
+  pub const fn process(brick: &'static dyn LinearBrick) -> FlowingProcess {
     FlowingProcess::Linear {
-      0: FlowingLinearProcess { brick, process_before_brick: Box::new(FlowingProcess::NoOp) },
+      0: FlowingLinearProcess { brick, process_before_brick: &FLOWING_PROCESS_NO_OP },
     }
   }
 
-  pub fn finnish(brick: Box<dyn FinalBrick>) -> FinalizedProcess {
+  pub const fn finnish(brick: &'static dyn FinalBrick) -> FinalizedProcess {
     FinalizedProcess::Linear {
-      0: FinalizedLinearProcess { brick, process_before_brick: Box::new(FlowingProcess::NoOp) },
+      0: FinalizedLinearProcess { brick, process_before_brick: &FLOWING_PROCESS_NO_OP },
     }
   }
 
   pub struct FlowingLinearProcess {
-    pub(crate) brick: Box<dyn LinearBrick>,
-    pub(crate) process_before_brick: Box<FlowingProcess>,
+    pub(crate) brick: &'static dyn LinearBrick,
+    pub(crate) process_before_brick: &'static FlowingProcess,
   }
 
   impl FlowingLinearProcess {
-    pub fn finnish(self, brick: Box<dyn FinalBrick>) -> FinalizedProcess {
+    pub const fn finnish(self, brick: &'static dyn FinalBrick) -> FinalizedProcess {
       FinalizedProcess::Linear {
-        0: FinalizedLinearProcess { brick, process_before_brick: Box::new(FlowingProcess::Linear(self)) },
+        0: FinalizedLinearProcess { brick, process_before_brick: &FlowingProcess::Linear(self) },
       }
     }
   }
 
   pub struct FlowingSplitProcess {
-    pub(crate) brick: Box<dyn SplitterBrick>,
+    pub(crate) brick: &'static dyn SplitterBrick,
     pub(crate) cases: HashMap<SplitIndex, FlowingProcess>,
     // some could be finalized
-    pub(crate) process_before_brick: Box<FlowingProcess>,
+    pub(crate) process_before_brick: &'static FlowingProcess,
   }
 
   impl FlowingSplitProcess {
-    pub fn finnish(self, brick: Box<dyn FinalBrick>) -> FinalizedProcess {
+    pub const fn finnish(self, brick: &'static dyn FinalBrick) -> FinalizedProcess {
       FinalizedProcess::Linear {
-        0: FinalizedLinearProcess { brick, process_before_brick: Box::new(FlowingProcess::Split(self)) },
+        0: FinalizedLinearProcess { brick, process_before_brick: &FlowingProcess::Split(self) },
       }
     }
   }
@@ -55,14 +57,14 @@ pub mod process {
   }
 
   pub struct FinalizedLinearProcess {
-    pub(crate) brick: Box<dyn FinalBrick>,
-    pub(crate) process_before_brick: Box<FlowingProcess>,
+    pub(crate) brick: &'static dyn FinalBrick,
+    pub(crate) process_before_brick: &'static FlowingProcess,
   }
 
   pub struct FinalizedSplitProcess {
-    pub(crate) brick: Box<dyn SplitterBrick>,
+    pub(crate) brick: &'static dyn SplitterBrick,
     pub(crate) cases: HashMap<SplitIndex, FinalizedProcess>,
-    pub(crate) process_before_brick: Box<FlowingProcess>,
+    pub(crate) process_before_brick: &'static FlowingProcess,
   }
 
   pub enum FinalizedProcess {
@@ -71,7 +73,7 @@ pub mod process {
   }
 
   impl FlowingProcess {
-    pub fn finnish(self, brick: Box<dyn FinalBrick>) -> FinalizedProcess {
+    pub const fn finnish(self, brick: &'static dyn FinalBrick) -> FinalizedProcess {
       match self {
         FlowingProcess::NoOp => finnish(brick),
         FlowingProcess::Linear(process) => process.finnish(brick),
@@ -79,15 +81,15 @@ pub mod process {
       }
     }
 
-    pub fn and_then(self, brick: Box<dyn LinearBrick>) -> FlowingProcess {
+    pub const fn and_then(self, brick: &'static dyn LinearBrick) -> FlowingProcess {
       FlowingProcess::Linear {
-        0: FlowingLinearProcess { brick, process_before_brick: Box::new(self) }
+        0: FlowingLinearProcess { brick, process_before_brick: &self }
       }
     }
 
-    pub fn split(
+    pub const fn split(
       self,
-      brick: Box<dyn SplitterBrick>,
+      brick: &'static dyn SplitterBrick,
       cases: HashMap<impl SplitParam, FlowingProcess>,
     ) -> FlowingProcess {
       let a = cases.into_iter()
@@ -97,13 +99,13 @@ pub mod process {
           (key_split_index, value)
         }).collect();
       FlowingProcess::Split {
-        0: FlowingSplitProcess { brick, cases: a, process_before_brick: Box::new(self) },
+        0: FlowingSplitProcess { brick, cases: a, process_before_brick: &self },
       }
     }
 
-    pub fn split_finalized(
+    pub const fn split_finalized(
       self,
-      brick: Box<dyn SplitterBrick>,
+      brick: &'static dyn SplitterBrick,
       cases: HashMap<impl SplitParam, FinalizedProcess>,
     ) -> FinalizedProcess {
       let a = cases.into_iter()
@@ -113,7 +115,7 @@ pub mod process {
           (key_split_index, value)
         }).collect();
       FinalizedProcess::Split {
-        0: FinalizedSplitProcess { brick, cases: a, process_before_brick: Box::new(self) }
+        0: FinalizedSplitProcess { brick, cases: a, process_before_brick: &self }
       }
     }
   }
@@ -124,7 +126,7 @@ pub mod process {
   }
 
   impl FinalizedProcess {
-    pub fn close(self, path: &'static str) -> NamedProcess {
+    pub const fn close(self, path: &'static str) -> NamedProcess {
       NamedProcess { path, process: self }
     }
   }

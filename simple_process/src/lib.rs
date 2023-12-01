@@ -1,6 +1,6 @@
 use std::collections::HashMap;
-use std::io::BufRead;
-use crate::bricks::brick::brick::{BrickData, FinalBrick, LinearBrick, LinearBrickData, Param, ParamDeserializationError, ParamSerializationError, SplitIndex, SplitParam, SplitterBrick, SplitterBrickData};
+use phf::phf_map;
+use crate::bricks::brick::brick::{BrickData, FinalBrick, LinearBrick, LinearBrickData, MAX_PARAMS_SIZE, Param, ParamDeserializationError, ParamSerializationError, SplitIndex, SplitParam, SplitterBrick, SplitterBrickData};
 use crate::process::process::process::*;
 
 pub mod bricks;
@@ -25,7 +25,7 @@ impl Param for AParam {
   }
 }
 
-#[derive(Eq, PartialEq, Hash)]
+#[derive(Eq, PartialEq, Hash, Clone)]
 pub enum SplitP {
   Bar,
   Foo,
@@ -87,10 +87,10 @@ impl SplitterBrick for Splitter {
         consumes: vec![],
         not_produced_before: vec![],
       },
-      HashMap::from([
-        (SplitP::Bar, vec![]),
-        (SplitP::Foo, vec![]),
-      ]),
+      phf_map! {
+        SplitP::Bar => [MAX_PARAMS_SIZE, None]
+        SplitP::Foo => [MAX_PARAMS_SIZE, None]
+      },
     )
   }
 }
@@ -108,20 +108,20 @@ impl FinalBrick for Final {
 }
 // pub const fn
 pub fn get_simple_process() -> NamedProcess {
-  process(Box::new(Linear))
-    .and_then(Box::new(Linear))
+  process(&Linear)
+    .and_then(&Linear)
     .split(
-      Box::new(Splitter),
+      &Splitter,
       HashMap::from([
         (SplitP::Bar, empty_process()),
-        (SplitP::Foo, process(Box::new(Linear))),
+        (SplitP::Foo, process(&Linear)),
       ]),
     )
     .split_finalized(
-      Box::new(Splitter),
+      &Splitter,
       HashMap::from([
-        (SplitP::Bar, finnish(Box::new(Final))),
-        (SplitP::Foo, process(Box::new(Linear)).finnish(Box::new(Final))),
+        (SplitP::Bar, finnish(&Final)),
+        (SplitP::Foo, process(&Linear).finnish(&Final)),
       ]),
     )
     .close("aa")

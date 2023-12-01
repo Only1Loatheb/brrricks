@@ -1,9 +1,9 @@
 pub mod brick {
+  use std::collections::HashMap;
+
   // use serde::{Deserialize, Serialize};
   // #[derive(PartialEq, Debug, Eq, Clone, Copy, PartialOrd, Ord, Hash)]
   // #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-
-  use std::collections::HashMap;
 
   #[derive(Clone)]
   pub struct ParamSerializationError {
@@ -43,15 +43,16 @@ pub mod brick {
     pub produces: Vec<&'static dyn Param>,
   }
 
+  pub const MAX_PARAMS_SIZE: usize = 10;
 
   #[derive(Clone)]// consider https://github.com/rust-phf/rust-phf for SplitterBrick
   pub struct SplitterBrickData {
     pub base: BrickData,
-    pub(crate) produces: HashMap<SplitIndex, Vec<&'static dyn Param>>,
+    pub(crate) produces: phf::Map<SplitIndex, [&'static Option<dyn Param>; MAX_PARAMS_SIZE]>,
   }
 
   impl SplitterBrickData {
-    pub fn new(base: BrickData, produces: HashMap<impl SplitParam, Vec<&'static dyn Param>>) -> SplitterBrickData {
+    pub fn new(base: BrickData, produces: phf::Map<impl SplitParam, [&'static Option<dyn Param>; MAX_PARAMS_SIZE]>) -> SplitterBrickData {
       SplitterBrickData {
         base: base,
         produces: produces
