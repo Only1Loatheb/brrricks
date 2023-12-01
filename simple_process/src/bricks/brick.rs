@@ -1,5 +1,4 @@
 pub mod brick {
-  use std::collections::HashMap;
 
   // use serde::{Deserialize, Serialize};
   // #[derive(PartialEq, Debug, Eq, Clone, Copy, PartialOrd, Ord, Hash)]
@@ -48,11 +47,11 @@ pub mod brick {
   #[derive(Clone)]// consider https://github.com/rust-phf/rust-phf for SplitterBrick
   pub struct SplitterBrickData {
     pub base: BrickData,
-    pub(crate) produces: phf::Map<SplitIndex, [&'static Option<dyn Param>; MAX_PARAMS_SIZE]>,
+    pub(crate) produces: phf::Map<i32, [Option<dyn Param + 'static>; MAX_PARAMS_SIZE]>,
   }
 
   impl SplitterBrickData {
-    pub fn new(base: BrickData, produces: phf::Map<impl SplitParam, [&'static Option<dyn Param>; MAX_PARAMS_SIZE]>) -> SplitterBrickData {
+    pub fn new(base: BrickData, produces: phf::Map<i32, [Option<dyn Param + 'static>; MAX_PARAMS_SIZE]>) -> SplitterBrickData {
       SplitterBrickData {
         base: base,
         produces: produces

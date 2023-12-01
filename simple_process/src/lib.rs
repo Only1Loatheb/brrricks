@@ -79,6 +79,7 @@ impl LinearBrick for Linear {
 
 struct Splitter;
 
+
 impl SplitterBrick for Splitter {
   fn data(&self) -> SplitterBrickData {
     SplitterBrickData::new(
@@ -88,8 +89,8 @@ impl SplitterBrick for Splitter {
         not_produced_before: vec![],
       },
       phf_map! {
-        SplitP::Bar => [MAX_PARAMS_SIZE, None]
-        SplitP::Foo => [MAX_PARAMS_SIZE, None]
+        1_i32 => [MAX_PARAMS_SIZE, None],
+        2_i32 => [MAX_PARAMS_SIZE, None],
       },
     )
   }
