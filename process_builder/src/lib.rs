@@ -89,8 +89,8 @@ impl SplitterBrick for Splitter {
         not_produced_before: vec![],
       },
       phf_map! {
-        1_i32 => [MAX_PARAMS_SIZE, None],
-        2_i32 => [MAX_PARAMS_SIZE, None],
+        1_i32 => [None; MAX_PARAMS_SIZE],
+        2_i32 => [None; MAX_PARAMS_SIZE],
       },
     )
   }
