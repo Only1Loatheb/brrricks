@@ -5,13 +5,13 @@ edition = "2021"
 
 [workspace]
 members = [
-    "simple_process",
-    "type_encoded_process",
+    "process_builder",
+    "process_runner",
 ]
 
 [dependencies]
-simple_process = { path = "simple_process" }
-type_encoded_process = { path = "type_encoded_process" }
+process_builder = { path = "process_builder" }
+process_runner = { path = "process_runner" }
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 #https://github.com/slog-rs/example-lib/blob/master/Cargo.toml
