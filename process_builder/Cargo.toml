@@ -6,6 +6,8 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-phf = { version = "0.11.2" , features = ["macros"]}
+typenum = { version = "1.17", features = ["const-generics"] }
+serde = { version = "1.0", features = ["derive"] }
+generic-array = "1.0.0"
 #phf_codegen = "0.11.2"
 #serde = "1.0"
