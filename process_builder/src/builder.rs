@@ -1,3 +1,5 @@
+use frunk::{HCons, HNil};
+use generic_array::GenericArray;
 use typenum::{Unsigned, U0};
 
 use crate::brick::{FinalBrick, LinearBrick, SplitParam, SplitterBrick};
@@ -6,15 +8,15 @@ use std::collections::HashMap;
 
 // think about brick <Error>
 
-const FLOWING_PROCESS_NO_OP: FlowingProcess = FlowingProcess::NoOp;
+const FLOWING_PROCESS_NO_OP: FlowingProcess<HNil> = FlowingProcess::NoOp;
 
-pub const fn empty_process() -> FlowingProcess {
+pub const fn empty_process() -> FlowingProcess<HNil> {
     FlowingProcess::NoOp
 }
 
-pub const fn process(
-    brick: &'static dyn LinearBrick<ConsumesCount = U0, ProducesCount = U0>,
-) -> FlowingProcess {
+pub const fn process<ConsumesCount, ProducesCount>(
+    brick: &'static dyn LinearBrick<ConsumesCount = ConsumesCount, ProducesCount = ProducesCount>,
+) -> FlowingProcess<HCons<(ConsumesCount, ProducesCount), HNil>> {
     FlowingProcess::Linear {
         0: FlowingLinearProcess {
             brick,
@@ -34,14 +36,14 @@ pub const fn finnish<ConsumesCount: Unsigned>(
     }
 }
 
-pub struct FlowingLinearProcess<ConsumesCount: Unsigned, ProducesCount: Unsigned> {
+pub struct FlowingLinearProcess<ConsumesCount: Unsigned, ProducesCount: Unsigned, TypesUpToThis> {
     pub(crate) brick:
         &'static dyn LinearBrick<ConsumesCount = ConsumesCount, ProducesCount = ProducesCount>,
-    pub(crate) process_before_brick: &'static FlowingProcess,
+    pub(crate) process_before_brick: &'static FlowingProcess<TypesUpToThis>,
 }
 
-impl<ConsumesCount: Unsigned, ProducesCount: Unsigned>
-    FlowingLinearProcess<ConsumesCount, ProducesCount>
+impl<ConsumesCount: Unsigned, ProducesCount: Unsigned, TypesUpToThis>
+    FlowingLinearProcess<ConsumesCount, ProducesCount, TypesUpToThis>
 {
     pub const fn finnish<FinalConsumesCount: Unsigned>(
         self,
@@ -56,15 +58,34 @@ impl<ConsumesCount: Unsigned, ProducesCount: Unsigned>
     }
 }
 
-pub struct FlowingSplitProcess {
-    pub(crate) brick: &'static dyn SplitterBrick,
-    pub(crate) cases: GenericArray<dyn Param, MaxSplitIndex>HashMap<SplitIndex, FlowingProcess>,
+pub struct FlowingSplitProcessStart<CaseTypes, TypesUpToThis> {
+    pub(crate) case: FlowingProcess<CaseTypes>,
+}
+
+pub struct FlowingSplitProcessStep<CaseTypes, PreviousCases> {
+    pub(crate) case: FlowingProcess<CaseTypes>,
+    pub(crate) cases: PreviousCases,
+}
+
+pub struct FlowingSplitProcess<
+    ConsumesCount: Unsigned,
+    MaxSplitIndex: Unsigned,
+    CaseFlowingProcess,
+    CaseFlowingProcesssBefore,
+    TypesUpToThis,
+> {
+    pub(crate) brick:
+        &'static dyn SplitterBrick<ConsumesCount = ConsumesCount, MaxSplitIndex = MaxSplitIndex>,
+    pub(crate) case: HCons<CaseFlowingProcess, CaseFlowingProcesssBefore>,
     // some could be finalized
-    pub(crate) process_before_brick: &'static FlowingProcess,
+    pub(crate) process_before_brick: &'static FlowingProcess<TypesUpToThis>,
 }
 
 impl FlowingSplitProcess {
-    pub const fn finnish(self, brick: &'static dyn FinalBrick) -> FinalizedProcess {
+    pub const fn finnish<FinalConsumesCount: Unsigned>(
+        self,
+        brick: &'static dyn FinalBrick<ConsumesCount = FinalConsumesCount>,
+    ) -> FinalizedProcess {
         FinalizedProcess::Linear {
             0: FinalizedLinearProcess {
                 brick,
@@ -74,10 +95,10 @@ impl FlowingSplitProcess {
     }
 }
 
-pub enum FlowingProcess {
+pub enum FlowingProcess<TypesUpToThis> {
     NoOp,
-    Linear(FlowingLinearProcess),
-    Split(FlowingSplitProcess),
+    Linear(FlowingLinearProcess<TypesUpToThis>),
+    Split(FlowingSplitProcess<TypesUpToThis>),
 }
 
 pub struct FinalizedLinearProcess {

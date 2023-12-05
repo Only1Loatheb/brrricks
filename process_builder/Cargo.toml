@@ -9,5 +9,6 @@ edition = "2021"
 typenum = { version = "1.17", features = ["const-generics"] }
 serde = { version = "1.0", features = ["derive"] }
 generic-array = "1.0.0"
+frunk = "0.4.2"
 #phf_codegen = "0.11.2"
 #serde = "1.0"

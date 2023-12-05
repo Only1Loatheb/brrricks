@@ -9,7 +9,6 @@ use brick::brick::{
     FinalBrick, LinearBrick, LinearBrickData, Named, Param, SplitParam, SplitterBrick,
     SplitterBrickData,
 };
-use builder;
 use split_index::SplitIndex;
 
 pub mod process_builder {
@@ -82,6 +81,12 @@ pub mod process_builder {
     }
 
     use std::collections::HashMap;
+    use generic_array::arr;
+    use serde::{Deserialize, Serialize};
+    use typenum::U0;
+    use crate::brick::{FinalBrick, LinearBrick, LinearBrickData, Named, Param, SplitParam, SplitterBrick, SplitterBrickData};
+    use crate::builder::{empty_process, finnish, NamedProcess, process};
+    use crate::split_index::SplitIndex;
 
     // pub const fn
     pub fn get_simple_process() -> NamedProcess {

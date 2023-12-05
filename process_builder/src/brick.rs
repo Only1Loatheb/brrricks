@@ -29,7 +29,7 @@ pub struct SplitterBrickData<ConsumesCount: Unsigned, MaxSplitIndex: Unsigned> {
 }
 
 #[derive(Clone)]
-pub struct FinalBrickkData<ConsumesCount: Unsigned> {
+pub struct FinalBrickData<ConsumesCount: Unsigned> {
     pub name: &'static str,
     pub consumes: GenericArray<dyn Param, ConsumesCount>,
 }
@@ -49,5 +49,5 @@ pub trait SplitterBrick {
 
 pub trait FinalBrick {
     type ConsumesCount: Unsigned;
-    fn data(&self) -> FinalBrickkData<Self::ConsumesCount>;
+    fn data(&self) -> FinalBrickData<Self::ConsumesCount>;
 }
