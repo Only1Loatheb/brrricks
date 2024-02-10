@@ -1,7 +1,8 @@
-use brick::{FinalBrick, LinearBrick, SplitterBrick};
+use internal_brick::{FinalBrick, LinearBrick, SplitterBrick};
 
 pub mod builder;
-pub(crate) mod brick;
+pub mod brick;
+pub(crate) mod internal_brick;
 pub(crate) mod split_index;
 
 pub mod process_builder {
