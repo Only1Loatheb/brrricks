@@ -8,6 +8,10 @@ pub trait Named {
     fn name() -> &'static str;
 }
 
+struct Action {
+    pub name: str,
+}
+
 pub trait Param: Named + Deserialize<'static> + Serialize {}
 
 pub trait SplitParam: Named {
@@ -15,10 +19,12 @@ pub trait SplitParam: Named {
 }
 
 #[derive(Clone)]
-pub struct LinearBrickData<ConsumesCount: Unsigned, ProducesCount: Unsigned> {
+pub struct LinearBrickData {
     pub name: &'static str,
-    pub consumes: GenericArray<dyn Param, ConsumesCount>,
-    pub produces: GenericArray<dyn Param, ProducesCount>,
+    pub consumes: Vec<dyn Param>,
+    pub required_actions: Vec<Action>,
+    pub produces: Vec<dyn Param>,
+    pub competed_actions: Vec<Action>,
 }
 
 #[derive(Clone)] // consider https://github.com/rust-phf/rust-phf for SplitterBrick
