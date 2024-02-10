@@ -1,12 +1,16 @@
 use std::collections::HashMap;
-use std::future::Future;
+
+use async_trait::async_trait;
 
 // #[derive(PartialEq, Debug, Eq, Clone, Copy, PartialOrd, Ord, Hash)]
 
+#[derive(Clone)]
 pub struct ParamId(pub usize);
 
+#[derive(Clone)]
 pub struct ActionId(pub usize);
 
+#[derive(Clone)]
 pub struct SplitIndex(pub usize);
 
 #[derive(Clone)]
@@ -36,20 +40,23 @@ pub struct FinalBrickData {
   pub forbids_prior_completion: Vec<ActionId>,
 }
 
+#[async_trait]
 pub trait LinearBrick {
   fn data(&self) -> LinearBrickData;
-  fn handle(&self, input: HashMap<ParamId, serde_json::value::Value>)
-    -> impl Future<Output=anyhow::Result<HashMap<ParamId, serde_json::value::Value>>>;
+  async fn handle(&self, input: HashMap<ParamId, serde_json::value::Value>)
+                  -> anyhow::Result<HashMap<ParamId, serde_json::value::Value>>;
 }
 
+#[async_trait]
 pub trait SplitterBrick {
   fn data(&self) -> SplitterBrickData;
-  fn handle(&self, input: HashMap<ParamId, serde_json::value::Value>)
-    -> impl Future<Output=anyhow::Result<(SplitIndex, HashMap<ParamId, serde_json::value::Value>)>>;
+  async fn handle(&self, input: HashMap<ParamId, serde_json::value::Value>)
+                  -> anyhow::Result<(SplitIndex, HashMap<ParamId, serde_json::value::Value>)>;
 }
 
+#[async_trait]
 pub trait FinalBrick {
   fn data(&self) -> FinalBrickData;
-  fn handle(&self, input: HashMap<ParamId, serde_json::value::Value>)
-    -> impl Future<Output=anyhow::Result<()>>;
+  async fn handle(&self, input: HashMap<ParamId, serde_json::value::Value>)
+                  -> anyhow::Result<()>;
 }

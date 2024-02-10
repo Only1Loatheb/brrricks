@@ -1,12 +1,11 @@
-use typenum::Unsigned;
 
 use crate::brick::{FinalBrick, LinearBrick, SplitterBrick};
 
 // accept different types in builder (with additional type params) and do the checking, and build with non-generic types
 
-pub const fn empty_process() -> FlowingProcess { FlowingProcess::NoOp }
+pub fn empty_process() -> FlowingProcess { FlowingProcess::NoOp }
 
-pub const fn process(brick: Box<dyn LinearBrick>) -> FlowingProcess {
+pub fn process(brick: Box<dyn LinearBrick>) -> FlowingProcess {
   FlowingProcess::Linear {
     0: FlowingLinearProcess {
       brick,
@@ -15,7 +14,7 @@ pub const fn process(brick: Box<dyn LinearBrick>) -> FlowingProcess {
   }
 }
 
-pub const fn finnish(brick: Box<dyn FinalBrick>) -> FinalizedProcess {
+pub fn finnish(brick: Box<dyn FinalBrick>) -> FinalizedProcess {
   FinalizedProcess::Linear {
     0: FinalizedLinearProcess {
       brick,
@@ -31,7 +30,7 @@ pub struct FlowingLinearProcess {
 
 impl FlowingLinearProcess
 {
-  pub const fn finnish(self, brick: Box<dyn FinalBrick>) -> FinalizedProcess {
+  pub fn finnish(self, brick: Box<dyn FinalBrick>) -> FinalizedProcess {
     FinalizedProcess::Linear {
       0: FinalizedLinearProcess {
         brick,
@@ -48,7 +47,7 @@ pub struct FlowingSplitProcess {
 }
 
 impl FlowingSplitProcess {
-  pub const fn finnish<FinalConsumesCount: Unsigned>(
+  pub fn finnish(
     self,
     brick: Box<dyn FinalBrick>,
   ) -> FinalizedProcess {
@@ -84,7 +83,7 @@ pub enum FinalizedProcess {
 }
 
 impl FlowingProcess {
-  pub const fn finnish(self, brick: Box<dyn FinalBrick>) -> FinalizedProcess {
+  pub fn finnish(self, brick: Box<dyn FinalBrick>) -> FinalizedProcess {
     match self {
       FlowingProcess::NoOp => finnish(brick),
       FlowingProcess::Linear(process) => process.finnish(brick),
@@ -92,7 +91,7 @@ impl FlowingProcess {
     }
   }
 
-  pub const fn and_then(self, brick: Box<dyn LinearBrick>) -> FlowingProcess {
+  pub fn and_then(self, brick: Box<dyn LinearBrick>) -> FlowingProcess {
     FlowingProcess::Linear {
       0: FlowingLinearProcess {
         brick,
@@ -101,7 +100,7 @@ impl FlowingProcess {
     }
   }
 
-  pub const fn split<const max_split: usize>(
+  pub fn split(
     self,
     brick: Box<dyn SplitterBrick>,
     cases: Vec<FlowingProcess>,
@@ -115,7 +114,7 @@ impl FlowingProcess {
     }
   }
 
-  pub const fn split_finalized(
+  pub fn split_finalized(
     self,
     brick: Box<dyn SplitterBrick>,
     cases: Vec<FinalizedProcess>,
@@ -136,7 +135,7 @@ pub struct NamedProcess {
 }
 
 impl FinalizedProcess {
-  pub const fn close(self, path: &'static str) -> NamedProcess {
+  pub fn close(self, path: &'static str) -> NamedProcess {
     NamedProcess {
       path,
       process: self,

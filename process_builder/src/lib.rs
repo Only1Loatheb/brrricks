@@ -1,19 +1,17 @@
-use serde::{Deserialize, Deserializer, Serialize, Serializer};
-
 use brick::{FinalBrick, LinearBrick, SplitterBrick};
 
-mod brick;
-mod builder;
-mod split_index;
+pub mod builder;
+pub(crate) mod brick;
+pub(crate) mod split_index;
 
 pub mod process_builder {
   use std::collections::HashMap;
-  use std::future::Future;
+  use async_trait::async_trait;
 
   use serde::{Deserialize, Serialize};
   use serde_json::Value;
 
-  use crate::brick::{FinalBrick, FinalBrickData, LinearBrick, LinearBrickData, ParamId, SplitterBrick, SplitterBrickData};
+  use crate::brick::{FinalBrick, FinalBrickData, LinearBrick, LinearBrickData, ParamId, SplitIndex, SplitterBrick, SplitterBrickData};
   use crate::builder::{empty_process, finnish, NamedProcess, process};
 
   #[derive(Serialize, Deserialize)]
@@ -27,6 +25,7 @@ pub mod process_builder {
 
   struct Linear;
 
+  #[async_trait]
   impl LinearBrick for Linear {
     fn data(&self) -> LinearBrickData {
       LinearBrickData {
@@ -39,13 +38,14 @@ pub mod process_builder {
       }
     }
 
-    fn handle(&self, input: HashMap<ParamId, Value>) -> impl Future<Output=anyhow::Result<HashMap<ParamId, Value>>> {
+    async fn handle(&self, input: HashMap<ParamId, Value>) -> anyhow::Result<HashMap<ParamId, Value>> {
       todo!()
     }
   }
 
   struct Splitter;
 
+  #[async_trait]
   impl SplitterBrick for Splitter {
     fn data(&self) -> SplitterBrickData {
       SplitterBrickData {
@@ -57,13 +57,14 @@ pub mod process_builder {
       }
     }
 
-    fn handle(&self, input: HashMap<ParamId, Value>) -> impl Future<Output=anyhow::Result<(crate::brick::SplitIndex, HashMap<ParamId, Value>)>> {
+    async fn handle(&self, input: HashMap<ParamId, Value>) -> anyhow::Result<(SplitIndex, HashMap<ParamId, Value>)> {
       todo!()
     }
   }
 
   struct Final;
 
+  #[async_trait]
   impl FinalBrick for Final {
     fn data(&self) -> FinalBrickData {
       FinalBrickData {
@@ -74,22 +75,22 @@ pub mod process_builder {
       }
     }
 
-    fn handle(&self, input: HashMap<ParamId, Value>) -> impl Future<Output=anyhow::Result<()>> {
+    async fn handle(&self, input: HashMap<ParamId, Value>) -> anyhow::Result<()> {
       todo!()
     }
   }
 
   // pub const fn
   pub fn get_simple_process() -> NamedProcess {
-    process(Linear.into())
-      .and_then(Linear.into())
+    process(Box::new(Linear))
+      .and_then(Box::new(Linear))
       .split(
-        Splitter.into(),
-        vec![empty_process(), process(Linear.into())],
+        Box::new(Splitter),
+        vec![empty_process(), process(Box::new(Linear))],
       )
       .split_finalized(
-        Splitter.into(),
-        vec![finnish(Final.into()), process(Linear.into()).finnish(Final.into())])
+        Box::new(Splitter),
+        vec![finnish(Box::new(Final)), process(Box::new(Linear)).finnish(Box::new(Final))])
       .close("aa")
   }
 }
