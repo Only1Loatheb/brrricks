@@ -1,59 +1,55 @@
-use generic_array::GenericArray;
-use serde::{Deserialize, Serialize};
-use typenum::Unsigned;
+use std::collections::HashMap;
+use std::future::Future;
 
 // #[derive(PartialEq, Debug, Eq, Clone, Copy, PartialOrd, Ord, Hash)]
 
-pub trait Named {
-    fn name() -> &'static str;
-}
+pub struct ParamId(pub usize);
 
-struct Action {
-    pub name: str,
-}
+pub struct ActionId(pub usize);
 
-pub trait Param: Named + Deserialize<'static> + Serialize {}
-
-pub trait SplitParam: Named {
-    type MaxSplitIndex: Unsigned;
-}
+pub struct SplitIndex(pub usize);
 
 #[derive(Clone)]
 pub struct LinearBrickData {
-    pub name: &'static str,
-    pub consumes: Vec<dyn Param>,
-    pub required_actions: Vec<Action>,
-    pub produces: Vec<dyn Param>,
-    pub competed_actions: Vec<Action>,
-}
-
-#[derive(Clone)] // consider https://github.com/rust-phf/rust-phf for SplitterBrick
-pub struct SplitterBrickData<ConsumesCount: Unsigned, MaxSplitIndex: Unsigned> {
-    pub name: &'static str,
-    pub consumes: GenericArray<dyn Param, ConsumesCount>,
-    pub produces: GenericArray<dyn Param, MaxSplitIndex>,
+  pub name: &'static str,
+  pub consumes: Vec<ParamId>,
+  pub requires_prior_completion: Vec<ActionId>,
+  pub forbids_prior_completion: Vec<ActionId>,
+  pub produces: Vec<ParamId>,
+  pub accomplishes: Vec<ActionId>,
 }
 
 #[derive(Clone)]
-pub struct FinalBrickData<ConsumesCount: Unsigned> {
-    pub name: &'static str,
-    pub consumes: GenericArray<dyn Param, ConsumesCount>,
+pub struct SplitterBrickData {
+  pub name: &'static str,
+  pub consumes: Vec<ParamId>,
+  pub requires_prior_completion: Vec<ActionId>,
+  pub forbids_prior_completion: Vec<ActionId>,
+  pub produces_and_accomplishes: Vec<(Vec<ActionId>, Vec<ParamId>)>, // consider https://github.com/rust-phf/rust-phf for SplitIndex
 }
 
-// add fn handle()
+#[derive(Clone)]
+pub struct FinalBrickData {
+  pub name: &'static str,
+  pub consumes: Vec<ParamId>,
+  pub requires_prior_completion: Vec<ActionId>,
+  pub forbids_prior_completion: Vec<ActionId>,
+}
+
 pub trait LinearBrick {
-    type ConsumesCount: Unsigned;
-    type ProducesCount: Unsigned;
-    fn data(&self) -> LinearBrickData<Self::ConsumesCount, Self::ProducesCount>;
+  fn data(&self) -> LinearBrickData;
+  fn handle(&self, input: HashMap<ParamId, serde_json::value::Value>)
+    -> impl Future<Output=anyhow::Result<HashMap<ParamId, serde_json::value::Value>>>;
 }
 
 pub trait SplitterBrick {
-    type ConsumesCount: Unsigned;
-    type MaxSplitIndex: Unsigned;
-    fn data(&self) -> SplitterBrickData<Self::ConsumesCount, Self::MaxSplitIndex>;
+  fn data(&self) -> SplitterBrickData;
+  fn handle(&self, input: HashMap<ParamId, serde_json::value::Value>)
+    -> impl Future<Output=anyhow::Result<(SplitIndex, HashMap<ParamId, serde_json::value::Value>)>>;
 }
 
 pub trait FinalBrick {
-    type ConsumesCount: Unsigned;
-    fn data(&self) -> FinalBrickData<Self::ConsumesCount>;
+  fn data(&self) -> FinalBrickData;
+  fn handle(&self, input: HashMap<ParamId, serde_json::value::Value>)
+    -> impl Future<Output=anyhow::Result<()>>;
 }
