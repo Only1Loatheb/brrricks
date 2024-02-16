@@ -1,11 +1,11 @@
 
-use crate::brick::{FinalBrick, LinearBrick, SplitterBrick};
+use crate::brick::{FinalBrickHandler, LinearBrickHandler, SplitterBrickHandler};
 
 // accept different types in builder (with additional type params) and do the checking, and build with non-generic types
 
 pub fn empty_process() -> FlowingProcess { FlowingProcess::NoOp }
 
-pub fn process(brick: Box<dyn LinearBrick>) -> FlowingProcess {
+pub fn process(brick: Box<dyn LinearBrickHandler>) -> FlowingProcess {
   FlowingProcess::Linear {
     0: FlowingLinearProcess {
       brick,
@@ -14,7 +14,7 @@ pub fn process(brick: Box<dyn LinearBrick>) -> FlowingProcess {
   }
 }
 
-pub fn finnish(brick: Box<dyn FinalBrick>) -> FinalizedProcess {
+pub fn finnish(brick: Box<dyn FinalBrickHandler>) -> FinalizedProcess {
   FinalizedProcess::Linear {
     0: FinalizedLinearProcess {
       brick,
@@ -24,13 +24,13 @@ pub fn finnish(brick: Box<dyn FinalBrick>) -> FinalizedProcess {
 }
 
 pub struct FlowingLinearProcess {
-  pub(crate) brick: Box<dyn LinearBrick>,
+  pub(crate) brick: Box<dyn LinearBrickHandler>,
   pub(crate) process_before_brick: Box<FlowingProcess>,
 }
 
 impl FlowingLinearProcess
 {
-  pub fn finnish(self, brick: Box<dyn FinalBrick>) -> FinalizedProcess {
+  pub fn finnish(self, brick: Box<dyn FinalBrickHandler>) -> FinalizedProcess {
     FinalizedProcess::Linear {
       0: FinalizedLinearProcess {
         brick,
@@ -41,7 +41,7 @@ impl FlowingLinearProcess
 }
 
 pub struct FlowingSplitProcess {
-  pub(crate) brick: Box<dyn SplitterBrick>,
+  pub(crate) brick: Box<dyn SplitterBrickHandler>,
   pub(crate) cases: Vec<FlowingProcess>,
   pub(crate) process_before_brick: Box<FlowingProcess>,
 }
@@ -49,7 +49,7 @@ pub struct FlowingSplitProcess {
 impl FlowingSplitProcess {
   pub fn finnish(
     self,
-    brick: Box<dyn FinalBrick>,
+    brick: Box<dyn FinalBrickHandler>,
   ) -> FinalizedProcess {
     FinalizedProcess::Linear {
       0: FinalizedLinearProcess {
@@ -67,12 +67,12 @@ pub enum FlowingProcess {
 }
 
 pub struct FinalizedLinearProcess {
-  pub(crate) brick: Box<dyn FinalBrick>,
+  pub(crate) brick: Box<dyn FinalBrickHandler>,
   pub(crate) process_before_brick: Box<FlowingProcess>,
 }
 
 pub struct FinalizedSplitProcess {
-  pub(crate) brick: Box<dyn SplitterBrick>,
+  pub(crate) brick: Box<dyn SplitterBrickHandler>,
   pub(crate) cases: Vec<FinalizedProcess>,
   pub(crate) process_before_brick: Box<FlowingProcess>,
 }
@@ -83,7 +83,7 @@ pub enum FinalizedProcess {
 }
 
 impl FlowingProcess {
-  pub fn finnish(self, brick: Box<dyn FinalBrick>) -> FinalizedProcess {
+  pub fn finnish(self, brick: Box<dyn FinalBrickHandler>) -> FinalizedProcess {
     match self {
       FlowingProcess::NoOp => finnish(brick),
       FlowingProcess::Linear(process) => process.finnish(brick),
@@ -91,7 +91,7 @@ impl FlowingProcess {
     }
   }
 
-  pub fn and_then(self, brick: Box<dyn LinearBrick>) -> FlowingProcess {
+  pub fn and_then(self, brick: Box<dyn LinearBrickHandler>) -> FlowingProcess {
     FlowingProcess::Linear {
       0: FlowingLinearProcess {
         brick,
@@ -102,7 +102,7 @@ impl FlowingProcess {
 
   pub fn split(
     self,
-    brick: Box<dyn SplitterBrick>,
+    brick: Box<dyn SplitterBrickHandler>,
     cases: Vec<FlowingProcess>,
   ) -> FlowingProcess {
     FlowingProcess::Split {
@@ -116,7 +116,7 @@ impl FlowingProcess {
 
   pub fn split_finalized(
     self,
-    brick: Box<dyn SplitterBrick>,
+    brick: Box<dyn SplitterBrickHandler>,
     cases: Vec<FinalizedProcess>,
   ) -> FinalizedProcess {
     FinalizedProcess::Split {

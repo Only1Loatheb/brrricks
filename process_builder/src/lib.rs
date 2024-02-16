@@ -1,4 +1,4 @@
-use internal_brick::{FinalBrick, LinearBrick, SplitterBrick};
+use internal_brick::{FinalBrick, LinearBrickHandler, SplitterBrick};
 
 pub mod builder;
 pub mod brick;
@@ -12,7 +12,7 @@ pub mod process_builder {
   use serde::{Deserialize, Serialize};
   use serde_json::Value;
 
-  use crate::brick::{FinalBrick, FinalBrickData, LinearBrick, LinearBrickData, ParamId, SplitIndex, SplitterBrick, SplitterBrickData};
+  use crate::brick::{FinalBrickHandler, FinalBrick, LinearBrickHandler, LinearBrick, ParamId, SplitIndex, SplitterBrickHandler, SplitterBrick};
   use crate::builder::{empty_process, finnish, NamedProcess, process};
 
   #[derive(Serialize, Deserialize)]
@@ -27,9 +27,9 @@ pub mod process_builder {
   struct Linear;
 
   #[async_trait]
-  impl LinearBrick for Linear {
-    fn data(&self) -> LinearBrickData {
-      LinearBrickData {
+  impl LinearBrickHandler for Linear {
+    fn data(&self) -> LinearBrick {
+      LinearBrick {
         name: "Linear",
         consumes: vec![],
         requires_prior_completion: vec![],
@@ -47,9 +47,9 @@ pub mod process_builder {
   struct Splitter;
 
   #[async_trait]
-  impl SplitterBrick for Splitter {
-    fn data(&self) -> SplitterBrickData {
-      SplitterBrickData {
+  impl SplitterBrickHandler for Splitter {
+    fn data(&self) -> SplitterBrick {
+      SplitterBrick {
         name: "Splitter",
         consumes: vec![],
         requires_prior_completion: vec![],
@@ -66,9 +66,9 @@ pub mod process_builder {
   struct Final;
 
   #[async_trait]
-  impl FinalBrick for Final {
-    fn data(&self) -> FinalBrickData {
-      FinalBrickData {
+  impl FinalBrickHandler for Final {
+    fn data(&self) -> FinalBrick {
+      FinalBrick {
         name: "Final",
         consumes: vec![],
         requires_prior_completion: vec![],

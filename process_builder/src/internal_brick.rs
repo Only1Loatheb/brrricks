@@ -1,65 +1,56 @@
-use std::collections::HashMap;
-
-use async_trait::async_trait;
-use crate::brick::{ActionId, FinalBrickData, LinearBrickData, ParamId, SplitIndex, SplitterBrickData};
+use crate::brick::{FinalBrick, FinalBrickHandler, LinearBrick, LinearBrickHandler, ParamId, SplitterBrick, SplitterBrickHandler};
 
 // #[derive(PartialEq, Debug, Eq, Clone, Copy, PartialOrd, Ord, Hash)]
 
-#[derive(Clone)]
-pub(crate) struct InternalLinearBrickData {
+pub(crate) struct InternalLinearBrick {
   pub name: &'static str,
   pub consumes: Vec<ParamId>,
   pub produces: Vec<ParamId>,
+  pub handler: Box<dyn LinearBrickHandler>,
 }
 
-impl InternalLinearBrickData {
-  pub(crate) fn new(data: LinearBrickData) -> InternalLinearBrickData {
-    InternalLinearBrickData {
-      name: data.name, consumes: data.consumes, produces: data.produces
+impl InternalLinearBrick {
+  pub(crate) fn new(data: LinearBrick) -> InternalLinearBrick {
+    InternalLinearBrick {
+      name: data.name,
+      consumes: data.consumes,
+      produces: data.produces,
+      handler: data.handler,
     }
   }
 }
 
-#[derive(Clone)]
-pub(crate) struct InternalSplitterBrickData {
+  // consider https://github.com/rust-phf/rust-phf for SplitIndex
+pub(crate) struct InternalSplitterBrick {
   pub name: &'static str,
   pub consumes: Vec<ParamId>,
-  pub produces: Vec<Vec<ParamId>>, // consider https://github.com/rust-phf/rust-phf for SplitIndex
+  pub produces: Vec<Vec<ParamId>>,
+  pub handler: Box<dyn SplitterBrickHandler>,
 }
 
-impl InternalSplitterBrickData {
-  impl InternalLinearBrickData {
-  pub(crate) fn new(data: LinearBrickData) -> InternalLinearBrickData {
-    InternalLinearBrickData {
-      name: data.name, consumes: data.consumes, produces: data.produces
+impl InternalSplitterBrick {
+  pub(crate) fn new(data: SplitterBrick) -> InternalSplitterBrick {
+    InternalSplitterBrick {
+      name: data.name,
+      consumes: data.consumes,
+      produces: data.produces_and_accomplishes.into_iter().map(|(_, params)| params).collect(),
+      handler: data.handler,
     }
   }
 }
-}
 
-#[derive(Clone)]
-pub(crate) struct InternalFinalBrickData {
+pub(crate) struct InternalFinalBrick {
   pub name: &'static str,
   pub consumes: Vec<ParamId>,
+  pub handler: Box<dyn FinalBrickHandler>,
 }
 
-#[async_trait]
-pub(crate) trait LinearBrick {
-  fn data(&self) -> LinearBrickData;
-  async fn handle(&self, input: HashMap<ParamId, serde_json::value::Value>)
-                  -> anyhow::Result<HashMap<ParamId, serde_json::value::Value>>;
-}
-
-#[async_trait]
-pub(crate) trait SplitterBrick {
-  fn data(&self) -> SplitterBrickData;
-  async fn handle(&self, input: HashMap<ParamId, serde_json::value::Value>)
-                  -> anyhow::Result<(SplitIndex, HashMap<ParamId, serde_json::value::Value>)>;
-}
-
-#[async_trait]
-pub(crate) trait FinalBrick {
-  fn data(&self) -> FinalBrickData;
-  async fn handle(&self, input: HashMap<ParamId, serde_json::value::Value>)
-                  -> anyhow::Result<()>;
+impl InternalFinalBrick {
+  pub(crate) fn new(data: FinalBrick) -> InternalFinalBrick {
+    InternalFinalBrick {
+      name: data.name,
+      consumes: data.consumes,
+      handler: data.handler,
+    }
+  }
 }
