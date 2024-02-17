@@ -4,12 +4,12 @@ use crate::brick::*;
 
 // #[derive(PartialEq, Debug, Eq, Clone, Copy, PartialOrd, Ord, Hash)]
 
-pub(crate) const fn params(value: u128) -> Vec<ParamId> {
+pub(crate) fn params(value: u128) -> Vec<ParamId> {
     let mut params: Vec<ParamId> = vec![];
     let mut i: usize = 0;
     while i < 128 {
-        if value >> i & 1 {
-            params.psuh(ParamId(i));
+        if value >> i & 1 == 1 {
+            params.push(ParamId(i));
         }
         i += 1;
     }
