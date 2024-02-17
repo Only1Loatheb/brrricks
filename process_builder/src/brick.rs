@@ -62,12 +62,18 @@ pub struct LinearBrick<
 }
 
 // consider https://github.com/rust-phf/rust-phf for SplitIndex
-pub struct SplitterBrick {
+pub struct SplitterBrick<
+    SPLITS: Unsigned,
+    CONSUMES: Unsigned,
+    REQUIRES: Unsigned,
+    FORBIDS: Unsigned,
+> {
     pub name: &'static str,
-    pub consumes: Vec<ParamId>,
-    pub requires_prior_completion: Vec<ActionId>,
-    pub forbids_prior_completion: Vec<ActionId>,
-    pub produces_and_accomplishes: Vec<(Vec<ActionId>, Vec<ParamId>)>,
+    pub splits: PhantomData<SPLITS>,
+    pub consumes: PhantomData<CONSUMES>,
+    pub requires_prior_completion: PhantomData<REQUIRES>,
+    pub forbids_prior_completion: PhantomData<FORBIDS>,
+    // pub produces_and_accomplishes: Vec<(Vec<ActionId>, Vec<ParamId>)>,
     pub handler: Box<dyn SplitterBrickHandler>,
 }
 
@@ -75,10 +81,12 @@ pub struct FinalBrick<
     CONSUMES: Unsigned,
     REQUIRES: Unsigned,
     FORBIDS: Unsigned,
+    ACCOMPLISHES: Unsigned,
 > {
     pub name: &'static str,
     pub consumes: PhantomData<CONSUMES>,
     pub requires_prior_completion: PhantomData<REQUIRES>,
     pub forbids_prior_completion: PhantomData<FORBIDS>,
+    pub accomplishes: PhantomData<ACCOMPLISHES>,
     pub handler: Box<dyn FinalBrickHandler>,
 }
