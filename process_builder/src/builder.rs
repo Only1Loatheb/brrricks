@@ -3,81 +3,81 @@ use typenum::*;
 
 use crate::brick::*;
 use crate::internal_brick::*;
-
-// accept different types in builder (with additional type params) and do the checking, and build with non-generic types
-
-pub type ALL = UInt<UInt<UInt<UInt<UInt<UInt<UInt<UInt<UInt<UInt<UInt<UInt<UInt<UInt<UInt<UInt<UInt<UInt<UInt<UInt<UInt<UInt<UInt<UInt<UInt<UInt<UInt<UInt<UInt<UInt<UInt<UInt<UInt<UInt<UInt<UInt<UInt<UInt<UInt<UInt<UInt<UInt<UInt<UInt<UInt<UInt<UInt<UInt<UInt<UInt<UInt<UInt<UInt<UInt<UInt<UInt<UInt<UInt<UInt<UInt<UInt<UInt<UInt<UInt<UInt<UInt<UInt<UInt<UInt<UInt<UInt<UInt<UInt<UInt<UInt<UInt<UInt<UInt<UInt<UInt<UInt<UInt<UInt<UInt<UInt<UInt<UInt<UInt<UInt<UInt<UInt<UInt<UInt<UInt<UInt<UInt<UInt<UInt<UInt<UInt<UInt<UInt<UInt<UInt<UInt<UInt<UInt<UInt<UInt<UInt<UInt<UInt<UInt<UInt<UInt<UInt<UInt<UInt<UInt<UInt<UInt<UInt<UInt<UInt<UInt<UInt<UInt<UInt<UTerm, B1>, B1>, B1>, B1>, B1>, B1>, B1>, B1>, B1>, B1>, B1>, B1>, B1>, B1>, B1>, B1>, B1>, B1>, B1>, B1>, B1>, B1>, B1>, B1>, B1>, B1>, B1>, B1>, B1>, B1>, B1>, B1>, B1>, B1>, B1>, B1>, B1>, B1>, B1>, B1>, B1>, B1>, B1>, B1>, B1>, B1>, B1>, B1>, B1>, B1>, B1>, B1>, B1>, B1>, B1>, B1>, B1>, B1>, B1>, B1>, B1>, B1>, B1>, B1>, B1>, B1>, B1>, B1>, B1>, B1>, B1>, B1>, B1>, B1>, B1>, B1>, B1>, B1>, B1>, B1>, B1>, B1>, B1>, B1>, B1>, B1>, B1>, B1>, B1>, B1>, B1>, B1>, B1>, B1>, B1>, B1>, B1>, B1>, B1>, B1>, B1>, B1>, B1>, B1>, B1>, B1>, B1>, B1>, B1>, B1>, B1>, B1>, B1>, B1>, B1>, B1>, B1>, B1>, B1>, B1>, B1>, B1>, B1>, B1>, B1>, B1>, B1>, B1>;
+use crate::internal_process::*;
 
 pub type EMPTY = U0;
 
-const _: () = assert!(ALL::U128 == u128::MAX);
-
-
-enum FlowingLinearProcess {
-  NoOp,
-  Flowing {
-    brick: InternalLinearBrick,
-    process_before_brick: Box<FlowingLinearProcess>,
-  },
-}
-
-struct FlowingProcess<
+pub struct FlowingProcess<
   CONSUMES: Unsigned,
   REQUIRES: Unsigned,
   FORBIDS: Unsigned,
   PRODUCES: Unsigned,
   ACCOMPLISHES: Unsigned,
 > {
-  process: FlowingLinearProcess,
-  consumes: PhantomData<CONSUMES>,
-  requires: PhantomData<REQUIRES>,
-  forbids: PhantomData<FORBIDS>,
-  produces: PhantomData<PRODUCES>,
-  accomplishes: PhantomData<ACCOMPLISHES>,
+  pub(crate) process: InternalFlowingProcess,
+  pub(crate) consumes: PhantomData<CONSUMES>,
+  pub(crate) requires: PhantomData<REQUIRES>,
+  pub(crate) forbids: PhantomData<FORBIDS>,
+  pub(crate) produces: PhantomData<PRODUCES>,
+  pub(crate) accomplishes: PhantomData<ACCOMPLISHES>,
 }
 
-pub fn empty_process() -> FlowingProcess<EMPTY, EMPTY, EMPTY, EMPTY, EMPTY> {
-   FlowingProcess {
-     process: FlowingLinearProcess::NoOp,
-     consumes: Default::default(),
-     requires: Default::default(),
-     forbids: Default::default(),
-     produces: Default::default(),
-     accomplishes: Default::default(),
-   }
+pub struct SplitterProcess<
+  SPLITS_LEFT: Unsigned,
+  ROOT_CONSUMES: Unsigned,
+  ROOT_REQUIRES: Unsigned,
+  ROOT_FORBIDS: Unsigned,
+  ROOT_PRODUCES: Unsigned,
+  ROOT_ACCOMPLISHES: Unsigned,
+  SPLIT_CONSUMES: Unsigned,
+  SPLIT_REQUIRES: Unsigned,
+  SPLIT_FORBIDS: Unsigned,
+  SPLIT_PRODUCES: Unsigned,
+  SPLIT_ACCOMPLISHES: Unsigned,
+> {
+  pub(crate) brick: InternalSplitterBrick,
+  pub(crate) process_before: FlowingProcess<
+    ROOT_CONSUMES,
+    ROOT_REQUIRES,
+    ROOT_FORBIDS,
+    ROOT_PRODUCES,
+    ROOT_ACCOMPLISHES
+  >,
+  pub(crate) splits_left: PhantomData<SPLITS_LEFT>,
+  pub(crate) split_consumes: PhantomData<SPLIT_CONSUMES>,
+  pub(crate) split_requires: PhantomData<SPLIT_REQUIRES>,
+  pub(crate) split_forbids: PhantomData<SPLIT_FORBIDS>,
+  pub(crate) split_produces: PhantomData<SPLIT_PRODUCES>,
+  pub(crate) split_accomplishes: PhantomData<SPLIT_ACCOMPLISHES>,
 }
 
-pub fn process<
-  BRICK_FORBIDS: Unsigned,
-  BRICK_PRODUCES: Unsigned,
-  BRICK_ACCOMPLISHES: Unsigned,
->(
-  brick: LinearBrick<EMPTY, EMPTY, BRICK_FORBIDS, BRICK_PRODUCES, BRICK_ACCOMPLISHES>,
-) -> FlowingProcess<EMPTY, EMPTY, BRICK_FORBIDS, BRICK_PRODUCES, BRICK_ACCOMPLISHES> {
-  FlowingProcess {
-    process: FlowingLinearProcess::Flowing {
-      brick: InternalLinearBrick::new(brick),
-      process_before_brick: Box::new(FlowingLinearProcess::NoOp),
-    },
-    consumes: Default::default(),
-    requires: Default::default(),
-    forbids: Default::default(),
-    produces: Default::default(),
-    accomplishes: Default::default(),
-  }
+pub struct FinalizedProcess<
+  CONSUMES: Unsigned,
+  REQUIRES: Unsigned,
+  FORBIDS: Unsigned,
+  PRODUCES: Unsigned,
+  ACCOMPLISHES: Unsigned,
+> {
+  pub(crate) process: InternalFinalizedProcess,
+  pub(crate) consumes: PhantomData<CONSUMES>,
+  pub(crate) requires: PhantomData<REQUIRES>,
+  pub(crate) forbids: PhantomData<FORBIDS>,
+  pub(crate) produces: PhantomData<PRODUCES>,
+  pub(crate) accomplishes: PhantomData<ACCOMPLISHES>,
 }
 
-pub fn finnish<
-  BRICK_FORBIDS: Unsigned,
-  BRICK_ACCOMPLISHES: Unsigned
->(
-  brick: FinalBrick<EMPTY, EMPTY, BRICK_FORBIDS, BRICK_ACCOMPLISHES>,
-) -> FinalizedProcess {
-  FinalizedProcess::Linear {
-    0: FinalizedLinearProcess {
-      brick: InternalFinalBrick::new(brick),
-      process_before_brick: FlowingLinearProcess::NoOp,
-    },
+impl<
+  CONSUMES: Unsigned,
+  REQUIRES: Unsigned,
+  FORBIDS: Unsigned,
+  PRODUCES: Unsigned,
+  ACCOMPLISHES: Unsigned,
+> FinalizedProcess<CONSUMES, REQUIRES, FORBIDS, PRODUCES, ACCOMPLISHES> {
+  pub fn close(self, path: &'static str) -> NamedProcess {
+    NamedProcess {
+      path,
+      process: self.process,
+    }
   }
 }
 
@@ -118,34 +118,6 @@ pub fn finnish<
 //   }
 // }
 
-pub struct FlowingSplitProcess<
-  SPLITS_LEFT: Unsigned,
-  ROOT_CONSUMES: Unsigned,
-  ROOT_REQUIRES: Unsigned,
-  ROOT_FORBIDS: Unsigned,
-  ROOT_PRODUCES: Unsigned,
-  ROOT_ACCOMPLISHES: Unsigned,
-  SPLIT_CONSUMES: Unsigned,
-  SPLIT_REQUIRES: Unsigned,
-  SPLIT_FORBIDS: Unsigned,
-  SPLIT_PRODUCES: Unsigned,
-  SPLIT_ACCOMPLISHES: Unsigned,
-> {
-  pub(crate) splits_left: PhantomData<SPLITS_LEFT>,
-  pub(crate) split_consumes: PhantomData<SPLIT_CONSUMES>,
-  pub(crate) split_requires: PhantomData<SPLIT_REQUIRES>,
-  pub(crate) split_forbids: PhantomData<SPLIT_FORBIDS>,
-  pub(crate) split_produces: PhantomData<SPLIT_PRODUCES>,
-  pub(crate) split_accomplishes: PhantomData<SPLIT_ACCOMPLISHES>,
-  pub(crate) brick: InternalSplitterBrick,
-  pub(crate) process_before_brick: FlowingProcess<
-    ROOT_CONSUMES,
-    ROOT_REQUIRES,
-    ROOT_FORBIDS,
-    ROOT_PRODUCES,
-    ROOT_ACCOMPLISHES
-  >,
-}
 
 // impl<
 //   CONSUMES: Unsigned,
@@ -177,23 +149,6 @@ pub struct FlowingSplitProcess<
 //     }
 //   }
 // }
-
-pub struct FinalizedLinearProcess {
-  pub(crate) brick: InternalFinalBrick,
-  pub(crate) process_before_brick: FlowingLinearProcess,
-}
-
-pub struct FinalizedSplitProcess {
-  pub(crate) brick: Box<dyn SplitterBrickHandler>,
-  // pub(crate) cases: Vec<FinalizedProcess>,
-  pub(crate) process_before_brick:                                 u8,
-  // FlowingProcess<EMPTY, EMPTY, FORBIDS, PRODUCES, ACCOMPLISHES>,
-}
-
-pub enum FinalizedProcess {
-  Linear(FinalizedLinearProcess),
-  Split(FinalizedSplitProcess),
-}
 
 // impl<
 //   CONSUMES: Unsigned,
@@ -300,14 +255,5 @@ pub enum FinalizedProcess {
 
 pub struct NamedProcess {
   pub(crate) path: &'static str,
-  pub(crate) process: FinalizedProcess,
-}
-
-impl FinalizedProcess {
-  pub fn close(self, path: &'static str) -> NamedProcess {
-    NamedProcess {
-      path,
-      process: self,
-    }
-  }
+  pub(crate) process: InternalFinalizedProcess,
 }
