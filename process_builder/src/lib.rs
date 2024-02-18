@@ -1,5 +1,7 @@
 #![recursion_limit = "256"]
 
+use typenum::*;
+
 pub mod brick;
 pub mod builder;
 pub(crate) mod internal_brick;
@@ -32,6 +34,14 @@ mod builder_helpers;
 ///     flowing_split_cases --> FlowingProcess: all cases handled
 /// ```
 pub mod process_builder {}
+
+type MyParam = U1;
+type HisParam = U32;
+
+type Consumes = op!(MyParam | HisParam);
+
+assert_type_eq!(Consumes, U33);
+
 // pub mod process_builder {
 //     use async_trait::async_trait;
 //     use std::collections::HashMap;
