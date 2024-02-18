@@ -1,5 +1,6 @@
 use std::marker::PhantomData;
 use typenum::*;
+use std::ops::*;
 
 use crate::brick::*;
 use crate::internal_brick::*;
@@ -8,11 +9,11 @@ use crate::internal_process::*;
 pub type EMPTY = U0;
 
 pub struct FlowingProcess<
-  CONSUMES: Unsigned,
-  REQUIRES: Unsigned,
-  FORBIDS: Unsigned,
-  PRODUCES: Unsigned,
-  ACCOMPLISHES: Unsigned,
+  CONSUMES: TypeLevelSet,
+  REQUIRES: TypeLevelSet,
+  FORBIDS: TypeLevelSet,
+  PRODUCES: TypeLevelSet,
+  ACCOMPLISHES: TypeLevelSet,
 > {
   pub(crate) process: InternalFlowingProcess,
   pub(crate) consumes: PhantomData<CONSUMES>,
@@ -22,18 +23,65 @@ pub struct FlowingProcess<
   pub(crate) accomplishes: PhantomData<ACCOMPLISHES>,
 }
 
+impl<
+  CONSUMES: TypeLevelSet,
+  REQUIRES: TypeLevelSet,
+  FORBIDS: TypeLevelSet,
+  PRODUCES: TypeLevelSet,
+  ACCOMPLISHES: TypeLevelSet,
+> FlowingProcess<CONSUMES, REQUIRES, FORBIDS, PRODUCES, ACCOMPLISHES>
+{
+  pub fn finnish<
+    BRICK_CONSUMES: TypeLevelSet + IsEqual<And<BRICK_CONSUMES, PRODUCES>> + BitOr<CONSUMES> + BitAnd<PRODUCES>, // a_includes_b(a & b == b)
+    BRICK_REQUIRES: TypeLevelSet + IsEqual<And<BRICK_REQUIRES, ACCOMPLISHES>> + BitAnd<ACCOMPLISHES> + BitAnd<PRODUCES> + BitOr<REQUIRES>, // a_includes_b(a & b == b)
+    BRICK_FORBIDS: TypeLevelSet + BitOr<ACCOMPLISHES> + BitAnd<ACCOMPLISHES> + BitOr<FORBIDS>,
+    BRICK_ACCOMPLISHES: TypeLevelSet + BitOr<ACCOMPLISHES>,
+  >(
+    self,
+    brick: FinalBrick<BRICK_CONSUMES, BRICK_REQUIRES, BRICK_FORBIDS, BRICK_ACCOMPLISHES>,
+  ) -> FinalizedProcess<
+    Or<BRICK_CONSUMES, CONSUMES>,
+    Or<BRICK_REQUIRES, REQUIRES>,
+    Or<BRICK_FORBIDS, FORBIDS>,
+    PRODUCES,
+    Or<BRICK_ACCOMPLISHES, ACCOMPLISHES>,
+  >
+  where
+  <BRICK_CONSUMES as BitOr<CONSUMES>>::Output: TypeLevelSet,
+  <BRICK_REQUIRES as BitOr<REQUIRES>>::Output: TypeLevelSet,
+  <BRICK_FORBIDS as BitOr<FORBIDS>>::Output: TypeLevelSet,
+  <BRICK_ACCOMPLISHES as BitOr<ACCOMPLISHES>>::Output: TypeLevelSet,
+    // BRICK_CONSUMES::Output: NonZero,
+    // BRICK_REQUIRES::Output: NonZero,
+    // False: IsEqual<And<BRICK_FORBIDS, ACCOMPLISHES>>,
+    // False: IsEqual<Or<BRICK_FORBIDS, ACCOMPLISHES>>,
+  {
+    FinalizedProcess {
+      process: InternalFinalizedProcess::Flowing(
+        InternalFinalBrick::new(brick),
+        self.process,
+      ),
+      consumes: Default::default(),
+      requires: Default::default(),
+      forbids: Default::default(),
+      produces: Default::default(),
+      accomplishes: Default::default(),
+    }
+  }
+}
+
 pub struct SplitterProcess<
-  SPLITS_LEFT: Unsigned,
-  ROOT_CONSUMES: Unsigned,
-  ROOT_REQUIRES: Unsigned,
-  ROOT_FORBIDS: Unsigned,
-  ROOT_PRODUCES: Unsigned,
-  ROOT_ACCOMPLISHES: Unsigned,
-  SPLIT_CONSUMES: Unsigned,
-  SPLIT_REQUIRES: Unsigned,
-  SPLIT_FORBIDS: Unsigned,
-  SPLIT_PRODUCES: Unsigned,
-  SPLIT_ACCOMPLISHES: Unsigned,
+  SPLITS_LEFT: TypeLevelSet,
+  ROOT_CONSUMES: TypeLevelSet,
+  ROOT_REQUIRES: TypeLevelSet,
+  ROOT_FORBIDS: TypeLevelSet,
+  ROOT_PRODUCES: TypeLevelSet,
+  ROOT_ACCOMPLISHES: TypeLevelSet,
+  SPLIT_CONSUMES: TypeLevelSet,
+  SPLIT_REQUIRES: TypeLevelSet,
+  SPLIT_FORBIDS: TypeLevelSet,
+  SPLIT_PRODUCES: TypeLevelSet,
+  SPLIT_ACCOMPLISHES: TypeLevelSet,
 > {
   pub(crate) brick: InternalSplitterBrick,
   pub(crate) process_before: FlowingProcess<
@@ -52,11 +100,11 @@ pub struct SplitterProcess<
 }
 
 pub struct FinalizedProcess<
-  CONSUMES: Unsigned,
-  REQUIRES: Unsigned,
-  FORBIDS: Unsigned,
-  PRODUCES: Unsigned,
-  ACCOMPLISHES: Unsigned,
+  CONSUMES: TypeLevelSet,
+  REQUIRES: TypeLevelSet,
+  FORBIDS: TypeLevelSet,
+  PRODUCES: TypeLevelSet,
+  ACCOMPLISHES: TypeLevelSet,
 > {
   pub(crate) process: InternalFinalizedProcess,
   pub(crate) consumes: PhantomData<CONSUMES>,
@@ -67,11 +115,11 @@ pub struct FinalizedProcess<
 }
 
 impl<
-  CONSUMES: Unsigned,
-  REQUIRES: Unsigned,
-  FORBIDS: Unsigned,
-  PRODUCES: Unsigned,
-  ACCOMPLISHES: Unsigned,
+  CONSUMES: TypeLevelSet,
+  REQUIRES: TypeLevelSet,
+  FORBIDS: TypeLevelSet,
+  PRODUCES: TypeLevelSet,
+  ACCOMPLISHES: TypeLevelSet,
 > FinalizedProcess<CONSUMES, REQUIRES, FORBIDS, PRODUCES, ACCOMPLISHES> {
   pub fn close(self, path: &'static str) -> NamedProcess {
     NamedProcess {
@@ -81,56 +129,19 @@ impl<
   }
 }
 
-// use
-// impl<
-//   CONSUMES: Unsigned,
-//   REQUIRES: Unsigned,
-//   FORBIDS: Unsigned,
-//   PRODUCES: Unsigned,
-//   ACCOMPLISHES: Unsigned,
-// > FlowingLinearProcess<CONSUMES, REQUIRES, FORBIDS, PRODUCES, ACCOMPLISHES>
-// {
-//   pub fn finnish<
-//     BRICK_CONSUMES: Unsigned + IsEqual<And<PRODUCES, BRICK_CONSUMES>>, // a_includes_b(a & b == b)
-//     BRICK_REQUIRES: Unsigned + IsEqual<And<ACCOMPLISHES, BRICK_REQUIRES>>, // a_includes_b(a & b == b)
-//     BRICK_FORBIDS: Unsigned,
-//     BRICK_ACCOMPLISHES: Unsigned,
-//   >(
-//     self,
-//     brick: FinalBrick<BRICK_CONSUMES, BRICK_REQUIRES, BRICK_FORBIDS, BRICK_ACCOMPLISHES>,
-//   ) -> FinalizedProcess<
-//     Or<FORBIDS, BRICK_FORBIDS>,
-//     PRODUCES,
-//     Or<ACCOMPLISHES, BRICK_ACCOMPLISHES>,
-//   >
-//   where
-//     BRICK_CONSUMES::Output: NonZero,
-//     BRICK_REQUIRES::Output: NonZero,
-//     And<BRICK_FORBIDS, ACCOMPLISHES>: Zero,
-//     Or<ACCOMPLISHES, BRICK_FORBIDS>: Zero,
-//   {
-//     FinalizedProcess::Linear {
-//       0: FinalizedLinearProcess {
-//         brick: InternalFinalBrick::new(brick),
-//         process_before_brick: FlowingProcess::Linear(self),
-//       },
-//     }
-//   }
-// }
-
 
 // impl<
-//   CONSUMES: Unsigned,
-//   REQUIRES: Unsigned,
-//   FORBIDS: Unsigned,
-//   PRODUCES: Unsigned,
-//   ACCOMPLISHES: Unsigned,
+//   CONSUMES: TypeLevelSet,
+//   REQUIRES: TypeLevelSet,
+//   FORBIDS: TypeLevelSet,
+//   PRODUCES: TypeLevelSet,
+//   ACCOMPLISHES: TypeLevelSet,
 // > FlowingSplitProcess<CONSUMES, REQUIRES, FORBIDS, PRODUCES, ACCOMPLISHES> {
 //   pub fn finnish<
-//     BRICK_CONSUMES: Unsigned + IsEqual<And<PRODUCES, BRICK_CONSUMES>>, // a_includes_b(a & b == b)
-//     BRICK_REQUIRES: Unsigned + IsEqual<And<ACCOMPLISHES, BRICK_REQUIRES>>, // a_includes_b(a & b == b)
-//     BRICK_FORBIDS: Unsigned,
-//     BRICK_ACCOMPLISHES: Unsigned,
+//     BRICK_CONSUMES: TypeLevelSet + IsEqual<And<PRODUCES, BRICK_CONSUMES>>, // a_includes_b(a & b == b)
+//     BRICK_REQUIRES: TypeLevelSet + IsEqual<And<ACCOMPLISHES, BRICK_REQUIRES>>, // a_includes_b(a & b == b)
+//     BRICK_FORBIDS: TypeLevelSet,
+//     BRICK_ACCOMPLISHES: TypeLevelSet,
 //   >(self, brick: FinalBrick<BRICK_CONSUMES, BRICK_REQUIRES, BRICK_FORBIDS, BRICK_ACCOMPLISHES>) -> FinalizedProcess<
 //     Or<FORBIDS, BRICK_FORBIDS>::Output,
 //     PRODUCES,
@@ -151,18 +162,18 @@ impl<
 // }
 
 // impl<
-//   CONSUMES: Unsigned,
-//   REQUIRES: Unsigned,
-//   FORBIDS: Unsigned,
-//   PRODUCES: Unsigned,
-//   ACCOMPLISHES: Unsigned,
+//   CONSUMES: TypeLevelSet,
+//   REQUIRES: TypeLevelSet,
+//   FORBIDS: TypeLevelSet,
+//   PRODUCES: TypeLevelSet,
+//   ACCOMPLISHES: TypeLevelSet,
 // > FlowingProcess<CONSUMES, REQUIRES, FORBIDS, PRODUCES, ACCOMPLISHES>
 // {
 //   pub fn finnish<
-//     BRICK_CONSUMES: Unsigned + IsEqual<And<PRODUCES, BRICK_CONSUMES>>, // a_includes_b(a & b == b)
-//     BRICK_REQUIRES: Unsigned + IsEqual<And<ACCOMPLISHES, BRICK_REQUIRES>>, // a_includes_b(a & b == b)
-//     BRICK_FORBIDS: Unsigned,
-//     BRICK_ACCOMPLISHES: Unsigned,
+//     BRICK_CONSUMES: TypeLevelSet + IsEqual<And<PRODUCES, BRICK_CONSUMES>>, // a_includes_b(a & b == b)
+//     BRICK_REQUIRES: TypeLevelSet + IsEqual<And<ACCOMPLISHES, BRICK_REQUIRES>>, // a_includes_b(a & b == b)
+//     BRICK_FORBIDS: TypeLevelSet,
+//     BRICK_ACCOMPLISHES: TypeLevelSet,
 //   >(
 //     self,
 //     brick: FinalBrick<BRICK_CONSUMES, BRICK_REQUIRES, BRICK_FORBIDS, BRICK_ACCOMPLISHES>,
@@ -179,11 +190,11 @@ impl<
 //   }
 //
 //   pub fn and_then<
-//     BRICK_CONSUMES: Unsigned + IsEqual<And<PRODUCES, BRICK_CONSUMES>>, // a_includes_b(a & b == b)
-//     BRICK_REQUIRES: Unsigned + IsEqual<And<ACCOMPLISHES, BRICK_REQUIRES>>, // a_includes_b(a & b == b)
-//     BRICK_FORBIDS: Unsigned,
-//     BRICK_PRODUCES: Unsigned,
-//     BRICK_ACCOMPLISHES: Unsigned,
+//     BRICK_CONSUMES: TypeLevelSet + IsEqual<And<PRODUCES, BRICK_CONSUMES>>, // a_includes_b(a & b == b)
+//     BRICK_REQUIRES: TypeLevelSet + IsEqual<And<ACCOMPLISHES, BRICK_REQUIRES>>, // a_includes_b(a & b == b)
+//     BRICK_FORBIDS: TypeLevelSet,
+//     BRICK_PRODUCES: TypeLevelSet,
+//     BRICK_ACCOMPLISHES: TypeLevelSet,
 //   >(
 //     self,
 //     brick: LinearBrick<
@@ -220,10 +231,10 @@ impl<
 //   }
 //
 //   pub fn split<
-//     SPLITS: Unsigned,
-//     BRICK_CONSUMES: Unsigned + IsEqual<And<PRODUCES, BRICK_CONSUMES>>, // a_includes_b(a & b == b)
-//     BRICK_REQUIRES: Unsigned + IsEqual<And<ACCOMPLISHES, BRICK_REQUIRES>>, // a_includes_b(a & b == b)
-//     BRICK_FORBIDS: Unsigned,
+//     SPLITS: TypeLevelSet,
+//     BRICK_CONSUMES: TypeLevelSet + IsEqual<And<PRODUCES, BRICK_CONSUMES>>, // a_includes_b(a & b == b)
+//     BRICK_REQUIRES: TypeLevelSet + IsEqual<And<ACCOMPLISHES, BRICK_REQUIRES>>, // a_includes_b(a & b == b)
+//     BRICK_FORBIDS: TypeLevelSet,
 //   >(
 //     self,
 //     brick: SplitterBrick<SPLITS, BRICK_CONSUMES, BRICK_REQUIRES, BRICK_FORBIDS>,

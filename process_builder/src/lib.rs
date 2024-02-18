@@ -1,4 +1,4 @@
-#![recursion_limit = "256"]
+#![recursion_limit = "512"]
 
 use typenum::*;
 
@@ -41,6 +41,7 @@ type HisParam = U32;
 type Consumes = op!(MyParam | HisParam);
 
 assert_type_eq!(Consumes, U33);
+assert_type_eq!(op!(U1 << U256), op!(pow(U2, U256)));
 
 // pub mod process_builder {
 //     use async_trait::async_trait;

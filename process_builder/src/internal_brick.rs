@@ -4,18 +4,6 @@ use crate::brick::*;
 
 // #[derive(PartialEq, Debug, Eq, Clone, Copy, PartialOrd, Ord, Hash)]
 
-pub(crate) fn params(value: u128) -> Vec<ParamId> {
-  let mut params: Vec<ParamId> = vec![];
-  let mut i: usize = 0;
-  while i < 128 {
-    if value >> i & 1 == 1 {
-      params.push(ParamId(i));
-    }
-    i += 1;
-  }
-  params
-}
-
 pub(crate) struct InternalLinearBrick {
   pub name: &'static str,
   pub consumes: Vec<ParamId>,
@@ -23,20 +11,30 @@ pub(crate) struct InternalLinearBrick {
   pub handler: Box<dyn LinearBrickHandler>,
 }
 
+fn get_params(value: Vec<bool>) -> Vec<ParamId> {
+  let mut params = vec![];
+  for (index, is_present) in value.iter().rev().enumerate() {
+    if *is_present {
+      params.push(ParamId(index))
+    }
+  }
+  params
+}
+
 impl InternalLinearBrick {
   pub(crate) fn new<
-    CONSUMES: Unsigned,
-    REQUIRES: Unsigned,
-    FORBIDS: Unsigned,
-    PRODUCES: Unsigned,
-    ACCOMPLISHES: Unsigned,
+    CONSUMES: TypeLevelSet,
+    REQUIRES: TypeLevelSet,
+    FORBIDS: TypeLevelSet,
+    PRODUCES: TypeLevelSet,
+    ACCOMPLISHES: TypeLevelSet,
   >(
     brick: LinearBrick<CONSUMES, REQUIRES, FORBIDS, PRODUCES, ACCOMPLISHES>,
   ) -> InternalLinearBrick {
     InternalLinearBrick {
       name: brick.name,
-      consumes: params(CONSUMES::U128),
-      produces: params(PRODUCES::U128),
+      consumes: get_params(CONSUMES::get()),
+      produces: get_params(PRODUCES::get()),
       handler: brick.handler,
     }
   }
@@ -52,14 +50,14 @@ pub(crate) struct InternalSplitterBrick {
 
 impl InternalSplitterBrick {
   pub(crate) fn new<
-    SPLITS: Unsigned,
-    CONSUMES: Unsigned,
-    REQUIRES: Unsigned,
-    FORBIDS: Unsigned,
+    SPLITS: TypeLevelSet,
+    CONSUMES: TypeLevelSet,
+    REQUIRES: TypeLevelSet,
+    FORBIDS: TypeLevelSet,
   >(brick: SplitterBrick<SPLITS, CONSUMES, REQUIRES, FORBIDS>) -> InternalSplitterBrick {
     InternalSplitterBrick {
       name: brick.name,
-      consumes: params(CONSUMES::U128),
+      consumes: get_params(CONSUMES::get()),
       // produces: brick
       //     .produces_and_accomplishes
       //     .into_iter()
@@ -78,16 +76,16 @@ pub(crate) struct InternalFinalBrick {
 
 impl InternalFinalBrick {
   pub(crate) fn new<
-    CONSUMES: Unsigned,
-    REQUIRES: Unsigned,
-    FORBIDS: Unsigned,
-    ACCOMPLISHES: Unsigned,
+    CONSUMES: TypeLevelSet,
+    REQUIRES: TypeLevelSet,
+    FORBIDS: TypeLevelSet,
+    ACCOMPLISHES: TypeLevelSet,
   >(
     brick: FinalBrick<CONSUMES, REQUIRES, FORBIDS, ACCOMPLISHES>,
   ) -> InternalFinalBrick {
     InternalFinalBrick {
       name: brick.name,
-      consumes: params(CONSUMES::U128),
+      consumes: get_params(CONSUMES::get()),
       handler: brick.handler,
     }
   }

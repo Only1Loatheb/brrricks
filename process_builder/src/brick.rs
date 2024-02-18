@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::marker::PhantomData;
 
 use async_trait::async_trait;
-use typenum::Unsigned;
+use typenum::{Bit, UInt, Unsigned, UTerm};
 
 // #[derive(PartialEq, Debug, Eq, Clone, Copy, PartialOrd, Ord, Hash)]
 
@@ -45,12 +45,30 @@ pub trait FinalBrickHandler {
     async fn handle(&self, input: InputParams) -> anyhow::Result<Message>;
 }
 
+pub trait TypeLevelSet: Unsigned {
+  fn get() -> Vec<bool>;
+}
+
+impl TypeLevelSet for UTerm {
+  fn get() -> Vec<bool> {
+    vec![]
+  }
+}
+
+impl<MORE_SIGNIFICANT_BITS: TypeLevelSet, LEAST_SIGNIFICANT_BIT: Bit> TypeLevelSet for UInt<MORE_SIGNIFICANT_BITS, LEAST_SIGNIFICANT_BIT> {
+  fn get() -> Vec<bool> {
+    let mut a = MORE_SIGNIFICANT_BITS::get();
+    a.push(LEAST_SIGNIFICANT_BIT::to_bool());
+    a
+  }
+}
+
 pub struct LinearBrick<
-    CONSUMES: Unsigned,
-    REQUIRES: Unsigned,
-    FORBIDS: Unsigned,
-    PRODUCES: Unsigned,
-    ACCOMPLISHES: Unsigned,
+    CONSUMES: TypeLevelSet,
+    REQUIRES: TypeLevelSet,
+    FORBIDS: TypeLevelSet,
+    PRODUCES: TypeLevelSet,
+    ACCOMPLISHES: TypeLevelSet,
 > {
     pub name: &'static str,
     pub consumes: PhantomData<CONSUMES>,
@@ -63,10 +81,10 @@ pub struct LinearBrick<
 
 // consider https://github.com/rust-phf/rust-phf for SplitIndex
 pub struct SplitterBrick<
-    SPLITS: Unsigned,
-    CONSUMES: Unsigned,
-    REQUIRES: Unsigned,
-    FORBIDS: Unsigned,
+    SPLITS: TypeLevelSet,
+    CONSUMES: TypeLevelSet,
+    REQUIRES: TypeLevelSet,
+    FORBIDS: TypeLevelSet,
 > {
     pub name: &'static str,
     pub splits: PhantomData<SPLITS>,
@@ -78,10 +96,10 @@ pub struct SplitterBrick<
 }
 
 pub struct FinalBrick<
-    CONSUMES: Unsigned,
-    REQUIRES: Unsigned,
-    FORBIDS: Unsigned,
-    ACCOMPLISHES: Unsigned,
+    CONSUMES: TypeLevelSet,
+    REQUIRES: TypeLevelSet,
+    FORBIDS: TypeLevelSet,
+    ACCOMPLISHES: TypeLevelSet,
 > {
     pub name: &'static str,
     pub consumes: PhantomData<CONSUMES>,
