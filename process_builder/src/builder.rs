@@ -32,8 +32,8 @@ impl<
 > FlowingProcess<CONSUMES, REQUIRES, FORBIDS, PRODUCES, ACCOMPLISHES>
 {
   pub fn finnish<
-    BRICK_CONSUMES: ParamBitSet + BitOr<CONSUMES> + BitAnd<PRODUCES>, // a_includes_b(a & b == b)
-    BRICK_REQUIRES: Unsigned + BitAnd<ACCOMPLISHES> + BitAnd<PRODUCES> + BitOr<REQUIRES>, // a_includes_b(a & b == b)
+    BRICK_CONSUMES: ParamBitSet + BitOr<CONSUMES> + BitAnd<PRODUCES> + Cmp<<BRICK_CONSUMES as BitAnd<PRODUCES>>::Output>,
+    BRICK_REQUIRES: Unsigned + BitAnd<ACCOMPLISHES> + BitAnd<PRODUCES> + BitOr<REQUIRES> + Cmp<<BRICK_REQUIRES as BitAnd<ACCOMPLISHES>>::Output>,
     BRICK_FORBIDS: Unsigned + BitOr<ACCOMPLISHES> + BitAnd<ACCOMPLISHES> + BitOr<FORBIDS>,
     BRICK_ACCOMPLISHES: Unsigned + BitOr<ACCOMPLISHES>,
   >(
@@ -51,10 +51,9 @@ impl<
     <BRICK_REQUIRES as BitOr<REQUIRES>>::Output: Unsigned,
     <BRICK_FORBIDS as BitOr<FORBIDS>>::Output: Unsigned,
     <BRICK_ACCOMPLISHES as BitOr<ACCOMPLISHES>>::Output: Unsigned,
+    Eq<BRICK_CONSUMES, And<BRICK_CONSUMES, PRODUCES>>: NonZero,
+    Eq<BRICK_REQUIRES, And<BRICK_REQUIRES, ACCOMPLISHES>>: NonZero,
     Or<BRICK_FORBIDS, ACCOMPLISHES>: Zero,
-    // Cmp<And<BRICK_CONSUMES, PRODUCES>::Output, BRICK_CONSUMES>::Output: Equal,
-    And<BRICK_REQUIRES, ACCOMPLISHES>: NonZero,
-    // IsEqual<IsEqual<And<BRICK_FORBIDS, ACCOMPLISHES>>, >::Output: Zero,
   {
     FinalizedProcess {
       process: InternalFinalizedProcess::Flowing(
