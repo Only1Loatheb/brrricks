@@ -1,6 +1,6 @@
 use typenum::*;
 
-use crate::brick::{TypeLevelSet, FinalBrick, LinearBrick};
+use crate::brick::{ParamBitSet, FinalBrick, LinearBrick};
 use crate::builder::*;
 use crate::internal_brick::{InternalFinalBrick, InternalLinearBrick};
 use crate::internal_process::{InternalFinalizedProcess, InternalFlowingProcess};
@@ -17,9 +17,9 @@ pub fn empty_process() -> FlowingProcess<EMPTY, EMPTY, EMPTY, EMPTY, EMPTY> {
 }
 
 pub fn process<
-  BRICK_FORBIDS: TypeLevelSet,
-  BRICK_PRODUCES: TypeLevelSet,
-  BRICK_ACCOMPLISHES: TypeLevelSet,
+  BRICK_FORBIDS: Unsigned,
+  BRICK_PRODUCES: ParamBitSet,
+  BRICK_ACCOMPLISHES: Unsigned,
 >(
   brick: LinearBrick<EMPTY, EMPTY, BRICK_FORBIDS, BRICK_PRODUCES, BRICK_ACCOMPLISHES>,
 ) -> FlowingProcess<EMPTY, EMPTY, BRICK_FORBIDS, BRICK_PRODUCES, BRICK_ACCOMPLISHES> {
@@ -41,8 +41,8 @@ pub fn process<
 // split_finnish
 
 pub fn finnish<
-  BRICK_FORBIDS: TypeLevelSet,
-  BRICK_ACCOMPLISHES: TypeLevelSet,
+  BRICK_FORBIDS: Unsigned,
+  BRICK_ACCOMPLISHES: Unsigned,
 >(
   brick: FinalBrick<EMPTY, EMPTY, BRICK_FORBIDS, BRICK_ACCOMPLISHES>,
 ) -> FinalizedProcess<EMPTY, EMPTY, BRICK_FORBIDS, EMPTY, BRICK_ACCOMPLISHES> {

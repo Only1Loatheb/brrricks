@@ -11,30 +11,20 @@ pub(crate) struct InternalLinearBrick {
   pub handler: Box<dyn LinearBrickHandler>,
 }
 
-fn get_params(value: Vec<bool>) -> Vec<ParamId> {
-  let mut params = vec![];
-  for (index, is_present) in value.iter().rev().enumerate() {
-    if *is_present {
-      params.push(ParamId(index))
-    }
-  }
-  params
-}
-
 impl InternalLinearBrick {
   pub(crate) fn new<
-    CONSUMES: TypeLevelSet,
-    REQUIRES: TypeLevelSet,
-    FORBIDS: TypeLevelSet,
-    PRODUCES: TypeLevelSet,
-    ACCOMPLISHES: TypeLevelSet,
+    CONSUMES: ParamBitSet,
+    REQUIRES: Unsigned,
+    FORBIDS: Unsigned,
+    PRODUCES: ParamBitSet,
+    ACCOMPLISHES: Unsigned,
   >(
     brick: LinearBrick<CONSUMES, REQUIRES, FORBIDS, PRODUCES, ACCOMPLISHES>,
   ) -> InternalLinearBrick {
     InternalLinearBrick {
       name: brick.name,
-      consumes: get_params(CONSUMES::get()),
-      produces: get_params(PRODUCES::get()),
+      consumes: CONSUMES::get().0,
+      produces: PRODUCES::get().0,
       handler: brick.handler,
     }
   }
@@ -50,14 +40,14 @@ pub(crate) struct InternalSplitterBrick {
 
 impl InternalSplitterBrick {
   pub(crate) fn new<
-    SPLITS: TypeLevelSet,
-    CONSUMES: TypeLevelSet,
-    REQUIRES: TypeLevelSet,
-    FORBIDS: TypeLevelSet,
+    SPLITS: ParamBitSet,
+    CONSUMES: ParamBitSet,
+    REQUIRES: Unsigned,
+    FORBIDS: Unsigned,
   >(brick: SplitterBrick<SPLITS, CONSUMES, REQUIRES, FORBIDS>) -> InternalSplitterBrick {
     InternalSplitterBrick {
       name: brick.name,
-      consumes: get_params(CONSUMES::get()),
+      consumes: CONSUMES::get().0,
       // produces: brick
       //     .produces_and_accomplishes
       //     .into_iter()
@@ -76,16 +66,16 @@ pub(crate) struct InternalFinalBrick {
 
 impl InternalFinalBrick {
   pub(crate) fn new<
-    CONSUMES: TypeLevelSet,
-    REQUIRES: TypeLevelSet,
-    FORBIDS: TypeLevelSet,
-    ACCOMPLISHES: TypeLevelSet,
+    CONSUMES: ParamBitSet,
+    REQUIRES: Unsigned,
+    FORBIDS: Unsigned,
+    ACCOMPLISHES: Unsigned,
   >(
     brick: FinalBrick<CONSUMES, REQUIRES, FORBIDS, ACCOMPLISHES>,
   ) -> InternalFinalBrick {
     InternalFinalBrick {
       name: brick.name,
-      consumes: get_params(CONSUMES::get()),
+      consumes: CONSUMES::get().0,
       handler: brick.handler,
     }
   }

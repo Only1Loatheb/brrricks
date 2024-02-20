@@ -45,30 +45,33 @@ pub trait FinalBrickHandler {
     async fn handle(&self, input: InputParams) -> anyhow::Result<Message>;
 }
 
-pub trait TypeLevelSet: Unsigned {
-  fn get() -> Vec<bool>;
+pub trait ParamBitSet: Unsigned {
+  fn get() -> (Vec<ParamId>, usize);
 }
 
-impl TypeLevelSet for UTerm {
-  fn get() -> Vec<bool> {
-    vec![]
+impl ParamBitSet for UTerm {
+  fn get() -> (Vec<ParamId>, usize) {
+    (vec![], 0)
   }
 }
 
-impl<MORE_SIGNIFICANT_BITS: TypeLevelSet, LEAST_SIGNIFICANT_BIT: Bit> TypeLevelSet for UInt<MORE_SIGNIFICANT_BITS, LEAST_SIGNIFICANT_BIT> {
-  fn get() -> Vec<bool> {
-    let mut a = MORE_SIGNIFICANT_BITS::get();
-    a.push(LEAST_SIGNIFICANT_BIT::to_bool());
-    a
+impl<MORE_SIGNIFICANT_BITS: ParamBitSet, LEAST_SIGNIFICANT_BIT: Bit> ParamBitSet for UInt<MORE_SIGNIFICANT_BITS, LEAST_SIGNIFICANT_BIT> {
+  fn get() -> (Vec<ParamId>, usize) {
+    let (mut vector, mut index) = MORE_SIGNIFICANT_BITS::get();
+    if LEAST_SIGNIFICANT_BIT::to_bool() {
+      vector.push(ParamId(index));
+    }
+    index += 1;
+    (vector, index)
   }
 }
 
 pub struct LinearBrick<
-    CONSUMES: TypeLevelSet,
-    REQUIRES: TypeLevelSet,
-    FORBIDS: TypeLevelSet,
-    PRODUCES: TypeLevelSet,
-    ACCOMPLISHES: TypeLevelSet,
+    CONSUMES: ParamBitSet,
+    REQUIRES: Unsigned,
+    FORBIDS: Unsigned,
+    PRODUCES: ParamBitSet,
+    ACCOMPLISHES: Unsigned,
 > {
     pub name: &'static str,
     pub consumes: PhantomData<CONSUMES>,
@@ -81,10 +84,10 @@ pub struct LinearBrick<
 
 // consider https://github.com/rust-phf/rust-phf for SplitIndex
 pub struct SplitterBrick<
-    SPLITS: TypeLevelSet,
-    CONSUMES: TypeLevelSet,
-    REQUIRES: TypeLevelSet,
-    FORBIDS: TypeLevelSet,
+    SPLITS: ParamBitSet,
+    CONSUMES: ParamBitSet,
+    REQUIRES: Unsigned,
+    FORBIDS: Unsigned,
 > {
     pub name: &'static str,
     pub splits: PhantomData<SPLITS>,
@@ -96,10 +99,10 @@ pub struct SplitterBrick<
 }
 
 pub struct FinalBrick<
-    CONSUMES: TypeLevelSet,
-    REQUIRES: TypeLevelSet,
-    FORBIDS: TypeLevelSet,
-    ACCOMPLISHES: TypeLevelSet,
+    CONSUMES: ParamBitSet,
+    REQUIRES: Unsigned,
+    FORBIDS: Unsigned,
+    ACCOMPLISHES: Unsigned,
 > {
     pub name: &'static str,
     pub consumes: PhantomData<CONSUMES>,
