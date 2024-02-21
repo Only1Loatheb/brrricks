@@ -29,11 +29,11 @@ impl<
   FORBIDS: Unsigned,
   PRODUCES: ParamBitSet,
   ACCOMPLISHES: Unsigned,
-> FlowingProcess<CONSUMES, REQUIRES, FORBIDS, PRODUCES, ACCOMPLISHES>
-{
+> FlowingProcess<CONSUMES, REQUIRES, FORBIDS, PRODUCES, ACCOMPLISHES> {
+
   pub fn finnish<
-    BRICK_CONSUMES: ParamBitSet + BitOr<CONSUMES> + BitAnd<PRODUCES> + Cmp<<BRICK_CONSUMES as BitAnd<PRODUCES>>::Output>,
-    BRICK_REQUIRES: Unsigned + BitAnd<ACCOMPLISHES> + BitAnd<PRODUCES> + BitOr<REQUIRES> + Cmp<<BRICK_REQUIRES as BitAnd<ACCOMPLISHES>>::Output>,
+    BRICK_CONSUMES: ParamBitSet + BitOr<CONSUMES> + BitAnd<PRODUCES> + Cmp<<BRICK_CONSUMES as BitAnd<PRODUCES>>::Output> + private::IsEqualPrivate<<BRICK_CONSUMES as BitAnd<PRODUCES>>::Output, <BRICK_CONSUMES as Cmp<<BRICK_CONSUMES as BitAnd<PRODUCES>>::Output>>::Output>,
+    BRICK_REQUIRES: Unsigned + BitAnd<ACCOMPLISHES> + BitAnd<PRODUCES> + BitOr<REQUIRES> + Cmp<<BRICK_REQUIRES as BitAnd<ACCOMPLISHES>>::Output> + private::IsEqualPrivate<<BRICK_REQUIRES as BitAnd<ACCOMPLISHES>>::Output, <BRICK_REQUIRES as Cmp<<BRICK_REQUIRES as BitAnd<ACCOMPLISHES>>::Output>>::Output>,
     BRICK_FORBIDS: Unsigned + BitOr<ACCOMPLISHES> + BitAnd<ACCOMPLISHES> + BitOr<FORBIDS>,
     BRICK_ACCOMPLISHES: Unsigned + BitOr<ACCOMPLISHES>,
   >(
@@ -53,7 +53,7 @@ impl<
     <BRICK_ACCOMPLISHES as BitOr<ACCOMPLISHES>>::Output: Unsigned,
     Eq<BRICK_CONSUMES, And<BRICK_CONSUMES, PRODUCES>>: NonZero,
     Eq<BRICK_REQUIRES, And<BRICK_REQUIRES, ACCOMPLISHES>>: NonZero,
-    Or<BRICK_FORBIDS, ACCOMPLISHES>: Zero,
+    And<BRICK_FORBIDS, ACCOMPLISHES>: Zero,
   {
     FinalizedProcess {
       process: InternalFinalizedProcess::Flowing(
