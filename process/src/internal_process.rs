@@ -1,9 +1,9 @@
-use crate::internal_brick::{InternalFinalBrick, InternalLinearBrick, InternalSplitterBrick};
+use crate::internal_brick::*;
 
-pub(crate) struct InternalFinalizedSplitSentinel {
-  brick: InternalSplitterBrick,
-  process_case: InternalFinalizedProcess,
-  process_before: InternalFlowingProcess,
+pub struct InternalFinalizedSplitSentinel {
+  pub brick: InternalSplitterBrick,
+  pub process_case: InternalFinalizedProcess,
+  pub process_before: InternalFlowingProcess,
 }
 
 pub enum InternalFinalizedSplitProcess {
@@ -17,10 +17,10 @@ pub enum InternalFinalizedSplitProcess {
   },
 }
 
-pub(crate) struct InternalFlowingSplitSentinel {
-  brick: InternalSplitterBrick,
-  process_case: InternalFlowingProcess,
-  process_before: InternalFlowingProcess,
+pub struct InternalFlowingSplitSentinel {
+  pub brick: InternalSplitterBrick,
+  pub process_case: InternalFlowingProcess,
+  pub process_before: InternalFlowingProcess,
 }
 
 pub enum InternalFlowingSplitProcess {
@@ -56,4 +56,9 @@ pub enum InternalFinalizedProcess {
   One(InternalFinalBrick),
   Flowing(InternalFinalBrick, InternalFlowingProcess),
   Split(Box<InternalFinalizedSplitProcess>),
+}
+
+pub struct NamedProcess {
+  pub path: &'static str,
+  pub process: InternalFinalizedProcess,
 }

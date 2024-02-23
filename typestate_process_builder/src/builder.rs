@@ -3,8 +3,8 @@ use typenum::*;
 use std::ops::*;
 
 use crate::brick::*;
-use crate::internal_brick::*;
-use crate::internal_process::*;
+use process::internal_brick::*;
+use process::internal_process::*;
 
 pub type EMPTY = U0;
 
@@ -47,19 +47,16 @@ impl<
     Or<BRICK_ACCOMPLISHES, ACCOMPLISHES>,
   >
   where
-    <BRICK_CONSUMES as BitOr<CONSUMES>>::Output: ParamBitSet,
-    <BRICK_REQUIRES as BitOr<REQUIRES>>::Output: Unsigned,
-    <BRICK_FORBIDS as BitOr<FORBIDS>>::Output: Unsigned,
-    <BRICK_ACCOMPLISHES as BitOr<ACCOMPLISHES>>::Output: Unsigned,
-    Eq<BRICK_CONSUMES, And<BRICK_CONSUMES, PRODUCES>>: NonZero,
-    Eq<BRICK_REQUIRES, And<BRICK_REQUIRES, ACCOMPLISHES>>: NonZero,
-    And<BRICK_FORBIDS, ACCOMPLISHES>: Zero,
+    <BRICK_CONSUMES as BitOr<CONSUMES>>::Output: ParamBitSet, // result
+    <BRICK_REQUIRES as BitOr<REQUIRES>>::Output: Unsigned, // result
+    <BRICK_FORBIDS as BitOr<FORBIDS>>::Output: Unsigned, // result
+    <BRICK_ACCOMPLISHES as BitOr<ACCOMPLISHES>>::Output: Unsigned, // result
+    Eq<BRICK_CONSUMES, And<BRICK_CONSUMES, PRODUCES>>: NonZero, // PRODUCES contain BRICK_CONSUMES
+    Eq<BRICK_REQUIRES, And<BRICK_REQUIRES, ACCOMPLISHES>>: NonZero, // ACCOMPLISHES contain BRICK_REQUIRES
+    And<BRICK_FORBIDS, ACCOMPLISHES>: Zero, // BRICK_FORBIDS are not in ACCOMPLISHES
   {
     FinalizedProcess {
-      process: InternalFinalizedProcess::Flowing(
-        InternalFinalBrick::new(brick),
-        self.process,
-      ),
+      process: InternalFinalizedProcess::Flowing(brick.to_internal(), self.process),
       consumes: Default::default(),
       requires: Default::default(),
       forbids: Default::default(),
@@ -262,8 +259,3 @@ impl<
 //     }
 //   }
 // }
-
-pub struct NamedProcess {
-  pub(crate) path: &'static str,
-  pub(crate) process: InternalFinalizedProcess,
-}

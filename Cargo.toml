@@ -5,12 +5,15 @@ edition = "2021"
 
 [workspace]
 members = [
-    "process_builder",
+    "process",
+    "typestate_process_builder",
     "process_runner",
 ]
 
 [dependencies]
-process_builder = { path = "process_builder" }
+process = { path = "process" }
+typestate_process_builder = { path = "typestate_process_builder" }
+#web_process_builder = { path = "web_process_builder" }
 process_runner = { path = "process_runner" }
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html

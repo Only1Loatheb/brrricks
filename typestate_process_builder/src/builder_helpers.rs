@@ -2,8 +2,7 @@ use typenum::*;
 
 use crate::brick::{ParamBitSet, FinalBrick, LinearBrick};
 use crate::builder::*;
-use crate::internal_brick::{InternalFinalBrick, InternalLinearBrick};
-use crate::internal_process::{InternalFinalizedProcess, InternalFlowingProcess};
+use process::internal_process::{InternalFinalizedProcess, InternalFlowingProcess};
 
 pub fn empty_process() -> FlowingProcess<EMPTY, EMPTY, EMPTY, EMPTY, EMPTY> {
   FlowingProcess {
@@ -25,7 +24,7 @@ pub fn process<
 ) -> FlowingProcess<EMPTY, EMPTY, BRICK_FORBIDS, BRICK_PRODUCES, BRICK_ACCOMPLISHES> {
   FlowingProcess {
     process: InternalFlowingProcess::Linear(
-      InternalLinearBrick::new(brick),
+      brick.to_internal(),
       Box::new(InternalFlowingProcess::Empty),
     ),
     consumes: Default::default(),
@@ -47,7 +46,7 @@ pub fn finnish<
   brick: FinalBrick<EMPTY, EMPTY, BRICK_FORBIDS, BRICK_ACCOMPLISHES>,
 ) -> FinalizedProcess<EMPTY, EMPTY, BRICK_FORBIDS, EMPTY, BRICK_ACCOMPLISHES> {
   FinalizedProcess {
-    process: InternalFinalizedProcess::One(InternalFinalBrick::new(brick)),
+    process: InternalFinalizedProcess::One(brick.to_internal()),
     consumes: Default::default(),
     requires: Default::default(),
     forbids: Default::default(),
