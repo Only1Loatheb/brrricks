@@ -71,7 +71,7 @@ pub mod process_builder {
     };
     process(linear)
       .finnish(last)
-      .close("my_process_name")
+      .close("my_process_name".to_string())
   }
 }
 

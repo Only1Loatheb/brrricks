@@ -48,7 +48,11 @@ impl<HEAD: ParamBitSet> CaseParamSetArray for TArr<HEAD, ATerm> {
   }
 }
 
-impl<HEAD: ParamBitSet + BitAnd<TAIL> + BitOr<TAIL>, TAIL: CaseParamSetArray> CaseParamSetArray for TArr<HEAD, TAIL> {
+impl<HEAD: ParamBitSet + BitAnd<TAIL> + BitOr<TAIL>, TAIL: CaseParamSetArray> CaseParamSetArray for TArr<HEAD, TAIL>
+  where
+    <HEAD as BitAnd<TAIL>>::Output: ParamBitSet,
+    <HEAD as BitOr<TAIL>>::Output: ParamBitSet,
+{
   type HEAD = HEAD;
   type INTERSECTION = And<HEAD, TAIL>;
   type UNION = Or<HEAD, TAIL>;
@@ -72,7 +76,11 @@ impl<HEAD: Unsigned> CaseActionSetArray for TArr<HEAD, ATerm> {
   type UNION = HEAD;
 }
 
-impl<HEAD: Unsigned + BitAnd<TAIL> + BitOr<TAIL>, TAIL: CaseActionSetArray> CaseActionSetArray for TArr<HEAD, TAIL> {
+impl<HEAD: Unsigned + BitAnd<TAIL> + BitOr<TAIL>, TAIL: CaseActionSetArray> CaseActionSetArray for TArr<HEAD, TAIL>
+where
+    <HEAD as BitAnd<TAIL>>::Output: Unsigned,
+    <HEAD as BitOr<TAIL>>::Output: Unsigned,
+{
   type HEAD = HEAD;
   type INTERSECTION = And<HEAD, TAIL>;
   type UNION = Or<HEAD, TAIL>;
