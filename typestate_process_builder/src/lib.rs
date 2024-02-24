@@ -51,15 +51,36 @@ pub mod process_builder {
   type Both = op!(Msisdn | Dialed);
   type SessionCharge = U1;
   type BoEventSent = U2;
-  pub fn get_simple_process() -> NamedProcess {
-    let linear = LinearBrick {
-      name: "Linear".to_string(),
+  pub fn get_simple_process() -> FlowingSplitterProcess<U1, EMPTY, EMPTY, EMPTY, Msisdn, SessionCharge, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY>
+    // -> NamedProcess
+  {
+    let entry = LinearBrick {
+      name: "Entry".to_string(),
       consumes: PhantomData::<EMPTY>,
       requires_prior_completion: PhantomData::<EMPTY>,
       forbids_prior_completion: PhantomData::<EMPTY>,
       produces: PhantomData::<Msisdn>,
       accomplishes: PhantomData::<SessionCharge>,
       handler: Box::new(Linear),
+    };
+    let linear = LinearBrick {
+      name: "Linear".to_string(),
+      consumes: PhantomData::<EMPTY>,
+      requires_prior_completion: PhantomData::<EMPTY>,
+      forbids_prior_completion: PhantomData::<EMPTY>,
+      produces: PhantomData::<EMPTY>,
+      accomplishes: PhantomData::<EMPTY>,
+      handler: Box::new(Linear),
+    };
+    let splitter = SplitterBrick {
+      name: "Splitter".to_string(),
+      splits: PhantomData::<U2>,
+      consumes: PhantomData::<EMPTY>,
+      requires_prior_completion: PhantomData::<EMPTY>,
+      forbids_prior_completion: PhantomData::<EMPTY>,
+      produces: PhantomData::<TArr<EMPTY, TArr<EMPTY, ATerm>>>,
+      accomplishes: PhantomData::<TArr<EMPTY, TArr<EMPTY, ATerm>>>,
+      handler: Box::new(Splitter),
     };
     let last = FinalBrick {
       name: "Final".to_string(),
@@ -69,9 +90,11 @@ pub mod process_builder {
       accomplishes: PhantomData::<EMPTY>,
       handler: Box::new(Final),
     };
-    process(linear)
-      .finnish(last)
-      .close("my_process_name".to_string())
+    let a: FlowingSplitterProcess<U1, EMPTY, EMPTY, EMPTY, Msisdn, SessionCharge, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY> =
+      process(entry).split(splitter, process(linear));
+    a
+      // .finnish(last)
+      // .close("my_process_name".to_string())
   }
 }
 
@@ -79,15 +102,6 @@ pub mod process_builder {
 mod tests {
   // use super::*;
 
-  //let splitter = SplitterBrick {
-  //   name: "Splitter".to_string(),
-  //   splits: PhantomData::<U0>,
-  //   consumes: PhantomData::<EMPTY>,
-  //   requires_prior_completion: PhantomData::<EMPTY>,
-  //   forbids_prior_completion: PhantomData::<EMPTY>,
-  //   // produces_and_accomplishes: vec![],
-  //   handler: Box::new(Splitter),
-  // };
 
   // process(Box::new(Linear))
   //   .and_then(Box::new(Linear))

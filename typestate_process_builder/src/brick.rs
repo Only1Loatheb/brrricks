@@ -33,28 +33,24 @@ impl<MORE_SIGNIFICANT_BITS: ParamBitSet, LEAST_SIGNIFICANT_BIT: Bit> ParamBitSet
 
 pub trait CaseParamSetArray {
   type HEAD: ParamBitSet;
-  type INTERSECTION: ParamBitSet;
   type UNION: ParamBitSet;
   fn get() -> Vec<Vec<ParamId>>;
 }
 
 impl<HEAD: ParamBitSet> CaseParamSetArray for TArr<HEAD, ATerm> {
   type HEAD = HEAD;
-  type INTERSECTION = HEAD;
   type UNION = HEAD;
 
   fn get() -> Vec<Vec<ParamId>> {
-    vec![HEAD::get().0]
+    vec![]
   }
 }
 
-impl<HEAD: ParamBitSet + BitAnd<TAIL> + BitOr<TAIL>, TAIL: CaseParamSetArray> CaseParamSetArray for TArr<HEAD, TAIL>
+impl<HEAD: ParamBitSet + BitOr<TAIL>, TAIL: CaseParamSetArray> CaseParamSetArray for TArr<HEAD, TAIL>
   where
-    <HEAD as BitAnd<TAIL>>::Output: ParamBitSet,
     <HEAD as BitOr<TAIL>>::Output: ParamBitSet,
 {
   type HEAD = HEAD;
-  type INTERSECTION = And<HEAD, TAIL>;
   type UNION = Or<HEAD, TAIL>;
 
   fn get() -> Vec<Vec<ParamId>> {
@@ -66,23 +62,19 @@ impl<HEAD: ParamBitSet + BitAnd<TAIL> + BitOr<TAIL>, TAIL: CaseParamSetArray> Ca
 
 pub trait CaseActionSetArray {
   type HEAD: Unsigned;
-  type INTERSECTION: Unsigned;
   type UNION: Unsigned;
 }
 
 impl<HEAD: Unsigned> CaseActionSetArray for TArr<HEAD, ATerm> {
   type HEAD = HEAD;
-  type INTERSECTION = HEAD;
   type UNION = HEAD;
 }
 
-impl<HEAD: Unsigned + BitAnd<TAIL> + BitOr<TAIL>, TAIL: CaseActionSetArray> CaseActionSetArray for TArr<HEAD, TAIL>
+impl<HEAD: Unsigned + BitOr<TAIL>, TAIL: CaseActionSetArray> CaseActionSetArray for TArr<HEAD, TAIL>
 where
-    <HEAD as BitAnd<TAIL>>::Output: Unsigned,
     <HEAD as BitOr<TAIL>>::Output: Unsigned,
 {
   type HEAD = HEAD;
-  type INTERSECTION = And<HEAD, TAIL>;
   type UNION = Or<HEAD, TAIL>;
 }
 
