@@ -1,14 +1,14 @@
 use std::marker::PhantomData;
+use std::ops::*;
 
 use typenum::*;
 
 use process::brick_domain::*;
 use process::internal_brick::*;
+use crate::brick;
 
 
 // #[derive(PartialEq, Debug, Eq, Clone, Copy, PartialOrd, Ord, Hash)]
-
-pub trait ActionBitSet: Unsigned {}
 
 pub trait ParamBitSet: Unsigned {
   fn get() -> (Vec<ParamId>, usize);
@@ -32,16 +32,27 @@ impl<MORE_SIGNIFICANT_BITS: ParamBitSet, LEAST_SIGNIFICANT_BIT: Bit> ParamBitSet
 }
 
 pub trait CaseParamSetArray {
+  type HEAD: ParamBitSet;
+  type INTERSECTION: ParamBitSet;
+  type UNION: ParamBitSet;
   fn get() -> Vec<Vec<ParamId>>;
 }
 
-impl CaseParamSetArray for ATerm {
+impl<HEAD: ParamBitSet> CaseParamSetArray for TArr<HEAD, ATerm> {
+  type HEAD = HEAD;
+  type INTERSECTION = HEAD;
+  type UNION = HEAD;
+
   fn get() -> Vec<Vec<ParamId>> {
-    vec![]
+    vec![HEAD::get().0]
   }
 }
 
-impl<HEAD: ParamBitSet, TAIL: CaseParamSetArray> CaseParamSetArray for TArr<HEAD, TAIL> {
+impl<HEAD: ParamBitSet + BitAnd<TAIL> + BitOr<TAIL>, TAIL: CaseParamSetArray> CaseParamSetArray for TArr<HEAD, TAIL> {
+  type HEAD = HEAD;
+  type INTERSECTION = And<HEAD, TAIL>;
+  type UNION = Or<HEAD, TAIL>;
+
   fn get() -> Vec<Vec<ParamId>> {
     let mut vector = TAIL::get();
     vector.push(HEAD::get().0);
@@ -49,9 +60,23 @@ impl<HEAD: ParamBitSet, TAIL: CaseParamSetArray> CaseParamSetArray for TArr<HEAD
   }
 }
 
-pub trait CaseActionSetArray {}
+pub trait CaseActionSetArray {
+  type HEAD: Unsigned;
+  type INTERSECTION: Unsigned;
+  type UNION: Unsigned;
+}
 
-impl<HEAD: ActionBitSet, TAIL: CaseActionSetArray> CaseActionSetArray for TArr<HEAD, TAIL> {}
+impl<HEAD: Unsigned> CaseActionSetArray for TArr<HEAD, ATerm> {
+  type HEAD = HEAD;
+  type INTERSECTION = HEAD;
+  type UNION = HEAD;
+}
+
+impl<HEAD: Unsigned + BitAnd<TAIL> + BitOr<TAIL>, TAIL: CaseActionSetArray> CaseActionSetArray for TArr<HEAD, TAIL> {
+  type HEAD = HEAD;
+  type INTERSECTION = And<HEAD, TAIL>;
+  type UNION = Or<HEAD, TAIL>;
+}
 
 pub struct LinearBrick<
   CONSUMES: ParamBitSet,

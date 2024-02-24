@@ -1,6 +1,6 @@
 use typenum::*;
 
-use crate::brick::{ParamBitSet, FinalBrick, LinearBrick};
+use crate::brick::*;
 use crate::builder::*;
 use process::internal_process::{InternalFinalizedProcess, InternalFlowingProcess};
 

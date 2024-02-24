@@ -2,46 +2,46 @@ use crate::internal_brick::*;
 
 pub struct InternalFinalizedSplitSentinel {
   pub brick: InternalSplitterBrick,
-  pub process_case: InternalFinalizedProcess,
+  pub first_cases: InternalFinalizedProcess,
   pub process_before: InternalFlowingProcess,
 }
 
 pub enum InternalFinalizedSplitProcess {
   SecondCase {
-    case_process: InternalFinalizedProcess,
+    second_case: InternalFinalizedProcess,
     process_before: InternalFinalizedSplitSentinel,
   },
   NextCase {
-    case_process: InternalFinalizedProcess,
+    next_case: InternalFinalizedProcess,
     process_before: Box<InternalFinalizedSplitProcess>,
   },
 }
 
 pub struct InternalFlowingSplitSentinel {
   pub brick: InternalSplitterBrick,
-  pub process_case: InternalFlowingProcess,
+  pub first_case: InternalFlowingProcess,
   pub process_before: InternalFlowingProcess,
 }
 
 pub enum InternalFlowingSplitProcess {
   SecondCaseFinalizedSentinel {
-    case_process: InternalFlowingProcess,
+    second_case: InternalFlowingProcess,
     process_before: InternalFinalizedSplitSentinel,
   },
   SecondCaseFlowing {
-    case_process: InternalFlowingProcess,
+    second_case: InternalFlowingProcess,
     process_before: InternalFlowingSplitSentinel,
   },
   SecondCaseFinalized {
-    case_process: InternalFinalizedProcess,
+    second_case: InternalFinalizedProcess,
     process_before: InternalFlowingSplitSentinel,
   },
   NextCaseFlowing {
-    case_process: InternalFlowingProcess,
+    next_case: InternalFlowingProcess,
     process_before: Box<InternalFlowingSplitProcess>,
   },
   NextCaseFinalized {
-    case_process: InternalFinalizedProcess,
+    next_case: InternalFinalizedProcess,
     process_before: Box<InternalFlowingSplitProcess>,
   },
 }
