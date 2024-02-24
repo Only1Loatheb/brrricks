@@ -46,12 +46,12 @@ impl<HEAD: ParamBitSet> CaseParamSetArray for TArr<HEAD, ATerm> {
   }
 }
 
-impl<HEAD: ParamBitSet + BitOr<TAIL>, TAIL: CaseParamSetArray> CaseParamSetArray for TArr<HEAD, TAIL>
+impl<HEAD: ParamBitSet + BitOr<TAIL::UNION>, TAIL: CaseParamSetArray> CaseParamSetArray for TArr<HEAD, TAIL>
   where
-    <HEAD as BitOr<TAIL>>::Output: ParamBitSet,
+    <HEAD as BitOr<TAIL::UNION>>::Output: ParamBitSet,
 {
   type HEAD = HEAD;
-  type UNION = Or<HEAD, TAIL>;
+  type UNION = Or<HEAD, TAIL::UNION>;
 
   fn get() -> Vec<Vec<ParamId>> {
     let mut vector = TAIL::get();
@@ -70,12 +70,12 @@ impl<HEAD: Unsigned> CaseActionSetArray for TArr<HEAD, ATerm> {
   type UNION = HEAD;
 }
 
-impl<HEAD: Unsigned + BitOr<TAIL>, TAIL: CaseActionSetArray> CaseActionSetArray for TArr<HEAD, TAIL>
+impl<HEAD: Unsigned + BitOr<TAIL::UNION>, TAIL: CaseActionSetArray> CaseActionSetArray for TArr<HEAD, TAIL>
 where
-    <HEAD as BitOr<TAIL>>::Output: Unsigned,
+    <HEAD as BitOr<TAIL::UNION>>::Output: Unsigned,
 {
   type HEAD = HEAD;
-  type UNION = Or<HEAD, TAIL>;
+  type UNION = Or<HEAD, TAIL::UNION>;
 }
 
 pub struct LinearBrick<
