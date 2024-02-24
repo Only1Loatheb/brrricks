@@ -53,7 +53,7 @@ pub mod process_builder {
   type BoEventSent = U2;
   pub fn get_simple_process() -> NamedProcess {
     let linear = LinearBrick {
-      name: "Linear",
+      name: "Linear".to_string(),
       consumes: PhantomData::<EMPTY>,
       requires_prior_completion: PhantomData::<EMPTY>,
       forbids_prior_completion: PhantomData::<EMPTY>,
@@ -62,7 +62,7 @@ pub mod process_builder {
       handler: Box::new(Linear),
     };
     let last = FinalBrick {
-      name: "Final",
+      name: "Final".to_string(),
       consumes: PhantomData::<Msisdn>,
       requires_prior_completion: PhantomData::<SessionCharge>,
       forbids_prior_completion: PhantomData::<BoEventSent>,
@@ -80,7 +80,7 @@ mod tests {
   // use super::*;
 
   //let splitter = SplitterBrick {
-  //   name: "Splitter",
+  //   name: "Splitter".to_string(),
   //   splits: PhantomData::<U0>,
   //   consumes: PhantomData::<EMPTY>,
   //   requires_prior_completion: PhantomData::<EMPTY>,

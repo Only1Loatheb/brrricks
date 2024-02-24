@@ -16,12 +16,14 @@ pub fn empty_process() -> FlowingProcess<EMPTY, EMPTY, EMPTY, EMPTY, EMPTY> {
 }
 
 pub fn process<
+  BRICK_CONSUMES: ParamBitSet,
+  BRICK_REQUIRES: Unsigned,
   BRICK_FORBIDS: Unsigned,
   BRICK_PRODUCES: ParamBitSet,
   BRICK_ACCOMPLISHES: Unsigned,
 >(
-  brick: LinearBrick<EMPTY, EMPTY, BRICK_FORBIDS, BRICK_PRODUCES, BRICK_ACCOMPLISHES>,
-) -> FlowingProcess<EMPTY, EMPTY, BRICK_FORBIDS, BRICK_PRODUCES, BRICK_ACCOMPLISHES> {
+  brick: LinearBrick<BRICK_CONSUMES, BRICK_REQUIRES, BRICK_FORBIDS, BRICK_PRODUCES, BRICK_ACCOMPLISHES>,
+) -> FlowingProcess<BRICK_CONSUMES, BRICK_REQUIRES, BRICK_FORBIDS, BRICK_PRODUCES, BRICK_ACCOMPLISHES> {
   FlowingProcess {
     process: InternalFlowingProcess::Linear(
       brick.to_internal(),
@@ -40,11 +42,13 @@ pub fn process<
 // split_finnish
 
 pub fn finnish<
+  BRICK_CONSUMES: ParamBitSet,
+  BRICK_REQUIRES: Unsigned,
   BRICK_FORBIDS: Unsigned,
   BRICK_ACCOMPLISHES: Unsigned,
 >(
-  brick: FinalBrick<EMPTY, EMPTY, BRICK_FORBIDS, BRICK_ACCOMPLISHES>,
-) -> FinalizedProcess<EMPTY, EMPTY, BRICK_FORBIDS, EMPTY, BRICK_ACCOMPLISHES> {
+  brick: FinalBrick<BRICK_CONSUMES, BRICK_REQUIRES, BRICK_FORBIDS, BRICK_ACCOMPLISHES>,
+) -> FinalizedProcess<BRICK_CONSUMES, BRICK_REQUIRES, BRICK_FORBIDS, EMPTY, BRICK_ACCOMPLISHES> {
   FinalizedProcess {
     process: InternalFinalizedProcess::One(brick.to_internal()),
     consumes: Default::default(),

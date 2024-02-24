@@ -1,9 +1,14 @@
 use std::marker::PhantomData;
+
 use typenum::*;
+
 use process::brick_domain::*;
 use process::internal_brick::*;
 
+
 // #[derive(PartialEq, Debug, Eq, Clone, Copy, PartialOrd, Ord, Hash)]
+
+pub trait ActionBitSet: Unsigned {}
 
 pub trait ParamBitSet: Unsigned {
   fn get() -> (Vec<ParamId>, usize);
@@ -26,6 +31,28 @@ impl<MORE_SIGNIFICANT_BITS: ParamBitSet, LEAST_SIGNIFICANT_BIT: Bit> ParamBitSet
   }
 }
 
+pub trait CaseParamSetArray {
+  fn get() -> Vec<Vec<ParamId>>;
+}
+
+impl CaseParamSetArray for ATerm {
+  fn get() -> Vec<Vec<ParamId>> {
+    vec![]
+  }
+}
+
+impl<HEAD: ParamBitSet, TAIL: CaseParamSetArray> CaseParamSetArray for TArr<HEAD, TAIL> {
+  fn get() -> Vec<Vec<ParamId>> {
+    let mut vector = TAIL::get();
+    vector.push(HEAD::get().0);
+    vector
+  }
+}
+
+pub trait CaseActionSetArray {}
+
+impl<HEAD: ActionBitSet, TAIL: CaseActionSetArray> CaseActionSetArray for TArr<HEAD, TAIL> {}
+
 pub struct LinearBrick<
   CONSUMES: ParamBitSet,
   REQUIRES: Unsigned,
@@ -33,7 +60,7 @@ pub struct LinearBrick<
   PRODUCES: ParamBitSet,
   ACCOMPLISHES: Unsigned,
 > {
-  pub name: &'static str,
+  pub name: String,
   pub consumes: PhantomData<CONSUMES>,
   pub requires_prior_completion: PhantomData<REQUIRES>,
   pub forbids_prior_completion: PhantomData<FORBIDS>,
@@ -49,7 +76,6 @@ impl<
   PRODUCES: ParamBitSet,
   ACCOMPLISHES: Unsigned,
 > LinearBrick<CONSUMES, REQUIRES, FORBIDS, PRODUCES, ACCOMPLISHES> {
-
   pub(crate) fn to_internal(self) -> InternalLinearBrick {
     InternalLinearBrick {
       name: self.name,
@@ -62,36 +88,36 @@ impl<
 
 // consider https://github.com/rust-phf/rust-phf for SplitIndex
 pub struct SplitterBrick<
-  SPLITS: ParamBitSet,
+  SPLITS: Unsigned,
   CONSUMES: ParamBitSet,
   REQUIRES: Unsigned,
   FORBIDS: Unsigned,
+  PRODUCES: CaseParamSetArray,
+  ACCOMPLISHES: CaseActionSetArray,
 > {
-  pub name: &'static str,
+  pub name: String,
   pub splits: PhantomData<SPLITS>,
   pub consumes: PhantomData<CONSUMES>,
   pub requires_prior_completion: PhantomData<REQUIRES>,
   pub forbids_prior_completion: PhantomData<FORBIDS>,
-  // pub produces_and_accomplishes: Vec<(Vec<ActionId>, Vec<ParamId>)>,
+  pub produces: PhantomData<PRODUCES>,
+  pub accomplishes: PhantomData<ACCOMPLISHES>,
   pub handler: Box<dyn SplitterBrickHandler>,
 }
 
 impl<
-  SPLITS: ParamBitSet,
+  SPLITS: Unsigned,
   CONSUMES: ParamBitSet,
   REQUIRES: Unsigned,
   FORBIDS: Unsigned,
-> SplitterBrick<SPLITS, CONSUMES, REQUIRES, FORBIDS> {
-
+  PRODUCES: CaseParamSetArray,
+  ACCOMPLISHES: CaseActionSetArray,
+> SplitterBrick<SPLITS, CONSUMES, REQUIRES, FORBIDS, PRODUCES, ACCOMPLISHES> {
   pub(crate) fn to_internal(self) -> InternalSplitterBrick {
     InternalSplitterBrick {
       name: self.name,
       consumes: CONSUMES::get().0,
-      // produces: brick
-      //     .produces_and_accomplishes
-      //     .into_iter()
-      //     .map(|(_, params)| params)
-      //     .collect(),
+      produces: PRODUCES::get(),
       handler: self.handler,
     }
   }
@@ -103,7 +129,7 @@ pub struct FinalBrick<
   FORBIDS: Unsigned,
   ACCOMPLISHES: Unsigned,
 > {
-  pub name: &'static str,
+  pub name: String,
   pub consumes: PhantomData<CONSUMES>,
   pub requires_prior_completion: PhantomData<REQUIRES>,
   pub forbids_prior_completion: PhantomData<FORBIDS>,
@@ -117,7 +143,6 @@ impl<
   FORBIDS: Unsigned,
   ACCOMPLISHES: Unsigned,
 > FinalBrick<CONSUMES, REQUIRES, FORBIDS, ACCOMPLISHES> {
-
   pub(crate) fn to_internal(self) -> InternalFinalBrick {
     InternalFinalBrick {
       name: self.name,
