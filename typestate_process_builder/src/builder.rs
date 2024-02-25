@@ -1,6 +1,6 @@
 use std::marker::PhantomData;
 use typenum::*;
-use private::*;
+use typenum::private::*;
 use std::ops::*;
 
 use process::internal_process::*;
@@ -67,23 +67,21 @@ impl<
   }
 
   pub fn split<
-    BRICK_SPLITS: Unsigned + Sub<U1> + Cmp<U1> + IsGreaterPrivate<U1, <BRICK_SPLITS as Cmp<U1>>::Output>,
     BRICK_CONSUMES: ParamBitSet + BitOr<CONSUMES>,
-    BRICK_REQUIRES: Unsigned + BitAnd<<<BRICK_ACCOMPLISHES as CaseActionSetArray>::HEAD as BitOr<ACCOMPLISHES>>::Output> + Cmp<<BRICK_REQUIRES as BitAnd<<<BRICK_ACCOMPLISHES as CaseActionSetArray>::HEAD as BitOr<ACCOMPLISHES>>::Output>>::Output> + IsEqualPrivate<<BRICK_REQUIRES as BitAnd<<<BRICK_ACCOMPLISHES as CaseActionSetArray>::HEAD as BitOr<ACCOMPLISHES>>::Output>>::Output, <BRICK_REQUIRES as Cmp<<BRICK_REQUIRES as BitAnd<<<BRICK_ACCOMPLISHES as CaseActionSetArray>::HEAD as BitOr<ACCOMPLISHES>>::Output>>::Output>>::Output> + BitOr<REQUIRES>,
-    BRICK_FORBIDS: Unsigned + BitAnd<<<BRICK_ACCOMPLISHES as CaseActionSetArray>::HEAD as BitOr<ACCOMPLISHES>>::Output> + BitOr<FORBIDS>,
-    BRICK_PRODUCES: CaseParamSetArray,
-    BRICK_ACCOMPLISHES: CaseActionSetArray,
-    FIRST_CONSUMES: ParamBitSet + BitAnd<<<BRICK_PRODUCES as CaseParamSetArray>::HEAD as BitOr<PRODUCES>>::Output> + Cmp<<FIRST_CONSUMES as BitAnd<<<BRICK_PRODUCES as CaseParamSetArray>::HEAD as BitOr<PRODUCES>>::Output>>::Output> + Cmp<<FIRST_CONSUMES as BitAnd<<<BRICK_PRODUCES as CaseParamSetArray>::HEAD as BitOr<PRODUCES>>::Output>>::Output> + IsEqualPrivate<<FIRST_CONSUMES as BitAnd<<<BRICK_PRODUCES as brick::CaseParamSetArray>::HEAD as BitOr<PRODUCES>>::Output>>::Output, <FIRST_CONSUMES as Cmp<<FIRST_CONSUMES as BitAnd<<<BRICK_PRODUCES as brick::CaseParamSetArray>::HEAD as BitOr<PRODUCES>>::Output>>::Output>>::Output>,
+    BRICK_REQUIRES: Unsigned + BitAnd<<<PRODUCES_AND_ACCOMPLISHES as CaseArray>::ACTION_HEAD as BitOr<ACCOMPLISHES>>::Output> + Cmp<<BRICK_REQUIRES as BitAnd<<<PRODUCES_AND_ACCOMPLISHES as CaseArray>::ACTION_HEAD as BitOr<ACCOMPLISHES>>::Output>>::Output> + IsEqualPrivate<<BRICK_REQUIRES as BitAnd<<<PRODUCES_AND_ACCOMPLISHES as CaseArray>::ACTION_HEAD as BitOr<ACCOMPLISHES>>::Output>>::Output, <BRICK_REQUIRES as Cmp<<BRICK_REQUIRES as BitAnd<<<PRODUCES_AND_ACCOMPLISHES as CaseArray>::ACTION_HEAD as BitOr<ACCOMPLISHES>>::Output>>::Output>>::Output> + BitOr<REQUIRES>,
+    BRICK_FORBIDS: Unsigned + BitAnd<<<PRODUCES_AND_ACCOMPLISHES as CaseArray>::ACTION_HEAD as BitOr<ACCOMPLISHES>>::Output> + BitOr<FORBIDS>,
+    PRODUCES_AND_ACCOMPLISHES: CaseArray + Len,
+    FIRST_CONSUMES: ParamBitSet + BitAnd<<<PRODUCES_AND_ACCOMPLISHES as CaseArray>::PARAM_HEAD as BitOr<PRODUCES>>::Output> + Cmp<<FIRST_CONSUMES as BitAnd<<<PRODUCES_AND_ACCOMPLISHES as CaseArray>::PARAM_HEAD as BitOr<PRODUCES>>::Output>>::Output> + Cmp<<FIRST_CONSUMES as BitAnd<<<PRODUCES_AND_ACCOMPLISHES as CaseArray>::PARAM_HEAD as BitOr<PRODUCES>>::Output>>::Output> + IsEqualPrivate<<FIRST_CONSUMES as BitAnd<<<PRODUCES_AND_ACCOMPLISHES as CaseArray>::PARAM_HEAD as BitOr<PRODUCES>>::Output>>::Output, <FIRST_CONSUMES as Cmp<<FIRST_CONSUMES as BitAnd<<<PRODUCES_AND_ACCOMPLISHES as CaseArray>::PARAM_HEAD as BitOr<PRODUCES>>::Output>>::Output>>::Output>,
     FIRST_REQUIRES: Unsigned,
     FIRST_FORBIDS: Unsigned,
     FIRST_PRODUCES: ParamBitSet,
     FIRST_ACCOMPLISHES: Unsigned,
   >(
     self,
-    brick: SplitterBrick<BRICK_SPLITS, BRICK_CONSUMES, BRICK_REQUIRES, BRICK_FORBIDS, BRICK_PRODUCES, BRICK_ACCOMPLISHES>,
+    brick: SplitterBrick<BRICK_CONSUMES, BRICK_REQUIRES, BRICK_FORBIDS, PRODUCES_AND_ACCOMPLISHES>,
     first_case: FlowingProcess<FIRST_CONSUMES, FIRST_REQUIRES, FIRST_FORBIDS, FIRST_PRODUCES, FIRST_ACCOMPLISHES>,
   ) -> FlowingSplitterProcess<
-      <BRICK_SPLITS as Sub<U1>>::Output,
+      PRODUCES_AND_ACCOMPLISHES::TAIL,
       Or<BRICK_CONSUMES, CONSUMES>,
       Or<BRICK_REQUIRES, REQUIRES>,
       Or<BRICK_FORBIDS, FORBIDS>,
@@ -96,21 +94,23 @@ impl<
       FIRST_ACCOMPLISHES,
   >
   where
-    <BRICK_SPLITS as Sub<U1>>::Output: Unsigned,
     <BRICK_CONSUMES as BitOr<CONSUMES>>::Output: ParamBitSet,
     <BRICK_REQUIRES as BitOr<REQUIRES>>::Output: Unsigned,
-    <BRICK_REQUIRES as IsEqualPrivate<<BRICK_REQUIRES as BitAnd<<<BRICK_ACCOMPLISHES as CaseActionSetArray>::HEAD as BitOr<ACCOMPLISHES>>::Output>>::Output, <BRICK_REQUIRES as Cmp<<BRICK_REQUIRES as BitAnd<<<BRICK_ACCOMPLISHES as CaseActionSetArray>::HEAD as BitOr<ACCOMPLISHES>>::Output>>::Output>>::Output>>::Output: NonZero,
+    <BRICK_REQUIRES as IsEqualPrivate<<BRICK_REQUIRES as BitAnd<<<PRODUCES_AND_ACCOMPLISHES as CaseArray>::ACTION_HEAD as BitOr<ACCOMPLISHES>>::Output>>::Output, <BRICK_REQUIRES as Cmp<<BRICK_REQUIRES as BitAnd<<<PRODUCES_AND_ACCOMPLISHES as CaseArray>::ACTION_HEAD as BitOr<ACCOMPLISHES>>::Output>>::Output>>::Output>>::Output: NonZero,
     <BRICK_FORBIDS as BitOr<FORBIDS>>::Output: Unsigned,
-    <BRICK_PRODUCES as CaseParamSetArray>::UNION: BitAnd<PRODUCES>,
-    <BRICK_PRODUCES as CaseParamSetArray>::HEAD: BitOr<PRODUCES>,
-    <BRICK_ACCOMPLISHES as CaseActionSetArray>::UNION: BitAnd<ACCOMPLISHES>,
-    <BRICK_ACCOMPLISHES as CaseActionSetArray>::HEAD: BitOr<ACCOMPLISHES>,
-    Gr<BRICK_SPLITS, U1>: NonZero,
-    Eq<FIRST_CONSUMES, And<FIRST_CONSUMES, Or<BRICK_PRODUCES::HEAD, PRODUCES>>>: NonZero, // (PRODUCES union BRICK_PRODUCES) contain FIRST_CONSUMES
-    Eq<BRICK_REQUIRES, And<BRICK_REQUIRES, Or<BRICK_ACCOMPLISHES::HEAD, ACCOMPLISHES>>>: NonZero, // ACCOMPLISHES contain BRICK_REQUIRES
-    And<BRICK_FORBIDS, Or<BRICK_ACCOMPLISHES::HEAD, ACCOMPLISHES>>: Zero, // BRICK_FORBIDS are not in ACCOMPLISHES
-    And<BRICK_PRODUCES::UNION, PRODUCES>: Zero, // splitter doesn't produce what was already produced
-    And<BRICK_ACCOMPLISHES::UNION, ACCOMPLISHES>: Zero, // splitter doesn't accomplish what was already accomplished
+    <PRODUCES_AND_ACCOMPLISHES as CaseArray>::PARAM_UNION: BitAnd<PRODUCES>,
+    <PRODUCES_AND_ACCOMPLISHES as CaseArray>::PARAM_HEAD: BitOr<PRODUCES>,
+    <PRODUCES_AND_ACCOMPLISHES as CaseArray>::ACTION_UNION: BitAnd<ACCOMPLISHES>,
+    <PRODUCES_AND_ACCOMPLISHES as CaseArray>::ACTION_HEAD: BitOr<ACCOMPLISHES>,
+    <PRODUCES_AND_ACCOMPLISHES as CaseArray>::TAIL: CaseArray,
+    <PRODUCES_AND_ACCOMPLISHES as Len>::Output: Cmp<U1>,
+    <PRODUCES_AND_ACCOMPLISHES as Len>::Output: IsGreaterPrivate<U1, <<PRODUCES_AND_ACCOMPLISHES as Len>::Output as Cmp<U1>>::Output>,
+    Gr<Length<PRODUCES_AND_ACCOMPLISHES>, U1>: NonZero, // split has more than one case
+    Eq<FIRST_CONSUMES, And<FIRST_CONSUMES, Or<PRODUCES_AND_ACCOMPLISHES::PARAM_HEAD, PRODUCES>>>: NonZero, // (PRODUCES union BRICK_PRODUCES) contain FIRST_CONSUMES
+    Eq<BRICK_REQUIRES, And<BRICK_REQUIRES, Or<PRODUCES_AND_ACCOMPLISHES::ACTION_HEAD, ACCOMPLISHES>>>: NonZero, // ACCOMPLISHES contain BRICK_REQUIRES
+    And<BRICK_FORBIDS, Or<PRODUCES_AND_ACCOMPLISHES::ACTION_HEAD, ACCOMPLISHES>>: Zero, // BRICK_FORBIDS are not in ACCOMPLISHES
+    And<PRODUCES_AND_ACCOMPLISHES::PARAM_UNION, PRODUCES>: Zero, // splitter doesn't produce what was already produced
+    And<PRODUCES_AND_ACCOMPLISHES::ACTION_UNION, ACCOMPLISHES>: Zero, // splitter doesn't accomplish what was already accomplished
   {
     FlowingSplitterProcess {
       process: InternalFlowingSplitProcess::FirstCase {
@@ -118,7 +118,7 @@ impl<
         first_case: first_case.process,
         process_before: self.process,
       },
-      splits_left: Default::default(),
+      produces_and_accomplishes: Default::default(),
       root_consumes: Default::default(),
       root_requires: Default::default(),
       root_forbids: Default::default(),
@@ -134,7 +134,7 @@ impl<
 }
 
 pub struct FinalizedSplitterProcess<
-  SPLITS_LEFT: Unsigned,
+  PRODUCES_AND_ACCOMPLISHES: CaseArray,
   ROOT_CONSUMES: ParamBitSet,
   ROOT_REQUIRES: Unsigned,
   ROOT_FORBIDS: Unsigned,
@@ -147,7 +147,7 @@ pub struct FinalizedSplitterProcess<
   ACCUM_ACCOMPLISHES: Unsigned,
 > {
   pub(crate) process: InternalFinalizedSplitProcess,
-  pub(crate) splits_left: PhantomData<SPLITS_LEFT>,
+  pub(crate) produces_and_accomplishes: PhantomData<PRODUCES_AND_ACCOMPLISHES>,
   pub(crate) root_consumes: PhantomData<ROOT_CONSUMES>,
   pub(crate) root_requires: PhantomData<ROOT_REQUIRES>,
   pub(crate) root_forbids: PhantomData<ROOT_FORBIDS>,
@@ -161,7 +161,7 @@ pub struct FinalizedSplitterProcess<
 }
 
 pub struct FlowingSplitterProcess<
-  SPLITS_LEFT: Unsigned,
+  PRODUCES_AND_ACCOMPLISHES: CaseArray,
   ROOT_CONSUMES: ParamBitSet,
   ROOT_REQUIRES: Unsigned,
   ROOT_FORBIDS: Unsigned,
@@ -174,7 +174,7 @@ pub struct FlowingSplitterProcess<
   ACCUM_ACCOMPLISHES: Unsigned,
 > {
   pub(crate) process: InternalFlowingSplitProcess,
-  pub(crate) splits_left: PhantomData<SPLITS_LEFT>,
+  pub(crate) produces_and_accomplishes: PhantomData<PRODUCES_AND_ACCOMPLISHES>,
   pub(crate) root_consumes: PhantomData<ROOT_CONSUMES>,
   pub(crate) root_requires: PhantomData<ROOT_REQUIRES>,
   pub(crate) root_forbids: PhantomData<ROOT_FORBIDS>,

@@ -51,9 +51,7 @@ pub mod process_builder {
   type Both = op!(Msisdn | Dialed);
   type SessionCharge = U1;
   type BoEventSent = U2;
-  pub fn get_simple_process() -> FlowingSplitterProcess<U1, EMPTY, EMPTY, EMPTY, Msisdn, SessionCharge, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY>
-    // -> NamedProcess
-  {
+  pub fn get_simple_process() -> FlowingSplitterProcess<TArr<(EMPTY, EMPTY), ATerm>, EMPTY, EMPTY, EMPTY, Msisdn, SessionCharge, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY> {
     let entry = LinearBrick {
       name: "Entry".to_string(),
       consumes: PhantomData::<EMPTY>,
@@ -74,12 +72,10 @@ pub mod process_builder {
     };
     let splitter = SplitterBrick {
       name: "Splitter".to_string(),
-      splits: PhantomData::<U2>,
       consumes: PhantomData::<EMPTY>,
       requires_prior_completion: PhantomData::<EMPTY>,
       forbids_prior_completion: PhantomData::<EMPTY>,
-      produces: PhantomData::<TArr<EMPTY, TArr<EMPTY, ATerm>>>,
-      accomplishes: PhantomData::<TArr<EMPTY, TArr<EMPTY, ATerm>>>,
+      produces_and_accomplishes: PhantomData::<TArr<(EMPTY, EMPTY), TArr<(EMPTY, EMPTY), ATerm>>>,
       handler: Box::new(Splitter),
     };
     let last = FinalBrick {
@@ -90,9 +86,7 @@ pub mod process_builder {
       accomplishes: PhantomData::<EMPTY>,
       handler: Box::new(Final),
     };
-    let a: FlowingSplitterProcess<U1, EMPTY, EMPTY, EMPTY, Msisdn, SessionCharge, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY> =
-      process(entry).split(splitter, process(linear));
-    a
+      process(entry).split(splitter, process(linear))
       // .finnish(last)
       // .close("my_process_name".to_string())
   }

@@ -31,51 +31,47 @@ impl<MORE_SIGNIFICANT_BITS: ParamBitSet, LEAST_SIGNIFICANT_BIT: Bit> ParamBitSet
   }
 }
 
-pub trait CaseParamSetArray {
-  type HEAD: ParamBitSet;
-  type UNION: ParamBitSet;
+pub trait CaseArray: TypeArray {
+  type PARAM_HEAD: ParamBitSet;
+  type PARAM_UNION: ParamBitSet;
+  type ACTION_HEAD: Unsigned;
+  type ACTION_UNION: Unsigned;
+  type TAIL: TypeArray;
   fn get() -> Vec<Vec<ParamId>>;
 }
 
-impl<HEAD: ParamBitSet> CaseParamSetArray for TArr<HEAD, ATerm> {
-  type HEAD = HEAD;
-  type UNION = HEAD;
+impl<PARAM_HEAD: ParamBitSet, ACTION_HEAD: Unsigned> CaseArray for TArr<(PARAM_HEAD, ACTION_HEAD), ATerm> {
+  type PARAM_HEAD = PARAM_HEAD;
+  type PARAM_UNION = PARAM_HEAD;
+  type ACTION_HEAD = ACTION_HEAD;
+  type ACTION_UNION = ACTION_HEAD;
+  type TAIL = ATerm;
 
   fn get() -> Vec<Vec<ParamId>> {
     vec![]
   }
 }
 
-impl<HEAD: ParamBitSet + BitOr<TAIL::UNION>, TAIL: CaseParamSetArray> CaseParamSetArray for TArr<HEAD, TAIL>
+impl<
+  TAIL: CaseArray,
+  PARAM_HEAD: ParamBitSet + BitOr<TAIL::PARAM_UNION>,
+  ACTION_HEAD: Unsigned + BitOr<TAIL::ACTION_UNION>,
+> CaseArray for TArr<(PARAM_HEAD, ACTION_HEAD), TAIL>
   where
-    <HEAD as BitOr<TAIL::UNION>>::Output: ParamBitSet,
+    <PARAM_HEAD as BitOr<TAIL::PARAM_UNION>>::Output: ParamBitSet,
+    <ACTION_HEAD as BitOr<TAIL::ACTION_UNION>>::Output: ParamBitSet,
 {
-  type HEAD = HEAD;
-  type UNION = Or<HEAD, TAIL::UNION>;
+  type PARAM_HEAD = PARAM_HEAD;
+  type PARAM_UNION = Or<PARAM_HEAD, TAIL::PARAM_UNION>;
+  type ACTION_HEAD = ACTION_HEAD;
+  type ACTION_UNION = Or<ACTION_HEAD, TAIL::ACTION_UNION>;
+  type TAIL = TAIL;
 
   fn get() -> Vec<Vec<ParamId>> {
     let mut vector = TAIL::get();
-    vector.push(HEAD::get().0);
+    vector.push(PARAM_HEAD::get().0);
     vector
   }
-}
-
-pub trait CaseActionSetArray {
-  type HEAD: Unsigned;
-  type UNION: Unsigned;
-}
-
-impl<HEAD: Unsigned> CaseActionSetArray for TArr<HEAD, ATerm> {
-  type HEAD = HEAD;
-  type UNION = HEAD;
-}
-
-impl<HEAD: Unsigned + BitOr<TAIL::UNION>, TAIL: CaseActionSetArray> CaseActionSetArray for TArr<HEAD, TAIL>
-where
-    <HEAD as BitOr<TAIL::UNION>>::Output: Unsigned,
-{
-  type HEAD = HEAD;
-  type UNION = Or<HEAD, TAIL::UNION>;
 }
 
 pub struct LinearBrick<
@@ -113,36 +109,30 @@ impl<
 
 // consider https://github.com/rust-phf/rust-phf for SplitIndex
 pub struct SplitterBrick<
-  SPLITS: Unsigned,
   CONSUMES: ParamBitSet,
   REQUIRES: Unsigned,
   FORBIDS: Unsigned,
-  PRODUCES: CaseParamSetArray,
-  ACCOMPLISHES: CaseActionSetArray,
+  PRODUCES_AND_ACCOMPLISHES: CaseArray,
 > {
   pub name: String,
-  pub splits: PhantomData<SPLITS>,
   pub consumes: PhantomData<CONSUMES>,
   pub requires_prior_completion: PhantomData<REQUIRES>,
   pub forbids_prior_completion: PhantomData<FORBIDS>,
-  pub produces: PhantomData<PRODUCES>,
-  pub accomplishes: PhantomData<ACCOMPLISHES>,
+  pub produces_and_accomplishes: PhantomData<PRODUCES_AND_ACCOMPLISHES>,
   pub handler: Box<dyn SplitterBrickHandler>,
 }
 
 impl<
-  SPLITS: Unsigned,
   CONSUMES: ParamBitSet,
   REQUIRES: Unsigned,
   FORBIDS: Unsigned,
-  PRODUCES: CaseParamSetArray,
-  ACCOMPLISHES: CaseActionSetArray,
-> SplitterBrick<SPLITS, CONSUMES, REQUIRES, FORBIDS, PRODUCES, ACCOMPLISHES> {
+  PRODUCES_AND_ACCOMPLISHES: CaseArray,
+> SplitterBrick<CONSUMES, REQUIRES, FORBIDS, PRODUCES_AND_ACCOMPLISHES> {
   pub(crate) fn to_internal(self) -> InternalSplitterBrick {
     InternalSplitterBrick {
       name: self.name,
       consumes: CONSUMES::get().0,
-      produces: PRODUCES::get(),
+      produces: PRODUCES_AND_ACCOMPLISHES::get(),
       handler: self.handler,
     }
   }
