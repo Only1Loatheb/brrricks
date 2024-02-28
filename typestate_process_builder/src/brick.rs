@@ -2,6 +2,7 @@ use std::marker::PhantomData;
 use std::ops::*;
 
 use typenum::*;
+use typenum::private::IsGreaterPrivate;
 
 use process::brick_domain::*;
 use process::internal_brick::*;
@@ -57,9 +58,9 @@ impl<
   PARAM_HEAD: ParamBitSet + BitOr<TAIL::PARAM_UNION>,
   ACTION_HEAD: Unsigned + BitOr<TAIL::ACTION_UNION>,
 > CaseArray for TArr<(PARAM_HEAD, ACTION_HEAD), TAIL>
-  where
-    <PARAM_HEAD as BitOr<TAIL::PARAM_UNION>>::Output: ParamBitSet,
-    <ACTION_HEAD as BitOr<TAIL::ACTION_UNION>>::Output: ParamBitSet,
+where
+  <PARAM_HEAD as BitOr<TAIL::PARAM_UNION>>::Output: ParamBitSet,
+  <ACTION_HEAD as BitOr<TAIL::ACTION_UNION>>::Output: ParamBitSet,
 {
   type PARAM_HEAD = PARAM_HEAD;
   type PARAM_UNION = Or<PARAM_HEAD, TAIL::PARAM_UNION>;
@@ -112,8 +113,12 @@ pub struct SplitterBrick<
   CONSUMES: ParamBitSet,
   REQUIRES: Unsigned,
   FORBIDS: Unsigned,
-  PRODUCES_AND_ACCOMPLISHES: CaseArray,
-> {
+  PRODUCES_AND_ACCOMPLISHES: CaseArray + Len,
+> where
+  <PRODUCES_AND_ACCOMPLISHES as Len>::Output: Cmp<U1>,
+  <PRODUCES_AND_ACCOMPLISHES as Len>::Output: IsGreaterPrivate<U1, <<PRODUCES_AND_ACCOMPLISHES as Len>::Output as Cmp<U1>>::Output>,
+  Gr<Length<PRODUCES_AND_ACCOMPLISHES>, U1>: NonZero,                                                 // split has more than one case
+{
   pub name: String,
   pub consumes: PhantomData<CONSUMES>,
   pub requires_prior_completion: PhantomData<REQUIRES>,
@@ -126,8 +131,13 @@ impl<
   CONSUMES: ParamBitSet,
   REQUIRES: Unsigned,
   FORBIDS: Unsigned,
-  PRODUCES_AND_ACCOMPLISHES: CaseArray,
-> SplitterBrick<CONSUMES, REQUIRES, FORBIDS, PRODUCES_AND_ACCOMPLISHES> {
+  PRODUCES_AND_ACCOMPLISHES: CaseArray + Len,
+> SplitterBrick<CONSUMES, REQUIRES, FORBIDS, PRODUCES_AND_ACCOMPLISHES>
+where
+  Length<PRODUCES_AND_ACCOMPLISHES>: Cmp<U1>,
+  Length<PRODUCES_AND_ACCOMPLISHES>: IsGreaterPrivate<U1, <Length<PRODUCES_AND_ACCOMPLISHES> as Cmp<U1>>::Output>,
+  Gr<Length<PRODUCES_AND_ACCOMPLISHES>, U1>: NonZero,
+{
   pub(crate) fn to_internal(self) -> InternalSplitterBrick {
     InternalSplitterBrick {
       name: self.name,
