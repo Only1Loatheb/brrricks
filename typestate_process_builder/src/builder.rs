@@ -4,9 +4,7 @@ use typenum::private::*;
 use std::ops::*;
 
 use process::internal_process::*;
-use crate::brick;
 use crate::brick::*;
-use crate::builder_helpers::process;
 
 pub type EMPTY = U0;
 
@@ -76,15 +74,15 @@ impl<
     BRICK_CONSUMES: ParamBitSet + BitOr<CONSUMES>,
     BRICK_REQUIRES: Unsigned + BitAnd<<ACTION_HEAD as BitOr<ACCOMPLISHES>>::Output> + Cmp<<BRICK_REQUIRES as BitAnd<<ACTION_HEAD as BitOr<ACCOMPLISHES>>::Output>>::Output> + IsEqualPrivate<<BRICK_REQUIRES as BitAnd<<ACTION_HEAD as BitOr<ACCOMPLISHES>>::Output>>::Output, <BRICK_REQUIRES as Cmp<<BRICK_REQUIRES as BitAnd<<ACTION_HEAD as BitOr<ACCOMPLISHES>>::Output>>::Output>>::Output> + BitOr<REQUIRES>,
     BRICK_FORBIDS: Unsigned + BitAnd<<ACTION_HEAD as BitOr<ACCOMPLISHES>>::Output> + BitOr<FORBIDS>,
-    FIRST_CONSUMES: ParamBitSet + BitAnd<<PARAM_HEAD as BitOr<PRODUCES>>::Output> + Cmp<<FIRST_CONSUMES as BitAnd<<PARAM_HEAD as BitOr<PRODUCES>>::Output>>::Output> + Cmp<<FIRST_CONSUMES as BitAnd<<PARAM_HEAD as BitOr<PRODUCES>>::Output>>::Output> + IsEqualPrivate<<FIRST_CONSUMES as BitAnd<<PARAM_HEAD as BitOr<PRODUCES>>::Output>>::Output, <FIRST_CONSUMES as Cmp<<FIRST_CONSUMES as BitAnd<<PARAM_HEAD as BitOr<PRODUCES>>::Output>>::Output>>::Output>,
-    FIRST_REQUIRES: Unsigned,
-    FIRST_FORBIDS: Unsigned,
-    FIRST_PRODUCES: ParamBitSet,
-    FIRST_ACCOMPLISHES: Unsigned,
+    CASE_CONSUMES: ParamBitSet + BitAnd<<PARAM_HEAD as BitOr<PRODUCES>>::Output> + Cmp<<CASE_CONSUMES as BitAnd<<PARAM_HEAD as BitOr<PRODUCES>>::Output>>::Output> + Cmp<<CASE_CONSUMES as BitAnd<<PARAM_HEAD as BitOr<PRODUCES>>::Output>>::Output> + IsEqualPrivate<<CASE_CONSUMES as BitAnd<<PARAM_HEAD as BitOr<PRODUCES>>::Output>>::Output, <CASE_CONSUMES as Cmp<<CASE_CONSUMES as BitAnd<<PARAM_HEAD as BitOr<PRODUCES>>::Output>>::Output>>::Output>,
+    CASE_REQUIRES: Unsigned,
+    CASE_FORBIDS: Unsigned,
+    CASE_PRODUCES: ParamBitSet,
+    CASE_ACCOMPLISHES: Unsigned,
   >(
     self,
     brick: SplitterBrick<BRICK_CONSUMES, BRICK_REQUIRES, BRICK_FORBIDS, TArr<(PARAM_HEAD, ACTION_HEAD), PRODUCES_AND_ACCOMPLISHES_TAIL>>,
-    first_case: FlowingProcess<FIRST_CONSUMES, FIRST_REQUIRES, FIRST_FORBIDS, FIRST_PRODUCES, FIRST_ACCOMPLISHES>,
+    the_case: FlowingProcess<CASE_CONSUMES, CASE_REQUIRES, CASE_FORBIDS, CASE_PRODUCES, CASE_ACCOMPLISHES>,
   ) -> FlowingSplitterProcess<
     PRODUCES_AND_ACCOMPLISHES_TAIL,
     Or<BRICK_CONSUMES, CONSUMES>,
@@ -92,30 +90,30 @@ impl<
     Or<BRICK_FORBIDS, FORBIDS>,
     PRODUCES, // And<BRICK_PRODUCES::INTERSECTION, PRODUCES>, todo
     ACCOMPLISHES, // And<BRICK_ACCOMPLISHES::INTERSECTION, ACCOMPLISHES>, up
-    FIRST_CONSUMES,
-    FIRST_REQUIRES,
-    FIRST_FORBIDS,
-    FIRST_PRODUCES,
-    FIRST_ACCOMPLISHES,
+    CASE_CONSUMES,
+    CASE_REQUIRES,
+    CASE_FORBIDS,
+    CASE_PRODUCES,
+    CASE_ACCOMPLISHES,
   >
   where
+    // compiler generated types
+    <ACTION_HEAD as BitOr<<PRODUCES_AND_ACCOMPLISHES_TAIL as CaseArray>::ACTION_UNION>>::Output: BitAnd<ACCOMPLISHES>,
+    <PARAM_HEAD as BitOr<<PRODUCES_AND_ACCOMPLISHES_TAIL as CaseArray>::PARAM_UNION>>::Output: BitAnd<PRODUCES>,
+    <PRODUCES_AND_ACCOMPLISHES_TAIL as Len>::Output: Add<B1>,
+    <PRODUCES_AND_ACCOMPLISHES_TAIL as Len>::Output: Add<U1>,
+    <<PRODUCES_AND_ACCOMPLISHES_TAIL as Len>::Output as Add<B1>>::Output: Unsigned,
+    <PARAM_HEAD as BitOr<<PRODUCES_AND_ACCOMPLISHES_TAIL as CaseArray>::PARAM_UNION>>::Output: ParamBitSet,
+    <<PRODUCES_AND_ACCOMPLISHES_TAIL as Len>::Output as Add<B1>>::Output: Cmp<U1>,
+    <<PRODUCES_AND_ACCOMPLISHES_TAIL as Len>::Output as Add<B1>>::Output: IsGreaterPrivate<U1, <<<PRODUCES_AND_ACCOMPLISHES_TAIL as Len>::Output as Add<B1>>::Output as Cmp<U1>>::Output>,
+    <<<PRODUCES_AND_ACCOMPLISHES_TAIL as Len>::Output as Add<B1>>::Output as IsGreaterPrivate<U1, <<<PRODUCES_AND_ACCOMPLISHES_TAIL as Len>::Output as Add<B1>>::Output as Cmp<U1>>::Output>>::Output: NonZero,
+    <ACTION_HEAD as BitOr<<PRODUCES_AND_ACCOMPLISHES_TAIL as CaseArray>::ACTION_UNION>>::Output: ParamBitSet,
   // outputs
     <BRICK_CONSUMES as BitOr<CONSUMES>>::Output: ParamBitSet,
     <BRICK_REQUIRES as BitOr<REQUIRES>>::Output: Unsigned,
     <BRICK_FORBIDS as BitOr<FORBIDS>>::Output: Unsigned,
-  // compiler generated types
-    <ACTION_HEAD as std::ops::BitOr<<PRODUCES_AND_ACCOMPLISHES_TAIL as brick::CaseArray>::ACTION_UNION>>::Output: std::ops::BitAnd<ACCOMPLISHES>,
-    <PARAM_HEAD as std::ops::BitOr<<PRODUCES_AND_ACCOMPLISHES_TAIL as brick::CaseArray>::PARAM_UNION>>::Output: std::ops::BitAnd<PRODUCES>,
-    <PRODUCES_AND_ACCOMPLISHES_TAIL as typenum::Len>::Output: std::ops::Add<typenum::B1>,
-    <PRODUCES_AND_ACCOMPLISHES_TAIL as typenum::Len>::Output: Add<typenum::UInt<typenum::UTerm, B1>>,
-    <<PRODUCES_AND_ACCOMPLISHES_TAIL as typenum::Len>::Output as std::ops::Add<typenum::B1>>::Output: typenum::Unsigned,
-    <PARAM_HEAD as std::ops::BitOr<<PRODUCES_AND_ACCOMPLISHES_TAIL as brick::CaseArray>::PARAM_UNION>>::Output: brick::ParamBitSet,
-    <<PRODUCES_AND_ACCOMPLISHES_TAIL as typenum::Len>::Output as std::ops::Add<typenum::B1>>::Output: typenum::Cmp<typenum::UInt<typenum::UTerm, typenum::B1>>,
-    <<PRODUCES_AND_ACCOMPLISHES_TAIL as typenum::Len>::Output as std::ops::Add<typenum::B1>>::Output: IsGreaterPrivate<typenum::UInt<typenum::UTerm, typenum::B1>, <<<PRODUCES_AND_ACCOMPLISHES_TAIL as typenum::Len>::Output as std::ops::Add<typenum::B1>>::Output as typenum::Cmp<typenum::UInt<typenum::UTerm, typenum::B1>>>::Output>,
-    <<<PRODUCES_AND_ACCOMPLISHES_TAIL as typenum::Len>::Output as std::ops::Add<typenum::B1>>::Output as typenum::private::IsGreaterPrivate<typenum::UInt<typenum::UTerm, typenum::B1>, <<<PRODUCES_AND_ACCOMPLISHES_TAIL as typenum::Len>::Output as std::ops::Add<typenum::B1>>::Output as typenum::Cmp<typenum::UInt<typenum::UTerm, typenum::B1>>>::Output>>::Output: typenum::NonZero,
-    <ACTION_HEAD as std::ops::BitOr<<PRODUCES_AND_ACCOMPLISHES_TAIL as brick::CaseArray>::ACTION_UNION>>::Output: brick::ParamBitSet,
   // constraint
-    Eq<FIRST_CONSUMES, And<FIRST_CONSUMES, Or<PARAM_HEAD, PRODUCES>>>: NonZero, // (PRODUCES union BRICK_PRODUCES) contain FIRST_CONSUMES
+    Eq<CASE_CONSUMES, And<CASE_CONSUMES, Or<PARAM_HEAD, PRODUCES>>>: NonZero, // (PRODUCES union BRICK_PRODUCES) contain FIRST_CONSUMES
     Eq<BRICK_REQUIRES, And<BRICK_REQUIRES, Or<ACTION_HEAD, ACCOMPLISHES>>>: NonZero, // ACCOMPLISHES contain BRICK_REQUIRES
     And<BRICK_FORBIDS, Or<ACTION_HEAD, ACCOMPLISHES>>: Zero, // BRICK_FORBIDS are not in ACCOMPLISHES
     And<Or<PARAM_HEAD, PRODUCES_AND_ACCOMPLISHES_TAIL::PARAM_UNION>, PRODUCES>: Zero, // splitter doesn't produce what was already produced
@@ -124,7 +122,7 @@ impl<
     FlowingSplitterProcess {
       process: InternalFlowingSplitProcess::FirstCase {
         brick: brick.to_internal(),
-        first_case: first_case.process,
+        first_case: the_case.process,
         process_before: self.process,
       },
       produces_and_accomplishes: Default::default(),
@@ -204,11 +202,11 @@ impl<
   ROOT_FORBIDS: Unsigned,
   ROOT_PRODUCES: ParamBitSet,
   ROOT_ACCOMPLISHES: Unsigned,
-  ACCUM_CONSUMES: ParamBitSet,
-  ACCUM_REQUIRES: Unsigned,
-  ACCUM_FORBIDS: Unsigned,
-  ACCUM_PRODUCES: ParamBitSet,
-  ACCUM_ACCOMPLISHES: Unsigned,
+  ACCUM_CONSUMES: ParamBitSet + BitOr<ROOT_CONSUMES>,
+  ACCUM_REQUIRES: Unsigned + BitOr<ROOT_REQUIRES>,
+  ACCUM_FORBIDS: Unsigned + BitOr<ROOT_FORBIDS>,
+  ACCUM_PRODUCES: ParamBitSet + BitAnd<ROOT_PRODUCES>,
+  ACCUM_ACCOMPLISHES: Unsigned + BitAnd<ROOT_ACCOMPLISHES>,
 > FlowingSplitterProcess<
   TArr<(PARAM_HEAD, ACTION_HEAD), ATerm>,
   ROOT_CONSUMES,
@@ -223,26 +221,37 @@ impl<
   ACCUM_ACCOMPLISHES
 > {
   pub fn last_case<
-    CASE_CONSUMES: ParamBitSet,
-    CASE_REQUIRES: Unsigned,
-    CASE_FORBIDS: Unsigned,
-    CASE_PRODUCES: ParamBitSet,
-    CASE_ACCOMPLISHES: Unsigned,
+    CASE_CONSUMES: ParamBitSet + BitOr<<ACCUM_CONSUMES as BitOr<ROOT_CONSUMES>>::Output>,
+    CASE_REQUIRES: Unsigned + BitOr<<ACCUM_REQUIRES as BitOr<ROOT_REQUIRES>>::Output>,
+    CASE_FORBIDS: Unsigned + BitOr<<ACCUM_FORBIDS as BitOr<ROOT_FORBIDS>>::Output>,
+    CASE_PRODUCES: ParamBitSet + BitAnd<ACCUM_PRODUCES>,
+    CASE_ACCOMPLISHES: Unsigned + BitAnd<ACCUM_ACCOMPLISHES>,
   >(
     self,
-    last_case: FlowingProcess<CASE_CONSUMES, CASE_REQUIRES, CASE_FORBIDS, CASE_PRODUCES, CASE_ACCOMPLISHES>,
+    the_case: FlowingProcess<CASE_CONSUMES, CASE_REQUIRES, CASE_FORBIDS, CASE_PRODUCES, CASE_ACCOMPLISHES>,
   ) -> FlowingProcess<
-    ROOT_CONSUMES,
-    ROOT_REQUIRES,
-    ROOT_FORBIDS,
-    ROOT_PRODUCES,
-    ROOT_ACCOMPLISHES,
-  > {
+    Or<CASE_CONSUMES, Or<ACCUM_CONSUMES, ROOT_CONSUMES>>,
+    Or<CASE_REQUIRES, Or<ACCUM_REQUIRES, ROOT_REQUIRES>>,
+    Or<CASE_FORBIDS, Or<ACCUM_FORBIDS, ROOT_FORBIDS>>,
+    Or<And<CASE_PRODUCES, ACCUM_PRODUCES>, ROOT_PRODUCES>,
+    Or<And<CASE_ACCOMPLISHES, ACCUM_ACCOMPLISHES>, ROOT_ACCOMPLISHES>,
+  > where
+    // generated
+  <CASE_PRODUCES as BitAnd<ACCUM_PRODUCES>>::Output: BitOr<ROOT_PRODUCES>  ,
+  <CASE_ACCOMPLISHES as BitAnd<ACCUM_ACCOMPLISHES>>::Output: BitOr<ROOT_ACCOMPLISHES>,
+  // outputs
+  <CASE_CONSUMES as BitOr<<ACCUM_CONSUMES as BitOr<ROOT_CONSUMES>>::Output>>::Output: ParamBitSet,
+  <CASE_REQUIRES as BitOr<<ACCUM_REQUIRES as BitOr<ROOT_REQUIRES>>::Output>>::Output: Unsigned,
+  <CASE_FORBIDS as BitOr<<ACCUM_FORBIDS as BitOr<ROOT_FORBIDS>>::Output>>::Output: Unsigned,
+  <<CASE_PRODUCES as BitAnd<ACCUM_PRODUCES>>::Output as BitOr<ROOT_PRODUCES>>::Output: ParamBitSet,
+  <<CASE_ACCOMPLISHES as BitAnd<ACCUM_ACCOMPLISHES>>::Output as BitOr<ROOT_ACCOMPLISHES>>::Output: Unsigned,
+  // constraints todo
+  {
     FlowingProcess {
       process: InternalFlowingProcess::Split {
         0: Box::new(
           InternalFlowingSplitProcess::NextCaseFlowing {
-            next_case: last_case.process,
+            next_case: the_case.process,
             process_before: Box::new(self.process),
           },
         ),
@@ -257,9 +266,9 @@ impl<
 }
 
 impl<
-  PARAM_HEAD: ParamBitSet + BitOr<<PRODUCES_AND_ACCOMPLISHES_TAIL as brick::CaseArray>::PARAM_UNION>,
-  ACTION_HEAD: Unsigned + BitOr<<PRODUCES_AND_ACCOMPLISHES_TAIL as brick::CaseArray>::ACTION_UNION>,
-  PRODUCES_AND_ACCOMPLISHES_TAIL: CaseArray + Len,
+  PARAM_HEAD: ParamBitSet + BitOr<<PRODUCES_AND_ACCOMPLISHES_TAIL as CaseArray>::PARAM_UNION>,
+  ACTION_HEAD: Unsigned + BitOr<<PRODUCES_AND_ACCOMPLISHES_TAIL as CaseArray>::ACTION_UNION>,
+  PRODUCES_AND_ACCOMPLISHES_TAIL: CaseArray,
   ROOT_CONSUMES: ParamBitSet,
   ROOT_REQUIRES: Unsigned,
   ROOT_FORBIDS: Unsigned,
@@ -283,18 +292,18 @@ impl<
   ACCUM_PRODUCES,
   ACCUM_ACCOMPLISHES,
 > where
-  <PARAM_HEAD as std::ops::BitOr<<PRODUCES_AND_ACCOMPLISHES_TAIL as brick::CaseArray>::PARAM_UNION>>::Output: brick::ParamBitSet,
-  <ACTION_HEAD as std::ops::BitOr<<PRODUCES_AND_ACCOMPLISHES_TAIL as brick::CaseArray>::ACTION_UNION>>::Output: brick::ParamBitSet,
+  <PARAM_HEAD as BitOr<<PRODUCES_AND_ACCOMPLISHES_TAIL as CaseArray>::PARAM_UNION>>::Output: ParamBitSet,
+  <ACTION_HEAD as BitOr<<PRODUCES_AND_ACCOMPLISHES_TAIL as CaseArray>::ACTION_UNION>>::Output: ParamBitSet,
 {
-  pub fn case<
-    CASE_CONSUMES: ParamBitSet,
-    CASE_REQUIRES: Unsigned,
-    CASE_FORBIDS: Unsigned,
-    CASE_PRODUCES: ParamBitSet,
-    CASE_ACCOMPLISHES: Unsigned,
+  pub fn next_case<
+    CASE_CONSUMES: ParamBitSet + BitOr<ACCUM_CONSUMES>,
+    CASE_REQUIRES: Unsigned + BitOr<ACCUM_REQUIRES>,
+    CASE_FORBIDS: Unsigned + BitOr<ACCUM_FORBIDS>,
+    CASE_PRODUCES: ParamBitSet + BitAnd<ACCUM_PRODUCES>,
+    CASE_ACCOMPLISHES: Unsigned + BitAnd<ACCUM_ACCOMPLISHES>,
   >(
     self,
-    next_case: FlowingProcess<CASE_CONSUMES, CASE_REQUIRES, CASE_FORBIDS, CASE_PRODUCES, CASE_ACCOMPLISHES>,
+    the_case: FlowingProcess<CASE_CONSUMES, CASE_REQUIRES, CASE_FORBIDS, CASE_PRODUCES, CASE_ACCOMPLISHES>,
   ) -> FlowingSplitterProcess<
     PRODUCES_AND_ACCOMPLISHES_TAIL,
     ROOT_CONSUMES,
@@ -302,15 +311,23 @@ impl<
     ROOT_FORBIDS,
     ROOT_PRODUCES,
     ROOT_ACCOMPLISHES,
-    ACCUM_CONSUMES, // + CASE_CONSUMES: ParamBitSet,
-    ACCUM_REQUIRES, // + CASE_REQUIRES: Unsigned,
-    ACCUM_FORBIDS, // + CASE_FORBIDS: Unsigned,
-    ACCUM_PRODUCES, // + CASE_PRODUCES: ParamBitSet,
-    ACCUM_ACCOMPLISHES, // + CASE_ACCOMPLISHES: Unsigned,
-  > {
+    Or<CASE_CONSUMES, ACCUM_CONSUMES>,
+    Or<CASE_REQUIRES, ACCUM_REQUIRES>,
+    Or<CASE_FORBIDS, ACCUM_FORBIDS>,
+    And<CASE_PRODUCES, ACCUM_PRODUCES>,
+    And<CASE_ACCOMPLISHES, ACCUM_ACCOMPLISHES>,
+  > where
+  // outputs
+  <CASE_CONSUMES as BitOr<ACCUM_CONSUMES>>::Output: ParamBitSet,
+  <CASE_REQUIRES as BitOr<ACCUM_REQUIRES>>::Output: Unsigned,
+  <CASE_FORBIDS as BitOr<ACCUM_FORBIDS>>::Output: Unsigned,
+  <CASE_PRODUCES as BitAnd<ACCUM_PRODUCES>>::Output: ParamBitSet,
+  <CASE_ACCOMPLISHES as BitAnd<ACCUM_ACCOMPLISHES>>::Output: Unsigned,
+  // constraints todo
+  {
     FlowingSplitterProcess {
       process: InternalFlowingSplitProcess::NextCaseFlowing {
-        next_case: next_case.process,
+        next_case: the_case.process,
         process_before: Box::new(self.process),
       },
       produces_and_accomplishes: Default::default(),

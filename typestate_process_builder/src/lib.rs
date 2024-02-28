@@ -51,7 +51,7 @@ pub mod process_builder {
   type Both = op!(Msisdn | Dialed);
   type SessionCharge = U1;
   type BoEventSent = U2;
-  pub fn get_simple_process() -> FlowingSplitterProcess<TArr<(EMPTY, EMPTY), ATerm>, EMPTY, EMPTY, EMPTY, Msisdn, SessionCharge, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY> {
+  pub fn get_simple_process() {
     let entry = LinearBrick {
       name: "Entry".to_string(),
       consumes: PhantomData::<EMPTY>,
@@ -70,12 +70,30 @@ pub mod process_builder {
       accomplishes: PhantomData::<EMPTY>,
       handler: Box::new(Linear),
     };
+    let linear2 = LinearBrick {
+      name: "Linear".to_string(),
+      consumes: PhantomData::<EMPTY>,
+      requires_prior_completion: PhantomData::<EMPTY>,
+      forbids_prior_completion: PhantomData::<EMPTY>,
+      produces: PhantomData::<EMPTY>,
+      accomplishes: PhantomData::<EMPTY>,
+      handler: Box::new(Linear),
+    };
+    let linear3 = LinearBrick {
+      name: "Linear".to_string(),
+      consumes: PhantomData::<EMPTY>,
+      requires_prior_completion: PhantomData::<EMPTY>,
+      forbids_prior_completion: PhantomData::<EMPTY>,
+      produces: PhantomData::<EMPTY>,
+      accomplishes: PhantomData::<EMPTY>,
+      handler: Box::new(Linear),
+    };
     let splitter = SplitterBrick {
       name: "Splitter".to_string(),
       consumes: PhantomData::<EMPTY>,
       requires_prior_completion: PhantomData::<EMPTY>,
       forbids_prior_completion: PhantomData::<EMPTY>,
-      produces_and_accomplishes: PhantomData::<TArr<(EMPTY, EMPTY), TArr<(EMPTY, EMPTY), ATerm>>>,
+      produces_and_accomplishes: PhantomData::<TArr<(EMPTY, EMPTY), TArr<(EMPTY, EMPTY), TArr<(EMPTY, EMPTY), ATerm>>>>,
       handler: Box::new(Splitter),
     };
     let last = FinalBrick {
@@ -86,9 +104,13 @@ pub mod process_builder {
       accomplishes: PhantomData::<EMPTY>,
       handler: Box::new(Final),
     };
-      process(entry).split(splitter, process(linear))
-      // .finnish(last)
-      // .close("my_process_name".to_string())
+      process(entry)
+        .split(splitter, process(linear))
+        .next_case(process(linear2))
+        .last_case(process(linear3))
+        .finnish(last)
+        .close("my_process_name".to_string());
+    ()
   }
 }
 
