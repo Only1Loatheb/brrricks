@@ -33,20 +33,14 @@ impl<MORE_SIGNIFICANT_BITS: ParamBitSet, LEAST_SIGNIFICANT_BIT: Bit> ParamBitSet
 }
 
 pub trait CaseArray: TypeArray {
-  type PARAM_HEAD: ParamBitSet;
   type PARAM_UNION: ParamBitSet;
-  type ACTION_HEAD: Unsigned;
   type ACTION_UNION: Unsigned;
-  type TAIL: TypeArray;
   fn get() -> Vec<Vec<ParamId>>;
 }
 
 impl<PARAM_HEAD: ParamBitSet, ACTION_HEAD: Unsigned> CaseArray for TArr<(PARAM_HEAD, ACTION_HEAD), ATerm> {
-  type PARAM_HEAD = PARAM_HEAD;
   type PARAM_UNION = PARAM_HEAD;
-  type ACTION_HEAD = ACTION_HEAD;
   type ACTION_UNION = ACTION_HEAD;
-  type TAIL = ATerm;
 
   fn get() -> Vec<Vec<ParamId>> {
     vec![]
@@ -62,11 +56,8 @@ where
   <PARAM_HEAD as BitOr<TAIL::PARAM_UNION>>::Output: ParamBitSet,
   <ACTION_HEAD as BitOr<TAIL::ACTION_UNION>>::Output: ParamBitSet,
 {
-  type PARAM_HEAD = PARAM_HEAD;
   type PARAM_UNION = Or<PARAM_HEAD, TAIL::PARAM_UNION>;
-  type ACTION_HEAD = ACTION_HEAD;
   type ACTION_UNION = Or<ACTION_HEAD, TAIL::ACTION_UNION>;
-  type TAIL = TAIL;
 
   fn get() -> Vec<Vec<ParamId>> {
     let mut vector = TAIL::get();
