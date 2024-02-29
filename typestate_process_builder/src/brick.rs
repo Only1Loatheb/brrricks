@@ -35,12 +35,16 @@ impl<MORE_SIGNIFICANT_BITS: ParamBitSet, LEAST_SIGNIFICANT_BIT: Bit> ParamBitSet
 pub trait CaseArray: TypeArray {
   type PARAM_UNION: ParamBitSet;
   type ACTION_UNION: Unsigned;
+  type PARAM_INTERSECTION: ParamBitSet;
+  type ACTION_INTERSECTION: Unsigned;
   fn get() -> Vec<Vec<ParamId>>;
 }
 
 impl<PARAM_HEAD: ParamBitSet, ACTION_HEAD: Unsigned> CaseArray for TArr<(PARAM_HEAD, ACTION_HEAD), ATerm> {
   type PARAM_UNION = PARAM_HEAD;
   type ACTION_UNION = ACTION_HEAD;
+  type PARAM_INTERSECTION = PARAM_HEAD;
+  type ACTION_INTERSECTION = ACTION_HEAD;
 
   fn get() -> Vec<Vec<ParamId>> {
     vec![]
@@ -49,15 +53,19 @@ impl<PARAM_HEAD: ParamBitSet, ACTION_HEAD: Unsigned> CaseArray for TArr<(PARAM_H
 
 impl<
   TAIL: CaseArray,
-  PARAM_HEAD: ParamBitSet + BitOr<TAIL::PARAM_UNION>,
-  ACTION_HEAD: Unsigned + BitOr<TAIL::ACTION_UNION>,
+  PARAM_HEAD: ParamBitSet + BitOr<TAIL::PARAM_UNION> + BitAnd<TAIL::PARAM_INTERSECTION>,
+  ACTION_HEAD: Unsigned + BitOr<TAIL::ACTION_UNION> + BitAnd<TAIL::ACTION_INTERSECTION>,
 > CaseArray for TArr<(PARAM_HEAD, ACTION_HEAD), TAIL>
 where
   <PARAM_HEAD as BitOr<TAIL::PARAM_UNION>>::Output: ParamBitSet,
-  <ACTION_HEAD as BitOr<TAIL::ACTION_UNION>>::Output: ParamBitSet,
+  <ACTION_HEAD as BitOr<TAIL::ACTION_UNION>>::Output: Unsigned,
+  <PARAM_HEAD as BitAnd<TAIL::PARAM_INTERSECTION>>::Output: ParamBitSet,
+  <ACTION_HEAD as BitAnd<TAIL::ACTION_INTERSECTION>>::Output: Unsigned,
 {
   type PARAM_UNION = Or<PARAM_HEAD, TAIL::PARAM_UNION>;
   type ACTION_UNION = Or<ACTION_HEAD, TAIL::ACTION_UNION>;
+  type PARAM_INTERSECTION = And<PARAM_HEAD, TAIL::PARAM_INTERSECTION>;
+  type ACTION_INTERSECTION = And<ACTION_HEAD, TAIL::ACTION_INTERSECTION>;
 
   fn get() -> Vec<Vec<ParamId>> {
     let mut vector = TAIL::get();
