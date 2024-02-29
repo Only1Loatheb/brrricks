@@ -4,6 +4,7 @@ pub mod internal_process;
 
 #[cfg_attr(doc, aquamarine::aquamarine)]
 /// It is forbidden to overwrite param value
+/// cargo doc --no-deps --workspace
 /// ```mermaid
 /// stateDiagram-v2
 ///     [*] --> FinalizedProcess: FinalBrick
