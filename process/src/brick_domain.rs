@@ -3,15 +3,19 @@ use async_trait::async_trait;
 
 // #[derive(PartialEq, Debug, Eq, Clone, Copy, PartialOrd, Ord, Hash)]
 
+#[derive(serde::Deserialize, serde::Serialize)]
 #[derive(Clone)]
 pub struct ParamId(pub usize);
 
+#[derive(serde::Deserialize, serde::Serialize)]
 #[derive(Clone)]
 pub struct ActionId(pub usize);
 
+#[derive(serde::Deserialize, serde::Serialize)]
 #[derive(Clone)]
 pub struct Message(pub String);
 
+#[derive(serde::Deserialize, serde::Serialize)]
 #[derive(Clone)]
 pub struct SplitIndex(pub usize);
 

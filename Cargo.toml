@@ -1,19 +1,23 @@
+build.target-dir = "./target"
+
 [package]
 name = "bricks"
 version = "0.1.0"
 edition = "2021"
+rust-version = "1.76"
 
 [workspace]
 members = [
     "process",
     "type_bitset_process_builder",
+    "graphical_process_builder",
     "process_runner",
 ]
 
 [dependencies]
 process = { path = "process" }
 type_bitset_process_builder = { path = "type_bitset_process_builder" }
-#web_process_builder = { path = "web_process_builder" }
+graphical_process_builder = { path = "graphical_process_builder" }
 process_runner = { path = "process_runner" }
 
 #todo https://doc.rust-lang.org/cargo/reference/workspaces.html
