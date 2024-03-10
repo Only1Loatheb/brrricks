@@ -6,13 +6,13 @@ edition = "2021"
 [workspace]
 members = [
     "process",
-    "typestate_process_builder",
+    "type_bitset_process_builder",
     "process_runner",
 ]
 
 [dependencies]
 process = { path = "process" }
-typestate_process_builder = { path = "typestate_process_builder" }
+type_bitset_process_builder = { path = "type_bitset_process_builder" }
 #web_process_builder = { path = "web_process_builder" }
 process_runner = { path = "process_runner" }
 
