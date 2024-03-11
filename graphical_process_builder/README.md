@@ -39,7 +39,7 @@ The official egui docs are at <https://docs.rs/egui>. If you prefer watching a v
 
 Make sure you are using the latest version of stable rust by running `rustup update`.
 
-`cargo run --release`
+`cargo run --release --package graphical_process_builder`
 
 On Linux you need to first run:
 

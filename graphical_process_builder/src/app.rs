@@ -1,6 +1,6 @@
 use eframe::emath::Pos2;
 use eframe::epaint::Rect;
-use egui::{Key, Label, TextEdit, Vec2, Widget};
+use egui::{Key, Label, TextEdit, Ui, Vec2, Widget};
 use crate::brick::*;
 
 #[derive(serde::Deserialize, serde::Serialize)]
@@ -62,24 +62,27 @@ impl eframe::App for TemplateApp {
     // Put your widgets into a `SidePanel`, `TopBottomPanel`, `CentralPanel`, `Window` or `Area`.
     // For inspiration and more examples, go to https://emilk.github.io/egui
 
-    ctx.input(|i| {
-      println!("1a");
-      if i.pointer.any_pressed() {
-        match ctx.pointer_latest_pos() {
+    egui::CentralPanel::default().show(ctx, |ui| {
+      if ctx.input(|i| i.pointer.primary_pressed()) {
+        match ctx.pointer_interact_pos() {
           None => {
-            println!("aaa");
-            ()
+            println!("aaa")
           }
-          Some(pos) => self.bricks.push(
-            BrickRect {
-              name: "aaa".to_owned(),
-              rect: Rect::from_center_size(pos, BRICK_INIT_SIZE),
-              brick: Default::default(),
-            })
+          Some(pos) => {
+            self.bricks.push(
+              BrickRect {
+                name: "aaa".to_owned(),
+                rect: Rect::from_center_size(pos, BRICK_INIT_SIZE),
+                brick: Default::default(),
+              });
+          }
         }
       }
-    }
-    );
+
+      for mut b in &mut self.bricks {
+        ui.put(b.rect, |ui: &mut Ui| ui.code_editor(&mut b.name));
+      }
+    });
 
     egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
       // The top panel is often a good place for a menu bar:
@@ -93,6 +96,11 @@ impl eframe::App for TemplateApp {
               ctx.send_viewport_cmd(egui::ViewportCommand::Close);
             }
           });
+          ui.menu_button("Clean", |ui| {
+            if ui.button("I am sure").clicked() {
+              self.bricks.clear();
+            }
+          });
           ui.add_space(16.0);
         }
 
@@ -100,11 +108,5 @@ impl eframe::App for TemplateApp {
       });
     });
 
-    egui::CentralPanel::default().show(ctx, |ui| {
-
-      for mut b in &mut self.bricks {
-        ui.allocate_ui_at_rect(b.rect, |ui| ui.code_editor(&mut b.name));
-      }
-    });
   }
 }
