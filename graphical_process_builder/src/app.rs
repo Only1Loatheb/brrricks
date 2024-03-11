@@ -1,6 +1,7 @@
+use std::ops::Not;
 use eframe::emath::Pos2;
-use eframe::epaint::Rect;
-use egui::{Key, Label, TextEdit, Ui, Vec2, Widget};
+use eframe::epaint::{Color32, Rect, Shape};
+use egui::{Key, Label, Order, Stroke, TextEdit, Ui, Vec2, Widget};
 use crate::brick::*;
 
 #[derive(serde::Deserialize, serde::Serialize)]
@@ -17,20 +18,17 @@ const BRICK_INIT_SIZE: Vec2 = Vec2 { x: 100.0, y: 100.0 };
 #[serde(default)] // if we add new fields, give them default values when deserializing old state
 pub struct TemplateApp {
   bricks: Vec<BrickRect>,
-
-  // Example stuff:
-  label: String,
+  edges: Vec<(usize, usize)>,
   #[serde(skip)] // This how you opt-out of serialization of a field
-  value: f32,
+  edge_start: Option<usize>,
 }
 
 impl Default for TemplateApp {
   fn default() -> Self {
     Self {
       bricks: vec![],
-      // Example stuff:
-      label: "Hello World!".to_owned(),
-      value: 2.7,
+      edges: vec![],
+      edge_start: None,
     }
   }
 }
@@ -43,13 +41,15 @@ impl TemplateApp {
 
     // Load previous app state (if any).
     // Note that you must enable the `persistence` feature for this to work.
-    if let Some(storage) = cc.storage {
-      return eframe::get_value(storage, eframe::APP_KEY).unwrap_or_default();
-    }
+    // if let Some(storage) = cc.storage {
+    //   return eframe::get_value(storage, eframe::APP_KEY).unwrap_or_default();
+    // }
 
     Default::default()
   }
 }
+
+static line: Stroke = Stroke{ width: 10.0, color: Color32::LIGHT_BLUE };
 
 impl eframe::App for TemplateApp {
   /// Called by the frame work to save state before shutdown.
@@ -63,7 +63,21 @@ impl eframe::App for TemplateApp {
     // For inspiration and more examples, go to https://emilk.github.io/egui
 
     egui::CentralPanel::default().show(ctx, |ui| {
-      if ctx.input(|i| i.pointer.primary_pressed()) {
+      for b in &mut self.bricks.iter_mut(){
+          ui.put(b.rect, |ui: &mut Ui| {
+            ui.code_editor(&mut b.name)
+          }
+        );
+      }
+      ui.painter().add(Shape::Vec(self.edges.iter().map(|x| {
+        Shape::LineSegment {
+          points: [self.bricks[x.0].rect.center_bottom(), self.bricks[x.1].rect.center_top()],
+          stroke: line,
+        }
+      }).collect()));
+
+      if ctx.is_context_menu_open().not()
+        && ctx.input(|i| i.pointer.primary_pressed()) {
         match ctx.pointer_interact_pos() {
           None => {
             println!("aaa")
@@ -78,12 +92,7 @@ impl eframe::App for TemplateApp {
           }
         }
       }
-
-      for mut b in &mut self.bricks {
-        ui.put(b.rect, |ui: &mut Ui| ui.code_editor(&mut b.name));
-      }
     });
-
     egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
       // The top panel is often a good place for a menu bar:
 
@@ -99,6 +108,7 @@ impl eframe::App for TemplateApp {
           ui.menu_button("Clean", |ui| {
             if ui.button("I am sure").clicked() {
               self.bricks.clear();
+              self.edges.clear();
             }
           });
           ui.add_space(16.0);
@@ -107,6 +117,5 @@ impl eframe::App for TemplateApp {
         egui::widgets::global_dark_light_mode_buttons(ui);
       });
     });
-
   }
 }
