@@ -1,7 +1,7 @@
 use std::ops::Not;
 use eframe::emath::Pos2;
 use eframe::epaint::{Color32, Rect, Shape};
-use egui::{Key, Label, Order, Stroke, TextEdit, Ui, Vec2, Widget};
+use egui::{Key, Label, Order, PointerButton, Stroke, TextEdit, Ui, Vec2, Widget};
 use crate::brick::*;
 
 #[derive(serde::Deserialize, serde::Serialize)]
@@ -9,6 +9,7 @@ struct BrickRect {
   name: String,
   rect: Rect,
   brick: Brick,
+  uuid: usize,
 }
 
 const BRICK_INIT_SIZE: Vec2 = Vec2 { x: 100.0, y: 100.0 };
@@ -21,6 +22,7 @@ pub struct TemplateApp {
   edges: Vec<(usize, usize)>,
   #[serde(skip)] // This how you opt-out of serialization of a field
   edge_start: Option<usize>,
+  next_brick_uuid: usize,
 }
 
 impl Default for TemplateApp {
@@ -29,6 +31,7 @@ impl Default for TemplateApp {
       bricks: vec![],
       edges: vec![],
       edge_start: None,
+      next_brick_uuid: 0,
     }
   }
 }
@@ -49,7 +52,8 @@ impl TemplateApp {
   }
 }
 
-static line: Stroke = Stroke{ width: 10.0, color: Color32::LIGHT_BLUE };
+static line: Stroke = Stroke { width: 10.0, color: Color32::LIGHT_BLUE };
+const edge_draw_button: PointerButton = PointerButton::Primary;
 
 impl eframe::App for TemplateApp {
   /// Called by the frame work to save state before shutdown.
@@ -63,12 +67,18 @@ impl eframe::App for TemplateApp {
     // For inspiration and more examples, go to https://emilk.github.io/egui
 
     egui::CentralPanel::default().show(ctx, |ui| {
-      for b in &mut self.bricks.iter_mut(){
+      self.bricks.retain_mut(|b|
+        {
+          let mut keep = true;
           ui.put(b.rect, |ui: &mut Ui| {
-            ui.code_editor(&mut b.name)
-          }
-        );
-      }
+            let brick_script_editor = ui.code_editor(&mut b.name);
+            keep = brick_script_editor.clicked_by(PointerButton::Secondary).not();
+            brick_script_editor
+          },
+          );
+          keep
+        }
+      );
       ui.painter().add(Shape::Vec(self.edges.iter().map(|x| {
         Shape::LineSegment {
           points: [self.bricks[x.0].rect.center_bottom(), self.bricks[x.1].rect.center_top()],
@@ -76,19 +86,42 @@ impl eframe::App for TemplateApp {
         }
       }).collect()));
 
+      // if ctx.drag_started_by(edge_draw_button) {
+      //   println!("start edge");
+      //   self.edge_start = Some(b.uuid);
+      // }
+      // if brick_script_editor.drag_released_by(edge_draw_button) {
+      //   match self.edge_start {
+      //     Some(uuid) if uuid != b.uuid => {
+      //       println!("draw edge");
+      //       self.edges.push((uuid, b.uuid));
+      //     }
+      //     _ => {
+      //       println!("not draw edge");
+      //     }
+      //   }
+      //   self.edge_start = None;
+      // }
       if ctx.is_context_menu_open().not()
+        && ctx.wants_keyboard_input().not()
         && ctx.input(|i| i.pointer.primary_pressed()) {
         match ctx.pointer_interact_pos() {
-          None => {
-            println!("aaa")
+          Some(pos) if ctx.layer_id_at(pos).is_some_and(|x|x.order != Order::Background) => {
+            println!("over something")
           }
           Some(pos) => {
+            println!("create brick");
             self.bricks.push(
               BrickRect {
                 name: "aaa".to_owned(),
                 rect: Rect::from_center_size(pos, BRICK_INIT_SIZE),
                 brick: Default::default(),
+                uuid: self.next_brick_uuid,
               });
+            self.next_brick_uuid += 1;
+          }
+          None => {
+            println!("not create brick")
           }
         }
       }
