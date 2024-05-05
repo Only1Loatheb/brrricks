@@ -29,13 +29,13 @@ struct RunnableFinalBrick {
     internal_final_brick: InternalFinalBrick,
 }
 
-///
-///
-/// debug_assert!(next_brick_index < size_of_brick_array)
-/// unsafe {
-///   if next_brick_index >= size_of_brick_array {
-///    std::hint::unreachable_unchecked()
-///    }
-/// }
-///
-///
+//
+//
+// debug_assert!(next_brick_index < size_of_brick_array)
+// unsafe {
+//   if next_brick_index >= size_of_brick_array {
+//    std::hint::unreachable_unchecked()
+//    }
+// }
+//
+//
