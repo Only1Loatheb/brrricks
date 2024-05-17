@@ -41,7 +41,6 @@ pub enum InternalFlowingProcess {
 }
 
 pub enum InternalFinalizedProcess {
-  One(InternalFinalBrick),
   Flowing(InternalFinalBrick, InternalFlowingProcess),
   Split(Box<InternalFinalizedSplitProcess>),
 }

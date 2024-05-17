@@ -50,7 +50,7 @@ pub fn finnish<
   brick: FinalBrick<BRICK_CONSUMES, BRICK_REQUIRES, BRICK_FORBIDS, BRICK_ACCOMPLISHES>,
 ) -> FinalizedProcess<BRICK_CONSUMES, BRICK_REQUIRES, BRICK_FORBIDS, EMPTY, BRICK_ACCOMPLISHES> {
   FinalizedProcess {
-    process: InternalFinalizedProcess::One(brick.to_internal()),
+    process: InternalFinalizedProcess::Flowing(brick.to_internal(), InternalFlowingProcess::Empty),
     consumes: Default::default(),
     requires: Default::default(),
     forbids: Default::default(),
