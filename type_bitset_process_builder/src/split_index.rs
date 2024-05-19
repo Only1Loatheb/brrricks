@@ -1,35 +1,33 @@
 use std::marker::PhantomData;
-use typenum::{IsLessOrEqual, NonZero, Unsigned};
 
-pub struct SplitIndex<MaxSplitIndex: Unsigned> {
-    value: usize,
-    max_split_size: PhantomData<MaxSplitIndex>,
+use typenum::{IsLess, NonZero, Unsigned};
+
+#[derive(Clone)]
+pub struct TypeSplitIndex<CASES_LEN: Unsigned> {
+  value: usize,
+  cases_len: PhantomData<CASES_LEN>,
 }
 
-impl<MaxSplitIndex: Unsigned> SplitIndex<MaxSplitIndex> {
-    pub fn new(value: usize) -> Option<SplitIndex<MaxSplitIndex>> {
-        if value <= MaxSplitIndex::USIZE {
-            Some(SplitIndex {
-                value,
-                max_split_size: Default::default(),
-            })
-        } else {
-            None
-        }
+impl<CASES_LEN: Unsigned> TypeSplitIndex<CASES_LEN> {
+  pub fn new(value: usize) -> Option<TypeSplitIndex<CASES_LEN>> {
+    if value < CASES_LEN::USIZE {
+      Some(TypeSplitIndex { value, cases_len: Default::default() })
+    } else {
+      None
     }
+  }
 
-    pub fn new_const<SplitIndexValue: Unsigned + IsLessOrEqual<MaxSplitIndex>>(
-    ) -> SplitIndex<MaxSplitIndex>
-    where
-        SplitIndexValue::Output: NonZero,
-    {
-        SplitIndex {
-            value: SplitIndexValue::USIZE,
-            max_split_size: Default::default(),
-        }
+  pub fn new_const<TypeSplitIndexValue: Unsigned + IsLess<CASES_LEN>>() -> TypeSplitIndex<CASES_LEN>
+  where
+    TypeSplitIndexValue::Output: NonZero,
+  {
+    TypeSplitIndex {
+      value: TypeSplitIndexValue::USIZE,
+      cases_len: Default::default(),
     }
+  }
 
-    pub fn get(&self) -> usize {
-        self.value
-    }
+  pub fn get(&self) -> usize {
+    self.value
+  }
 }

@@ -40,7 +40,7 @@ impl Default for TemplateApp {
 }
 
 static line: Stroke = Stroke { width: 1.0, color: Color32::LIGHT_BLUE };
-const edge_draw_button: PointerButton = PointerButton::Primary;
+const EDGE_DRAW_BUTTON: PointerButton = PointerButton::Primary;
 
 impl TemplateApp {
   /// Called once before the first frame.
@@ -91,7 +91,7 @@ impl TemplateApp {
       ui.put(brick_model.rect, |ui: &mut Ui| {
         let brick_script_editor = ui.code_editor(&mut brick_model.name);
         keep = brick_script_editor.clicked_by(PointerButton::Secondary).not();
-        if brick_script_editor.drag_started_by(edge_draw_button) {
+        if brick_script_editor.drag_started_by(EDGE_DRAW_BUTTON) {
           println!("start edge");
           self.edge_start = Some((brick_model.rect.center_bottom(), brick_model.uuid));
         }

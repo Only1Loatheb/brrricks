@@ -1,6 +1,6 @@
 use async_trait::async_trait;
+
 use process::brick_domain::{FinalBrickHandler, InputParams, LinearBrickHandler, LinearOutput, Message, ParamId, SplitterBrickHandler, SplitterOutput};
-use crate::TemplateApp;
 
 #[derive(serde::Deserialize, serde::Serialize)]
 pub enum Brick {

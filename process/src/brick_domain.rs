@@ -25,9 +25,11 @@ pub struct InputParams(pub HashMap<ParamId, serde_json::value::Value>);
 #[derive(Clone)]
 pub struct OutputParams(pub HashMap<ParamId, serde_json::value::Value>);
 
+// process breaking requires explicit split with final brick
 #[derive(Clone)]
 pub struct LinearOutput(pub Option<Message>, pub OutputParams);
 
+// process breaking requires explicit split with final brick
 #[derive(Clone)]
 pub struct SplitterOutput(pub SplitIndex, pub OutputParams);
 

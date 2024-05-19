@@ -3,11 +3,11 @@ use std::ops::*;
 
 use typenum::*;
 use typenum::private::IsGreaterPrivate;
+use async_trait::async_trait;
 
 use process::brick_domain::*;
 use process::internal_brick::*;
-use crate::brick;
-
+use crate::split_index::TypeSplitIndex;
 
 // #[derive(PartialEq, Debug, Eq, Clone, Copy, PartialOrd, Ord, Hash)]
 
@@ -107,6 +107,14 @@ impl<
   }
 }
 
+#[derive(Clone)]
+pub struct TypeSplitterOutput<CASES_LEN: Unsigned>(pub TypeSplitIndex<CASES_LEN>, pub OutputParams);
+
+#[async_trait]
+pub trait TypeSplitterBrickHandler<CASES_LEN: Unsigned>: Send + Sync {
+    async fn handle(&self, input: InputParams) -> anyhow::Result<TypeSplitterOutput<CASES_LEN>>;
+}
+
 // consider https://github.com/rust-phf/rust-phf for SplitIndex
 pub struct SplitterBrick<
   CONSUMES: ParamBitSet,
@@ -123,7 +131,17 @@ pub struct SplitterBrick<
   pub requires_prior_completion: PhantomData<REQUIRES>,
   pub forbids_prior_completion: PhantomData<FORBIDS>,
   pub produces_and_accomplishes: PhantomData<PRODUCES_AND_ACCOMPLISHES>,
-  pub handler: Box<dyn SplitterBrickHandler>,
+  pub handler: Box<dyn TypeSplitterBrickHandler<Length<PRODUCES_AND_ACCOMPLISHES>>>,
+}
+
+#[async_trait]
+impl<CASES_LEN: Unsigned> SplitterBrickHandler for dyn TypeSplitterBrickHandler<CASES_LEN>
+where
+{
+  async fn handle(&self, input: InputParams) -> anyhow::Result<SplitterOutput> {
+    let result = self.handle(input).await?;
+    anyhow::Ok(SplitterOutput(SplitIndex(result.0.get()), result.1))
+  }
 }
 
 impl<
@@ -142,7 +160,7 @@ where
       name: self.name,
       consumes: CONSUMES::get().0,
       produces: PRODUCES_AND_ACCOMPLISHES::get(),
-      handler: self.handler,
+      handler: Box::new(self.handler) as Box<dyn SplitterBrickHandler>,
     }
   }
 }
