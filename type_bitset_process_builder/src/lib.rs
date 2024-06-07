@@ -31,8 +31,8 @@ pub mod process_builder {
   struct Splitter;
 
   #[async_trait]
-  impl SplitterBrickHandler for Splitter {
-    async fn handle(&self, input: InputParams) -> anyhow::Result<SplitterOutput> {
+  impl TypeSplitterBrickHandler<U3> for Splitter {
+    async fn handle(&self, input: InputParams) -> anyhow::Result<TypeSplitterOutput<U3>> {
       todo!()
     }
   }

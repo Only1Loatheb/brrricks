@@ -134,12 +134,20 @@ pub struct SplitterBrick<
   pub handler: Box<dyn TypeSplitterBrickHandler<Length<PRODUCES_AND_ACCOMPLISHES>>>,
 }
 
+struct TypeSplitterBrickHandlerAdapter<CASES_LEN: Unsigned> {
+    inner: Box<dyn TypeSplitterBrickHandler<CASES_LEN>>,
+}
+
+impl<CASES_LEN: Unsigned> TypeSplitterBrickHandlerAdapter<CASES_LEN> {
+    fn new(inner: Box<dyn TypeSplitterBrickHandler<CASES_LEN>>) -> Self {
+        Self { inner }
+    }
+}
+
 #[async_trait]
-impl<CASES_LEN: Unsigned> SplitterBrickHandler for dyn TypeSplitterBrickHandler<CASES_LEN>
-where
-{
+impl<CASES_LEN: Unsigned> SplitterBrickHandler for TypeSplitterBrickHandlerAdapter<CASES_LEN> {
   async fn handle(&self, input: InputParams) -> anyhow::Result<SplitterOutput> {
-    let result = self.handle(input).await?;
+    let result = self.inner.handle(input).await?;
     anyhow::Ok(SplitterOutput(SplitIndex(result.0.get()), result.1))
   }
 }
@@ -160,7 +168,7 @@ where
       name: self.name,
       consumes: CONSUMES::get().0,
       produces: PRODUCES_AND_ACCOMPLISHES::get(),
-      handler: Box::new(self.handler) as Box<dyn SplitterBrickHandler>,
+      handler: Box::new(TypeSplitterBrickHandlerAdapter::new(self.handler)),
     }
   }
 }
