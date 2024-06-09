@@ -4,7 +4,7 @@ use crate::brick_domain::*;
 
 pub struct InternalLinearBrick {
   pub name: String,
-  pub consumes: Vec<ParamId>,
+  pub uses: Vec<ParamId>,
   pub produces: Vec<ParamId>,
   pub handler: Box<dyn LinearBrickHandler>,
 }
@@ -12,13 +12,13 @@ pub struct InternalLinearBrick {
 // consider https://github.com/rust-phf/rust-phf for SplitIndex
 pub struct InternalSplitterBrick {
   pub name: String,
-  pub consumes: Vec<ParamId>,
+  pub uses: Vec<ParamId>,
   pub produces: Vec<Vec<ParamId>>,
   pub handler: Box<dyn SplitterBrickHandler>,
 }
 
 pub struct InternalFinalBrick {
   pub name: String,
-  pub consumes: Vec<ParamId>,
+  pub uses: Vec<ParamId>,
   pub handler: Box<dyn FinalBrickHandler>,
 }

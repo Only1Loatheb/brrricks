@@ -3,34 +3,34 @@ use crate::internal_brick::*;
 // builder has to take care of having at least 2 cases
 pub enum InternalFinalizedSplitProcess {
   FirstCase {
-    brick: InternalSplitterBrick,
+    splitter_brick: InternalSplitterBrick,
     first_cases: InternalFinalizedProcess,
     process_before: InternalFlowingProcess,
   },
   NextCase {
     next_case: InternalFinalizedProcess,
-    process_before: Box<InternalFinalizedSplitProcess>,
+    split_process_before: Box<InternalFinalizedSplitProcess>,
   },
 }
 
 // builder has to take care of having at least 2 cases
 pub enum InternalFlowingSplitProcess {
   FirstCase {
-    brick: InternalSplitterBrick,
+    splitter_brick: InternalSplitterBrick,
     first_case: InternalFlowingProcess,
     process_before: InternalFlowingProcess,
   },
   NextCase {
     next_case: InternalFlowingProcess,
-    process_before: Box<InternalFinalizedSplitProcess>,
+    split_process_before: Box<InternalFinalizedSplitProcess>,
   },
   NextCaseFlowing {
     next_case: InternalFlowingProcess,
-    process_before: Box<InternalFlowingSplitProcess>,
+    split_process_before: Box<InternalFlowingSplitProcess>,
   },
   NextCaseFinalized {
     next_case: InternalFinalizedProcess,
-    process_before: Box<InternalFlowingSplitProcess>,
+    split_process_before: Box<InternalFlowingSplitProcess>,
   },
 }
 

@@ -42,14 +42,22 @@ impl RunnableProcess {
       }
       InternalFlowingProcess::Linear(linear_brick, rest) => {
         let idx = process.add_linear_brick(linear_brick, NextBrickTransition { next_brick: RunnableBrickIndex(idx) });
-        process
+        process.continue_flowing(idx, rest)
       }
-      InternalFlowingProcess::Split(FlowingSplitProcess) => {
-        match *FlowingSplitProcess {
-          InternalFlowingSplitProcess::FirstCase { .. } => {}
-          InternalFlowingSplitProcess::NextCase { .. } => {}
-          InternalFlowingSplitProcess::NextCaseFlowing { .. } => {}
-          InternalFlowingSplitProcess::NextCaseFinalized { .. } => {}
+      InternalFlowingProcess::Split(flowing_split_process) => {
+        match *flowing_split_process {
+          InternalFlowingSplitProcess::FirstCase { splitter_brick, first_case, process_before } => {
+
+          }
+          InternalFlowingSplitProcess::NextCase { next_case, split_process_before } => {
+
+          }
+          InternalFlowingSplitProcess::NextCaseFlowing { next_case, split_process_before } => {
+
+          }
+          InternalFlowingSplitProcess::NextCaseFinalized { next_case, split_process_before } => {
+
+          }
         }
         process
       }

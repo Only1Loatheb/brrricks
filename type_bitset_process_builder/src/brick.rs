@@ -75,14 +75,14 @@ where
 }
 
 pub struct LinearBrick<
-  CONSUMES: ParamBitSet,
+  USES: ParamBitSet,
   REQUIRES: Unsigned,
   FORBIDS: Unsigned,
   PRODUCES: ParamBitSet,
   ACCOMPLISHES: Unsigned,
 > {
   pub name: String,
-  pub consumes: PhantomData<CONSUMES>,
+  pub uses: PhantomData<USES>,
   pub requires_prior_completion: PhantomData<REQUIRES>,
   pub forbids_prior_completion: PhantomData<FORBIDS>,
   pub produces: PhantomData<PRODUCES>,
@@ -91,16 +91,16 @@ pub struct LinearBrick<
 }
 
 impl<
-  CONSUMES: ParamBitSet,
+  USES: ParamBitSet,
   REQUIRES: Unsigned,
   FORBIDS: Unsigned,
   PRODUCES: ParamBitSet,
   ACCOMPLISHES: Unsigned,
-> LinearBrick<CONSUMES, REQUIRES, FORBIDS, PRODUCES, ACCOMPLISHES> {
+> LinearBrick<USES, REQUIRES, FORBIDS, PRODUCES, ACCOMPLISHES> {
   pub(crate) fn to_internal(self) -> InternalLinearBrick {
     InternalLinearBrick {
       name: self.name,
-      consumes: CONSUMES::get().0,
+      uses: USES::get().0,
       produces: PRODUCES::get().0,
       handler: self.handler,
     }
@@ -117,7 +117,7 @@ pub trait TypeSplitterBrickHandler<CASES_LEN: Unsigned>: Send + Sync {
 
 // consider https://github.com/rust-phf/rust-phf for SplitIndex
 pub struct SplitterBrick<
-  CONSUMES: ParamBitSet,
+  USES: ParamBitSet,
   REQUIRES: Unsigned,
   FORBIDS: Unsigned,
   PRODUCES_AND_ACCOMPLISHES: CaseArray + Len,
@@ -127,7 +127,7 @@ pub struct SplitterBrick<
   Gr<Length<PRODUCES_AND_ACCOMPLISHES>, U1>: NonZero,                                                 // split has more than one case
 {
   pub name: String,
-  pub consumes: PhantomData<CONSUMES>,
+  pub uses: PhantomData<USES>,
   pub requires_prior_completion: PhantomData<REQUIRES>,
   pub forbids_prior_completion: PhantomData<FORBIDS>,
   pub produces_and_accomplishes: PhantomData<PRODUCES_AND_ACCOMPLISHES>,
@@ -153,11 +153,11 @@ impl<CASES_LEN: Unsigned> SplitterBrickHandler for TypeSplitterBrickHandlerAdapt
 }
 
 impl<
-  CONSUMES: ParamBitSet,
+  USES: ParamBitSet,
   REQUIRES: Unsigned,
   FORBIDS: Unsigned,
   PRODUCES_AND_ACCOMPLISHES: CaseArray + Len,
-> SplitterBrick<CONSUMES, REQUIRES, FORBIDS, PRODUCES_AND_ACCOMPLISHES>
+> SplitterBrick<USES, REQUIRES, FORBIDS, PRODUCES_AND_ACCOMPLISHES>
 where
   Length<PRODUCES_AND_ACCOMPLISHES>: Cmp<U1>,
   Length<PRODUCES_AND_ACCOMPLISHES>: IsGreaterPrivate<U1, <Length<PRODUCES_AND_ACCOMPLISHES> as Cmp<U1>>::Output>,
@@ -166,7 +166,7 @@ where
   pub(crate) fn to_internal(self) -> InternalSplitterBrick {
     InternalSplitterBrick {
       name: self.name,
-      consumes: CONSUMES::get().0,
+      uses: USES::get().0,
       produces: PRODUCES_AND_ACCOMPLISHES::get(),
       handler: Box::new(TypeSplitterBrickHandlerAdapter::new(self.handler)),
     }
@@ -174,13 +174,13 @@ where
 }
 
 pub struct FinalBrick<
-  CONSUMES: ParamBitSet,
+  USES: ParamBitSet,
   REQUIRES: Unsigned,
   FORBIDS: Unsigned,
   ACCOMPLISHES: Unsigned,
 > {
   pub name: String,
-  pub consumes: PhantomData<CONSUMES>,
+  pub uses: PhantomData<USES>,
   pub requires_prior_completion: PhantomData<REQUIRES>,
   pub forbids_prior_completion: PhantomData<FORBIDS>,
   pub accomplishes: PhantomData<ACCOMPLISHES>,
@@ -188,15 +188,15 @@ pub struct FinalBrick<
 }
 
 impl<
-  CONSUMES: ParamBitSet,
+  USES: ParamBitSet,
   REQUIRES: Unsigned,
   FORBIDS: Unsigned,
   ACCOMPLISHES: Unsigned,
-> FinalBrick<CONSUMES, REQUIRES, FORBIDS, ACCOMPLISHES> {
+> FinalBrick<USES, REQUIRES, FORBIDS, ACCOMPLISHES> {
   pub(crate) fn to_internal(self) -> InternalFinalBrick {
     InternalFinalBrick {
       name: self.name,
-      consumes: CONSUMES::get().0,
+      uses: USES::get().0,
       handler: self.handler,
     }
   }

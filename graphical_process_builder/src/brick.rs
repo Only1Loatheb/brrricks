@@ -5,17 +5,17 @@ use process::brick_domain::{FinalBrickHandler, InputParams, LinearBrickHandler, 
 #[derive(serde::Deserialize, serde::Serialize)]
 pub enum Brick {
   LinearBrick {
-    consumes: Vec<ParamId>,
+    uses: Vec<ParamId>,
     produces: Vec<ParamId>,
     handler: Box<Linear>,
   },
   SplitterBrick {
-    consumes: Vec<ParamId>,
+    uses: Vec<ParamId>,
     produces: Vec<Vec<ParamId>>,
     handler: Box<Splitter>,
   },
   FinalBrick {
-    consumes: Vec<ParamId>,
+    uses: Vec<ParamId>,
     handler: Box<Final>,
   },
 }
@@ -24,7 +24,7 @@ pub enum Brick {
 impl Default for Brick {
     fn default() -> Self {
         Brick::LinearBrick {
-          consumes: vec![],
+          uses: vec![],
           produces: vec![],
           handler: Box::new(Linear),
         }

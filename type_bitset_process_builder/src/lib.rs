@@ -16,7 +16,7 @@ pub mod process_builder {
   use crate::builder::*;
   use crate::builder_helpers::*;
 
-  // assert_type_eq!(Consumes, U33);
+  // assert_type_eq!(Uses, U33);
   // assert_type_eq!(op!(U1 << U256), op!(pow(U2, U256)));
 
   struct Linear;
@@ -54,7 +54,7 @@ pub mod process_builder {
   pub fn get_simple_process() {
     let entry = LinearBrick {
       name: "Entry".to_string(),
-      consumes: PhantomData::<EMPTY>,
+      uses: PhantomData::<EMPTY>,
       requires_prior_completion: PhantomData::<EMPTY>,
       forbids_prior_completion: PhantomData::<EMPTY>,
       produces: PhantomData::<Msisdn>,
@@ -63,7 +63,7 @@ pub mod process_builder {
     };
     let linear = LinearBrick {
       name: "Linear".to_string(),
-      consumes: PhantomData::<EMPTY>,
+      uses: PhantomData::<EMPTY>,
       requires_prior_completion: PhantomData::<EMPTY>,
       forbids_prior_completion: PhantomData::<EMPTY>,
       produces: PhantomData::<EMPTY>,
@@ -72,7 +72,7 @@ pub mod process_builder {
     };
     let linear2 = LinearBrick {
       name: "Linear".to_string(),
-      consumes: PhantomData::<EMPTY>,
+      uses: PhantomData::<EMPTY>,
       requires_prior_completion: PhantomData::<EMPTY>,
       forbids_prior_completion: PhantomData::<EMPTY>,
       produces: PhantomData::<EMPTY>,
@@ -81,7 +81,7 @@ pub mod process_builder {
     };
     let linear3 = LinearBrick {
       name: "Linear".to_string(),
-      consumes: PhantomData::<EMPTY>,
+      uses: PhantomData::<EMPTY>,
       requires_prior_completion: PhantomData::<EMPTY>,
       forbids_prior_completion: PhantomData::<EMPTY>,
       produces: PhantomData::<EMPTY>,
@@ -90,7 +90,7 @@ pub mod process_builder {
     };
     let splitter = SplitterBrick {
       name: "Splitter".to_string(),
-      consumes: PhantomData::<EMPTY>,
+      uses: PhantomData::<EMPTY>,
       requires_prior_completion: PhantomData::<EMPTY>,
       forbids_prior_completion: PhantomData::<EMPTY>,
       produces_and_accomplishes: PhantomData::<TArr<(EMPTY, EMPTY), TArr<(EMPTY, EMPTY), TArr<(EMPTY, EMPTY), ATerm>>>>,
@@ -98,7 +98,7 @@ pub mod process_builder {
     };
     let last = FinalBrick {
       name: "Final".to_string(),
-      consumes: PhantomData::<Msisdn>,
+      uses: PhantomData::<Msisdn>,
       requires_prior_completion: PhantomData::<SessionCharge>,
       forbids_prior_completion: PhantomData::<BoEventSent>,
       accomplishes: PhantomData::<EMPTY>,
