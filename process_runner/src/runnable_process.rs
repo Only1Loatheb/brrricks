@@ -28,62 +28,76 @@ impl RunnableProcess {
     };
     match named_process.process {
       InternalFinalizedProcess::Flowing(finalBrick, rest) => {
-        let idx = process.add_final_brick(finalBrick);
-        process.continue_flowing(idx, rest)
+        let next_brick_idx = RunnableProcess::add_final_brick(&mut process, finalBrick);
+        process.add_process(next_brick_idx, rest)
       }
       InternalFinalizedProcess::Split(_) => { todo!("handle split at the end of the process") }
     }
   }
 
-  fn continue_flowing(mut process: Self, idx: usize, rest: InternalFlowingProcess) -> RunnableProcess {
+  fn add_process(mut self, next_brick_idx: usize, rest: InternalFlowingProcess) -> RunnableProcess {
     match rest {
       InternalFlowingProcess::Empty => {
-        process
+        self
       }
       InternalFlowingProcess::Linear(linear_brick, rest) => {
-        let idx = process.add_linear_brick(linear_brick, NextBrickTransition { next_brick: RunnableBrickIndex(idx) });
-        process.continue_flowing(idx, rest)
+        let this_brick_idx = self.add_linear_brick(
+          linear_brick,
+          NextBrickTransition { next_brick: RunnableBrickIndex(next_brick_idx) },
+        );
+        self.add_process(this_brick_idx, *rest)
       }
       InternalFlowingProcess::Split(flowing_split_process) => {
-        match *flowing_split_process {
-          InternalFlowingSplitProcess::FirstCase { splitter_brick, first_case, process_before } => {
-
-          }
-          InternalFlowingSplitProcess::NextCase { next_case, split_process_before } => {
-
-          }
-          InternalFlowingSplitProcess::NextCaseFlowing { next_case, split_process_before } => {
-
-          }
-          InternalFlowingSplitProcess::NextCaseFinalized { next_case, split_process_before } => {
-
-          }
-        }
-        process
+        self.add_split_process(*flowing_split_process, next_brick_idx)
       }
     }
   }
 
-  fn add_linear_brick(process: &mut Self, linear_brick: InternalLinearBrick, next: NextBrickTransition) -> usize {
-    let this = process.runnable_bricks.len();
-    process.runnable_bricks.push(RunnableLinearBrick(linear_brick, next));
-    this
+  fn add_split_process(mut self, flowing_split_process: InternalFlowingSplitProcess, after_split_brick_index: usize) ->
+  RunnableProcess {
+    match flowing_split_process {
+      InternalFlowingSplitProcess::FirstCase { splitter_brick, first_case, process_before } => {
+        assert!(false, "only one option in split, use linear process instead");
+        let mut runnable_process = self.add_process(after_split_brick_index, first_case);
+        let len = runnable_process.runnable_bricks.len();
+        let next_brick_idx = runnable_process.add_splitter_brick(
+          splitter_brick,
+          vec![NextBrickTransition { next_brick: RunnableBrickIndex(len) }],
+        );
+        runnable_process.add_process(next_brick_idx, process_before)
+      }
+      InternalFlowingSplitProcess::NextCase { next_case, split_process_before } => {
+        self
+      }
+      InternalFlowingSplitProcess::NextCaseFlowing { next_case, split_process_before } => {
+        self
+      }
+      InternalFlowingSplitProcess::NextCaseFinalized { next_case, split_process_before } => {
+        self
+      }
+    }
+  }
+
+  fn add_linear_brick(&mut self, linear_brick: InternalLinearBrick, next: NextBrickTransition) -> usize {
+    let this_brick_idx = self.runnable_bricks.len();
+    self.runnable_bricks.push(RunnableLinearBrick(linear_brick, next));
+    this_brick_idx
   }
 
   fn add_splitter_brick(
-    process: &mut Self,
+    &mut self,
     splitter_brick: InternalSplitterBrick,
     next_brick_transitions: Vec<NextBrickTransition>,
   ) -> usize {
-    let this = process.runnable_bricks.len();
-    process.runnable_bricks.push(RunnableSplitterBrick(splitter_brick, next_brick_transitions));
-    this
+    let this_brick_idx = self.runnable_bricks.len();
+    self.runnable_bricks.push(RunnableSplitterBrick(splitter_brick, next_brick_transitions));
+    this_brick_idx
   }
 
-  fn add_final_brick(process: &mut Self, final_brick: InternalFinalBrick) -> usize {
-    let this = process.runnable_bricks.len();
-    process.runnable_bricks.push(RunnableFinalBrick(final_brick));
-    this
+  fn add_final_brick(&mut self, final_brick: InternalFinalBrick) -> usize {
+    let this_brick_idx = self.runnable_bricks.len();
+    self.runnable_bricks.push(RunnableFinalBrick(final_brick));
+    this_brick_idx
   }
 }
 
