@@ -4,14 +4,11 @@ use crate::brick::*;
 use crate::builder::*;
 use process::internal_process::{InternalFinalizedProcess, InternalFlowingProcess};
 
-pub fn empty_process() -> FlowingProcess<EMPTY, EMPTY, EMPTY, EMPTY, EMPTY> {
+pub fn empty_process<'same_process>() -> FlowingProcess<'same_process> {
   FlowingProcess {
     process: InternalFlowingProcess::Empty,
-    uses: Default::default(),
-    requires: Default::default(),
-    forbids: Default::default(),
-    produces: Default::default(),
-    accomplishes: Default::default(),
+    next_param_id: 0,
+    same_process_invariant: Default::default(),
   }
 }
 

@@ -2,8 +2,8 @@
 
 pub mod brick;
 pub mod builder;
-pub(crate) mod split_index;
-mod builder_helpers;
+pub mod builder_helpers;
+pub mod split_index;
 
 pub mod process_builder {
   use std::marker::PhantomData;

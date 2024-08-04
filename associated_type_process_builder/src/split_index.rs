@@ -10,11 +10,7 @@ pub struct TypeSplitIndex<CASES_LEN: Unsigned> {
 
 impl<CASES_LEN: Unsigned> TypeSplitIndex<CASES_LEN> {
   pub fn new(value: usize) -> Option<TypeSplitIndex<CASES_LEN>> {
-    if value < CASES_LEN::USIZE {
-      Some(TypeSplitIndex { value, cases_len: Default::default() })
-    } else {
-      None
-    }
+    (value < CASES_LEN::USIZE).then_some(TypeSplitIndex { value, cases_len: Default::default() })
   }
 
   pub fn new_const<TypeSplitIndexValue: Unsigned + IsLess<CASES_LEN>>() -> TypeSplitIndex<CASES_LEN>

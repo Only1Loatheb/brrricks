@@ -6,38 +6,21 @@ use std::ops::*;
 use process::internal_process::*;
 use crate::brick;
 use crate::brick::*;
+use crate::invariant::Invariant;
 
 pub type EMPTY = U0;
 
 pub struct FlowingProcess<
-  USES: ParamBitSet,
-  REQUIRES: Unsigned,
-  FORBIDS: Unsigned,
-  PRODUCES: ParamBitSet,
-  ACCOMPLISHES: Unsigned,
+  'same_process,
 > {
   pub(crate) process: InternalFlowingProcess,
-  pub(crate) uses: PhantomData<USES>,
-  pub(crate) requires: PhantomData<REQUIRES>,
-  pub(crate) forbids: PhantomData<FORBIDS>,
-  pub(crate) produces: PhantomData<PRODUCES>,
-  pub(crate) accomplishes: PhantomData<ACCOMPLISHES>,
+  pub(crate) next_param_id: usize,
+  pub(crate) same_process_invariant: Invariant<'same_process>,
 }
 
-impl<
-  USES: ParamBitSet,
-  REQUIRES: Unsigned,
-  FORBIDS: Unsigned,
-  PRODUCES: ParamBitSet,
-  ACCOMPLISHES: Unsigned,
-> FlowingProcess<USES, REQUIRES, FORBIDS, PRODUCES, ACCOMPLISHES> {
-  pub fn finnish<
-    BRICK_USES: ParamBitSet + BitOr<USES> + BitAnd<PRODUCES> + Cmp<<BRICK_USES as BitAnd<PRODUCES>>::Output> + IsEqualPrivate<<BRICK_USES as BitAnd<PRODUCES>>::Output, <BRICK_USES as Cmp<<BRICK_USES as BitAnd<PRODUCES>>::Output>>::Output>,
-    BRICK_REQUIRES: Unsigned + BitAnd<ACCOMPLISHES> + BitAnd<PRODUCES> + BitOr<REQUIRES> + Cmp<<BRICK_REQUIRES as BitAnd<ACCOMPLISHES>>::Output> + IsEqualPrivate<<BRICK_REQUIRES as BitAnd<ACCOMPLISHES>>::Output, <BRICK_REQUIRES as Cmp<<BRICK_REQUIRES as BitAnd<ACCOMPLISHES>>::Output>>::Output>,
-    BRICK_FORBIDS: Unsigned + BitOr<ACCOMPLISHES> + BitAnd<ACCOMPLISHES> + BitOr<FORBIDS>,
-    BRICK_ACCOMPLISHES: Unsigned + BitOr<ACCOMPLISHES> + BitAnd<ACCOMPLISHES>,
-  >(
-    self,
+impl<'same_process> FlowingProcess<'same_process> {
+  pub fn finnish(
+    mut self,
     brick: FinalBrick<BRICK_USES, BRICK_REQUIRES, BRICK_FORBIDS, BRICK_ACCOMPLISHES>,
   ) -> FinalizedProcess<
     Or<BRICK_USES, USES>,

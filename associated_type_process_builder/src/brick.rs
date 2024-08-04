@@ -7,9 +7,19 @@ use async_trait::async_trait;
 
 use process::brick_domain::*;
 use process::internal_brick::*;
+use crate::invariant::Invariant;
 use crate::split_index::TypeSplitIndex;
 
 // #[derive(PartialEq, Debug, Eq, Clone, Copy, PartialOrd, Ord, Hash)]
+
+pub struct ProcessParamId<'same_process> {
+  pub(crate) param_id: ParamId,
+  pub(crate) same_process_invariant: Invariant<'same_process>,
+}
+pub struct ProcessParam<'same_process, PARAM_VALUE> {
+  pub(crate) process_param_id: ProcessParamId<>,
+  pub(crate) param: PhantomData<PARAM_VALUE>,
+}
 
 pub trait ParamBitSet: Unsigned {
   fn get() -> (Vec<ParamId>, usize);
@@ -74,33 +84,17 @@ where
   }
 }
 
-pub struct LinearBrick<
-  USES: ParamBitSet,
-  REQUIRES: Unsigned,
-  FORBIDS: Unsigned,
-  PRODUCES: ParamBitSet,
-  ACCOMPLISHES: Unsigned,
-> {
+pub struct LinearBrick<PARAM_VALUE> {
   pub name: String,
-  pub uses: PhantomData<USES>,
-  pub requires_prior_completion: PhantomData<REQUIRES>,
-  pub forbids_prior_completion: PhantomData<FORBIDS>,
-  pub produces: PhantomData<PRODUCES>,
-  pub accomplishes: PhantomData<ACCOMPLISHES>,
+  pub produces: PhantomData<PARAM_VALUE>,
   pub handler: Box<dyn LinearBrickHandler>,
 }
 
-impl<
-  USES: ParamBitSet,
-  REQUIRES: Unsigned,
-  FORBIDS: Unsigned,
-  PRODUCES: ParamBitSet,
-  ACCOMPLISHES: Unsigned,
-> LinearBrick<USES, REQUIRES, FORBIDS, PRODUCES, ACCOMPLISHES> {
-  pub(crate) fn to_internal(self) -> InternalLinearBrick {
+impl<PARAM_VALUE> LinearBrick<PARAM_VALUE> {
+  pub(crate) fn to_internal(self, uses: ParamId) -> InternalLinearBrick {
     InternalLinearBrick {
       name: self.name,
-      uses: USES::get().0,
+      uses: vec![uses],
       produces: PRODUCES::get().0,
       handler: self.handler,
     }
@@ -173,26 +167,12 @@ where
   }
 }
 
-pub struct FinalBrick<
-  USES: ParamBitSet,
-  REQUIRES: Unsigned,
-  FORBIDS: Unsigned,
-  ACCOMPLISHES: Unsigned,
-> {
+pub struct FinalBrick {
   pub name: String,
-  pub uses: PhantomData<USES>,
-  pub requires_prior_completion: PhantomData<REQUIRES>,
-  pub forbids_prior_completion: PhantomData<FORBIDS>,
-  pub accomplishes: PhantomData<ACCOMPLISHES>,
   pub handler: Box<dyn FinalBrickHandler>,
 }
 
-impl<
-  USES: ParamBitSet,
-  REQUIRES: Unsigned,
-  FORBIDS: Unsigned,
-  ACCOMPLISHES: Unsigned,
-> FinalBrick<USES, REQUIRES, FORBIDS, ACCOMPLISHES> {
+impl FinalBrick {
   pub(crate) fn to_internal(self) -> InternalFinalBrick {
     InternalFinalBrick {
       name: self.name,
