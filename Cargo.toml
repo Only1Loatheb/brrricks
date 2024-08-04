@@ -11,6 +11,7 @@ members = [
     "process",
     "type_bitset_process_builder",
     "graphical_process_builder",
+    "associated_type_process_builder",
     "process_runner",
 ]
 
