@@ -12,76 +12,14 @@ use crate::split_index::TypeSplitIndex;
 
 // #[derive(PartialEq, Debug, Eq, Clone, Copy, PartialOrd, Ord, Hash)]
 
-pub struct ProcessParamId<'same_process> {
-  pub(crate) param_id: ParamId,
+
+pub trait ParamValue {
+  fn name() -> ParamId;
+}
+
+pub struct ProcessParam<'same_process, PARAM_VALUE: ParamValue> {
+  pub(crate) param_value: PARAM_VALUE,
   pub(crate) same_process_invariant: Invariant<'same_process>,
-}
-pub struct ProcessParam<'same_process, PARAM_VALUE> {
-  pub(crate) process_param_id: ProcessParamId<>,
-  pub(crate) param: PhantomData<PARAM_VALUE>,
-}
-
-pub trait ParamBitSet: Unsigned {
-  fn get() -> (Vec<ParamId>, usize);
-}
-
-impl ParamBitSet for UTerm {
-  fn get() -> (Vec<ParamId>, usize) {
-    (vec![], 0)
-  }
-}
-
-impl<MORE_SIGNIFICANT_BITS: ParamBitSet, LEAST_SIGNIFICANT_BIT: Bit> ParamBitSet for UInt<MORE_SIGNIFICANT_BITS, LEAST_SIGNIFICANT_BIT> {
-  fn get() -> (Vec<ParamId>, usize) {
-    let (mut vector, mut index) = MORE_SIGNIFICANT_BITS::get();
-    if LEAST_SIGNIFICANT_BIT::to_bool() {
-      vector.push(ParamId(index));
-    }
-    index += 1;
-    (vector, index)
-  }
-}
-
-pub trait CaseArray: TypeArray {
-  type PARAM_UNION: ParamBitSet;
-  type ACTION_UNION: Unsigned;
-  type PARAM_INTERSECTION: ParamBitSet;
-  type ACTION_INTERSECTION: Unsigned;
-  fn get() -> Vec<Vec<ParamId>>;
-}
-
-impl<PARAM_HEAD: ParamBitSet, ACTION_HEAD: Unsigned> CaseArray for TArr<(PARAM_HEAD, ACTION_HEAD), ATerm> {
-  type PARAM_UNION = PARAM_HEAD;
-  type ACTION_UNION = ACTION_HEAD;
-  type PARAM_INTERSECTION = PARAM_HEAD;
-  type ACTION_INTERSECTION = ACTION_HEAD;
-
-  fn get() -> Vec<Vec<ParamId>> {
-    vec![]
-  }
-}
-
-impl<
-  TAIL: CaseArray,
-  PARAM_HEAD: ParamBitSet + BitOr<TAIL::PARAM_UNION> + BitAnd<TAIL::PARAM_INTERSECTION>,
-  ACTION_HEAD: Unsigned + BitOr<TAIL::ACTION_UNION> + BitAnd<TAIL::ACTION_INTERSECTION>,
-> CaseArray for TArr<(PARAM_HEAD, ACTION_HEAD), TAIL>
-where
-  <PARAM_HEAD as BitOr<TAIL::PARAM_UNION>>::Output: ParamBitSet,
-  <ACTION_HEAD as BitOr<TAIL::ACTION_UNION>>::Output: Unsigned,
-  <PARAM_HEAD as BitAnd<TAIL::PARAM_INTERSECTION>>::Output: ParamBitSet,
-  <ACTION_HEAD as BitAnd<TAIL::ACTION_INTERSECTION>>::Output: Unsigned,
-{
-  type PARAM_UNION = Or<PARAM_HEAD, TAIL::PARAM_UNION>;
-  type ACTION_UNION = Or<ACTION_HEAD, TAIL::ACTION_UNION>;
-  type PARAM_INTERSECTION = And<PARAM_HEAD, TAIL::PARAM_INTERSECTION>;
-  type ACTION_INTERSECTION = And<ACTION_HEAD, TAIL::ACTION_INTERSECTION>;
-
-  fn get() -> Vec<Vec<ParamId>> {
-    let mut vector = TAIL::get();
-    vector.push(PARAM_HEAD::get().0);
-    vector
-  }
 }
 
 pub struct LinearBrick<PARAM_VALUE> {
