@@ -1,24 +1,24 @@
 use crate::brick_domain::*;
 
-// #[derive(PartialEq, Debug, Eq, Clone, Copy, PartialOrd, Ord, Hash)]
-
+/// The workhorse of the brick architecture
 pub struct InternalLinearBrick {
-  pub name: String,                           // could be useful for metrics
-  pub uses: Vec<ParamId>,                     // get rid of these, move them to checking
-  pub produces: Vec<ParamId>,                 // get rid of these, move them to checking
+  pub name: String,
+  pub deletes: Vec<ParamId>,
   pub handler: Box<dyn LinearBrickHandler>,
 }
 
-// consider https://github.com/rust-phf/rust-phf for SplitIndex
+/// I think we can safely repeat the common deletes, because most of the params will be deleted before this brick
 pub struct InternalSplitterBrick {
   pub name: String,
-  pub uses: Vec<ParamId>,                         // get rid of these, move them to checking
-  pub produces: Vec<Vec<ParamId>>,                // get rid of these, move them to checking
+  pub case_specific_deletes: Vec<Vec<ParamId>>,
   pub handler: Box<dyn SplitterBrickHandler>,
 }
 
+/// All params should be deleted after running this brick.
+/// There is no point in specifying them individually.
 pub struct InternalFinalBrick {
   pub name: String,
-  pub uses: Vec<ParamId>,                              // get rid of these, move them to checking
   pub handler: Box<dyn FinalBrickHandler>,
 }
+
+// There should be a redirect brick, but its implementation is left as an exercise for the reader.
