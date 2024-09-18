@@ -9,16 +9,17 @@ rust-version = "1.76"
 [workspace]
 members = [
     "process",
-    "type_bitset_process_builder",
     "graphical_process_builder",
-    "associated_type_process_builder",
+    "type_process_builder",
+    "type_process_adapter",
     "process_runner",
 ]
 
 [dependencies]
 process = { path = "process" }
-type_bitset_process_builder = { path = "type_bitset_process_builder" }
 graphical_process_builder = { path = "graphical_process_builder" }
+type_process_builder = { path = "type_process_builder" }
+type_process_adapter = { path = "type_process_adapter" }
 process_runner = { path = "process_runner" }
 
 #todo https://doc.rust-lang.org/cargo/reference/workspaces.html

@@ -1,5 +1,5 @@
 [package]
-name = "associated_type_process_builder"
+name = "type_process_builder"
 version = "0.1.0"
 edition = "2021"
 
