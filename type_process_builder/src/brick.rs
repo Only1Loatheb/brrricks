@@ -58,21 +58,21 @@ pub trait SplitterReprCase<'same_process> {
 }
 
 impl<'same_process, INL: ParamReprList<'same_process>> SplitterReprCase<'same_process> for Coproduct<INL, CNil> {
-    fn get_param_ids(self) -> Vec<ParamId> {
-        match self {
-            Coproduct::Inl(inl) => inl.get_param_ids(),
-            Coproduct::Inr(_) => unreachable!("Unexpected CNil"),
-        }
+  fn get_param_ids(self) -> Vec<ParamId> {
+    match self {
+      Coproduct::Inl(inl) => inl.get_param_ids(),
+      Coproduct::Inr(_) => unreachable!("Unexpected CNil"),
     }
+  }
 }
 
 impl<'same_process, INL: ParamReprList<'same_process>, INR: SplitterReprCase<'same_process>> SplitterReprCase<'same_process> for Coproduct<INL, INR> {
-    fn get_param_ids(self) -> Vec<ParamId> {
-        match self {
-            Coproduct::Inl(inl) => inl.get_param_ids(),
-            Coproduct::Inr(inr) => inr.get_param_ids(),
-        }
+  fn get_param_ids(self) -> Vec<ParamId> {
+    match self {
+      Coproduct::Inl(inl) => inl.get_param_ids(),
+      Coproduct::Inr(inr) => inr.get_param_ids(),
     }
+  }
 }
 
 /// At least two cases, I guess
@@ -82,15 +82,16 @@ pub trait TypeSplitterBrickHandler<
   INL: ParamReprList<'same_process>,
   INR: SplitterReprCase<'same_process>,
 > {
-    async fn handle(&self, input: InputParams) -> anyhow::Result<Coproduct<INL, INR>>;
+  async fn handle(&self, input: InputParams) -> anyhow::Result<Coproduct<INL, INR>>;
 }
 
 /// We can add a list of completed actions later
-pub struct SplitterBrick<'same_process,  INL: ParamReprList<'same_process>, INR: SplitterReprCase<'same_process>>
-where {
+pub struct SplitterBrick<'same_process, INL: ParamReprList<'same_process>, INR: SplitterReprCase<'same_process>>
+where
+{
   pub name: String,
   pub produces: Coproduct<INL, INR>,
-  pub handler: Box<dyn TypeSplitterBrickHandler<'same_process,  INL, INR>>,
+  pub handler: Box<dyn TypeSplitterBrickHandler<'same_process, INL, INR>>,
 }
 
 #[async_trait]

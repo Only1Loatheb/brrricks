@@ -8,7 +8,7 @@ rust-version = "1.76"
 
 [workspace]
 members = [
-    "process",
+    "process_builder_common",
     "graphical_process_builder",
     "type_process_builder",
     "type_process_adapter",
@@ -16,7 +16,7 @@ members = [
 ]
 
 [dependencies]
-process = { path = "process" }
+process_builder_common = { path = "process_builder_common" }
 graphical_process_builder = { path = "graphical_process_builder" }
 type_process_builder = { path = "type_process_builder" }
 type_process_adapter = { path = "type_process_adapter" }

@@ -1,7 +1,9 @@
 struct RunnableBrickIndex(usize);
 
-use process::internal_brick::*;
-use process::internal_process::{InternalFinalizedProcess, InternalFlowingProcess, InternalFlowingSplitProcess, NamedProcess};
+use process_builder_common::internal_brick::*;
+use process_builder_common::internal_process::{InternalFinalizedProcess, InternalFlowingProcess,
+                                          InternalFlowingSplitProcess,
+                                 NamedProcess};
 use crate::runnable_process::RunnableBrick::*;
 
 struct NextBrickTransition {

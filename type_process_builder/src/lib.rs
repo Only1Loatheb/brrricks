@@ -5,14 +5,14 @@ pub mod builder;
 pub(crate) mod split_index;
 mod builder_helpers;
 mod invariant;
+pub mod internal_brick;
+pub mod internal_process;
 
 pub mod process_builder {
   use std::marker::PhantomData;
   use async_trait::async_trait;
   use typenum::*;
   use process::brick_domain::*;
-  use process::internal_process::NamedProcess;
-
   use crate::brick::*;
   use crate::builder::*;
   use crate::builder_helpers::*;

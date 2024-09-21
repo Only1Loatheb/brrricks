@@ -2,7 +2,7 @@ use typenum::*;
 
 use crate::brick::*;
 use crate::builder::*;
-use process::internal_process::{InternalFinalizedProcess, InternalFlowingProcess};
+use crate::internal_process::{InternalFinalizedProcess, InternalFlowingProcess};
 
 pub fn empty_process<'same_process>() -> FlowingProcess<'same_process> {
   FlowingProcess {

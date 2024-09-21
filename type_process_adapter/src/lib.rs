@@ -1,7 +1,7 @@
 pub mod type_process_adapter {
   use async_trait::async_trait;
-  use process::brick_domain::{InputParams, SplitIndex, SplitterBrickHandler, SplitterOutput};
-  use process::internal_brick::InternalSplitterBrick;
+  use process_builder_common::brick_domain::{InputParams, SplitIndex, SplitterBrickHandler, SplitterOutput};
+  use process_builder_common::internal_brick::InternalSplitterBrick;
   use type_process_builder::brick::{ParamReprList, SplitterBrick, SplitterReprCase, TypeSplitterBrickHandler};
 
   struct TypeSplitterBrickHandlerAdapter<'same_process, INL: ParamReprList<'same_process>, INR: SplitterReprCase<'same_process>> {

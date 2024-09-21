@@ -3,7 +3,7 @@ use typenum::*;
 use typenum::private::*;
 use std::ops::*;
 
-use process::internal_process::*;
+use crate::internal_process::*;
 use crate::brick;
 use crate::brick::*;
 use crate::invariant::Invariant;
