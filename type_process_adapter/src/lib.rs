@@ -4,20 +4,20 @@ pub mod type_process_adapter {
   use process_builder_common::internal_brick::InternalSplitterBrick;
   use type_process_builder::brick::{ParamReprList, SplitterBrick, SplitterReprCase, TypeSplitterBrickHandler};
 
-  struct TypeSplitterBrickHandlerAdapter<'same_process, INL: ParamReprList<'same_process>, INR: SplitterReprCase<'same_process>> {
-    inner: Box<dyn TypeSplitterBrickHandler<'same_process, INL, INR>>,
+  struct TypeSplitterBrickHandlerAdapter<'same_process, CASE_THIS: ParamReprList<'same_process>, CASE_OTHER: SplitterReprCase<'same_process>> {
+    inner: Box<dyn TypeSplitterBrickHandler<'same_process, CASE_THIS, CASE_OTHER>>,
   }
 
-  impl<'same_process, INL: ParamReprList<'same_process>, INR: SplitterReprCase<'same_process>>
-  TypeSplitterBrickHandlerAdapter<'same_process, INL, INR> {
-    fn new(inner: Box<dyn TypeSplitterBrickHandler<'same_process, INL, INR>>) -> Self {
+  impl<'same_process, CASE_THIS: ParamReprList<'same_process>, CASE_OTHER: SplitterReprCase<'same_process>>
+  TypeSplitterBrickHandlerAdapter<'same_process, CASE_THIS, CASE_OTHER> {
+    fn new(inner: Box<dyn TypeSplitterBrickHandler<'same_process, CASE_THIS, CASE_OTHER>>) -> Self {
       Self { inner }
     }
   }
 
   #[async_trait]
-  impl<'same_process, INL: ParamReprList<'same_process>, INR: SplitterReprCase<'same_process>> SplitterBrickHandler
-  for TypeSplitterBrickHandlerAdapter<'same_process, INL, INR> {
+  impl<'same_process, CASE_THIS: ParamReprList<'same_process>, CASE_OTHER: SplitterReprCase<'same_process>> SplitterBrickHandler
+  for TypeSplitterBrickHandlerAdapter<'same_process, CASE_THIS, CASE_OTHER> {
     async fn handle(&self, input: InputParams) -> anyhow::Result<SplitterOutput> {
       let result = self.inner.handle(input).await?;
       anyhow::Ok(SplitterOutput(SplitIndex(result.0.get()), result.1))

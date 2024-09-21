@@ -4,7 +4,7 @@ use crate::invariant::Invariant;
 use async_trait::async_trait;
 use frunk_core::coproduct::{CNil, Coproduct};
 use frunk_core::hlist::{HCons, HList, HNil};
-use process::brick_domain::*;
+use process_builder_common::brick_domain::*;
 
 // #[derive(PartialEq, Debug, Eq, Clone, Copy, PartialOrd, Ord, Hash)]
 
@@ -57,7 +57,7 @@ pub trait SplitterReprCase<'same_process> {
   fn get_param_ids(self) -> Vec<ParamId>;
 }
 
-impl<'same_process, INL: ParamReprList<'same_process>> SplitterReprCase<'same_process> for Coproduct<INL, CNil> {
+impl<'same_process, CASE_THIS: ParamReprList<'same_process>> SplitterReprCase<'same_process> for Coproduct<CASE_THIS, CNil> {
   fn get_param_ids(self) -> Vec<ParamId> {
     match self {
       Coproduct::Inl(inl) => inl.get_param_ids(),
@@ -66,7 +66,7 @@ impl<'same_process, INL: ParamReprList<'same_process>> SplitterReprCase<'same_pr
   }
 }
 
-impl<'same_process, INL: ParamReprList<'same_process>, INR: SplitterReprCase<'same_process>> SplitterReprCase<'same_process> for Coproduct<INL, INR> {
+impl<'same_process, CASE_THIS: ParamReprList<'same_process>, CASE_OTHER: SplitterReprCase<'same_process>> SplitterReprCase<'same_process> for Coproduct<CASE_THIS, CASE_OTHER> {
   fn get_param_ids(self) -> Vec<ParamId> {
     match self {
       Coproduct::Inl(inl) => inl.get_param_ids(),
@@ -79,19 +79,19 @@ impl<'same_process, INL: ParamReprList<'same_process>, INR: SplitterReprCase<'sa
 #[async_trait]
 pub trait TypeSplitterBrickHandler<
   'same_process,
-  INL: ParamReprList<'same_process>,
-  INR: SplitterReprCase<'same_process>,
+  CASE_THIS: ParamReprList<'same_process>,
+  CASE_OTHER: SplitterReprCase<'same_process>,
 > {
-  async fn handle(&self, input: InputParams) -> anyhow::Result<Coproduct<INL, INR>>;
+  async fn handle(&self, input: InputParams) -> anyhow::Result<Coproduct<CASE_THIS, CASE_OTHER>>;
 }
 
 /// We can add a list of completed actions later
-pub struct SplitterBrick<'same_process, INL: ParamReprList<'same_process>, INR: SplitterReprCase<'same_process>>
+pub struct SplitterBrick<'same_process, CASE_THIS: ParamReprList<'same_process>, CASE_OTHER: SplitterReprCase<'same_process>>
 where
 {
   pub name: String,
-  pub produces: Coproduct<INL, INR>,
-  pub handler: Box<dyn TypeSplitterBrickHandler<'same_process, INL, INR>>,
+  pub produces: Coproduct<CASE_THIS, CASE_OTHER>,
+  pub handler: Box<dyn TypeSplitterBrickHandler<'same_process, CASE_THIS, CASE_OTHER>>,
 }
 
 #[async_trait]
