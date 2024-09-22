@@ -31,7 +31,7 @@ impl<'same_process> FlowingProcess<'same_process> {
     SEL,
     CONSUMES_CASE_THIS: ParamReprList<'same_process> + Selector<ROOT_CONSUMES, SEL>,
     PRODUCES_CASE_THIS: ParamReprList<'same_process>,
-    PRODUCES_CASE_OTHER: SplitterReprCase<'same_process>
+    PRODUCES_CASE_OTHER: SplitterOutputRepr<'same_process>
   >(
     self,
     _consumes: ROOT_CONSUMES,
@@ -55,7 +55,7 @@ impl<'same_process> FlowingProcess<'same_process> {
 pub struct FinalizedSplitterProcess<
   'same_process,
   ROOT_CONSUMES: ParamReprList<'same_process>,
-  PRODUCES_CASE_OTHER: SplitterReprCase<'same_process>
+  PRODUCES_CASE_OTHER: SplitterOutputRepr<'same_process>
 > {
   pub(crate) process: InternalFinalizedSplitProcess,
   pub(crate) root_consumes: PhantomData<ROOT_CONSUMES>,
@@ -66,7 +66,7 @@ pub struct FinalizedSplitterProcess<
 pub struct FlowingSplitterProcess<
   'same_process,
   ROOT_CONSUMES: ParamReprList<'same_process>,
-  PRODUCES_CASE_OTHER: SplitterReprCase<'same_process>
+  PRODUCES_CASE_OTHER: SplitterOutputRepr<'same_process>
 > {
   pub(crate) process: InternalFlowingSplitProcess,
   pub(crate) root_consumes: PhantomData<ROOT_CONSUMES>,
@@ -103,7 +103,7 @@ impl<
   'same_process,
   ROOT_CONSUMES: ParamReprList<'same_process>,
   PRODUCES_CASE_THIS: ParamReprList<'same_process>,
-  PRODUCES_CASE_OTHER: SplitterReprCase<'same_process>,
+  PRODUCES_CASE_OTHER: SplitterOutputRepr<'same_process>,
 > FlowingSplitterProcess<'same_process, ROOT_CONSUMES, PRODUCES_CASE_OTHER> {
   pub fn next_case(
     self,

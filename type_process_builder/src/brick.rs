@@ -53,24 +53,39 @@ pub struct LinearBrick<'same_process, CONSUMES: ParamReprList<'same_process>, PR
 }
 
 /// Let's hope rust will optimise frunk::coproduct::Coproduct just fine :copium:
-pub trait SplitterReprCase<'same_process> {
+pub trait SplitterOutputRepr<'same_process> {
   fn get_param_ids(self) -> Vec<ParamId>;
+  fn index(self) -> usize;
 }
 
-impl<'same_process, CASE_THIS: ParamReprList<'same_process>> SplitterReprCase<'same_process> for Coproduct<CASE_THIS, CNil> {
+impl<'same_process, CASE_THIS: ParamReprList<'same_process>> SplitterOutputRepr<'same_process> for Coproduct<CASE_THIS, CNil> {
   fn get_param_ids(self) -> Vec<ParamId> {
     match self {
       Coproduct::Inl(inl) => inl.get_param_ids(),
-      Coproduct::Inr(_) => unreachable!("Unexpected CNil"),
+      Coproduct::Inr(cnil) => match cnil {},
+    }
+  }
+
+  fn index(self) -> usize {
+    match self {
+      Coproduct::Inl(_) => 0,
+      Coproduct::Inr(cnil) => match cnil {},
     }
   }
 }
 
-impl<'same_process, CASE_THIS: ParamReprList<'same_process>, CASE_OTHER: SplitterReprCase<'same_process>> SplitterReprCase<'same_process> for Coproduct<CASE_THIS, CASE_OTHER> {
+impl<'same_process, CASE_THIS: ParamReprList<'same_process>, CASE_OTHER: SplitterOutputRepr<'same_process>> SplitterOutputRepr<'same_process> for Coproduct<CASE_THIS, CASE_OTHER> {
   fn get_param_ids(self) -> Vec<ParamId> {
     match self {
       Coproduct::Inl(inl) => inl.get_param_ids(),
       Coproduct::Inr(inr) => inr.get_param_ids(),
+    }
+  }
+
+  fn index(self) -> usize {
+    match self {
+      Coproduct::Inl(_) => 0,
+      Coproduct::Inr(tail) => 1 + tail.index(),
     }
   }
 }
@@ -79,14 +94,25 @@ impl<'same_process, CASE_THIS: ParamReprList<'same_process>, CASE_OTHER: Splitte
 #[async_trait]
 pub trait TypeSplitterBrickHandler<
   'same_process,
-  CASE_THIS: ParamReprList<'same_process>,
-  CASE_OTHER: SplitterReprCase<'same_process>,
+  SPLITTER_OUTPUT_REPR: SplitterOutputRepr<'same_process>,
 > {
-  async fn handle(&self, input: InputParams) -> anyhow::Result<Coproduct<CASE_THIS, CASE_OTHER>>;
+  async fn handle(&self, input: InputParams) -> anyhow::Result<SPLITTER_OUTPUT_REPR>;
+}
+
+#[async_trait]
+impl<
+  'same_process,
+  SPLITTER_OUTPUT_REPR: SplitterOutputRepr<'same_process>,
+> SplitterBrickHandler
+for dyn TypeSplitterBrickHandler<'same_process, SPLITTER_OUTPUT_REPR> {
+  async fn handle(&self, input: InputParams) -> anyhow::Result<SplitterOutput> {
+    let result = self.handle(input).await?;
+    anyhow::Ok(SplitterOutput(SplitIndex(result.index()), OutputParams(result.get_param_ids())))
+  }
 }
 
 /// We can add a list of completed actions later
-pub struct SplitterBrick<'same_process, CASE_THIS: ParamReprList<'same_process>, CASE_OTHER: SplitterReprCase<'same_process>>
+pub struct SplitterBrick<'same_process, CASE_THIS: ParamReprList<'same_process>, CASE_OTHER: SplitterOutputRepr<'same_process>>
 where
 {
   pub name: String,

@@ -2,17 +2,13 @@
 
 pub mod brick;
 pub mod builder;
-pub(crate) mod split_index;
 mod builder_helpers;
 mod invariant;
-pub mod internal_brick;
-pub mod internal_process;
 
 pub mod process_builder {
   use std::marker::PhantomData;
   use async_trait::async_trait;
-  use typenum::*;
-  use process::brick_domain::*;
+  use process_builder_common::brick_domain::*;
   use crate::brick::*;
   use crate::builder::*;
   use crate::builder_helpers::*;
@@ -32,7 +28,7 @@ pub mod process_builder {
   struct Splitter;
 
   #[async_trait]
-  impl TypeSplitterBrickHandler<U3> for Splitter {
+  impl TypeSplitterBrickHandler<'same_process, U3, CASE_OTHER> for Splitter {
     async fn handle(&self, input: InputParams) -> anyhow::Result<TypeSplitterOutput<U3>> {
       todo!()
     }
