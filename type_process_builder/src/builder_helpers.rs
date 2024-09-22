@@ -1,9 +1,8 @@
-use typenum::*;
-
 use crate::brick::*;
 use crate::builder::*;
-use crate::internal_process::{InternalFinalizedProcess, InternalFlowingProcess};
+use process_builder_common::internal_process::*;
 
+// should be method in this builder
 pub fn empty_process<'same_process>() -> FlowingProcess<'same_process> {
   FlowingProcess {
     process: InternalFlowingProcess::Empty,
@@ -12,25 +11,17 @@ pub fn empty_process<'same_process>() -> FlowingProcess<'same_process> {
   }
 }
 
-pub fn process<
-  BRICK_USES: ParamBitSet,
-  BRICK_REQUIRES: Unsigned,
-  BRICK_FORBIDS: Unsigned,
-  BRICK_PRODUCES: ParamBitSet,
-  BRICK_ACCOMPLISHES: Unsigned,
->(
-  brick: LinearBrick<BRICK_USES, BRICK_REQUIRES, BRICK_FORBIDS, BRICK_PRODUCES, BRICK_ACCOMPLISHES>,
-) -> FlowingProcess<BRICK_USES, BRICK_REQUIRES, BRICK_FORBIDS, BRICK_PRODUCES, BRICK_ACCOMPLISHES> {
+// should be method in this builder
+pub fn process<'same_process, CONSUMES: ParamReprList<'same_process>, PRODUCES: ParamReprList<'same_process>>(
+  brick: LinearBrick<'same_process, CONSUMES, CONSUMES>,
+) -> FlowingProcess<'same_process> {
   FlowingProcess {
     process: InternalFlowingProcess::Linear(
       brick.to_internal(),
       Box::new(InternalFlowingProcess::Empty),
     ),
-    uses: Default::default(),
-    requires: Default::default(),
-    forbids: Default::default(),
-    produces: Default::default(),
-    accomplishes: Default::default(),
+    next_param_id: 0, // todo
+    same_process_invariant: Default::default(),
   }
 }
 
@@ -38,20 +29,12 @@ pub fn process<
 
 // split_finnish
 
-pub fn finnish<
-  BRICK_USES: ParamBitSet,
-  BRICK_REQUIRES: Unsigned,
-  BRICK_FORBIDS: Unsigned,
-  BRICK_ACCOMPLISHES: Unsigned,
->(
-  brick: FinalBrick<BRICK_USES, BRICK_REQUIRES, BRICK_FORBIDS, BRICK_ACCOMPLISHES>,
-) -> FinalizedProcess<BRICK_USES, BRICK_REQUIRES, BRICK_FORBIDS, EMPTY, BRICK_ACCOMPLISHES> {
+pub fn finnish<'same_process, CONSUMES: ParamReprList<'same_process>>(
+  brick: FinalBrick<'same_process, CONSUMES>,
+) -> FinalizedProcess<'same_process> {
   FinalizedProcess {
     process: InternalFinalizedProcess::Flowing(brick.to_internal(), InternalFlowingProcess::Empty),
-    uses: Default::default(),
-    requires: Default::default(),
-    forbids: Default::default(),
-    produces: Default::default(),
-    accomplishes: Default::default(),
+    next_param_id: 0, // todo
+    same_process_invariant: Default::default(),
   }
 }
