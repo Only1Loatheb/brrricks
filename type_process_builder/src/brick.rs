@@ -10,29 +10,29 @@ use serde::{Serialize, Deserialize, Serializer};
 use serde_json::Value;
 // #[derive(PartialEq, Debug, Eq, Clone, Copy, PartialOrd, Ord, Hash)]
 
-pub trait ParamValue<SERIALIZER: Serializer>: Serialize + for<'de> Deserialize<'de> {}
+pub trait ParamValue: Serialize + for<'de> Deserialize<'de> {}
 
-pub trait ParamList<'same_process, SERIALIZER: Serializer>: HList {
-  fn get_params(self, serializer: SERIALIZER) -> Vec<Value>;
+pub trait ParamList<'same_process>: HList {
+  fn get_params(self) -> Vec<Value>;
 }
 
-impl<SERIALIZER: Serializer> ParamList<SERIALIZER> for HNil {
+impl ParamList for HNil {
   fn get_params(self, _serializer: SERIALIZER) -> Vec<Value> {
     vec![]
   }
 }
 
-impl<'same_process, SERIALIZER: Serializer, PARAM_VALUE: ParamValue<SERIALIZER>, TAIL: ParamList<SERIALIZER>>
+impl<'same_process, SERIALIZER: Serializer, PARAM_VALUE: ParamValue, TAIL: ParamList>
 ParamList<'same_process, SERIALIZER>
 for HCons<PARAM_VALUE, TAIL> {
-  fn get_params(self, serializer: SERIALIZER) -> Vec<Value> {
+  fn get_params(self) -> Vec<Value> {
     let mut param_ids = self.tail.get_param_ids();
     param_ids.push(self.head.serialize(serializer));
     param_ids
   }
 }
 
-pub struct ParamRepr<'same_process, SERIALIZER: Serializer, PARAM_VALUE: ParamValue<SERIALIZER>> {
+pub struct ParamRepr<'same_process, SERIALIZER: Serializer, PARAM_VALUE: ParamValue> {
   pub(crate) same_process_invariant: Invariant<'same_process>,
   pub(crate) param_value: PhantomData<PARAM_VALUE>,
   pub(crate) param_id: ParamId,
@@ -51,7 +51,7 @@ impl<'same_process, SERIALIZER: Serializer> ParamReprList<'same_process, SERIALI
   type VALUE = HNil;
 }
 
-impl<'same_process, SERIALIZER: Serializer, PARAM_VALUE: ParamValue<SERIALIZER>, TAIL: ParamReprList<'same_process, SERIALIZER>>
+impl<'same_process, SERIALIZER: Serializer, PARAM_VALUE: ParamValue, TAIL: ParamReprList<'same_process, SERIALIZER>>
 ParamReprList<'same_process, SERIALIZER>
 for HCons<ParamRepr<'same_process, SERIALIZER, PARAM_VALUE>, TAIL> {
   fn get_param_ids(self) -> Vec<ParamId> {
@@ -80,9 +80,9 @@ impl<
     SERIALIZER: Serializer,
   CONSUMES: ParamReprList<'same_process, SERIALIZER>,
   PRODUCES: ParamReprList<'same_process, SERIALIZER>,
-> LinearBrickHandler<SERIALIZER>
+> LinearBrickHandler
 for dyn TypeLinearBrickHandler<'same_process, SERIALIZER, CONSUMES, PRODUCES> {
-  async fn handle(&self, input: InputParams, serializer: SERIALIZER) -> anyhow::Result<LinearOutput> {
+  async fn handle(&self, input: InputParams) -> anyhow::Result<LinearOutput> {
     let result = self.handle(input).await?;
     let param_ids:Vec<ParamId> =  vec![];
     let param_values = result.1.get_params(serializer);

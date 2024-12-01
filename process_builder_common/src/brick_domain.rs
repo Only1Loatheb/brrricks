@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use async_trait::async_trait;
-use serde::Serializer;
+use serde::{Serialize, Serializer};
+use serde::de::DeserializeOwned;
 
 #[derive(serde::Deserialize, serde::Serialize)]
 #[derive(PartialEq, Debug, Eq, Clone, Copy, PartialOrd, Ord, Hash)]
@@ -17,11 +18,13 @@ pub struct Message(pub String);
 #[derive(PartialEq, Debug, Eq, Clone, Copy, PartialOrd, Ord, Hash)]
 pub struct SplitIndex(pub usize);
 
-#[derive(PartialEq, Debug, Eq, Clone)]
-pub struct InputParams(pub HashMap<ParamId, serde_json::value::Value>);
+trait Param: Serialize + DeserializeOwned {}
 
 #[derive(PartialEq, Debug, Eq, Clone)]
-pub struct OutputParams(pub HashMap<ParamId, serde_json::value::Value>);
+pub struct InputParams(pub HashMap<ParamId, dyn Param>);
+
+#[derive(PartialEq, Debug, Eq, Clone)]
+pub struct OutputParams(pub HashMap<ParamId, dyn Param>);
 
 // process breaking requires explicit split with final brick
 #[derive(PartialEq, Debug, Eq, Clone)]
@@ -31,17 +34,18 @@ pub struct LinearOutput(pub Option<Message>, pub OutputParams);
 #[derive(PartialEq, Debug, Eq, Clone)]
 pub struct SplitterOutput(pub SplitIndex, pub OutputParams);
 
+// there are no recoverable errors for now, split the process to handle error.
 #[async_trait]
-pub trait LinearBrickHandler<SERIALIZER: Serializer> {
-  async fn handle(&self, input: InputParams, serializer: SERIALIZER) -> anyhow::Result<LinearOutput>;
+pub trait LinearBrickHandler {
+  async fn handle(&self, input: InputParams) -> anyhow::Result<LinearOutput>;
 }
 
 #[async_trait]
-pub trait SplitterBrickHandler<SERIALIZER: Serializer> {
-  async fn handle(&self, input: InputParams, serializer: SERIALIZER) -> anyhow::Result<SplitterOutput>;
+pub trait SplitterBrickHandler {
+  async fn handle(&self, input: InputParams) -> anyhow::Result<SplitterOutput>;
 }
 
 #[async_trait]
-pub trait FinalBrickHandler<SERIALIZER: Serializer> {
-  async fn handle(&self, input: InputParams, serializer: SERIALIZER) -> anyhow::Result<Message>;
+pub trait FinalBrickHandler {
+  async fn handle(&self, input: InputParams) -> anyhow::Result<Message>;
 }

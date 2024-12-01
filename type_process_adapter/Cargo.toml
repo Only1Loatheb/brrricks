@@ -9,4 +9,4 @@ edition = "2021"
 process_builder_common = { path = "../process_builder_common" }
 type_process_builder = { path = "../type_process_builder" }
 async-trait = "0.1.80"
-anyhow = "1.0.82"
+serde = { version = "1.0", features = ["derive"] }

@@ -1,3 +1,4 @@
+use serde::Serializer;
 use crate::brick::*;
 use crate::builder::*;
 use process_builder_common::internal_process::*;

@@ -7,8 +7,7 @@ edition = "2021"
 async-trait = "0.1.77"
 # not required:
 serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0.113"
 anyhow = "1.0.79"
 
-#[build-dependencies]
+[build-dependencies]
 aquamarine = "0.5.0"
