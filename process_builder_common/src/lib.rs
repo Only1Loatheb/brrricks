@@ -1,7 +1,3 @@
-pub mod brick_domain;
-pub mod internal_brick;
-pub mod internal_process;
-
 #[cfg_attr(doc, aquamarine::aquamarine)]
 /// It is forbidden to overwrite param value
 /// cargo doc --no-deps --workspace
@@ -27,4 +23,21 @@ pub mod internal_process;
 ///     flowing_split_cases --> FlowingSplitProcess: some cases left
 ///     flowing_split_cases --> FlowingProcess: all cases handled
 /// ```
-pub mod process {}
+pub mod brick_domain {
+         #[derive(serde::Deserialize, serde::Serialize)]
+#[derive(PartialEq, Debug, Eq, Clone, Copy, PartialOrd, Ord, Hash)]
+pub struct ParamId(pub usize);
+
+#[derive(serde::Deserialize, serde::Serialize)]
+#[derive(PartialEq, Debug, Eq, Clone, Copy, PartialOrd, Ord, Hash)]
+pub struct ActionId(pub usize);
+
+#[derive(serde::Deserialize, serde::Serialize)]
+#[derive(PartialEq, Debug, Eq, Clone, PartialOrd, Ord, Hash)]
+pub struct Message(pub String);
+
+#[derive(serde::Deserialize, serde::Serialize)]
+#[derive(PartialEq, Debug, Eq, Clone, Copy, PartialOrd, Ord, Hash)]
+pub struct SplitIndex(pub usize);
+
+}

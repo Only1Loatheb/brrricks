@@ -20,7 +20,7 @@ impl ParamList for HNil {
   fn get_params(self, _serializer: SERIALIZER) -> Vec<Value> {
     vec![]
   }
-}
+}                                             
 
 impl<'same_process, SERIALIZER: Serializer, PARAM_VALUE: ParamValue, TAIL: ParamList>
 ParamList<'same_process, SERIALIZER>
