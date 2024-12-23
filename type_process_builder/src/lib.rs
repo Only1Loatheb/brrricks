@@ -1,9 +1,9 @@
 // #![recursion_limit = "512"]
 //
-mod invariant;
 pub mod brick;
 pub mod builder;
 mod builder_helpers;
+mod invariant;
 //
 // pub mod process_builder {
 //   use std::marker::PhantomData;

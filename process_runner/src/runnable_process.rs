@@ -21,7 +21,7 @@
 //   path: String,
 //   runnable_bricks: Vec<RunnableBrick>, // starts from last
 // }
-// 
+//
 // impl RunnableProcess {
 //   pub fn new(named_process: NamedProcess) -> RunnableProcess {
 //     let mut process = RunnableProcess {

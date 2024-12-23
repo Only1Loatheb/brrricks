@@ -24,20 +24,15 @@
 ///     flowing_split_cases --> FlowingProcess: all cases handled
 /// ```
 pub mod brick_domain {
-         #[derive(serde::Deserialize, serde::Serialize)]
-#[derive(PartialEq, Debug, Eq, Clone, Copy, PartialOrd, Ord, Hash)]
-pub struct ParamId(pub usize);
+  #[derive(serde::Deserialize, serde::Serialize, PartialEq, Debug, Eq, Clone, Copy, PartialOrd, Ord, Hash)]
+  pub struct ParamId(pub usize);
 
-#[derive(serde::Deserialize, serde::Serialize)]
-#[derive(PartialEq, Debug, Eq, Clone, Copy, PartialOrd, Ord, Hash)]
-pub struct ActionId(pub usize);
+  #[derive(serde::Deserialize, serde::Serialize, PartialEq, Debug, Eq, Clone, Copy, PartialOrd, Ord, Hash)]
+  pub struct ActionId(pub usize);
 
-#[derive(serde::Deserialize, serde::Serialize)]
-#[derive(PartialEq, Debug, Eq, Clone, PartialOrd, Ord, Hash)]
-pub struct Message(pub String);
+  #[derive(serde::Deserialize, serde::Serialize, PartialEq, Debug, Eq, Clone, PartialOrd, Ord, Hash)]
+  pub struct Message(pub String);
 
-#[derive(serde::Deserialize, serde::Serialize)]
-#[derive(PartialEq, Debug, Eq, Clone, Copy, PartialOrd, Ord, Hash)]
-pub struct SplitIndex(pub usize);
-
+  #[derive(serde::Deserialize, serde::Serialize, PartialEq, Debug, Eq, Clone, Copy, PartialOrd, Ord, Hash)]
+  pub struct SplitIndex(pub usize);
 }
