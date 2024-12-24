@@ -4,10 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-async-trait = "0.1.77"
-# not required:
 serde = { version = "1.0", features = ["derive"] }
-anyhow = "1.0.79"
 
 [build-dependencies]
-aquamarine = "0.5.0"
+aquamarine = "0.6.0"
