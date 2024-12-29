@@ -1,4 +1,5 @@
 use crate::invariant::Invariant;
+use frunk_core::Coprod;
 use process_builder_common::process_domain::ParamId;
 use serde::{Deserialize, Serialize};
 use std::marker::PhantomData;
@@ -45,17 +46,19 @@ pub mod param_repr_list {
 pub mod splitter_output_repr {
   use crate::step::param_list::ParamList;
   use crate::step::param_repr_list::ParamReprList;
-  use frunk_core::coproduct::{CNil, Coproduct};
+  use frunk_core::coproduct::{CNil, Coproduct, CoproductMappable};
 
   pub trait SplitterOutputRepr {
-    type VALUE: ParamList;
+    type VALUE;
   }
 
   impl<CASE_THIS: ParamReprList> SplitterOutputRepr for Coproduct<CASE_THIS, CNil> {
-    type VALUE = CASE_THIS::VALUE;
+    type VALUE = Coproduct<CASE_THIS::VALUE, CNil>;
   }
 
-  impl<CASE_THIS: ParamReprList, CASE_OTHER: SplitterOutputRepr> SplitterOutputRepr for Coproduct<CASE_THIS, CASE_OTHER> {
+  impl<CASE_THIS: ParamReprList, CASE_OTHER: SplitterOutputRepr> SplitterOutputRepr
+    for Coproduct<CASE_THIS, CASE_OTHER>
+  {
     type VALUE = Coproduct<CASE_THIS::VALUE, CASE_OTHER::VALUE>;
   }
 }
@@ -63,26 +66,20 @@ pub mod splitter_output_repr {
 pub mod step {
   use crate::step::param_repr_list::ParamReprList;
   use crate::step::splitter_output_repr::SplitterOutputRepr;
-  use async_trait::async_trait;
   use process_builder_common::process_domain::Message;
 
-  #[async_trait]
-  pub trait Linear {
-    type CONSUMES: ParamReprList;
-    type PRODUCES: ParamReprList;
-    async fn handle(&self, input: Self::CONSUMES::VALUE) -> anyhow::Result<(Option<Message>, Self::PRODUCES::VALUE)>;
+  // #[async_trait]
+  pub trait Linear<CONSUMES: ParamReprList, PRODUCES: ParamReprList> {
+    async fn handle(&self, input: CONSUMES::VALUE) -> anyhow::Result<(Option<Message>, PRODUCES::VALUE)>;
   }
 
-  #[async_trait]
-  pub trait Splitter {
-    type CONSUMES: ParamReprList;
-    type PRODUCES: SplitterOutputRepr;
-    async fn handle(&self, input: Self::CONSUMES::VALUE) -> anyhow::Result<Self::PRODUCES::VALUE>;
+  // #[async_trait]
+  pub trait Splitter<CONSUMES: ParamReprList, PRODUCES: SplitterOutputRepr> {
+    async fn handle(&self, input: CONSUMES::VALUE) -> anyhow::Result<PRODUCES::VALUE>;
   }
 
-  #[async_trait]
-  pub trait Final {
-    type CONSUMES: ParamReprList;
-    async fn handle(&self, input: Self::CONSUMES::VALUE) -> anyhow::Result<Message>;
+  // #[async_trait]
+  pub trait Final<CONSUMES: ParamReprList> {
+    async fn handle(&self, input: CONSUMES::VALUE) -> anyhow::Result<Message>;
   }
 }

@@ -58,15 +58,13 @@ pub mod flowing_process {
 
   pub trait FlowingProcess {}
 
-  impl FlowingProcess for HNil {}
+  pub struct EmptyProcess;
 
-  impl<LAST_STEP_CONSUMES: ParamReprList, LAST_STEP_PRODUCES: ParamReprList, PROCESS_BEFORE: FlowingProcess>
-    FlowingProcess for HCons<dyn Linear<CONSUMES = LAST_STEP_CONSUMES, PRODUCES = LAST_STEP_PRODUCES>, PROCESS_BEFORE>
-  {
-  }
+  impl FlowingProcess for EmptyProcess {}
 
-  pub fn empty() -> impl FlowingProcess {
-    HNil
+  pub struct LinearFlowingProcess<LINEAR: Linear, FLOWING_PROCESS: FlowingProcess> {
+    pub linear: LINEAR,
+    pub flowing_process: FLOWING_PROCESS,
   }
 }
 
