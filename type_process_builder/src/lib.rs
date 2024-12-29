@@ -1,6 +1,6 @@
 // #![recursion_limit = "512"]
 //
-pub mod brick;
+pub mod step;
 pub mod builder;
 mod builder_helpers;
 mod invariant;

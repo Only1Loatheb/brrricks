@@ -1,10 +1,10 @@
 pub mod type_process_adapter {
     use async_trait::async_trait;
-    use process_builder_common::brick_domain::{
+    use process_builder_common::process_domain::{
         InputParams, SplitIndex, SplitterBrickHandler, SplitterOutput,
     };
     use process_builder_common::internal_brick::InternalSplitterBrick;
-    use type_process_builder::brick::{
+    use type_process_builder::step::{
         ParamReprList, SplitterBrick, SplitterOutputRepr, TypeSplitterBrickHandler,
     };
 

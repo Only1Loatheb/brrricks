@@ -1,15 +1,12 @@
-use crate::brick::param_repr_list::ParamReprList;
-use crate::brick::split::SplitterOutputRepr;
 use crate::invariant::Invariant;
-use async_trait::async_trait;
-use process_builder_common::brick_domain::*;
+use process_builder_common::process_domain::ParamId;
 use serde::{Deserialize, Serialize};
 use std::marker::PhantomData;
 
 pub trait ParamValue: Serialize + for<'de> Deserialize<'de> {}
 
-mod param_list {
-  use crate::brick::ParamValue;
+pub mod param_list {
+  use crate::step::ParamValue;
   use frunk_core::hlist::{HCons, HList, HNil};
 
   pub trait ParamList: HList {}
@@ -25,9 +22,9 @@ pub struct ParamRepr<'same_process, PARAM_VALUE: ParamValue> {
   pub(crate) param_id: ParamId,
 }
 
-mod param_repr_list {
-  use crate::brick::param_list::ParamList;
-  use crate::brick::{ParamRepr, ParamValue};
+pub mod param_repr_list {
+  use crate::step::param_list::ParamList;
+  use crate::step::{ParamRepr, ParamValue};
   use frunk_core::hlist::{HCons, HList, HNil};
 
   pub trait ParamReprList: HList {
@@ -45,9 +42,9 @@ mod param_repr_list {
   }
 }
 
-mod split {
-  use crate::brick::param_list::ParamList;
-  use crate::brick::param_repr_list::ParamReprList;
+pub mod splitter_output_repr {
+  use crate::step::param_list::ParamList;
+  use crate::step::param_repr_list::ParamReprList;
   use frunk_core::coproduct::{CNil, Coproduct};
 
   pub trait SplitterOutputRepr {
@@ -58,24 +55,34 @@ mod split {
     type VALUE = CASE_THIS::VALUE;
   }
 
-  impl<CASE_THIS: ParamReprList, CASE_OTHER: SplitterOutputRepr> SplitterOutputRepr
-    for Coproduct<CASE_THIS, CASE_OTHER>
-  {
+  impl<CASE_THIS: ParamReprList, CASE_OTHER: SplitterOutputRepr> SplitterOutputRepr for Coproduct<CASE_THIS, CASE_OTHER> {
     type VALUE = Coproduct<CASE_THIS::VALUE, CASE_OTHER::VALUE>;
   }
 }
 
-#[async_trait]
-pub trait TypeLinearBrickHandler<CONSUMES: ParamReprList, PRODUCES: ParamReprList> {
-  async fn handle(&self, input: CONSUMES::VALUE) -> anyhow::Result<(Option<Message>, PRODUCES::VALUE)>;
-}
+pub mod step {
+  use crate::step::param_repr_list::ParamReprList;
+  use crate::step::splitter_output_repr::SplitterOutputRepr;
+  use async_trait::async_trait;
+  use process_builder_common::process_domain::Message;
 
-#[async_trait]
-pub trait TypeSplitterBrickHandler<CONSUMES: ParamReprList, SPLITTER_OUTPUT: SplitterOutputRepr> {
-  async fn handle(&self, input: CONSUMES::VALUE) -> anyhow::Result<SPLITTER_OUTPUT::VALUE>;
-}
+  #[async_trait]
+  pub trait Linear {
+    type CONSUMES: ParamReprList;
+    type PRODUCES: ParamReprList;
+    async fn handle(&self, input: Self::CONSUMES::VALUE) -> anyhow::Result<(Option<Message>, Self::PRODUCES::VALUE)>;
+  }
 
-#[async_trait]
-pub trait TypeFinalBrickHandler<'same_process, CONSUMES: ParamReprList> {
-  async fn handle(&self, input: CONSUMES::VALUE) -> anyhow::Result<Message>;
+  #[async_trait]
+  pub trait Splitter {
+    type CONSUMES: ParamReprList;
+    type PRODUCES: SplitterOutputRepr;
+    async fn handle(&self, input: Self::CONSUMES::VALUE) -> anyhow::Result<Self::PRODUCES::VALUE>;
+  }
+
+  #[async_trait]
+  pub trait Final {
+    type CONSUMES: ParamReprList;
+    async fn handle(&self, input: Self::CONSUMES::VALUE) -> anyhow::Result<Message>;
+  }
 }

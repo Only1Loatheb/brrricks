@@ -23,7 +23,7 @@
 ///     flowing_split_cases --> FlowingSplitProcess: some cases left
 ///     flowing_split_cases --> FlowingProcess: all cases handled
 /// ```
-pub mod brick_domain {
+pub mod process_domain {
   #[derive(serde::Deserialize, serde::Serialize, PartialEq, Debug, Eq, Clone, Copy, PartialOrd, Ord, Hash)]
   pub struct ParamId(pub usize);
 

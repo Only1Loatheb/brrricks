@@ -3,7 +3,7 @@ use process::brick_domain::{
     FinalBrickHandler, InputParams, LinearBrickHandler, LinearOutput, Message, ParamId,
     SplitterBrickHandler, SplitterOutput,
 };
-use process_builder_common::brick_domain::{Message, ParamId, SplitIndex};
+use process_builder_common::process_domain::{Message, ParamId, SplitIndex};
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 use std::collections::HashMap;
@@ -65,7 +65,7 @@ pub struct InternalFinalBrick {
 
 // There should be a redirect brick, but its implementation is left as an exercise for the reader.
 
-// builder has to take care of having at least 2 cases
+// We can allow one case for to support accept forms and confirm forms
 pub enum InternalFinalizedSplitProcess {
     FirstCase {
         splitter_brick: InternalSplitterBrick,
