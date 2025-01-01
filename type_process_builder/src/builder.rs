@@ -62,10 +62,13 @@ pub mod flowing_process {
 
   impl FlowingProcess for EmptyProcess {}
 
-  pub struct LinearFlowingProcess<LINEAR: Linear, FLOWING_PROCESS: FlowingProcess> {
-    pub linear: LINEAR,
+  pub struct LinearFlowingProcess<CONSUMES: ParamReprList, PRODUCES: ParamReprList, FLOWING_PROCESS: FlowingProcess> {
+    pub linear: dyn Linear<CONSUMES, PRODUCES>,
     pub flowing_process: FLOWING_PROCESS,
   }
+
+  impl FlowingProcess for LinearFlowingProcess<>
+
 }
 
 pub mod finalized_process {
@@ -79,7 +82,7 @@ pub mod finalized_process {
   pub trait FinalizedProcess {}
 
   impl<LAST_STEP_CONSUMES: ParamReprList, PROCESS_BEFORE: FlowingProcess> FinalizedProcess
-    for HCons<dyn Final<CONSUMES = LAST_STEP_CONSUMES>, PROCESS_BEFORE>
+    for FlowingProcess
   {
   }
 
@@ -88,6 +91,11 @@ pub mod finalized_process {
       head: final_step,
       tail: flowing_process::empty(),
     }
+  }
+
+  pub struct FinalizedProcess {
+    head: final_step,
+    tail: flowing_process::empty(),
   }
 }
 

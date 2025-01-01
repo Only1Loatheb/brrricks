@@ -1,8 +1,4 @@
-use crate::invariant::Invariant;
-use frunk_core::Coprod;
-use process_builder_common::process_domain::ParamId;
 use serde::{Deserialize, Serialize};
-use std::marker::PhantomData;
 
 pub trait ParamValue: Serialize + for<'de> Deserialize<'de> {}
 
@@ -17,69 +13,39 @@ pub mod param_list {
   impl<PARAM_VALUE: ParamValue, TAIL: ParamList> ParamList for HCons<PARAM_VALUE, TAIL> {}
 }
 
-pub struct ParamRepr<'same_process, PARAM_VALUE: ParamValue> {
-  pub(crate) same_process_invariant: Invariant<'same_process>,
-  pub(crate) param_value: PhantomData<PARAM_VALUE>,
-  pub(crate) param_id: ParamId,
-}
-
-pub mod param_repr_list {
-  use crate::step::param_list::ParamList;
-  use crate::step::{ParamRepr, ParamValue};
-  use frunk_core::hlist::{HCons, HList, HNil};
-
-  pub trait ParamReprList: HList {
-    type VALUE: ParamList;
-  }
-
-  impl<'same_process> ParamReprList for HNil {
-    type VALUE = HNil;
-  }
-
-  impl<'same_process, PARAM_VALUE: ParamValue, TAIL: ParamReprList> ParamReprList
-    for HCons<ParamRepr<'same_process, PARAM_VALUE>, TAIL>
-  {
-    type VALUE = HCons<PARAM_VALUE, TAIL::VALUE>;
-  }
-}
-
 pub mod splitter_output_repr {
   use crate::step::param_list::ParamList;
-  use crate::step::param_repr_list::ParamReprList;
-  use frunk_core::coproduct::{CNil, Coproduct, CoproductMappable};
+  use frunk_core::coproduct::{CNil, Coproduct};
 
-  pub trait SplitterOutputRepr {
+  pub trait SplitterOutput {
     type VALUE;
   }
 
-  impl<CASE_THIS: ParamReprList> SplitterOutputRepr for Coproduct<CASE_THIS, CNil> {
-    type VALUE = Coproduct<CASE_THIS::VALUE, CNil>;
+  impl<CASE_THIS: ParamList> SplitterOutput for Coproduct<CASE_THIS, CNil> {
+    type VALUE = Coproduct<CASE_THIS, CNil>;
   }
 
-  impl<CASE_THIS: ParamReprList, CASE_OTHER: SplitterOutputRepr> SplitterOutputRepr
+  impl<CASE_THIS: ParamList, CASE_OTHER: SplitterOutput> SplitterOutput
     for Coproduct<CASE_THIS, CASE_OTHER>
   {
-    type VALUE = Coproduct<CASE_THIS::VALUE, CASE_OTHER::VALUE>;
+    type VALUE = Coproduct<CASE_THIS, CASE_OTHER::VALUE>;
   }
 }
 
 pub mod step {
-  use crate::step::param_repr_list::ParamReprList;
-  use crate::step::splitter_output_repr::SplitterOutputRepr;
+  use crate::step::param_list::ParamList;
+  use crate::step::splitter_output_repr::SplitterOutput;
   use process_builder_common::process_domain::Message;
 
-  // #[async_trait]
-  pub trait Linear<CONSUMES: ParamReprList, PRODUCES: ParamReprList> {
-    async fn handle(&self, input: CONSUMES::VALUE) -> anyhow::Result<(Option<Message>, PRODUCES::VALUE)>;
+  pub trait Linear<CONSUMES: ParamList, PRODUCES: ParamList> {
+    async fn handle(&self, input: CONSUMES) -> anyhow::Result<(Option<Message>, PRODUCES)>;
   }
 
-  // #[async_trait]
-  pub trait Splitter<CONSUMES: ParamReprList, PRODUCES: SplitterOutputRepr> {
-    async fn handle(&self, input: CONSUMES::VALUE) -> anyhow::Result<PRODUCES::VALUE>;
+  pub trait Splitter<CONSUMES: ParamList, PRODUCES: SplitterOutput> {
+    async fn handle(&self, input: CONSUMES) -> anyhow::Result<PRODUCES>;
   }
 
-  // #[async_trait]
-  pub trait Final<CONSUMES: ParamReprList> {
-    async fn handle(&self, input: CONSUMES::VALUE) -> anyhow::Result<Message>;
+  pub trait Final<CONSUMES: ParamList> {
+    async fn handle(&self, input: CONSUMES) -> anyhow::Result<Message>;
   }
 }
