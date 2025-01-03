@@ -65,6 +65,17 @@ pub struct InternalFinalBrick {
 
 // There should be a redirect brick, but its implementation is left as an exercise for the reader.
 
+pub enum InternalFlowingProcess {
+    Empty,
+    Linear(InternalLinearBrick, Box<InternalFlowingProcess>),
+    Split(Box<InternalFlowingSplitProcess>),
+}
+
+pub enum InternalFinalizedProcess {
+    Flowing(InternalFinalBrick, InternalFlowingProcess),
+    Split(Box<InternalFinalizedSplitProcess>),
+}
+
 // We can allow one case for to support accept forms and confirm forms
 pub enum InternalFinalizedSplitProcess {
     FirstCase {
@@ -85,10 +96,6 @@ pub enum InternalFlowingSplitProcess {
         first_case: InternalFlowingProcess,
         process_before: InternalFlowingProcess,
     },
-    NextCase {
-        next_case: InternalFlowingProcess,
-        split_process_before: Box<InternalFinalizedSplitProcess>,
-    },
     NextCaseFlowing {
         next_case: InternalFlowingProcess,
         split_process_before: Box<InternalFlowingSplitProcess>,
@@ -97,17 +104,10 @@ pub enum InternalFlowingSplitProcess {
         next_case: InternalFinalizedProcess,
         split_process_before: Box<InternalFlowingSplitProcess>,
     },
-}
-
-pub enum InternalFlowingProcess {
-    Empty,
-    Linear(InternalLinearBrick, Box<InternalFlowingProcess>),
-    Split(Box<InternalFlowingSplitProcess>),
-}
-
-pub enum InternalFinalizedProcess {
-    Flowing(InternalFinalBrick, InternalFlowingProcess),
-    Split(Box<InternalFinalizedSplitProcess>),
+    NextCaseFromFinalized {
+        next_case: InternalFlowingProcess,
+        split_process_before: Box<InternalFinalizedSplitProcess>,
+    },
 }
 
 pub struct NamedProcess {

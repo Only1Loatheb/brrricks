@@ -4,6 +4,7 @@ pub mod step;
 pub mod builder;
 mod builder_helpers;
 mod invariant;
+mod enumBuilder;
 //
 // pub mod process_builder {
 //   use std::marker::PhantomData;
