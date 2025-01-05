@@ -6,11 +6,12 @@ use frunk_core::coproduct::{CNil, Coproduct};
 use frunk_core::hlist::{HList, Selector};
 use process_builder_common::process_domain::Message;
 use serde::{Deserialize, Deserializer, Serialize};
+use serde_json::Value;
 use std::marker::PhantomData;
 
 pub enum InterpretationOutcome<T: ParamList> {
   Continue(T),
-  Yield(Message, dyn Serialize),
+  Yield(Message, Value),
   Finish(Message),
 }
 
@@ -21,7 +22,7 @@ trait Process {
   type Produces: ParamList;
   async fn interpret(
     &self,
-    previous_interpretation_result: String,
+    previous_interpretation_produced: Value,
     last_interpreted: usize,
   ) -> InterpretationResult<Self::Produces>;
 }
@@ -34,14 +35,12 @@ pub mod flowing_process {
   use crate::hlist_concat::Concat;
   use crate::step::param_list::ParamList;
   use crate::step::step::{Final, Linear};
-  use either::{Either, Left, Right};
   use frunk_core::hlist::{HNil, Sculptor, Selector};
-  use serde::Deserializer;
   use process_builder_common::process_domain::Message;
+  use serde::Deserializer;
+  use serde_json::Value;
 
-  pub trait FlowingProcess: Process {
-    // type Consumes: ParamList;
-  }
+  pub trait FlowingProcess: Process {}
 
   pub struct EmptyProcess;
   impl Process for EmptyProcess {
@@ -49,7 +48,7 @@ pub mod flowing_process {
 
     async fn interpret(
       &self,
-      previous_interpretation_result: String,
+      previous_interpretation_result: Value,
       last_interpreted: usize,
     ) -> InterpretationResult<Self::Produces> {
       Ok(Continue(HNil))
@@ -77,7 +76,7 @@ pub mod flowing_process {
 
     async fn interpret(
       &self,
-      previous_interpretation_result: String,
+      previous_interpretation_result: Value,
       last_interpreted: usize,
     ) -> InterpretationResult<Self::Produces> {
       if last_interpreted < self.step_index {
@@ -97,7 +96,9 @@ pub mod flowing_process {
           Finish(msg) => Ok(Finish(msg)),
         }
       } else {
-        Ok(Continue(previous_interpretation_result))
+        let previous_interpretation_produced =
+          serde_json::from_value::<Self::Produces>(previous_interpretation_result)?;
+        Ok(Continue(previous_interpretation_produced))
       }
     }
   }
@@ -117,7 +118,7 @@ pub mod flowing_process {
   //   type Produced = ();
   // }
 
-  // methods
+  // builder methods
   impl EmptyProcess {
     fn finnish<FINAL_STEP: Final<HNil>>(&self, step: FINAL_STEP) -> impl FinalizedProcess {
       FlowingFinalizedProcess {
@@ -221,7 +222,7 @@ pub mod flowing_split_process {
     PROCESS_BEFORE: FlowingProcess,
     SPLITTER_CONSUMES: ParamList,
     SPLITTER_PRODUCES: SplitterOutput,
-    FIRST_CASE: FlowingSplitProcess,
+    FIRST_CASE: FlowingProcess,
   > {
     pub process_before: PROCESS_BEFORE,
     pub splitter: dyn Splitter<SPLITTER_CONSUMES, SPLITTER_PRODUCES>,
@@ -231,7 +232,7 @@ pub mod flowing_split_process {
       PROCESS_BEFORE: FlowingProcess,
       SPLITTER_CONSUMES: ParamList,
       SPLITTER_PRODUCES: SplitterOutput,
-      FIRST_CASE: FinalizedProcess,
+      FIRST_CASE: FlowingProcess,
     > FlowingSplitProcess
     for FirstCaseOfFlowingSplitProcess<PROCESS_BEFORE, SPLITTER_CONSUMES, SPLITTER_PRODUCES, FIRST_CASE>
   {

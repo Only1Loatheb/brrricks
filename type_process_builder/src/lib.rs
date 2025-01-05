@@ -4,8 +4,8 @@ pub mod step;
 pub mod builder;
 mod builder_helpers;
 mod invariant;
-mod enumBuilder;
 mod hlist_concat;
+mod hlist_intersection;
 //
 // pub mod process_builder {
 //   use std::marker::PhantomData;
