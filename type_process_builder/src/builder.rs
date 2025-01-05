@@ -68,22 +68,22 @@ pub mod flowing_process {
   impl EmptyProcess {
     fn finnish<FINAL_STEP: Final<HNil>>(&self, step: FINAL_STEP) -> impl FinalizedProcess {
       FlowingFinalizedProcess {
-        final_step: step,
         process_before: EmptyProcess,
+        final_step: step,
       }
     }
   }
 
-  impl<LINEAR_CONSUMES: ParamList, LINEAR_PRODUCES: ParamList, PROCESS_BEFORE: FlowingProcess>
-    LinearFlowingProcess<LINEAR_CONSUMES, LINEAR_PRODUCES, PROCESS_BEFORE>
+  impl<PROCESS_BEFORE: FlowingProcess, LINEAR_CONSUMES: ParamList, LINEAR_PRODUCES: ParamList>
+    LinearFlowingProcess<PROCESS_BEFORE, LINEAR_CONSUMES, LINEAR_PRODUCES>
   {
     fn finnish<SEL, FINAL_CONSUMES: ParamList + Selector<LINEAR_PRODUCES, SEL>, FINAL_STEP: Final<FINAL_CONSUMES>>(
       &self,
       step: FINAL_STEP,
     ) -> impl FinalizedProcess {
       FlowingFinalizedProcess {
-        final_step: step,
         process_before: self,
+        final_step: step,
       }
     }
   }
@@ -97,12 +97,12 @@ pub mod finalized_process {
 
   pub trait FinalizedProcess {}
 
-  pub struct FlowingFinalizedProcess<FINAL_CONSUMES: ParamList, PROCESS_BEFORE: FlowingProcess> {
-    pub final_step: dyn Final<FINAL_CONSUMES>,
+  pub struct FlowingFinalizedProcess<PROCESS_BEFORE: FlowingProcess, FINAL_CONSUMES: ParamList> {
     pub process_before: PROCESS_BEFORE,
+    pub final_step: dyn Final<FINAL_CONSUMES>,
   }
-  impl<FINAL_CONSUMES: ParamList, PROCESS_BEFORE: FlowingProcess> FinalizedProcess
-    for FlowingFinalizedProcess<FINAL_CONSUMES, PROCESS_BEFORE>
+  impl<PROCESS_BEFORE: FlowingProcess, FINAL_CONSUMES: ParamList> FinalizedProcess
+    for FlowingFinalizedProcess<PROCESS_BEFORE, FINAL_CONSUMES>
   {
   }
 
@@ -125,31 +125,31 @@ pub mod finalized_split_process {
   pub trait FinalizedSplitProcess {}
 
   pub struct FirstCaseOfFinalizedSplitProcess<
+    PROCESS_BEFORE: FlowingProcess,
     SPLITTER_CONSUMES: ParamList,
     SPLITTER_PRODUCES: SplitterOutput,
     FIRST_CASE: FinalizedProcess,
-    PROCESS_BEFORE: FlowingProcess,
   > {
+    pub process_before: PROCESS_BEFORE,
     pub splitter: dyn Splitter<SPLITTER_CONSUMES, SPLITTER_PRODUCES>,
     pub first_case: FIRST_CASE,
-    pub process_before: PROCESS_BEFORE,
   }
   impl<
+      PROCESS_BEFORE: FlowingProcess,
       SPLITTER_CONSUMES: ParamList,
       SPLITTER_PRODUCES: SplitterOutput,
       FIRST_CASE: FinalizedProcess,
-      PROCESS_BEFORE: FlowingProcess,
     > FinalizedSplitProcess
-    for FirstCaseOfFinalizedSplitProcess<SPLITTER_CONSUMES, SPLITTER_PRODUCES, FIRST_CASE, PROCESS_BEFORE>
+    for FirstCaseOfFinalizedSplitProcess<PROCESS_BEFORE, SPLITTER_CONSUMES, SPLITTER_PRODUCES, FIRST_CASE>
   {
   }
 
-  pub struct NextCaseOfFinalizedSplitProcess<NEXT_CASE: FinalizedProcess, PROCESS_BEFORE: FinalizedProcess> {
-    pub next_case: NEXT_CASE,
+  pub struct NextCaseOfFinalizedSplitProcess<PROCESS_BEFORE: FinalizedProcess, NEXT_CASE: FinalizedProcess> {
     pub split_process_before: PROCESS_BEFORE,
+    pub next_case: NEXT_CASE,
   }
-  impl<NEXT_CASE: FinalizedProcess, PROCESS_BEFORE: FinalizedProcess> FinalizedSplitProcess
-    for NextCaseOfFinalizedSplitProcess<NEXT_CASE, PROCESS_BEFORE>
+  impl<PROCESS_BEFORE: FinalizedProcess, NEXT_CASE: FinalizedProcess> FinalizedSplitProcess
+    for NextCaseOfFinalizedSplitProcess<PROCESS_BEFORE, NEXT_CASE>
   {
   }
 }
@@ -165,52 +165,52 @@ pub mod flowing_split_process {
   pub trait FlowingSplitProcess {}
 
   pub struct FirstCaseOfFlowingSplitProcess<
+    PROCESS_BEFORE: FlowingProcess,
     SPLITTER_CONSUMES: ParamList,
     SPLITTER_PRODUCES: SplitterOutput,
     FIRST_CASE: FlowingSplitProcess,
-    PROCESS_BEFORE: FlowingProcess,
   > {
+    pub process_before: PROCESS_BEFORE,
     pub splitter: dyn Splitter<SPLITTER_CONSUMES, SPLITTER_PRODUCES>,
     pub first_case: FIRST_CASE,
-    pub process_before: PROCESS_BEFORE,
   }
   impl<
+      PROCESS_BEFORE: FlowingProcess,
       SPLITTER_CONSUMES: ParamList,
       SPLITTER_PRODUCES: SplitterOutput,
       FIRST_CASE: FinalizedProcess,
-      PROCESS_BEFORE: FlowingProcess,
     > FlowingSplitProcess
-    for FirstCaseOfFlowingSplitProcess<SPLITTER_CONSUMES, SPLITTER_PRODUCES, FIRST_CASE, PROCESS_BEFORE>
+    for FirstCaseOfFlowingSplitProcess<PROCESS_BEFORE, SPLITTER_CONSUMES, SPLITTER_PRODUCES, FIRST_CASE>
   {
   }
 
-  pub struct NextCaseFlowingOfFlowingSplitProcess<NEXT_CASE: FlowingProcess, PROCESS_BEFORE: FlowingSplitProcess> {
-    pub next_case: NEXT_CASE,
+  pub struct NextCaseFlowingOfFlowingSplitProcess<PROCESS_BEFORE: FlowingSplitProcess, NEXT_CASE: FlowingProcess> {
     pub split_process_before: PROCESS_BEFORE,
+    pub next_case: NEXT_CASE,
   }
-  impl<NEXT_CASE: FlowingProcess, PROCESS_BEFORE: FlowingSplitProcess> FlowingSplitProcess
-    for NextCaseFlowingOfFlowingSplitProcess<NEXT_CASE, PROCESS_BEFORE>
+  impl<PROCESS_BEFORE: FlowingSplitProcess, NEXT_CASE: FlowingProcess> FlowingSplitProcess
+    for NextCaseFlowingOfFlowingSplitProcess<PROCESS_BEFORE, NEXT_CASE>
   {
   }
 
-  pub struct NextCaseFinalizedOfFlowingSplitProcess<NEXT_CASE: FinalizedProcess, PROCESS_BEFORE: FlowingSplitProcess> {
-    pub next_case: NEXT_CASE,
+  pub struct NextCaseFinalizedOfFlowingSplitProcess<PROCESS_BEFORE: FlowingSplitProcess, NEXT_CASE: FinalizedProcess> {
     pub split_process_before: PROCESS_BEFORE,
+    pub next_case: NEXT_CASE,
   }
-  impl<NEXT_CASE: FinalizedProcess, PROCESS_BEFORE: FlowingSplitProcess> FlowingSplitProcess
-    for NextCaseFinalizedOfFlowingSplitProcess<NEXT_CASE, PROCESS_BEFORE>
+  impl<PROCESS_BEFORE: FlowingSplitProcess, NEXT_CASE: FinalizedProcess> FlowingSplitProcess
+    for NextCaseFinalizedOfFlowingSplitProcess<PROCESS_BEFORE, NEXT_CASE>
   {
   }
 
   pub struct NextCaseFromFinalizedOfFlowingSplitProcess<
-    NEXT_CASE: FlowingProcess,
     PROCESS_BEFORE: FinalizedSplitProcess,
+    NEXT_CASE: FlowingProcess,
   > {
-    pub next_case: NEXT_CASE,
     pub split_process_before: PROCESS_BEFORE,
+    pub next_case: NEXT_CASE,
   }
-  impl<NEXT_CASE: FlowingProcess, PROCESS_BEFORE: FinalizedSplitProcess> FlowingSplitProcess
-    for NextCaseFromFinalizedOfFlowingSplitProcess<NEXT_CASE, PROCESS_BEFORE>
+  impl<PROCESS_BEFORE: FinalizedSplitProcess, NEXT_CASE: FlowingProcess> FlowingSplitProcess
+    for NextCaseFromFinalizedOfFlowingSplitProcess<PROCESS_BEFORE, NEXT_CASE>
   {
   }
 }
