@@ -5,34 +5,87 @@ use frunk_core::coproduct::{CNil, Coproduct};
 use frunk_core::hlist::{HList, Selector};
 use serde::{Deserialize, Serialize};
 use std::marker::PhantomData;
+use process_builder_common::process_domain::Message;
+
+trait Process<SERIALIZED> {
+    async fn interpret(&self, input: SERIALIZED) -> anyhow::Result<Option<Message>>;
+}
 
 pub mod flowing_process {
+  use crate::builder::finalized_process::{FinalizedProcess, FlowingFinalizedProcess};
   use crate::builder::flowing_split_process::FlowingSplitProcess;
+  use crate::hlist_concat::Concat;
   use crate::step::param_list::ParamList;
-  use crate::step::step::Linear;
+  use crate::step::step::{Final, Linear};
+  use frunk_core::hlist::{HNil, Selector};
+  use process_builder_common::process_domain::Message;
+  use crate::builder::Process;
 
-  pub trait FlowingProcess {}
+  pub trait FlowingProcess: Process {
+    type Produced: ParamList;
+  }
 
   pub struct EmptyProcess;
-  impl FlowingProcess for EmptyProcess {}
+  impl Process for EmptyProcess {
+    async fn interpret(&self, input: ()) -> anyhow::Result<Option<Message>> {
+      anyhow::Ok(None)
+    }
+  }
+  impl FlowingProcess for EmptyProcess {
+    type Produced = HNil;
+  }
 
   pub struct LinearFlowingProcess<
+    PROCESS_BEFORE: FlowingProcess,
     LINEAR_CONSUMES: ParamList,
     LINEAR_PRODUCES: ParamList,
-    PROCESS_BEFORE: FlowingProcess,
   > {
-    pub last_step: dyn Linear<LINEAR_CONSUMES, LINEAR_PRODUCES>,
     pub process_before: PROCESS_BEFORE,
-  }
-  impl<LINEAR_CONSUMES: ParamList, LINEAR_PRODUCES: ParamList, PROCESS_BEFORE: FlowingProcess> FlowingProcess
-    for LinearFlowingProcess<LINEAR_CONSUMES, LINEAR_PRODUCES, PROCESS_BEFORE>
-  {
+    pub final_step: dyn Linear<LINEAR_CONSUMES, LINEAR_PRODUCES>,
   }
 
-  pub struct SplitFlowingProcess<FLOWING_SPLIT_PROCESS: FlowingSplitProcess> {
-    pub process: FLOWING_SPLIT_PROCESS,
+  impl<
+      PROCESS_BEFORE: FlowingProcess,
+      LINEAR_CONSUMES: ParamList,
+      LINEAR_PRODUCES: ParamList + Concat<PROCESS_BEFORE>,
+    > FlowingProcess for LinearFlowingProcess<PROCESS_BEFORE, LINEAR_CONSUMES, LINEAR_PRODUCES>
+  {
+    type Produced = <LINEAR_PRODUCES as Concat<PROCESS_BEFORE>>::Concatenated;
+
+    async fn interpret(&self, input: ()) -> anyhow::Result<Option<Message>> {
+      todo!()
+    }
   }
-  impl<FLOWING_SPLIT_PROCESS: FlowingSplitProcess> FlowingProcess for SplitFlowingProcess<FLOWING_SPLIT_PROCESS> {
+
+  // pub struct SplitFlowingProcess<FLOWING_SPLIT_PROCESS: FlowingSplitProcess> {
+  //   pub process: FLOWING_SPLIT_PROCESS,
+  // }
+  // impl<FLOWING_SPLIT_PROCESS: FlowingSplitProcess> FlowingProcess for SplitFlowingProcess<FLOWING_SPLIT_PROCESS> {
+  //   type Produced = ();
+  // }
+
+  // methods
+  impl EmptyProcess {
+    fn finnish<FINAL_STEP: Final<HNil>>(&self, step: FINAL_STEP) -> impl FinalizedProcess {
+      FlowingFinalizedProcess {
+        final_step: step,
+        process_before: EmptyProcess,
+      }
+    }
+  }
+
+  impl<LINEAR_CONSUMES: ParamList, LINEAR_PRODUCES: ParamList, PROCESS_BEFORE: FlowingProcess>
+    LinearFlowingProcess<LINEAR_CONSUMES, LINEAR_PRODUCES, PROCESS_BEFORE>
+  {
+    fn finnish<SEL, FINAL_CONSUMES: ParamList + Selector<LINEAR_PRODUCES, SEL>, FINAL_STEP: Final<FINAL_CONSUMES>>(
+      &self,
+      step: FINAL_STEP,
+    ) -> impl FinalizedProcess {
+      FlowingFinalizedProcess {
+        final_step: step,
+        process_before: self,
+      }
+    }
   }
 }
 
@@ -45,7 +98,7 @@ pub mod finalized_process {
   pub trait FinalizedProcess {}
 
   pub struct FlowingFinalizedProcess<FINAL_CONSUMES: ParamList, PROCESS_BEFORE: FlowingProcess> {
-    pub last_step: dyn Final<FINAL_CONSUMES>,
+    pub final_step: dyn Final<FINAL_CONSUMES>,
     pub process_before: PROCESS_BEFORE,
   }
   impl<FINAL_CONSUMES: ParamList, PROCESS_BEFORE: FlowingProcess> FinalizedProcess
@@ -149,7 +202,10 @@ pub mod flowing_split_process {
   {
   }
 
-  pub struct NextCaseFromFinalizedOfFlowingSplitProcess<NEXT_CASE: FlowingProcess, PROCESS_BEFORE: FinalizedSplitProcess> {
+  pub struct NextCaseFromFinalizedOfFlowingSplitProcess<
+    NEXT_CASE: FlowingProcess,
+    PROCESS_BEFORE: FinalizedSplitProcess,
+  > {
     pub next_case: NEXT_CASE,
     pub split_process_before: PROCESS_BEFORE,
   }

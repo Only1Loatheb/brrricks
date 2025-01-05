@@ -45,7 +45,7 @@ pub mod step {
     async fn handle(&self, input: CONSUMES) -> anyhow::Result<PRODUCES>;
   }
 
-  pub trait Final<CONSUMES: ParamList> {
+  pub trait Final<CONSUMES: ParamList>{
     async fn handle(&self, input: CONSUMES) -> anyhow::Result<Message>;
   }
 }
