@@ -1,39 +1,61 @@
 use crate::invariant::Invariant;
+use crate::step::param_list::ParamList;
 use crate::step::step::Linear;
 use crate::step::*;
 use frunk_core::coproduct::{CNil, Coproduct};
 use frunk_core::hlist::{HList, Selector};
-use serde::{Deserialize, Serialize};
-use std::marker::PhantomData;
 use process_builder_common::process_domain::Message;
+use serde::{Deserialize, Deserializer, Serialize};
+use std::marker::PhantomData;
 
-trait Process<SERIALIZED> {
-    async fn interpret(&self, input: SERIALIZED) -> anyhow::Result<Option<Message>>;
+pub enum InterpretationOutcome<T: ParamList> {
+  Continue(T),
+  Yield(Message, dyn Serialize),
+  Finish(Message),
+}
+
+type InterpretationResult<T: ParamList> = anyhow::Result<InterpretationOutcome<T>>;
+
+trait Process {
+  // async fn interpret<'a>(&self, input: &'a str) -> anyhow::Result<Option<Message>>;
+  type Produces: ParamList;
+  async fn interpret(
+    &self,
+    previous_interpretation_result: String,
+    last_interpreted: usize,
+  ) -> InterpretationResult<Self::Produces>;
 }
 
 pub mod flowing_process {
   use crate::builder::finalized_process::{FinalizedProcess, FlowingFinalizedProcess};
   use crate::builder::flowing_split_process::FlowingSplitProcess;
+  use crate::builder::InterpretationOutcome::{Continue, Finish, Yield};
+  use crate::builder::{InterpretationOutcome, InterpretationResult, Process};
   use crate::hlist_concat::Concat;
   use crate::step::param_list::ParamList;
   use crate::step::step::{Final, Linear};
-  use frunk_core::hlist::{HNil, Selector};
+  use either::{Either, Left, Right};
+  use frunk_core::hlist::{HNil, Sculptor, Selector};
+  use serde::Deserializer;
   use process_builder_common::process_domain::Message;
-  use crate::builder::Process;
 
   pub trait FlowingProcess: Process {
-    type Produced: ParamList;
+    // type Consumes: ParamList;
   }
 
   pub struct EmptyProcess;
   impl Process for EmptyProcess {
-    async fn interpret(&self, input: ()) -> anyhow::Result<Option<Message>> {
-      anyhow::Ok(None)
+    type Produces = HNil;
+
+    async fn interpret(
+      &self,
+      previous_interpretation_result: String,
+      last_interpreted: usize,
+    ) -> InterpretationResult<Self::Produces> {
+      Ok(Continue(HNil))
     }
   }
-  impl FlowingProcess for EmptyProcess {
-    type Produced = HNil;
-  }
+  impl FlowingProcess for EmptyProcess {}
 
   pub struct LinearFlowingProcess<
     PROCESS_BEFORE: FlowingProcess,
@@ -41,7 +63,43 @@ pub mod flowing_process {
     LINEAR_PRODUCES: ParamList,
   > {
     pub process_before: PROCESS_BEFORE,
-    pub final_step: dyn Linear<LINEAR_CONSUMES, LINEAR_PRODUCES>,
+    pub last_step: dyn Linear<LINEAR_CONSUMES, LINEAR_PRODUCES>,
+    pub step_index: usize,
+  }
+
+  impl<
+      PROCESS_BEFORE: FlowingProcess,
+      LINEAR_CONSUMES: ParamList,
+      LINEAR_PRODUCES: ParamList + Concat<PROCESS_BEFORE>,
+    > Process for LinearFlowingProcess<PROCESS_BEFORE, LINEAR_CONSUMES, LINEAR_PRODUCES>
+  {
+    type Produces = <LINEAR_PRODUCES as Concat<PROCESS_BEFORE>>::Concatenated;
+
+    async fn interpret(
+      &self,
+      previous_interpretation_result: String,
+      last_interpreted: usize,
+    ) -> InterpretationResult<Self::Produces> {
+      if last_interpreted < self.step_index {
+        let process_before_output = self
+          .process_before
+          .interpret(previous_interpretation_result, last_interpreted)
+          .await?;
+        match process_before_output {
+          Continue(process_before_produces) => {
+            let last_step_output = self.last_step.handle(process_before_produces).await?;
+            match last_step_output {
+              (Some(msg), last_step_produces) => Ok(Yield(msg, last_step_produces.concat(process_before_produces))),
+              (None, last_step_produces) => Ok(Continue(last_step_produces.concat(process_before_produces))),
+            }
+          }
+          Yield(msg, produced) => Ok(Yield(msg, produced)),
+          Finish(msg) => Ok(Finish(msg)),
+        }
+      } else {
+        Ok(Continue(previous_interpretation_result))
+      }
+    }
   }
 
   impl<
@@ -50,11 +108,6 @@ pub mod flowing_process {
       LINEAR_PRODUCES: ParamList + Concat<PROCESS_BEFORE>,
     > FlowingProcess for LinearFlowingProcess<PROCESS_BEFORE, LINEAR_CONSUMES, LINEAR_PRODUCES>
   {
-    type Produced = <LINEAR_PRODUCES as Concat<PROCESS_BEFORE>>::Concatenated;
-
-    async fn interpret(&self, input: ()) -> anyhow::Result<Option<Message>> {
-      todo!()
-    }
   }
 
   // pub struct SplitFlowingProcess<FLOWING_SPLIT_PROCESS: FlowingSplitProcess> {
@@ -77,7 +130,7 @@ pub mod flowing_process {
   impl<PROCESS_BEFORE: FlowingProcess, LINEAR_CONSUMES: ParamList, LINEAR_PRODUCES: ParamList>
     LinearFlowingProcess<PROCESS_BEFORE, LINEAR_CONSUMES, LINEAR_PRODUCES>
   {
-    fn finnish<SEL, FINAL_CONSUMES: ParamList + Selector<LINEAR_PRODUCES, SEL>, FINAL_STEP: Final<FINAL_CONSUMES>>(
+    fn finnish<FINAL_CONSUMES: ParamList, FINAL_STEP: Final<FINAL_CONSUMES>>(
       &self,
       step: FINAL_STEP,
     ) -> impl FinalizedProcess {
