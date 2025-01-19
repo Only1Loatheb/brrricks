@@ -9,29 +9,21 @@ use serde::{Deserialize, Deserializer, Serialize};
 use serde_json::Value;
 use std::marker::PhantomData;
 
+pub struct LastInterpreted(usize);
+
 pub enum InterpretationOutcome<T: ParamList> {
   Continue(T),
-  Yield(Message, Value),
+  Yield(Message, Value, LastInterpreted),
   Finish(Message),
 }
 
 type InterpretationResult<T: ParamList> = anyhow::Result<InterpretationOutcome<T>>;
 
-trait Process {
-  // async fn interpret<'a>(&self, input: &'a str) -> anyhow::Result<Option<Message>>;
-  type Produces: ParamList;
-  async fn interpret(
-    &self,
-    previous_interpretation_produced: Value,
-    last_interpreted: usize,
-  ) -> InterpretationResult<Self::Produces>;
-}
-
 pub mod flowing_process {
   use crate::builder::finalized_process::{FinalizedProcess, FlowingFinalizedProcess};
   use crate::builder::flowing_split_process::FlowingSplitProcess;
-  use crate::builder::InterpretationOutcome::{Continue, Finish, Yield};
-  use crate::builder::{InterpretationOutcome, InterpretationResult, Process};
+  use crate::builder::InterpretationOutcome::*;
+  use crate::builder::{InterpretationOutcome, InterpretationResult, LastInterpreted};
   use crate::hlist_concat::Concat;
   use crate::step::param_list::ParamList;
   use crate::step::step::{Final, Linear};
@@ -40,21 +32,30 @@ pub mod flowing_process {
   use serde::Deserializer;
   use serde_json::Value;
 
-  pub trait FlowingProcess: Process {}
+  pub trait FlowingProcess {
+    type Consumes: ParamList;
+    type Produces: ParamList;
+
+    async fn interpret(
+      &self,
+      previous_interpretation_produced: Value,
+      last_interpreted: LastInterpreted,
+    ) -> InterpretationResult<Self::Produces>;
+  }
 
   pub struct EmptyProcess;
-  impl Process for EmptyProcess {
+  impl FlowingProcess for EmptyProcess {
+    type Consumes = HNil;
     type Produces = HNil;
 
     async fn interpret(
       &self,
       previous_interpretation_result: Value,
-      last_interpreted: usize,
+      last_interpreted: LastInterpreted,
     ) -> InterpretationResult<Self::Produces> {
       Ok(Continue(HNil))
     }
   }
-  impl FlowingProcess for EmptyProcess {}
 
   pub struct LinearFlowingProcess<
     PROCESS_BEFORE: FlowingProcess,
@@ -65,50 +66,45 @@ pub mod flowing_process {
     pub last_step: dyn Linear<LINEAR_CONSUMES, LINEAR_PRODUCES>,
     pub step_index: usize,
   }
-
-  impl<
-      PROCESS_BEFORE: FlowingProcess,
-      LINEAR_CONSUMES: ParamList,
-      LINEAR_PRODUCES: ParamList + Concat<PROCESS_BEFORE>,
-    > Process for LinearFlowingProcess<PROCESS_BEFORE, LINEAR_CONSUMES, LINEAR_PRODUCES>
-  {
-    type Produces = <LINEAR_PRODUCES as Concat<PROCESS_BEFORE>>::Concatenated;
-
-    async fn interpret(
-      &self,
-      previous_interpretation_result: Value,
-      last_interpreted: usize,
-    ) -> InterpretationResult<Self::Produces> {
-      if last_interpreted < self.step_index {
-        let process_before_output = self
-          .process_before
-          .interpret(previous_interpretation_result, last_interpreted)
-          .await?;
-        match process_before_output {
-          Continue(process_before_produces) => {
-            let last_step_output = self.last_step.handle(process_before_produces).await?;
-            match last_step_output {
-              (Some(msg), last_step_produces) => Ok(Yield(msg, last_step_produces.concat(process_before_produces))),
-              (None, last_step_produces) => Ok(Continue(last_step_produces.concat(process_before_produces))),
-            }
-          }
-          Yield(msg, produced) => Ok(Yield(msg, produced)),
-          Finish(msg) => Ok(Finish(msg)),
-        }
-      } else {
-        let previous_interpretation_produced =
-          serde_json::from_value::<Self::Produces>(previous_interpretation_result)?;
-        Ok(Continue(previous_interpretation_produced))
-      }
-    }
-  }
-
   impl<
       PROCESS_BEFORE: FlowingProcess,
       LINEAR_CONSUMES: ParamList,
       LINEAR_PRODUCES: ParamList + Concat<PROCESS_BEFORE>,
     > FlowingProcess for LinearFlowingProcess<PROCESS_BEFORE, LINEAR_CONSUMES, LINEAR_PRODUCES>
   {
+    type Consumes = <LINEAR_CONSUMES as Concat<PROCESS_BEFORE::Consumes>>::Concatenated;
+    type Produces = <LINEAR_PRODUCES as Concat<PROCESS_BEFORE::Produces>>::Concatenated;
+
+    async fn interpret(
+      &self,
+      previous_interpretation_produced: Value,
+      last_interpreted: LastInterpreted,
+    ) -> InterpretationResult<Self::Produces> {
+      if last_interpreted.0 < self.step_index {
+        let process_before_output = self
+          .process_before
+          .interpret(previous_interpretation_produced, last_interpreted)
+          .await?;
+        match process_before_output {
+          Continue(process_before_produces) => {
+            let last_step_output = self.last_step.handle(process_before_produces).await?;
+            match last_step_output {
+              (Some(msg), last_step_produces) => Ok(Yield(
+                msg,
+                last_step_produces.concat(process_before_produces),
+                LastInterpreted(self.step_index),
+              )),
+              (None, last_step_produces) => Ok(Continue(last_step_produces.concat(process_before_produces))),
+            }
+          }
+          Yield(msg, produced, index) => Ok(Yield(msg, produced, index)),
+          Finish(msg) => Ok(Finish(msg)),
+        }
+      } else {
+        let params = serde_json::from_value::<Self::Produces>(previous_interpretation_produced)?;
+        Ok(Continue(params))
+      }
+    }
   }
 
   // pub struct SplitFlowingProcess<FLOWING_SPLIT_PROCESS: FlowingSplitProcess> {
@@ -144,12 +140,18 @@ pub mod flowing_process {
 }
 
 pub mod finalized_process {
+  use frunk_core::hlist::HNil;
+  use serde_json::Value;
   use crate::builder::finalized_split_process::FinalizedSplitProcess;
   use crate::builder::flowing_process::FlowingProcess;
+  use crate::builder::{InterpretationResult, LastInterpreted};
   use crate::step::param_list::ParamList;
   use crate::step::step::Final;
 
-  pub trait FinalizedProcess {}
+  pub trait FinalizedProcess {
+        async fn interpret(&self, previous_interpretation_produced: Value, last_interpreted: LastInterpreted)
+      -> InterpretationResult<HNil>; // fixme create result for finalised process, or undo changes
+  }
 
   pub struct FlowingFinalizedProcess<PROCESS_BEFORE: FlowingProcess, FINAL_CONSUMES: ParamList> {
     pub process_before: PROCESS_BEFORE,
@@ -158,6 +160,9 @@ pub mod finalized_process {
   impl<PROCESS_BEFORE: FlowingProcess, FINAL_CONSUMES: ParamList> FinalizedProcess
     for FlowingFinalizedProcess<PROCESS_BEFORE, FINAL_CONSUMES>
   {
+    async fn interpret(&self, previous_interpretation_produced: Value, last_interpreted: LastInterpreted) -> InterpretationResult<HNil> {
+      todo!()
+    }
   }
 
   pub struct SplitFinalizedProcess<FINALIZED_SPLIT_PROCESS: FinalizedSplitProcess> {
@@ -166,17 +171,30 @@ pub mod finalized_process {
   impl<FINALIZED_SPLIT_PROCESS: FinalizedSplitProcess> FinalizedProcess
     for SplitFinalizedProcess<FINALIZED_SPLIT_PROCESS>
   {
+    async fn interpret(&self, previous_interpretation_produced: Value, last_interpreted: LastInterpreted) -> InterpretationResult<HNil> {
+      todo!()
+    }
   }
 }
 
 pub mod finalized_split_process {
+  use frunk_core::coproduct::Coproduct;
+  use frunk_core::hlist::HNil;
   use crate::builder::finalized_process::FinalizedProcess;
   use crate::builder::flowing_process::FlowingProcess;
+  use crate::builder::InterpretationOutcome::*;
+  use crate::builder::{InterpretationOutcome, InterpretationResult, LastInterpreted};
   use crate::step::param_list::ParamList;
   use crate::step::splitter_output_repr::SplitterOutput;
   use crate::step::step::Splitter;
+  use process_builder_common::process_domain::Message;
+  use serde_json::Value;
+  use crate::hlist_concat::Concat;
 
-  pub trait FinalizedSplitProcess {}
+  pub trait FinalizedSplitProcess {
+    async fn interpret(&self, previous_interpretation_produced: Value, last_interpreted: LastInterpreted)
+      -> InterpretationResult<HNil>; // fixme create result for finalised process, or undo changes
+  }
 
   pub struct FirstCaseOfFinalizedSplitProcess<
     PROCESS_BEFORE: FlowingProcess,
@@ -186,25 +204,62 @@ pub mod finalized_split_process {
   > {
     pub process_before: PROCESS_BEFORE,
     pub splitter: dyn Splitter<SPLITTER_CONSUMES, SPLITTER_PRODUCES>,
+    pub step_index: usize,
     pub first_case: FIRST_CASE,
   }
   impl<
       PROCESS_BEFORE: FlowingProcess,
       SPLITTER_CONSUMES: ParamList,
-      SPLITTER_PRODUCES: SplitterOutput,
+      CASE_THIS: ParamList,
+      CASE_OTHER: SplitterOutput,
       FIRST_CASE: FinalizedProcess,
     > FinalizedSplitProcess
-    for FirstCaseOfFinalizedSplitProcess<PROCESS_BEFORE, SPLITTER_CONSUMES, SPLITTER_PRODUCES, FIRST_CASE>
+    for FirstCaseOfFinalizedSplitProcess<PROCESS_BEFORE, SPLITTER_CONSUMES, Coproduct<CASE_THIS, CASE_OTHER>, FIRST_CASE>
   {
+    // type SplitterOutput = <CASE_THIS as Concat<PROCESS_BEFORE::Produces>>::Concatenated;
+
+    async fn interpret(
+      &self,
+      previous_interpretation_produced: Value,
+      last_interpreted: LastInterpreted,
+    ) -> InterpretationResult<HNil> {
+      if last_interpreted.0 < self.step_index { // no yielding from splitter step todo maybe implement
+        let process_before_output = self
+          .process_before
+          .interpret(previous_interpretation_produced, last_interpreted)
+          .await?;
+        match process_before_output {
+          Continue(process_before_produces) => {
+            let splitter_output = self.splitter.handle(process_before_produces).await?;
+            match splitter_output  {
+              Coproduct::Inl(a) => {
+                self.first_case.interpret(previous_interpretation_produced, last_interpreted)
+              }
+              Coproduct::Inr(b) => {}
+            }
+          }
+          Yield(msg, produced, last_interpreted) => Ok(Yield(msg, produced, last_interpreted)),
+          Finish(msg) => Ok(Finish(msg)),
+        }
+      } else {
+        let params = serde_json::from_value::<SPLITTER_PRODUCES>(previous_interpretation_produced)?;
+        Ok(Continue(params))
+      }
+    }
   }
 
-  pub struct NextCaseOfFinalizedSplitProcess<PROCESS_BEFORE: FinalizedProcess, NEXT_CASE: FinalizedProcess> {
+  pub struct NextCaseOfFinalizedSplitProcess<PROCESS_BEFORE: FinalizedSplitProcess, NEXT_CASE: FinalizedProcess> {
     pub split_process_before: PROCESS_BEFORE,
     pub next_case: NEXT_CASE,
   }
-  impl<PROCESS_BEFORE: FinalizedProcess, NEXT_CASE: FinalizedProcess> FinalizedSplitProcess
+
+  impl<PROCESS_BEFORE: FinalizedSplitProcess, NEXT_CASE: FinalizedProcess> FinalizedSplitProcess
     for NextCaseOfFinalizedSplitProcess<PROCESS_BEFORE, NEXT_CASE>
   {
+
+    async fn interpret(&self, previous_interpretation_produced: Value, last_interpreted: LastInterpreted) -> InterpretationResult<Self::SplitterOutput> {
+      todo!()
+    }
   }
 }
 
