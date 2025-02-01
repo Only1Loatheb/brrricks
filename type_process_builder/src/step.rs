@@ -1,16 +1,41 @@
-use serde::{Deserialize, Serialize};
+use serde::de::DeserializeOwned;
+use serde::Serialize;
 
-pub trait ParamValue: Serialize + for<'de> Deserialize<'de> {}
+pub trait ParamValue: Copy + Serialize + DeserializeOwned {
+  const NAME: &'static str;
+} // copy required by interpret method
 
 pub mod param_list {
   use crate::step::ParamValue;
   use frunk_core::hlist::{HCons, HList, HNil};
+  use serde::ser::SerializeMap;
+  use serde::{Deserializer, Serializer};
+  use serde::de::MapAccess;
 
-  pub trait ParamList: HList {}
+  pub trait ParamList: HList + Copy {
+    // copy required by interpret method
+    fn _serialize<S: Serializer>(&self, serialize_map: &mut S::SerializeMap) -> Result<(), S::Error>;
 
-  impl ParamList for HNil {}
+    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+      // https://serde.rs/impl-serialize.html#serializing-a-sequence-or-map
+      let mut serialize_map = serializer.serialize_map(Some(self.len()))?;
+      self._serialize::<S>(&mut serialize_map)?;
+      serialize_map.end()
+    }
+  }
 
-  impl<PARAM_VALUE: ParamValue, TAIL: ParamList> ParamList for HCons<PARAM_VALUE, TAIL> {}
+  impl ParamList for HNil {
+    fn _serialize<S: Serializer>(&self, serialize_map: &mut S::SerializeMap) -> Result<(), S::Error> {
+      Ok(())
+    }
+  }
+
+  impl<PARAM_VALUE: ParamValue, TAIL: ParamList> ParamList for HCons<PARAM_VALUE, TAIL> {
+    fn _serialize<S: Serializer>(&self, serialize_map: &mut S::SerializeMap) -> Result<(), S::Error> {
+      self.tail._serialize::<S>(serialize_map)?;
+      serialize_map.serialize_entry(PARAM_VALUE::NAME, &self.head)
+    }
+  }
 }
 
 pub mod splitter_output_repr {
@@ -25,9 +50,7 @@ pub mod splitter_output_repr {
     type VALUE = Coproduct<CASE_THIS, CNil>;
   }
 
-  impl<CASE_THIS: ParamList, CASE_OTHER: SplitterOutput> SplitterOutput
-    for Coproduct<CASE_THIS, CASE_OTHER>
-  {
+  impl<CASE_THIS: ParamList, CASE_OTHER: SplitterOutput> SplitterOutput for Coproduct<CASE_THIS, CASE_OTHER> {
     type VALUE = Coproduct<CASE_THIS, CASE_OTHER::VALUE>;
   }
 }
@@ -45,7 +68,7 @@ pub mod step {
     async fn handle(&self, input: CONSUMES) -> anyhow::Result<PRODUCES>;
   }
 
-  pub trait Final<CONSUMES: ParamList>{
+  pub trait Final<CONSUMES: ParamList> {
     async fn handle(&self, input: CONSUMES) -> anyhow::Result<Message>;
   }
 }

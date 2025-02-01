@@ -2,6 +2,7 @@ use crate::step::param_list::ParamList;
 use crate::step::ParamValue;
 use frunk_core::hlist::{HCons, HNil};
 
+// todo fail if the same types are in both lists
 // Using ParamList instead of HList simplifies where clauses
 pub trait Concat<RHS: ParamList>: ParamList {
   type Concatenated: ParamList;

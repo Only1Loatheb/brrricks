@@ -1,4 +1,3 @@
-use crate::invariant::Invariant;
 use crate::step::param_list::ParamList;
 use crate::step::step::Linear;
 use crate::step::*;
@@ -20,11 +19,11 @@ pub enum InterpretationOutcome<T: ParamList> {
 type InterpretationResult<T: ParamList> = anyhow::Result<InterpretationOutcome<T>>;
 
 pub mod flowing_process {
+  use std::marker::PhantomData;
   use crate::builder::finalized_process::{FinalizedProcess, FlowingFinalizedProcess};
   use crate::builder::flowing_split_process::FlowingSplitProcess;
   use crate::builder::InterpretationOutcome::*;
   use crate::builder::{InterpretationOutcome, InterpretationResult, LastInterpreted};
-  use crate::param_list_concat::Concat;
   use crate::step::param_list::ParamList;
   use crate::step::step::{Final, Linear};
   use frunk_core::hlist::{HNil, Sculptor, Selector};
@@ -73,36 +72,44 @@ pub mod flowing_process {
     pub process_before: PROCESS_BEFORE,
     pub last_step: LINEAR_STEP,
     pub step_index: usize,
+    pub pd: PhantomData<(LINEAR_CONSUMES, LINEAR_PRODUCES)>,
   }
 
   impl<
       PROCESS_BEFORE: FlowingProcess,
-      LINEAR_CONSUMES: ParamList + Concat<PROCESS_BEFORE::Consumes>,
-      LINEAR_PRODUCES: ParamList + Concat<PROCESS_BEFORE::Produces>,
-      LINEAR_STEP: Linear<LINEAR_CONSUMES, LINEAR_PRODUCES>,
-    > FlowingProcess for LinearFlowingProcess<PROCESS_BEFORE, LINEAR_CONSUMES, LINEAR_PRODUCES, LINEAR_STEP>
+      LAST_STEP_CONSUMES: ParamList + Concat<PROCESS_BEFORE::Consumes>,
+      LAST_STEP_PRODUCES: ParamList + Concat<PROCESS_BEFORE::Produces>,
+      LAST_STEP: Linear<LAST_STEP_CONSUMES, LAST_STEP_PRODUCES>,
+    > FlowingProcess for LinearFlowingProcess<PROCESS_BEFORE, LAST_STEP_CONSUMES, 
+    LAST_STEP_PRODUCES, 
+    LAST_STEP>
   where
   {
-    type Consumes = <LINEAR_CONSUMES as Concat<PROCESS_BEFORE::Consumes>>::Concatenated;
-    type Produces = <LINEAR_PRODUCES as Concat<PROCESS_BEFORE::Produces>>::Concatenated;
+    // Consumes should be: (LINEAR_CONSUMES - PROCESS_BEFORE::Produces) union PROCESS_BEFORE::Consumes
+    type Consumes = <LAST_STEP_CONSUMES as Concat<PROCESS_BEFORE::Consumes>>::Concatenated;
+    // Produces should be: LINEAR_PRODUCES union PROCESS_BEFORE::Produces(with check for duplicates)
+    type Produces = <LAST_STEP_PRODUCES as Concat<PROCESS_BEFORE::Produces>>::Concatenated;
 
     async fn interpret(&self, consumes: Self::Consumes) -> InterpretationResult<Self::Produces> {
-      let process_before_output = self.process_before.interpret(consumes).await?;
+      let (process_before_consumes, _): (PROCESS_BEFORE::Consumes, _) = consumes.sculpt();
+      let process_before_output = self.process_before.interpret(process_before_consumes).await?;
       match process_before_output {
         Continue(process_before_produces) => {
-          let last_step_output = self.last_step.handle(process_before_produces).await?; //
-                                                                                        // process_before_produces most likely will need to be adapted with a selector
+          let (last_step_consumes, _): (LAST_STEP_CONSUMES, _) = consumes.concat(process_before_produces).sculpt();
+          let last_step_output = self.last_step.handle(last_step_consumes).await?;
           match last_step_output {
             (Some(msg), last_step_produces) => Ok(Yield(
               msg,
-              serde_json::to_value(last_step_produces.concat(process_before_produces))?,
+              // Should only pass params required in further part of the process, but I don't know what they are.
+              // todo Make all the methods generic over Serializer
+              last_step_produces.concat(process_before_produces).serialize(serde_json::value::Serializer)?,
               LastInterpreted(self.step_index),
             )),
             (None, last_step_produces) => Ok(Continue(last_step_produces.concat(process_before_produces))),
           }
         }
-        result @ Yield(_, _, _) => Ok(result),
-        result @ Finish(_) => Ok(result),
+        Yield(a, b, c) => Ok(Yield(a, b, c)),
+        Finish(a) => Ok(Finish(a)),
       }
     }
 
@@ -129,8 +136,8 @@ pub mod flowing_process {
               (None, last_step_produces) => Ok(Continue(last_step_produces.concat(process_before_produces))),
             }
           }
-          result @ Yield(_, _, _) => Ok(result),
-          result @ Finish(_) => Ok(result),
+        Yield(a, b, c) => Ok(Yield(a, b, c)),
+        Finish(a) => Ok(Finish(a)),
         }
       } else {
         let params = serde_json::from_value::<Self::Produces>(previous_interpretation_produced)?;
@@ -225,7 +232,6 @@ pub mod finalized_split_process {
   use crate::builder::flowing_process::FlowingProcess;
   use crate::builder::InterpretationOutcome::*;
   use crate::builder::{InterpretationOutcome, InterpretationResult, LastInterpreted};
-  use crate::param_list_concat::Concat;
   use crate::step::param_list::ParamList;
   use crate::step::splitter_output_repr::SplitterOutput;
   use crate::step::step::Splitter;
