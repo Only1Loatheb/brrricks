@@ -24,13 +24,14 @@ pub mod flowing_process {
   use crate::builder::flowing_split_process::FlowingSplitProcess;
   use crate::builder::InterpretationOutcome::*;
   use crate::builder::{InterpretationOutcome, InterpretationResult, LastInterpreted};
-  use crate::hlist_concat::Concat;
+  use crate::param_list_concat::Concat;
   use crate::step::param_list::ParamList;
   use crate::step::step::{Final, Linear};
   use frunk_core::hlist::{HNil, Sculptor, Selector};
   use process_builder_common::process_domain::Message;
   use serde::Deserializer;
   use serde_json::Value;
+  use crate::hlist_concat::Concat;
 
   pub trait FlowingProcess {
     type Consumes: ParamList;
@@ -67,16 +68,20 @@ pub mod flowing_process {
     PROCESS_BEFORE: FlowingProcess,
     LINEAR_CONSUMES: ParamList,
     LINEAR_PRODUCES: ParamList,
+    LINEAR_STEP: Linear<LINEAR_CONSUMES, LINEAR_PRODUCES>,
   > {
     pub process_before: PROCESS_BEFORE,
-    pub last_step: dyn Linear<LINEAR_CONSUMES, LINEAR_PRODUCES>,
+    pub last_step: LINEAR_STEP,
     pub step_index: usize,
   }
+
   impl<
       PROCESS_BEFORE: FlowingProcess,
-      LINEAR_CONSUMES: ParamList,
-      LINEAR_PRODUCES: ParamList + Concat<PROCESS_BEFORE>,
-    > FlowingProcess for LinearFlowingProcess<PROCESS_BEFORE, LINEAR_CONSUMES, LINEAR_PRODUCES>
+      LINEAR_CONSUMES: ParamList + Concat<PROCESS_BEFORE::Consumes>,
+      LINEAR_PRODUCES: ParamList + Concat<PROCESS_BEFORE::Produces>,
+      LINEAR_STEP: Linear<LINEAR_CONSUMES, LINEAR_PRODUCES>,
+    > FlowingProcess for LinearFlowingProcess<PROCESS_BEFORE, LINEAR_CONSUMES, LINEAR_PRODUCES, LINEAR_STEP>
+  where
   {
     type Consumes = <LINEAR_CONSUMES as Concat<PROCESS_BEFORE::Consumes>>::Concatenated;
     type Produces = <LINEAR_PRODUCES as Concat<PROCESS_BEFORE::Produces>>::Concatenated;
@@ -85,17 +90,17 @@ pub mod flowing_process {
       let process_before_output = self.process_before.interpret(consumes).await?;
       match process_before_output {
         Continue(process_before_produces) => {
-            let last_step_output = self.last_step.handle(process_before_produces).await?;       // 
-            // process_before_produces most likely will need to be adapted with a selector
-            match last_step_output {
-              (Some(msg), last_step_produces) => Ok(Yield(
-                msg,
-                serde_json::to_value(last_step_produces.concat(process_before_produces))?,
-                LastInterpreted(self.step_index),
-              )),
-              (None, last_step_produces) => Ok(Continue(last_step_produces.concat(process_before_produces))),
-            }
+          let last_step_output = self.last_step.handle(process_before_produces).await?; //
+                                                                                        // process_before_produces most likely will need to be adapted with a selector
+          match last_step_output {
+            (Some(msg), last_step_produces) => Ok(Yield(
+              msg,
+              serde_json::to_value(last_step_produces.concat(process_before_produces))?,
+              LastInterpreted(self.step_index),
+            )),
+            (None, last_step_produces) => Ok(Continue(last_step_produces.concat(process_before_produces))),
           }
+        }
         result @ Yield(_, _, _) => Ok(result),
         result @ Finish(_) => Ok(result),
       }
@@ -113,8 +118,8 @@ pub mod flowing_process {
           .await?;
         match process_before_output {
           Continue(process_before_produces) => {
-            let last_step_output = self.last_step.handle(process_before_produces).await?;       // 
-            // process_before_produces most likely will need to be adapted with a selector
+            let last_step_output = self.last_step.handle(process_before_produces).await?; //
+                                                                                          // process_before_produces most likely will need to be adapted with a selector
             match last_step_output {
               (Some(msg), last_step_produces) => Ok(Yield(
                 msg,
@@ -220,7 +225,7 @@ pub mod finalized_split_process {
   use crate::builder::flowing_process::FlowingProcess;
   use crate::builder::InterpretationOutcome::*;
   use crate::builder::{InterpretationOutcome, InterpretationResult, LastInterpreted};
-  use crate::hlist_concat::Concat;
+  use crate::param_list_concat::Concat;
   use crate::step::param_list::ParamList;
   use crate::step::splitter_output_repr::SplitterOutput;
   use crate::step::step::Splitter;
