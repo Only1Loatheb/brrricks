@@ -19,18 +19,18 @@ pub enum InterpretationOutcome<T: ParamList> {
 type InterpretationResult<T: ParamList> = anyhow::Result<InterpretationOutcome<T>>;
 
 pub mod flowing_process {
-  use std::marker::PhantomData;
   use crate::builder::finalized_process::{FinalizedProcess, FlowingFinalizedProcess};
   use crate::builder::flowing_split_process::FlowingSplitProcess;
   use crate::builder::InterpretationOutcome::*;
   use crate::builder::{InterpretationOutcome, InterpretationResult, LastInterpreted};
+  use crate::hlist_concat::Concat;
   use crate::step::param_list::ParamList;
   use crate::step::step::{Final, Linear};
   use frunk_core::hlist::{HNil, Sculptor, Selector};
   use process_builder_common::process_domain::Message;
   use serde::Deserializer;
   use serde_json::Value;
-  use crate::hlist_concat::Concat;
+  use std::marker::PhantomData;
 
   pub trait FlowingProcess {
     type Consumes: ParamList;
@@ -77,21 +77,24 @@ pub mod flowing_process {
 
   impl<
       PROCESS_BEFORE: FlowingProcess,
-      LAST_STEP_CONSUMES: ParamList + Concat<PROCESS_BEFORE::Consumes>,
+      LAST_STEP_CONSUMES: ParamList + Concat<PROCESS_BEFORE::Consumes, Concatenated = CONSUMES>,
       LAST_STEP_PRODUCES: ParamList + Concat<PROCESS_BEFORE::Produces>,
       LAST_STEP: Linear<LAST_STEP_CONSUMES, LAST_STEP_PRODUCES>,
-    > FlowingProcess for LinearFlowingProcess<PROCESS_BEFORE, LAST_STEP_CONSUMES, 
-    LAST_STEP_PRODUCES, 
-    LAST_STEP>
-  where
+      LAST_STEP_CONSUMES_INDECES,
+      PROCESS_BEFORE_CONSUMES_INDECES,
+      CONSUMES_CONCAT_PROCESS_BEFORE_PRODUCES: ParamList + Sculptor<LAST_STEP_CONSUMES, LAST_STEP_CONSUMES_INDECES>,
+      CONSUMES: ParamList
+        + Sculptor<PROCESS_BEFORE::Consumes, PROCESS_BEFORE_CONSUMES_INDECES>
+        + Concat<PROCESS_BEFORE::Produces, Concatenated = CONSUMES_CONCAT_PROCESS_BEFORE_PRODUCES>,
+    > FlowingProcess for LinearFlowingProcess<PROCESS_BEFORE, LAST_STEP_CONSUMES, LAST_STEP_PRODUCES, LAST_STEP>
   {
     // Consumes should be: (LINEAR_CONSUMES - PROCESS_BEFORE::Produces) union PROCESS_BEFORE::Consumes
-    type Consumes = <LAST_STEP_CONSUMES as Concat<PROCESS_BEFORE::Consumes>>::Concatenated;
+    type Consumes = CONSUMES;
     // Produces should be: LINEAR_PRODUCES union PROCESS_BEFORE::Produces(with check for duplicates)
     type Produces = <LAST_STEP_PRODUCES as Concat<PROCESS_BEFORE::Produces>>::Concatenated;
 
     async fn interpret(&self, consumes: Self::Consumes) -> InterpretationResult<Self::Produces> {
-      let (process_before_consumes, _): (PROCESS_BEFORE::Consumes, _) = consumes.sculpt();
+      let (process_before_consumes, _) = consumes.sculpt();
       let process_before_output = self.process_before.interpret(process_before_consumes).await?;
       match process_before_output {
         Continue(process_before_produces) => {
@@ -102,7 +105,9 @@ pub mod flowing_process {
               msg,
               // Should only pass params required in further part of the process, but I don't know what they are.
               // todo Make all the methods generic over Serializer
-              last_step_produces.concat(process_before_produces).serialize(serde_json::value::Serializer)?,
+              last_step_produces
+                .concat(process_before_produces)
+                .serialize(serde_json::value::Serializer)?,
               LastInterpreted(self.step_index),
             )),
             (None, last_step_produces) => Ok(Continue(last_step_produces.concat(process_before_produces))),
@@ -136,8 +141,8 @@ pub mod flowing_process {
               (None, last_step_produces) => Ok(Continue(last_step_produces.concat(process_before_produces))),
             }
           }
-        Yield(a, b, c) => Ok(Yield(a, b, c)),
-        Finish(a) => Ok(Finish(a)),
+          Yield(a, b, c) => Ok(Yield(a, b, c)),
+          Finish(a) => Ok(Finish(a)),
         }
       } else {
         let params = serde_json::from_value::<Self::Produces>(previous_interpretation_produced)?;
@@ -155,24 +160,30 @@ pub mod flowing_process {
 
   // builder methods
   impl EmptyProcess {
-    fn finnish<FINAL_STEP: Final<HNil>>(&self, step: FINAL_STEP) -> impl FinalizedProcess {
+    fn finnish<FINAL_STEP: Final<HNil>>(self, step: FINAL_STEP) -> impl FinalizedProcess {
       FlowingFinalizedProcess {
         process_before: EmptyProcess,
         final_step: step,
+        pd: Default::default(),
       }
     }
   }
 
-  impl<PROCESS_BEFORE: FlowingProcess, LINEAR_CONSUMES: ParamList, LINEAR_PRODUCES: ParamList>
-    LinearFlowingProcess<PROCESS_BEFORE, LINEAR_CONSUMES, LINEAR_PRODUCES>
+  impl<
+      PROCESS_BEFORE: FlowingProcess,
+      LINEAR_CONSUMES: ParamList + Concat<<PROCESS_BEFORE as FlowingProcess>::Consumes>,
+      LINEAR_PRODUCES: ParamList + Concat<<PROCESS_BEFORE as FlowingProcess>::Produces>,
+      LINEAR_STEP: Linear<LINEAR_CONSUMES, LINEAR_PRODUCES>,
+    > LinearFlowingProcess<PROCESS_BEFORE, LINEAR_CONSUMES, LINEAR_PRODUCES, LINEAR_STEP>
   {
     fn finnish<FINAL_CONSUMES: ParamList, FINAL_STEP: Final<FINAL_CONSUMES>>(
-      &self,
+      self,
       step: FINAL_STEP,
     ) -> impl FinalizedProcess {
       FlowingFinalizedProcess {
         process_before: self,
         final_step: step,
+        pd: Default::default(),
       }
     }
   }
@@ -186,21 +197,28 @@ pub mod finalized_process {
   use crate::step::step::Final;
   use frunk_core::hlist::HNil;
   use serde_json::Value;
+  use std::marker::PhantomData;
 
   pub trait FinalizedProcess {
     async fn interpret_resume(
       &self,
       previous_interpretation_produced: Value,
       last_interpreted: LastInterpreted,
-    ) -> InterpretationResult<HNil>; // fixme create result for finalised process, or undo changes
+    ) -> InterpretationResult<HNil>; // fixme create result type for finalised process, or undo changes
   }
 
-  pub struct FlowingFinalizedProcess<PROCESS_BEFORE: FlowingProcess, FINAL_CONSUMES: ParamList> {
+  pub struct FlowingFinalizedProcess<
+    PROCESS_BEFORE: FlowingProcess,
+    FINAL_CONSUMES: ParamList,
+    FINAL_STEP: Final<FINAL_CONSUMES>,
+  > {
     pub process_before: PROCESS_BEFORE,
-    pub final_step: dyn Final<FINAL_CONSUMES>,
+    pub final_step: FINAL_STEP,
+    pub pd: PhantomData<FINAL_CONSUMES>,
   }
-  impl<PROCESS_BEFORE: FlowingProcess, FINAL_CONSUMES: ParamList> FinalizedProcess
-    for FlowingFinalizedProcess<PROCESS_BEFORE, FINAL_CONSUMES>
+
+  impl<PROCESS_BEFORE: FlowingProcess, FINAL_CONSUMES: ParamList, FINAL_STEP: Final<FINAL_CONSUMES>> FinalizedProcess
+    for FlowingFinalizedProcess<PROCESS_BEFORE, FINAL_CONSUMES, FINAL_STEP>
   {
     async fn interpret_resume(
       &self,
@@ -239,6 +257,7 @@ pub mod finalized_split_process {
   use frunk_core::hlist::HNil;
   use process_builder_common::process_domain::Message;
   use serde_json::Value;
+  use std::marker::PhantomData;
 
   pub trait FinalizedSplitProcess {
     async fn interpret_resume(
@@ -252,24 +271,29 @@ pub mod finalized_split_process {
     PROCESS_BEFORE: FlowingProcess,
     SPLITTER_CONSUMES: ParamList,
     SPLITTER_PRODUCES: SplitterOutput,
+    SPLITTER_STEP: Splitter<SPLITTER_CONSUMES, SPLITTER_PRODUCES>,
     FIRST_CASE: FinalizedProcess,
   > {
     pub process_before: PROCESS_BEFORE,
-    pub splitter: dyn Splitter<SPLITTER_CONSUMES, SPLITTER_PRODUCES>,
+    pub splitter: SPLITTER_STEP,
     pub step_index: usize,
     pub first_case: FIRST_CASE,
+    pub pd: PhantomData<(SPLITTER_CONSUMES, SPLITTER_PRODUCES)>,
   }
+
   impl<
       PROCESS_BEFORE: FlowingProcess,
       SPLITTER_CONSUMES: ParamList,
       CASE_THIS: ParamList,
       CASE_OTHER: SplitterOutput,
+      SPLITTER_STEP: Splitter<SPLITTER_CONSUMES, Coproduct<CASE_THIS, CASE_OTHER>>,
       FIRST_CASE: FinalizedProcess,
     > FinalizedSplitProcess
     for FirstCaseOfFinalizedSplitProcess<
       PROCESS_BEFORE,
       SPLITTER_CONSUMES,
       Coproduct<CASE_THIS, CASE_OTHER>,
+      SPLITTER_STEP,
       FIRST_CASE,
     >
   {
@@ -331,6 +355,7 @@ pub mod flowing_split_process {
   use crate::step::param_list::ParamList;
   use crate::step::splitter_output_repr::SplitterOutput;
   use crate::step::step::Splitter;
+  use std::marker::PhantomData;
 
   pub trait FlowingSplitProcess {}
 
@@ -338,19 +363,23 @@ pub mod flowing_split_process {
     PROCESS_BEFORE: FlowingProcess,
     SPLITTER_CONSUMES: ParamList,
     SPLITTER_PRODUCES: SplitterOutput,
+    SPLITTER_STEP: Splitter<SPLITTER_CONSUMES, SPLITTER_PRODUCES>,
     FIRST_CASE: FlowingProcess,
   > {
     pub process_before: PROCESS_BEFORE,
-    pub splitter: dyn Splitter<SPLITTER_CONSUMES, SPLITTER_PRODUCES>,
+    pub splitter: SPLITTER_STEP,
     pub first_case: FIRST_CASE,
+    pub pd: PhantomData<(SPLITTER_CONSUMES, SPLITTER_PRODUCES)>,
   }
+
   impl<
       PROCESS_BEFORE: FlowingProcess,
       SPLITTER_CONSUMES: ParamList,
       SPLITTER_PRODUCES: SplitterOutput,
+      SPLITTER_STEP: Splitter<SPLITTER_CONSUMES, SPLITTER_PRODUCES>,
       FIRST_CASE: FlowingProcess,
     > FlowingSplitProcess
-    for FirstCaseOfFlowingSplitProcess<PROCESS_BEFORE, SPLITTER_CONSUMES, SPLITTER_PRODUCES, FIRST_CASE>
+    for FirstCaseOfFlowingSplitProcess<PROCESS_BEFORE, SPLITTER_CONSUMES, SPLITTER_PRODUCES, SPLITTER_STEP, FIRST_CASE>
   {
   }
 

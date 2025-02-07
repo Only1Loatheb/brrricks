@@ -12,10 +12,11 @@ pub mod param_list {
   use serde::{Deserializer, Serializer};
   use serde::de::MapAccess;
 
+  /// copy required by interpret method
   pub trait ParamList: HList + Copy {
-    // copy required by interpret method
     fn _serialize<S: Serializer>(&self, serialize_map: &mut S::SerializeMap) -> Result<(), S::Error>;
 
+    /// maybe serialize as a list if the same list is always serialized and deserialized?
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
       // https://serde.rs/impl-serialize.html#serializing-a-sequence-or-map
       let mut serialize_map = serializer.serialize_map(Some(self.len()))?;
