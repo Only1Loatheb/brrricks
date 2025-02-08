@@ -31,6 +31,7 @@ pub mod flowing_process {
   use serde::Deserializer;
   use serde_json::Value;
   use std::marker::PhantomData;
+  use crate::hlist_transformer::TransformTo;
 
   pub trait FlowingProcess {
     type Consumes: ParamList;
@@ -82,9 +83,9 @@ pub mod flowing_process {
       LAST_STEP: Linear<LAST_STEP_CONSUMES, LAST_STEP_PRODUCES>,
       LAST_STEP_CONSUMES_INDECES,
       PROCESS_BEFORE_CONSUMES_INDECES,
-      CONSUMES_CONCAT_PROCESS_BEFORE_PRODUCES: ParamList + Sculptor<LAST_STEP_CONSUMES, LAST_STEP_CONSUMES_INDECES>,
+      CONSUMES_CONCAT_PROCESS_BEFORE_PRODUCES: ParamList + TransformTo<LAST_STEP_CONSUMES, LAST_STEP_CONSUMES_INDECES>,
       CONSUMES: ParamList
-        + Sculptor<PROCESS_BEFORE::Consumes, PROCESS_BEFORE_CONSUMES_INDECES>
+        + TransformTo<PROCESS_BEFORE::Consumes, PROCESS_BEFORE_CONSUMES_INDECES>
         + Concat<PROCESS_BEFORE::Produces, Concatenated = CONSUMES_CONCAT_PROCESS_BEFORE_PRODUCES>,
     > FlowingProcess for LinearFlowingProcess<PROCESS_BEFORE, LAST_STEP_CONSUMES, LAST_STEP_PRODUCES, LAST_STEP>
   {
@@ -94,11 +95,11 @@ pub mod flowing_process {
     type Produces = <LAST_STEP_PRODUCES as Concat<PROCESS_BEFORE::Produces>>::Concatenated;
 
     async fn interpret(&self, consumes: Self::Consumes) -> InterpretationResult<Self::Produces> {
-      let (process_before_consumes, _) = consumes.sculpt();
+      let process_before_consumes = consumes.transform();
       let process_before_output = self.process_before.interpret(process_before_consumes).await?;
       match process_before_output {
         Continue(process_before_produces) => {
-          let (last_step_consumes, _): (LAST_STEP_CONSUMES, _) = consumes.concat(process_before_produces).sculpt();
+          let last_step_consumes = consumes.concat(process_before_produces).transform();
           let last_step_output = self.last_step.handle(last_step_consumes).await?;
           match last_step_output {
             (Some(msg), last_step_produces) => Ok(Yield(
