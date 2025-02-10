@@ -1,11 +1,40 @@
-// #![recursion_limit = "512"]
-//
 pub mod step;
 pub mod builder;
 mod builder_helpers;
 mod hlist_concat;
 mod hlist_transformer;
 mod hlist_empty;
+
+pub mod process_builder {
+}
+
+#[cfg(test)]
+mod tests {
+  use frunk_core::hlist::{h_cons, HNil};
+  use process_builder_common::process_domain::Message;
+  use crate::builder::BuilderToken;
+  use crate::builder::flowing_process::{EmptyProcess, FlowingProcess};
+  use crate::step::step::Linear;
+  use super::*;
+
+  struct A;
+
+  impl Linear<HNil, HNil> for A {
+    async fn handle(&self, input: HNil) -> anyhow::Result<(Option<Message>, HNil)> {
+      todo!()
+    }
+  }
+
+  #[test]
+  fn test_hcons() {
+    let token = BuilderToken::new();
+    let (p, t) = EmptyProcess.then(A, token);
+    
+    assert_eq!(t.getAndInc().1, 1);
+  }
+}
+
+
 //
 // pub mod process_builder {
 //   use std::marker::PhantomData;

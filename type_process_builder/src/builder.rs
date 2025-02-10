@@ -16,13 +16,27 @@ pub enum InterpretationOutcome<T: ParamList> {
   Finish(Message),
 }
 
+/// auto inc id
+pub struct BuilderToken(usize);
+
+impl BuilderToken {
+  // https://www.reddit.com/r/rust/comments/108z8pl/comment/j3vrsp1/?utm_source=share&utm_medium=web3x&utm_name=web3xcss&utm_term=1&utm_content=share_button
+  // todo pub(crate) type Invariant<'a> = PhantomData<fn(&'a ()) -> &'a ()>;
+  pub fn new() -> BuilderToken {
+    BuilderToken(0)
+  }
+  pub fn getAndInc(self) -> (BuilderToken, usize) {
+    (BuilderToken { 0: self.0 + 1 }, self.0)
+  }
+}
+
 type InterpretationResult<T: ParamList> = anyhow::Result<InterpretationOutcome<T>>;
 
 pub mod flowing_process {
   use crate::builder::finalized_process::{FinalizedProcess, FlowingFinalizedProcess};
   use crate::builder::flowing_split_process::FlowingSplitProcess;
   use crate::builder::InterpretationOutcome::*;
-  use crate::builder::{InterpretationOutcome, InterpretationResult, LastInterpreted};
+  use crate::builder::{BuilderToken, InterpretationOutcome, InterpretationResult, LastInterpreted};
   use crate::hlist_concat::Concat;
   use crate::hlist_empty::Empty;
   use crate::hlist_transformer::TransformTo;
@@ -34,17 +48,33 @@ pub mod flowing_process {
   use serde_json::Value;
   use std::marker::PhantomData;
 
-  pub trait FlowingProcess {
+  pub trait FlowingProcess: Sized {
     type Consumes: ParamList;
     type Produces: ParamList;
 
+    fn then<CONSUMES: ParamList + Concat<Self::Consumes>, PRODUCES: ParamList + Concat<Self::Produces>, LINEAR_STEP: Linear<CONSUMES, PRODUCES>>(
+      self,
+      step: LINEAR_STEP,
+      builderToken: BuilderToken,
+    ) -> (impl FlowingProcess, BuilderToken) where <CONSUMES as Concat<Self::Consumes>>::Concatenated: Concat<Self::Produces> {
+      let (token, idx) = builderToken.getAndInc();
+      let process = LinearFlowingProcess {
+        process_before: self,
+        last_step: step,
+        step_index: idx,
+        pd: Default::default(),
+      };
+      (process, token)
+    }
+
     async fn interpret(&self, consumes: Self::Consumes) -> InterpretationResult<Self::Produces>;
 
-    async fn interpret_resume(
-      &self,
-      previous_interpretation_produced: Value,
-      last_interpreted: LastInterpreted,
-    ) -> InterpretationResult<Self::Produces>;
+    // // should be the only interpret method, but it is a bit too hard to implement right now
+    // async fn interpret_resume(
+    //   &self,
+    //   previous_interpretation_produced: Value,
+    //   last_interpreted: LastInterpreted,
+    // ) -> InterpretationResult<Self::Produces>;
   }
 
   pub struct EmptyProcess;
@@ -56,13 +86,13 @@ pub mod flowing_process {
       Ok(Continue(HNil))
     }
 
-    async fn interpret_resume(
-      &self,
-      previous_interpretation_result: Value,
-      last_interpreted: LastInterpreted,
-    ) -> InterpretationResult<Self::Produces> {
-      Ok(Continue(HNil))
-    }
+    // async fn interpret_resume(
+    //   &self,
+    //   previous_interpretation_result: Value,
+    //   last_interpreted: LastInterpreted,
+    // ) -> InterpretationResult<Self::Produces> {
+    //   Ok(Continue(HNil))
+    // }
   }
 
   pub struct LinearFlowingProcess<
@@ -94,7 +124,7 @@ pub mod flowing_process {
   // For process_before_consumes and last_step_consumes 
     <<LAST_STEP_CONSUMES as Sculptor<LAST_STEP_CONSUMES_FROM_PROCESS_BEFORE, LAST_STEP_CONSUMES_FROM_PROCESS_BEFORE_INDIDES>>::Remainder as
     Concat<PROCESS_BEFORE::Consumes>>::Concatenated: TransformTo<PROCESS_BEFORE::Consumes, PROCESS_BEFORE_CONSUMES_INDECES> +
-  Concat<PROCESS_BEFORE::Produces, Concatenated = CONSUMES_CONCAT_PROCESS_BEFORE_PRODUCES>,
+    Concat<PROCESS_BEFORE::Produces, Concatenated=CONSUMES_CONCAT_PROCESS_BEFORE_PRODUCES>,
   // For LAST_STEP_CONSUMES_FROM_PROCESS_BEFORE restriction
   // <<LAST_STEP_CONSUMES as Sculptor<LAST_STEP_CONSUMES_NOT_FROM_PROCESS_BEFORE, INDICES0>>::Remainder as Sculptor<
   //   LAST_STEP_CONSUMES_FROM_PROCESS_BEFORE,
@@ -141,37 +171,37 @@ pub mod flowing_process {
       }
     }
 
-    async fn interpret_resume(
-      &self,
-      previous_interpretation_produced: Value,
-      last_interpreted: LastInterpreted,
-    ) -> InterpretationResult<Self::Produces> {
-      if last_interpreted.0 < self.step_index {
-        let process_before_output = self
-          .process_before
-          .interpret_resume(previous_interpretation_produced, last_interpreted)
-          .await?;
-        match process_before_output {
-          Continue(process_before_produces) => {
-            let last_step_output = self.last_step.handle(process_before_produces).await?; //
-            // process_before_produces most likely will need to be adapted with a selector
-            match last_step_output {
-              (Some(msg), last_step_produces) => Ok(Yield(
-                msg,
-                serde_json::to_value(last_step_produces.concat(process_before_produces))?,
-                LastInterpreted(self.step_index),
-              )),
-              (None, last_step_produces) => Ok(Continue(last_step_produces.concat(process_before_produces))),
-            }
-          }
-          Yield(a, b, c) => Ok(Yield(a, b, c)),
-          Finish(a) => Ok(Finish(a)),
-        }
-      } else {
-        let params = serde_json::from_value::<Self::Produces>(previous_interpretation_produced)?;
-        Ok(Continue(params))
-      }
-    }
+    // async fn interpret_resume(
+    //   &self,
+    //   previous_interpretation_produced: Value,
+    //   last_interpreted: LastInterpreted,
+    // ) -> InterpretationResult<Self::Produces> {
+    //   if last_interpreted.0 < self.step_index {
+    //     let process_before_output = self
+    //       .process_before
+    //       .interpret_resume(previous_interpretation_produced, last_interpreted)
+    //       .await?;
+    //     match process_before_output {
+    //       Continue(process_before_produces) => {
+    //         let last_step_output = self.last_step.handle(process_before_produces).await?; //
+    //         // process_before_produces most likely will need to be adapted with a selector
+    //         match last_step_output {
+    //           (Some(msg), last_step_produces) => Ok(Yield(
+    //             msg,
+    //             serde_json::to_value(last_step_produces.concat(process_before_produces))?,
+    //             LastInterpreted(self.step_index),
+    //           )),
+    //           (None, last_step_produces) => Ok(Continue(last_step_produces.concat(process_before_produces))),
+    //         }
+    //       }
+    //       Yield(a, b, c) => Ok(Yield(a, b, c)),
+    //       Finish(a) => Ok(Finish(a)),
+    //     }
+    //   } else {
+    //     let params = serde_json::from_value::<Self::Produces>(previous_interpretation_produced)?;
+    //     Ok(Continue(params))
+    //   }
+    // }
   }
 
   // pub struct SplitFlowingProcess<FLOWING_SPLIT_PROCESS: FlowingSplitProcess> {
@@ -193,11 +223,11 @@ pub mod flowing_process {
   }
 
   impl<
-    PROCESS_BEFORE: FlowingProcess,
-    LINEAR_CONSUMES: ParamList + Concat<<PROCESS_BEFORE as FlowingProcess>::Consumes>,
-    LINEAR_PRODUCES: ParamList + Concat<<PROCESS_BEFORE as FlowingProcess>::Produces>,
-    LINEAR_STEP: Linear<LINEAR_CONSUMES, LINEAR_PRODUCES>,
-  > LinearFlowingProcess<PROCESS_BEFORE, LINEAR_CONSUMES, LINEAR_PRODUCES, LINEAR_STEP>
+      PROCESS_BEFORE: FlowingProcess,
+      LINEAR_CONSUMES: ParamList + Concat<<PROCESS_BEFORE as FlowingProcess>::Consumes>,
+      LINEAR_PRODUCES: ParamList + Concat<<PROCESS_BEFORE as FlowingProcess>::Produces>,
+      LINEAR_STEP: Linear<LINEAR_CONSUMES, LINEAR_PRODUCES>,
+    > LinearFlowingProcess<PROCESS_BEFORE, LINEAR_CONSUMES, LINEAR_PRODUCES, LINEAR_STEP>
   {
     fn finnish<FINAL_CONSUMES: ParamList, FINAL_STEP: Final<FINAL_CONSUMES>>(self, step: FINAL_STEP) -> impl FinalizedProcess {
       FlowingFinalizedProcess {
@@ -219,7 +249,7 @@ pub mod finalized_process {
   use serde_json::Value;
   use std::marker::PhantomData;
 
-  pub trait FinalizedProcess {
+  pub trait FinalizedProcess: Sized {
     async fn interpret_resume(
       &self,
       previous_interpretation_produced: Value,
@@ -234,7 +264,7 @@ pub mod finalized_process {
   }
 
   impl<PROCESS_BEFORE: FlowingProcess, FINAL_CONSUMES: ParamList, FINAL_STEP: Final<FINAL_CONSUMES>> FinalizedProcess
-  for FlowingFinalizedProcess<PROCESS_BEFORE, FINAL_CONSUMES, FINAL_STEP>
+    for FlowingFinalizedProcess<PROCESS_BEFORE, FINAL_CONSUMES, FINAL_STEP>
   {
     async fn interpret_resume(
       &self,
@@ -273,7 +303,7 @@ pub mod finalized_split_process {
   use serde_json::Value;
   use std::marker::PhantomData;
 
-  pub trait FinalizedSplitProcess {
+  pub trait FinalizedSplitProcess: Sized {
     async fn interpret_resume(
       &self,
       previous_interpretation_produced: Value,
@@ -296,14 +326,14 @@ pub mod finalized_split_process {
   }
 
   impl<
-    PROCESS_BEFORE: FlowingProcess,
-    SPLITTER_CONSUMES: ParamList,
-    CASE_THIS: ParamList,
-    CASE_OTHER: SplitterOutput,
-    SPLITTER_STEP: Splitter<SPLITTER_CONSUMES, Coproduct<CASE_THIS, CASE_OTHER>>,
-    FIRST_CASE: FinalizedProcess,
-  > FinalizedSplitProcess
-  for FirstCaseOfFinalizedSplitProcess<PROCESS_BEFORE, SPLITTER_CONSUMES, Coproduct<CASE_THIS, CASE_OTHER>, SPLITTER_STEP, FIRST_CASE>
+      PROCESS_BEFORE: FlowingProcess,
+      SPLITTER_CONSUMES: ParamList,
+      CASE_THIS: ParamList,
+      CASE_OTHER: SplitterOutput,
+      SPLITTER_STEP: Splitter<SPLITTER_CONSUMES, Coproduct<CASE_THIS, CASE_OTHER>>,
+      FIRST_CASE: FinalizedProcess,
+    > FinalizedSplitProcess
+    for FirstCaseOfFinalizedSplitProcess<PROCESS_BEFORE, SPLITTER_CONSUMES, Coproduct<CASE_THIS, CASE_OTHER>, SPLITTER_STEP, FIRST_CASE>
   {
     // type SplitterOutput = <CASE_THIS as Concat<PROCESS_BEFORE::Produces>>::Concatenated;
 
@@ -312,27 +342,28 @@ pub mod finalized_split_process {
       previous_interpretation_produced: Value,
       last_interpreted: LastInterpreted,
     ) -> InterpretationResult<HNil> {
-      if last_interpreted.0 < self.step_index {
-        // no yielding from splitter step todo maybe implement
-        let process_before_output = self
-          .process_before
-          .interpret_resume(previous_interpretation_produced, last_interpreted)
-          .await?;
-        match process_before_output {
-          Continue(process_before_produces) => {
-            let splitter_output = self.splitter.handle(process_before_produces).await?;
-            match splitter_output {
-              Coproduct::Inl(a) => self.first_case.interpret_resume(previous_interpretation_produced, last_interpreted),
-              Coproduct::Inr(b) => {}
-            }
-          }
-          result @ Yield(_, _, _) => Ok(result),
-          result @ Finish(_) => Ok(result),
-        }
-      } else {
-        let params = serde_json::from_value::<SPLITTER_PRODUCES>(previous_interpretation_produced)?;
-        Ok(Continue(params))
-      }
+      todo!()
+      // if last_interpreted.0 < self.step_index {
+      //   // no yielding from splitter step todo maybe implement
+      //   let process_before_output = self
+      //     .process_before
+      //     .interpret_resume(previous_interpretation_produced, last_interpreted)
+      //     .await?;
+      //   match process_before_output {
+      //     Continue(process_before_produces) => {
+      //       let splitter_output = self.splitter.handle(process_before_produces).await?;
+      //       match splitter_output {
+      //         Coproduct::Inl(a) => self.first_case.interpret_resume(previous_interpretation_produced, last_interpreted),
+      //         Coproduct::Inr(b) => {}
+      //       }
+      //     }
+      //     result @ Yield(_, _, _) => Ok(result),
+      //     result @ Finish(_) => Ok(result),
+      //   }
+      // } else {
+      //   let params = serde_json::from_value::<SPLITTER_PRODUCES>(previous_interpretation_produced)?;
+      //   Ok(Continue(params))
+      // }
     }
   }
 
@@ -342,7 +373,7 @@ pub mod finalized_split_process {
   }
 
   impl<PROCESS_BEFORE: FinalizedSplitProcess, NEXT_CASE: FinalizedProcess> FinalizedSplitProcess
-  for NextCaseOfFinalizedSplitProcess<PROCESS_BEFORE, NEXT_CASE>
+    for NextCaseOfFinalizedSplitProcess<PROCESS_BEFORE, NEXT_CASE>
   {
     async fn interpret_resume(
       &self,
@@ -379,38 +410,42 @@ pub mod flowing_split_process {
   }
 
   impl<
-    PROCESS_BEFORE: FlowingProcess,
-    SPLITTER_CONSUMES: ParamList,
-    SPLITTER_PRODUCES: SplitterOutput,
-    SPLITTER_STEP: Splitter<SPLITTER_CONSUMES, SPLITTER_PRODUCES>,
-    FIRST_CASE: FlowingProcess,
-  > FlowingSplitProcess
-  for FirstCaseOfFlowingSplitProcess<PROCESS_BEFORE, SPLITTER_CONSUMES, SPLITTER_PRODUCES, SPLITTER_STEP, FIRST_CASE>
-  {}
+      PROCESS_BEFORE: FlowingProcess,
+      SPLITTER_CONSUMES: ParamList,
+      SPLITTER_PRODUCES: SplitterOutput,
+      SPLITTER_STEP: Splitter<SPLITTER_CONSUMES, SPLITTER_PRODUCES>,
+      FIRST_CASE: FlowingProcess,
+    > FlowingSplitProcess
+    for FirstCaseOfFlowingSplitProcess<PROCESS_BEFORE, SPLITTER_CONSUMES, SPLITTER_PRODUCES, SPLITTER_STEP, FIRST_CASE>
+  {
+  }
 
   pub struct NextCaseFlowingOfFlowingSplitProcess<PROCESS_BEFORE: FlowingSplitProcess, NEXT_CASE: FlowingProcess> {
     pub split_process_before: PROCESS_BEFORE,
     pub next_case: NEXT_CASE,
   }
   impl<PROCESS_BEFORE: FlowingSplitProcess, NEXT_CASE: FlowingProcess> FlowingSplitProcess
-  for NextCaseFlowingOfFlowingSplitProcess<PROCESS_BEFORE, NEXT_CASE>
-  {}
+    for NextCaseFlowingOfFlowingSplitProcess<PROCESS_BEFORE, NEXT_CASE>
+  {
+  }
 
   pub struct NextCaseFinalizedOfFlowingSplitProcess<PROCESS_BEFORE: FlowingSplitProcess, NEXT_CASE: FinalizedProcess> {
     pub split_process_before: PROCESS_BEFORE,
     pub next_case: NEXT_CASE,
   }
   impl<PROCESS_BEFORE: FlowingSplitProcess, NEXT_CASE: FinalizedProcess> FlowingSplitProcess
-  for NextCaseFinalizedOfFlowingSplitProcess<PROCESS_BEFORE, NEXT_CASE>
-  {}
+    for NextCaseFinalizedOfFlowingSplitProcess<PROCESS_BEFORE, NEXT_CASE>
+  {
+  }
 
   pub struct NextCaseFromFinalizedOfFlowingSplitProcess<PROCESS_BEFORE: FinalizedSplitProcess, NEXT_CASE: FlowingProcess> {
     pub split_process_before: PROCESS_BEFORE,
     pub next_case: NEXT_CASE,
   }
   impl<PROCESS_BEFORE: FinalizedSplitProcess, NEXT_CASE: FlowingProcess> FlowingSplitProcess
-  for NextCaseFromFinalizedOfFlowingSplitProcess<PROCESS_BEFORE, NEXT_CASE>
-  {}
+    for NextCaseFromFinalizedOfFlowingSplitProcess<PROCESS_BEFORE, NEXT_CASE>
+  {
+  }
 }
 
 // pub struct FlowingProcess<'same_process> {
