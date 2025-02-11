@@ -8,9 +8,9 @@ pub trait ParamValue: Copy + Serialize + DeserializeOwned {
 pub mod param_list {
   use crate::step::ParamValue;
   use frunk_core::hlist::{HCons, HList, HNil};
+  use serde::de::MapAccess;
   use serde::ser::SerializeMap;
   use serde::{Deserializer, Serializer};
-  use serde::de::MapAccess;
 
   /// copy required by interpret method
   pub trait ParamList: HList + Copy {
@@ -60,6 +60,11 @@ pub mod step {
   use crate::step::param_list::ParamList;
   use crate::step::splitter_output_repr::SplitterOutput;
   use process_builder_common::process_domain::Message;
+  use serde::de::DeserializeOwned;
+
+  pub trait Entry<PRODUCES: ParamList, DESERIALIZE_OWNED: DeserializeOwned> {
+    async fn handle(&self, input: DESERIALIZE_OWNED) -> anyhow::Result<PRODUCES>;
+  }
 
   pub trait Linear<CONSUMES: ParamList, PRODUCES: ParamList> {
     async fn handle(&self, input: CONSUMES) -> anyhow::Result<(Option<Message>, PRODUCES)>;
