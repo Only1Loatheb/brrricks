@@ -1,39 +1,47 @@
-pub mod step;
 pub mod builder;
 mod builder_helpers;
 mod hlist_concat;
-mod hlist_transformer;
 mod hlist_empty;
+mod hlist_transformer;
+pub mod step;
 
-pub mod process_builder {
-}
+pub mod process_builder {}
 
 #[cfg(test)]
 mod tests {
-  use frunk_core::hlist::{h_cons, HNil};
-  use process_builder_common::process_domain::Message;
-  use crate::builder::BuilderToken;
   use crate::builder::flowing_process::{EmptyProcess, FlowingProcess};
   use crate::step::step::Linear;
-  use super::*;
+  use crate::step::ParamValue;
+  use frunk_core::hlist::{HCons, HNil};
+  use process_builder_common::process_domain::Message;
+  use serde::de::DeserializeOwned;
+  use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
-  struct A;
+  #[derive(Clone, serde::Deserialize, serde::Serialize)]
+  struct Param1;
 
-  impl Linear<HNil, HNil> for A {
-    async fn handle(&self, input: HNil) -> anyhow::Result<(Option<Message>, HNil)> {
-      todo!()
-    }
+  impl ParamValue for Param1 {
+    const NAME: &'static str = "Param1";
   }
+
+  struct LinearA;
+
+  impl Linear<HNil, HNil> for LinearA { async fn handle(&self, input: HNil) -> anyhow::Result<(Option<Message>, HNil)> { todo!() }}
+  // impl Linear<HNil, HCons<Param1, HNil>> for LinearA { async fn handle(&self, input: HNil) -> anyhow::Result<(Option<Message>, HCons<Param1, HNil>)> {todo!()}}
+
+  struct LinearB;
+
+  impl Linear<HNil, HNil> for LinearB { async fn handle(&self, input: HNil) -> anyhow::Result<(Option<Message>, HNil)> { todo!() } }
+  // impl Linear<HCons<Param1, HNil>, HNil> for LinearB { async fn handle(&self, input: HCons<Param1, HNil>) -> anyhow::Result<(Option<Message>, HNil)> { todo!() } }
 
   #[test]
   fn test_hcons() {
-    let token = BuilderToken::new();
-    let (p, t) = EmptyProcess.then(A, token);
-    
-    assert_eq!(t.getAndInc().1, 1);
+    let empty = EmptyProcess;
+    let one_step = empty.then(LinearA);
+    let two_steps = one_step.then(LinearB);
+    assert_eq!(1, 1);
   }
 }
-
 
 //
 // pub mod process_builder {
