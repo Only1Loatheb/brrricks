@@ -16,19 +16,7 @@ pub enum InterpretationOutcome<T: ParamList> {
   Finish(Message),
 }
 
-/// auto inc id
-pub struct BuilderToken(usize);
-
-impl BuilderToken {
-  // https://www.reddit.com/r/rust/comments/108z8pl/comment/j3vrsp1/?utm_source=share&utm_medium=web3x&utm_name=web3xcss&utm_term=1&utm_content=share_button
-  // todo pub(crate) type Invariant<'a> = PhantomData<fn(&'a ()) -> &'a ()>;
-  pub fn new() -> BuilderToken {
-    BuilderToken(0)
-  }
-  pub fn getAndInc(self) -> (BuilderToken, usize) {
-    (BuilderToken { 0: self.0 + 1 }, self.0)
-  }
-}
+const WILL_BE_RENUMBERED: usize = 0;
 
 type InterpretationResult<T: ParamList> = anyhow::Result<InterpretationOutcome<T>>;
 
@@ -36,7 +24,7 @@ pub mod flowing_process {
   use crate::builder::finalized_process::{FinalizedProcess, FlowingFinalizedProcess};
   use crate::builder::flowing_split_process::FlowingSplitProcess;
   use crate::builder::InterpretationOutcome::*;
-  use crate::builder::{BuilderToken, InterpretationOutcome, InterpretationResult, LastInterpreted};
+  use crate::builder::{InterpretationOutcome, InterpretationResult, LastInterpreted, WILL_BE_RENUMBERED};
   use crate::hlist_concat::Concat;
   use crate::hlist_empty::Empty;
   use crate::hlist_transformer::TransformTo;
@@ -52,19 +40,23 @@ pub mod flowing_process {
     type Consumes: ParamList;
     type Produces: ParamList;
 
-    fn then<CONSUMES: ParamList + Concat<Self::Consumes>, PRODUCES: ParamList + Concat<Self::Produces>, LINEAR_STEP: Linear<CONSUMES, PRODUCES>>(
+    fn then<
+      CONSUMES: ParamList + Concat<Self::Consumes>,
+      PRODUCES: ParamList + Concat<Self::Produces>,
+      LINEAR_STEP: Linear<CONSUMES, PRODUCES>,
+    >(
       self,
       step: LINEAR_STEP,
-      builderToken: BuilderToken,
-    ) -> (impl FlowingProcess, BuilderToken) where <CONSUMES as Concat<Self::Consumes>>::Concatenated: Concat<Self::Produces> {
-      let (token, idx) = builderToken.getAndInc();
-      let process = LinearFlowingProcess {
+    ) -> impl FlowingProcess
+    where
+      <CONSUMES as Concat<Self::Consumes>>::Concatenated: Concat<Self::Produces>,
+    {
+      LinearFlowingProcess {
         process_before: self,
         last_step: step,
-        step_index: idx,
-        pd: Default::default(),
-      };
-      (process, token)
+        step_index: WILL_BE_RENUMBERED,
+        phantom_data: Default::default(),
+      }
     }
 
     async fn interpret(&self, consumes: Self::Consumes) -> InterpretationResult<Self::Produces>;
@@ -104,7 +96,7 @@ pub mod flowing_process {
     pub process_before: PROCESS_BEFORE,
     pub last_step: LINEAR_STEP,
     pub step_index: usize,
-    pub pd: PhantomData<(LINEAR_CONSUMES, LINEAR_PRODUCES)>,
+    pub phantom_data: PhantomData<(LINEAR_CONSUMES, LINEAR_PRODUCES)>,
   }
 
   impl<
@@ -217,7 +209,7 @@ pub mod flowing_process {
       FlowingFinalizedProcess {
         process_before: EmptyProcess,
         final_step: step,
-        pd: Default::default(),
+        phantom_data: Default::default(),
       }
     }
   }
@@ -233,7 +225,7 @@ pub mod flowing_process {
       FlowingFinalizedProcess {
         process_before: self,
         final_step: step,
-        pd: Default::default(),
+        phantom_data: Default::default(),
       }
     }
   }
@@ -260,7 +252,7 @@ pub mod finalized_process {
   pub struct FlowingFinalizedProcess<PROCESS_BEFORE: FlowingProcess, FINAL_CONSUMES: ParamList, FINAL_STEP: Final<FINAL_CONSUMES>> {
     pub process_before: PROCESS_BEFORE,
     pub final_step: FINAL_STEP,
-    pub pd: PhantomData<FINAL_CONSUMES>,
+    pub phantom_data: PhantomData<FINAL_CONSUMES>,
   }
 
   impl<PROCESS_BEFORE: FlowingProcess, FINAL_CONSUMES: ParamList, FINAL_STEP: Final<FINAL_CONSUMES>> FinalizedProcess
@@ -322,7 +314,7 @@ pub mod finalized_split_process {
     pub splitter: SPLITTER_STEP,
     pub step_index: usize,
     pub first_case: FIRST_CASE,
-    pub pd: PhantomData<(SPLITTER_CONSUMES, SPLITTER_PRODUCES)>,
+    pub phantom_data: PhantomData<(SPLITTER_CONSUMES, SPLITTER_PRODUCES)>,
   }
 
   impl<
@@ -406,7 +398,7 @@ pub mod flowing_split_process {
     pub process_before: PROCESS_BEFORE,
     pub splitter: SPLITTER_STEP,
     pub first_case: FIRST_CASE,
-    pub pd: PhantomData<(SPLITTER_CONSUMES, SPLITTER_PRODUCES)>,
+    pub phantom_data: PhantomData<(SPLITTER_CONSUMES, SPLITTER_PRODUCES)>,
   }
 
   impl<
