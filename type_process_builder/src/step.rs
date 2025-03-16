@@ -1,7 +1,7 @@
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 
-pub trait ParamValue: Copy + Serialize + DeserializeOwned {
+pub trait ParamValue: Clone + Serialize + DeserializeOwned {
   const NAME: &'static str;
 } // copy required by interpret method
 
@@ -13,7 +13,7 @@ pub mod param_list {
   use serde::{Deserializer, Serializer};
 
   /// copy required by interpret method
-  pub trait ParamList: HList + Copy {
+  pub trait ParamList: HList + Clone {
     fn _serialize<S: Serializer>(&self, serialize_map: &mut S::SerializeMap) -> Result<(), S::Error>;
 
     /// maybe serialize as a list if the same list is always serialized and deserialized?
