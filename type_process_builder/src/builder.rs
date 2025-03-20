@@ -42,9 +42,10 @@ pub mod flowing_process {
 
     async fn interpret(&self, process_before_produces: Self::ProcessBeforeProduces) -> InterpretationResult<Self::Produces>;
 
+    // LINEAR_PRODUCES and Self::Produces overlap is prevented https://github.com/lloydmeta/frunk/issues/187
     fn then<
       LINEAR_CONSUMES: ParamList,
-      LINEAR_PRODUCES: ParamList + Concat<Self::Produces>,
+      LINEAR_PRODUCES: ParamList + Concat<Self::Produces>, 
       LINEAR_STEP: Linear<LINEAR_CONSUMES, LINEAR_PRODUCES>,
       PROCESS_BEFORE_PRODUCES_TO_LAST_STEP_CONSUMES_INDICES,
     >(
@@ -119,7 +120,6 @@ pub mod flowing_process {
     <PROCESS_BEFORE as FlowingProcess>::Produces: TransformTo<LAST_STEP_CONSUMES, PROCESS_BEFORE_PRODUCES_TO_LAST_STEP_CONSUMES_INDICES>,
   {
     type ProcessBeforeProduces = PROCESS_BEFORE::Produces;
-    // fixme guarantee no overlap in LAST_STEP_PRODUCES and PROCESS_BEFORE::Produces
     type Produces = <LAST_STEP_PRODUCES as Concat<PROCESS_BEFORE::Produces>>::Concatenated;
 
     async fn interpret_resume(
