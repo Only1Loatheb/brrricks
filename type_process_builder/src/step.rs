@@ -1,9 +1,10 @@
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 
+/// clone (required by interpret method) should be used in brick instead
 pub trait ParamValue: Clone + Serialize + DeserializeOwned {
   const NAME: &'static str;
-} // copy required by interpret method
+} 
 
 pub mod param_list {
   use crate::step::ParamValue;
@@ -11,8 +12,7 @@ pub mod param_list {
   use serde::de::MapAccess;
   use serde::ser::SerializeMap;
   use serde::{Deserializer, Serializer};
-
-  /// copy required by interpret method
+  
   pub trait ParamList: HList + Clone {
     fn _serialize<S: Serializer>(&self, serialize_map: &mut S::SerializeMap) -> Result<(), S::Error>;
 

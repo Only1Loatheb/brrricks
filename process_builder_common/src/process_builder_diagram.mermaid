@@ -1,20 +1,105 @@
-stateDiagram-v2
-    [*] --> FinalizedProcess: FinalBrick
-    FinalizedProcess --> [*]
-    [*] --> FlowingProcess: LinearBrick
-    FlowingProcess --> FlowingProcess: LinearBrick\n or FlowingProcess
-    FlowingProcess --> FinalizedProcess: FinalBrick\n or FinalizedProcess
-    [*] --> FinalizedSplitProcess: SplitBrick
-    FlowingProcess --> FinalizedSplitProcess: SplitBrick
-    state finalized_split_cases_final <<choice>>
-    FinalizedSplitProcess --> finalized_split_cases_final: FinalizedProcess
-    finalized_split_cases_final --> FinalizedSplitProcess: some cases left
-    finalized_split_cases_final --> FinalizedProcess: all cases handled
-    state finalized_split_cases_linear <<choice>>
-    FinalizedSplitProcess --> finalized_split_cases_linear: FlowingProcess
-    finalized_split_cases_linear --> FlowingSplitProcess: some cases left
-    finalized_split_cases_linear --> FlowingProcess: all cases handled
-    state flowing_split_cases <<choice>>
-    FlowingSplitProcess --> flowing_split_cases: FinalizedProcess\n or FlowingProcess
-    flowing_split_cases --> FlowingSplitProcess: some cases left
-    flowing_split_cases --> FlowingProcess: all cases handled
+flowchart TD
+    Start((Start)) -->|FinalBrick| FinalizedProcess
+    FinalizedProcess --> End((End))
+    Start((Start)) -->|LinearBrick| FlowingProcess
+    FlowingProcess -->|LinearBrick or FlowingProcess| FlowingProcess
+    FlowingProcess -->|FinalBrick or FinalizedProcess| FinalizedProcess
+    Start((Start)) -->|SplitBrick| FinalizedSplitProcess
+    FlowingProcess -->|SplitBrick| FinalizedSplitProcess
+    finalized_split_cases_final{{is exhaustive}}
+    FinalizedSplitProcess -->|FinalizedProcess| finalized_split_cases_final
+    finalized_split_cases_final -->|some cases left| FinalizedSplitProcess
+    finalized_split_cases_final -->|all cases handled| FinalizedProcess
+    finalized_split_cases_linear{{is exhaustive}}
+    FinalizedSplitProcess -->|FlowingProcess| finalized_split_cases_linear
+    finalized_split_cases_linear -->|some cases left| FlowingSplitProcess
+    finalized_split_cases_linear -->|all cases handled| FlowingProcess
+    flowing_split_cases{{is exhaustive}}
+    FlowingSplitProcess -->|FinalizedProcess or FlowingProcess| flowing_split_cases
+    flowing_split_cases -->|some cases left| FlowingSplitProcess
+    flowing_split_cases -->|all cases handled| FlowingProcess
+
+
+digraph G {
+    Start [label="Start"]
+    End [label="End"]
+    FinalizedProcess [label="FinalizedProcess"]
+    FlowingProcess [label="FlowingProcess"]
+    FinalizedSplitProcess [label="FinalizedSplitProcess"]
+    FlowingSplitProcess [label="FlowingSplitProcess"]
+
+    Start -> FinalizedProcess [label="FinalBrick"]
+    FinalizedProcess -> End
+    Start -> FlowingProcess [label="LinearBrick"]
+    FlowingProcess -> FlowingProcess [label="LinearBrick or FlowingProcess"]
+    FlowingProcess -> FinalizedProcess [label="FinalBrick or FinalizedProcess"]
+    Start -> FinalizedSplitProcess [label="SplitBrick"]
+    FlowingProcess -> FinalizedSplitProcess [label="SplitBrick"]
+
+    finalized_split_cases_final [label="is exhaustive", shape=diamond]
+    FinalizedSplitProcess -> finalized_split_cases_final [label="FinalizedProcess"]
+    finalized_split_cases_final -> FinalizedSplitProcess [label="some cases left"]
+    finalized_split_cases_final -> FinalizedProcess [label="all cases handled"]
+
+    finalized_split_cases_linear [label="is exhaustive", shape=diamond]
+    FinalizedSplitProcess -> finalized_split_cases_linear [label="FlowingProcess"]
+    finalized_split_cases_linear -> FlowingSplitProcess [label="some cases left"]
+    finalized_split_cases_linear -> FlowingProcess [label="all cases handled"]
+
+    flowing_split_cases [label="is exhaustive", shape=diamond]
+    FlowingSplitProcess -> flowing_split_cases [label="FinalizedProcess or FlowingProcess"]
+    flowing_split_cases -> FlowingSplitProcess [label="some cases left"]
+    flowing_split_cases -> FlowingProcess [label="all cases handled"]
+}
+
+https://dot-to-ascii.ggerganov.com/
+
+
+
+  ┌─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │                                                                                                                                         │
+  │                                                           ┌─────────────────────────────────────┐                                       │
+  │                                             ┌──────────── │                Start                │ ──────────────────────────────────────┼───────────────────┐
+  │                                             │             └─────────────────────────────────────┘                                       │                   │
+  │                                             │               │                                                                           │                   │
+  │ FinalizedProcess                            │               │ SplitBrick                                                                │                   │
+  ▼                                             │               ▼                                                                           │                   │
+┌───────────────────┐      some cases left      │             ┌──────────────────────────────────────────────────────────────────────────────────────────────┐  │
+│   is exhaustive   │ ──────────────────────────┼───────────▶ │                                    FinalizedSplitProcess                                     │ ◀┼────┐
+└───────────────────┘                           │             └──────────────────────────────────────────────────────────────────────────────────────────────┘  │    │
+  │                                             │               │                                                                                               │    │
+  │                                             │               │ FlowingProcess                                                                                │    │
+  │                                             │               ▼                                                                                               │    │
+  │                                             │             ┌─────────────────────────────────────┐                                                           │    │
+  │                                             │             │            is exhaustive            │ ─┐                                                        │    │
+  │                                             │             └─────────────────────────────────────┘  │                                                        │    │
+  │                                             │               │                                      │                                                        │    │
+  │                                             │               │ some cases left                      │                                                        │    │
+  │                                             │               ▼                                      │                                                        │    │
+  │                                             │             ┌─────────────────────────────────────┐  │                                                        │    │ SplitBrick
+  │                                             │ LinearBrick │         FlowingSplitProcess         │ ◀┼────────────────────────────────────┐                   │    │
+  │                                             │             └─────────────────────────────────────┘  │                                    │                   │    │
+  │                                             │               │                                      │                                    │                   │    │
+  │                                             │               │ FinalizedProcess or FlowingProcess   │                                    │ some cases left   │    │
+  │                                             │               ▼                                      │                                    │                   │    │
+  │                                             │             ┌─────────────────────────────────────┐  │                                    │                   │    │
+  │                                             │             │            is exhaustive            │ ─┼────────────────────────────────────┘                   │    │
+  │                                             │             └─────────────────────────────────────┘  │                                                        │    │
+  │                                             │               │                                      │                                                        │    │
+  │                                             │               │ all cases handled                    │ all cases handled                  ┌───────────────────┼────┘
+  │                                             │               ▼                                      ▼                                    │                   │
+  │                                             │             ┌──────────────────────────────────────────────────────────────────────────────────────────────┐  │
+  │                                             └───────────▶ │                                        FlowingProcess                                        │  │
+  │                                                           └──────────────────────────────────────────────────────────────────────────────────────────────┘  │
+  │                                                             │                                      ▲ LinearBrick or FlowingProcess │                        │
+  │                                                             │ FinalBrick or FinalizedProcess       └───────────────────────────────┘                        │
+  │                                                             ▼                                                                                               │
+  │                   all cases handled                       ┌─────────────────────────────────────┐  FinalBrick                                               │
+  └─────────────────────────────────────────────────────────▶ │          FinalizedProcess           │ ◀─────────────────────────────────────────────────────────┘
+                                                              └─────────────────────────────────────┘
+                                                                │
+                                                                │
+                                                                ▼
+                                                              ┌─────────────────────────────────────┐
+                                                              │                 End                 │
+                                                              └─────────────────────────────────────┘
