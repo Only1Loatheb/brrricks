@@ -528,7 +528,7 @@ pub mod flowing_split_process {
 // }
 //
 // impl<'same_process> FinalizedProcess<'same_process> {
-//   pub fn close(self, path: String) -> NamedProcess {
+//   pub fn close(self, path: String) -> NamedProcess {    // runnable process
 //     NamedProcess {
 //       path,
 //       process: self.process,

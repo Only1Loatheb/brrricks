@@ -1,0 +1,32 @@
+digraph G {
+    # dreampuf.github.io
+    bgcolor=transparent
+
+    Start [label="", color=transparent, fontcolor=white]
+    End [label="RunnableProcess", color=mediumorchid1, fontcolor=white]
+    FinalizedProcess [label="FinalizedProcess", color=mediumorchid1, fontcolor=white]
+    FlowingProcess [label="FlowingProcess", color=mediumorchid1, fontcolor=white]
+    FinalizedSplitProcess [label="FinalizedSplitProcess", color=mediumorchid1, fontcolor=white]
+    FlowingSplitProcess [label="FlowingSplitProcess", color=mediumorchid1, fontcolor=white]
+
+    Start -> FinalizedProcess [label="FinalBrick", color=blue, fontcolor=skyblue]
+    FinalizedProcess -> End [label="build", color=blue, fontcolor=skyblue]
+    Start -> FlowingProcess [label="LinearBrick", color=blue, fontcolor=skyblue]
+    FlowingProcess -> FlowingProcess [label="LinearBrick\nor FlowingProcess", color=blue, fontcolor=skyblue]
+    FlowingProcess -> FinalizedProcess [label="FinalBrick\nor FinalizedProcess", color=blue, fontcolor=skyblue]
+    Start -> FinalizedSplitProcess [label="matchesFinal\n+ SplitBrick", color=blue, fontcolor=skyblue]
+    FlowingProcess -> FinalizedSplitProcess [label="matchesFinal\n+ SplitBrick", color=blue, fontcolor=skyblue]
+
+    finalized_split_cases_final [label="is exhaustive?", shape=diamond, color=orange, fontcolor=orange]
+    FinalizedSplitProcess -> finalized_split_cases_final [label="FinalizedProcess", color=blue, fontcolor=skyblue]
+    finalized_split_cases_final -> FinalizedSplitProcess [label="some cases left", color=blue, fontcolor=skyblue]
+    finalized_split_cases_final -> FinalizedProcess [label="all cases handled", color=blue, fontcolor=skyblue]
+
+    FlowingProcess -> FlowingSplitProcess [label="matches\n+ SplitBrick", color=blue, fontcolor=skyblue]
+    Start -> FlowingSplitProcess [label="matches\n+ SplitBrick", color=blue, fontcolor=skyblue]
+
+    flowing_split_cases [label="is exhaustive?", shape=diamond, color=orange, fontcolor=orange]
+    FlowingSplitProcess -> flowing_split_cases [label="FinalizedProcess\nor FlowingProcess", color=blue, fontcolor=skyblue]
+    flowing_split_cases -> FlowingSplitProcess [label="some cases left", color=blue, fontcolor=skyblue]
+    flowing_split_cases -> FlowingProcess [label="all cases handled", color=blue, fontcolor=skyblue]
+}
