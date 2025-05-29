@@ -1,31 +1,38 @@
 digraph G {
-    # dreampuf.github.io
+    # https://dreampuf.github.io/GraphvizOnline/
     bgcolor=transparent
+    ranksep=1.4;
 
-    Start [label="", color=transparent, fontcolor=white]
-    End [label="RunnableProcess", color=mediumorchid1, fontcolor=white]
-    FinalizedProcess [label="FinalizedProcess", color=mediumorchid1, fontcolor=white]
-    FlowingProcess [label="FlowingProcess", color=mediumorchid1, fontcolor=white]
-    FinalizedSplitProcess [label="FinalizedSplitProcess", color=mediumorchid1, fontcolor=white]
-    FlowingSplitProcess [label="FlowingSplitProcess", color=mediumorchid1, fontcolor=white]
+    Entry [label="Entry", shape=box, color=mediumorchid1, fontcolor=white]
+    End [label="RunnableProcess", shape=box, color=mediumorchid1, fontcolor=white]
+    FinalizedProcess [label="FinalizedProcess", shape=box, color=mediumorchid1, fontcolor=white]
+    FlowingProcess [label="FlowingProcess", shape=box, color=mediumorchid1, fontcolor=white]
 
-    Start -> FinalizedProcess [label="FinalBrick", color=blue, fontcolor=skyblue]
+    subgraph cluster0 {
+        color = white;
+        FlowingSplitProcess [label="FlowingSplitProcess", shape=box, color=mediumorchid1, fontcolor=white]
+        flowing_split_cases [label="exhaustive?", shape=hexagon, color=orange, fontcolor=orange]
+    }
+    subgraph cluster1 {
+        color = white;
+        FinalizedSplitProcess [label="FinalizedSplitProcess", shape=box, color=mediumorchid1, fontcolor=white]
+        finalized_split_cases_final [label="exhaustive?", shape=hexagon, color=orange, fontcolor=orange]
+    }
+
+    Entry -> FinalizedProcess [label="FinalBrick", color=blue, fontcolor=skyblue]
     FinalizedProcess -> End [label="build", color=blue, fontcolor=skyblue]
-    Start -> FlowingProcess [label="LinearBrick", color=blue, fontcolor=skyblue]
+    Entry -> FlowingProcess [label="LinearBrick", color=blue, fontcolor=skyblue]
     FlowingProcess -> FlowingProcess [label="LinearBrick\nor FlowingProcess", color=blue, fontcolor=skyblue]
     FlowingProcess -> FinalizedProcess [label="FinalBrick\nor FinalizedProcess", color=blue, fontcolor=skyblue]
-    Start -> FinalizedSplitProcess [label="matchesFinal\n+ SplitBrick", color=blue, fontcolor=skyblue]
-    FlowingProcess -> FinalizedSplitProcess [label="matchesFinal\n+ SplitBrick", color=blue, fontcolor=skyblue]
+    Entry -> FinalizedSplitProcess [label="SplitBrick", color=blue, fontcolor=skyblue]
+    FlowingProcess -> FinalizedSplitProcess [label="SplitBrick", color=blue, fontcolor=skyblue]
 
-    finalized_split_cases_final [label="is exhaustive?", shape=diamond, color=orange, fontcolor=orange]
     FinalizedSplitProcess -> finalized_split_cases_final [label="FinalizedProcess", color=blue, fontcolor=skyblue]
     finalized_split_cases_final -> FinalizedSplitProcess [label="some cases left", color=blue, fontcolor=skyblue]
     finalized_split_cases_final -> FinalizedProcess [label="all cases handled", color=blue, fontcolor=skyblue]
 
-    FlowingProcess -> FlowingSplitProcess [label="matches\n+ SplitBrick", color=blue, fontcolor=skyblue]
-    Start -> FlowingSplitProcess [label="matches\n+ SplitBrick", color=blue, fontcolor=skyblue]
+    FinalizedSplitProcess -> FlowingSplitProcess [label="FlowingProcess", color=blue, fontcolor=skyblue]
 
-    flowing_split_cases [label="is exhaustive?", shape=diamond, color=orange, fontcolor=orange]
     FlowingSplitProcess -> flowing_split_cases [label="FinalizedProcess\nor FlowingProcess", color=blue, fontcolor=skyblue]
     flowing_split_cases -> FlowingSplitProcess [label="some cases left", color=blue, fontcolor=skyblue]
     flowing_split_cases -> FlowingProcess [label="all cases handled", color=blue, fontcolor=skyblue]
