@@ -6,12 +6,12 @@ use process_builder_common::process_domain::Message;
 use serde::{Deserialize, Deserializer, Serialize};
 use serde_json::Value;
 
-pub struct PreviousInterpretationYielded(usize);
-pub struct CurrentInterpretationYields(usize);
+pub struct PreviousInterpretationYieldedAt(usize);
+pub struct CurrentInterpretationYieldsAt(usize);
 
 pub enum InterpretationOutcome<T: ParamList> {
   Continue(T),
-  Yield(Message, Value, CurrentInterpretationYields),
+  Yield(Message, Value, CurrentInterpretationYieldsAt),
   Finish(Message),
 }
 
@@ -21,12 +21,13 @@ type InterpretationResult<T: ParamList> = anyhow::Result<InterpretationOutcome<T
 
 pub mod flowing_process {
   use crate::builder::InterpretationOutcome::*;
-  use crate::builder::{CurrentInterpretationYields, InterpretationResult, PreviousInterpretationYielded, WILL_BE_RENUMBERED};
+  use crate::builder::{CurrentInterpretationYieldsAt, InterpretationResult, PreviousInterpretationYieldedAt, WILL_BE_RENUMBERED};
   use crate::hlist_concat::Concat;
   use crate::hlist_transformer::TransformTo;
   use crate::step::param_list::ParamList;
-  use crate::step::step::Linear;
+  use crate::step::step::{Entry, Linear};
   use frunk_core::hlist::HNil;
+  use serde::de::DeserializeOwned;
   use std::io;
   use std::marker::PhantomData;
 
@@ -37,7 +38,7 @@ pub mod flowing_process {
     async fn interpret_resume(
       &self,
       consumes: impl io::Read,
-      previous_interpretation_yielded: PreviousInterpretationYielded,
+      previous_interpretation_yielded: PreviousInterpretationYieldedAt,
     ) -> InterpretationResult<Self::Produces>;
 
     async fn interpret(&self, process_before_produces: Self::ProcessBeforeProduces) -> InterpretationResult<Self::Produces>;
@@ -45,7 +46,7 @@ pub mod flowing_process {
     // LINEAR_PRODUCES and Self::Produces overlap is prevented https://github.com/lloydmeta/frunk/issues/187
     fn then<
       LINEAR_CONSUMES: ParamList,
-      LINEAR_PRODUCES: ParamList + Concat<Self::Produces>, 
+      LINEAR_PRODUCES: ParamList + Concat<Self::Produces>,
       LINEAR_STEP: Linear<LINEAR_CONSUMES, LINEAR_PRODUCES>,
       PROCESS_BEFORE_PRODUCES_TO_LAST_STEP_CONSUMES_INDICES,
     >(
@@ -75,7 +76,7 @@ pub mod flowing_process {
     async fn interpret_resume(
       &self,
       consumes: impl io::Read,
-      previous_interpretation_yielded: PreviousInterpretationYielded,
+      previous_interpretation_yielded: PreviousInterpretationYieldedAt,
     ) -> InterpretationResult<Self::Produces> {
       Ok(Continue(HNil))
     }
@@ -125,7 +126,7 @@ pub mod flowing_process {
     async fn interpret_resume(
       &self,
       consumes: impl io::Read,
-      previous_interpretation_yielded: PreviousInterpretationYielded,
+      previous_interpretation_yielded: PreviousInterpretationYieldedAt,
     ) -> InterpretationResult<Self::Produces> {
       if previous_interpretation_yielded.0 < self.step_index {
         let process_before_output = self
@@ -157,7 +158,7 @@ pub mod flowing_process {
             last_step_produces
               .concat(process_before_produces)
               .serialize(serde_json::value::Serializer)?, // fixme make it generic over format i.e. json
-            CurrentInterpretationYields(self.step_index),
+            CurrentInterpretationYieldsAt(self.step_index),
           ))
         }
         (None, last_step_produces) => Ok(Continue(last_step_produces.concat(process_before_produces))),
@@ -203,7 +204,7 @@ pub mod flowing_process {
 pub mod finalized_process {
   use crate::builder::finalized_split_process::FinalizedSplitProcess;
   use crate::builder::flowing_process::FlowingProcess;
-  use crate::builder::{InterpretationResult, PreviousInterpretationYielded};
+  use crate::builder::{InterpretationResult, PreviousInterpretationYieldedAt};
   use crate::step::param_list::ParamList;
   use crate::step::step::Final;
   use frunk_core::hlist::HNil;
@@ -214,7 +215,7 @@ pub mod finalized_process {
     async fn interpret_resume(
       &self,
       previous_interpretation_produced: Value,
-      previous_interpretation_yielded: PreviousInterpretationYielded,
+      previous_interpretation_yielded: PreviousInterpretationYieldedAt,
     ) -> InterpretationResult<HNil>; // fixme create result type for finalised process, or undo changes
   }
 
@@ -230,7 +231,7 @@ pub mod finalized_process {
     async fn interpret_resume(
       &self,
       previous_interpretation_produced: Value,
-      previous_interpretation_yielded: PreviousInterpretationYielded,
+      previous_interpretation_yielded: PreviousInterpretationYieldedAt,
     ) -> InterpretationResult<HNil> {
       todo!()
     }
@@ -243,7 +244,7 @@ pub mod finalized_process {
     async fn interpret_resume(
       &self,
       previous_interpretation_produced: Value,
-      previous_interpretation_yielded: PreviousInterpretationYielded,
+      previous_interpretation_yielded: PreviousInterpretationYieldedAt,
     ) -> InterpretationResult<HNil> {
       todo!()
     }
@@ -254,7 +255,7 @@ pub mod finalized_split_process {
   use crate::builder::finalized_process::FinalizedProcess;
   use crate::builder::flowing_process::FlowingProcess;
   use crate::builder::InterpretationOutcome::*;
-  use crate::builder::{InterpretationResult, PreviousInterpretationYielded};
+  use crate::builder::{InterpretationResult, PreviousInterpretationYieldedAt};
   use crate::step::param_list::ParamList;
   use crate::step::splitter_output_repr::SplitterOutput;
   use crate::step::step::Splitter;
@@ -267,7 +268,7 @@ pub mod finalized_split_process {
     async fn interpret_resume(
       &self,
       previous_interpretation_produced: Value,
-      previous_interpretation_yielded: PreviousInterpretationYielded,
+      previous_interpretation_yielded: PreviousInterpretationYieldedAt,
     ) -> InterpretationResult<HNil>; // fixme create result for finalised process, or undo changes
   }
 
@@ -300,7 +301,7 @@ pub mod finalized_split_process {
     async fn interpret_resume(
       &self,
       previous_interpretation_produced: Value,
-      previous_interpretation_yielded: PreviousInterpretationYielded,
+      previous_interpretation_yielded: PreviousInterpretationYieldedAt,
     ) -> InterpretationResult<HNil> {
       todo!()
       // if last_interpreted.0 < self.step_index {
@@ -338,7 +339,7 @@ pub mod finalized_split_process {
     async fn interpret_resume(
       &self,
       previous_interpretation_produced: Value,
-      previous_interpretation_yielded: PreviousInterpretationYielded,
+      previous_interpretation_yielded: PreviousInterpretationYieldedAt,
     ) -> InterpretationResult<HNil> {
       //Self::SplitterOutput
       todo!()

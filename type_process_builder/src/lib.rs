@@ -16,6 +16,8 @@ mod tests {
   use process_builder_common::process_domain::Message;
   use serde::de::DeserializeOwned;
   use serde::{Deserialize, Deserializer, Serialize, Serializer};
+  use crate::hlist_concat::Concat;
+  use crate::step::param_list::ParamList;
 
   #[derive(Clone, serde::Deserialize, serde::Serialize)]
   struct Param1;

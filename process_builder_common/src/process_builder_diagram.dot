@@ -1,4 +1,4 @@
-digraph G {
+digraph {
     # https://dreampuf.github.io/GraphvizOnline/
     bgcolor=transparent
     ranksep=1.4;
@@ -28,12 +28,12 @@ digraph G {
     FlowingProcess -> FinalizedSplitProcess [label="SplitBrick", color=blue, fontcolor=skyblue]
 
     FinalizedSplitProcess -> finalized_split_cases_final [label="FinalizedProcess", color=blue, fontcolor=skyblue]
-    finalized_split_cases_final -> FinalizedSplitProcess [label="some cases left", color=blue, fontcolor=skyblue]
-    finalized_split_cases_final -> FinalizedProcess [label="all cases handled", color=blue, fontcolor=skyblue]
+    finalized_split_cases_final -> FinalizedSplitProcess [label="cases left", color=blue, fontcolor=skyblue]
+    finalized_split_cases_final -> FinalizedProcess [label="all cases\ncovered", color=blue, fontcolor=skyblue]
 
     FinalizedSplitProcess -> FlowingSplitProcess [label="FlowingProcess", color=blue, fontcolor=skyblue]
 
     FlowingSplitProcess -> flowing_split_cases [label="FinalizedProcess\nor FlowingProcess", color=blue, fontcolor=skyblue]
-    flowing_split_cases -> FlowingSplitProcess [label="some cases left", color=blue, fontcolor=skyblue]
-    flowing_split_cases -> FlowingProcess [label="all cases handled", color=blue, fontcolor=skyblue]
+    flowing_split_cases -> FlowingSplitProcess [label="cases left", color=blue, fontcolor=skyblue]
+    flowing_split_cases -> FlowingProcess [label="all cases\ncovered", color=blue, fontcolor=skyblue]
 }
