@@ -2,7 +2,6 @@ use crate::step::param_list::ParamList;
 use crate::step::ParamValue;
 use frunk_core::hlist::{HCons, HNil};
 
-/// todo fail if the same types are in both lists
 /// Using ParamList instead of HList simplifies where clauses
 /// Like `impl<RHS> Add<RHS> for HNil` in [frunk_core::hlist]
 pub trait Concat<RHS: ParamList>: ParamList {
