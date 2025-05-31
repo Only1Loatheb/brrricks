@@ -42,8 +42,8 @@ impl<
   > ProcessBuilder
   for FirstCaseOfFinalizedSplitProcess<PROCESS_BEFORE, SPLITTER_CONSUMES, Coproduct<CASE_THIS, CASE_OTHER>, SPLITTER_STEP, FIRST_CASE>
 {
-  fn build(mut self, last_used_index: usize) -> usize {
-    let used_index = self.process_before.build(last_used_index);
+  fn enumerate_steps(&mut self, last_used_index: usize) -> usize {
+    let used_index = self.process_before.enumerate_steps(last_used_index);
     self.step_index = used_index + 1;
     self.step_index
   }
@@ -101,8 +101,8 @@ pub struct NextCaseOfFinalizedSplitProcess<PROCESS_BEFORE: FinalizedSplitProcess
 impl<PROCESS_BEFORE: FinalizedSplitProcess, NEXT_CASE: FinalizedProcess> ProcessBuilder
   for NextCaseOfFinalizedSplitProcess<PROCESS_BEFORE, NEXT_CASE>
 {
-  fn build(mut self, last_used_index: usize) -> usize {
-    let used_index = self.split_process_before.build(last_used_index);
+  fn enumerate_steps(&mut self, last_used_index: usize) -> usize {
+    let used_index = self.split_process_before.enumerate_steps(last_used_index);
     self.case_step_index = used_index + 1;
     self.case_step_index
   }

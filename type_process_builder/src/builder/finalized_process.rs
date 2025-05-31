@@ -24,9 +24,9 @@ pub struct FlowingFinalizedProcess<PROCESS_BEFORE: FlowingProcess, FINAL_CONSUME
 impl<PROCESS_BEFORE: FlowingProcess, FINAL_CONSUMES: ParamList, FINAL_STEP: Final<FINAL_CONSUMES>> ProcessBuilder
   for FlowingFinalizedProcess<PROCESS_BEFORE, FINAL_CONSUMES, FINAL_STEP>
 {
-  fn build(self, last_used_index: usize) -> usize {
+  fn enumerate_steps(&mut self, last_used_index: usize) -> usize {
     // most likely not worth to assign an index to final steps, but maybe test
-    self.process_before.build(last_used_index)
+    self.process_before.enumerate_steps(last_used_index)
   }
 }
 
@@ -47,9 +47,9 @@ pub struct SplitFinalizedProcess<FINALIZED_SPLIT_PROCESS: FinalizedSplitProcess>
 }
 
 impl<FINALIZED_SPLIT_PROCESS: FinalizedSplitProcess> ProcessBuilder for SplitFinalizedProcess<FINALIZED_SPLIT_PROCESS> {
-  fn build(self, last_used_index: usize) -> usize {
+  fn enumerate_steps(&mut self, last_used_index: usize) -> usize {
     // most likely not worth to assign an index to final steps, but maybe test
-    self.process.build(last_used_index)
+    self.process.enumerate_steps(last_used_index)
   }
 }
 

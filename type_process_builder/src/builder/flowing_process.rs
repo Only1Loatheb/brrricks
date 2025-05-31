@@ -51,7 +51,7 @@ pub trait FlowingProcess: ProcessBuilder {
 pub struct EmptyProcess;
 
 impl ProcessBuilder for EmptyProcess {
-  fn build(self, last_used_index: usize) -> usize {
+  fn enumerate_steps(&mut self, last_used_index: usize) -> usize {
     last_used_index
   }
 }
@@ -107,8 +107,8 @@ impl<
 where
   <PROCESS_BEFORE as FlowingProcess>::Produces: TransformTo<LAST_STEP_CONSUMES, PROCESS_BEFORE_PRODUCES_TO_LAST_STEP_CONSUMES_INDICES>,
 {
-  fn build(mut self, last_used_index: usize) -> usize {
-    let used_index = self.process_before.build(last_used_index);
+  fn enumerate_steps(&mut self, last_used_index: usize) -> usize {
+    let used_index = self.process_before.enumerate_steps(last_used_index);
     self.step_index = used_index + 1;
     self.step_index
   }

@@ -26,7 +26,7 @@ pub(crate) const WILL_BE_RENUMBERED: usize = 0;
 type InterpretationResult<T: ParamList> = anyhow::Result<InterpretationOutcome<T>>;
 
 pub trait ProcessBuilder: Sized {
-  fn build(self, last_used_index: usize) -> usize;
+  fn enumerate_steps(&mut self, last_used_index: usize) -> usize;
 }
 
 
