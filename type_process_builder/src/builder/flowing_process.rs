@@ -17,7 +17,7 @@ pub trait FlowingProcess: ProcessBuilder {
 
   async fn continue_run(
     &self,
-    consumes: impl io::Read,
+    previous_run_produced: impl io::Read,
     previous_run_yielded: PreviousRunYieldedAt,
   ) -> IntermediateRunResult<Self::Produces>;
 
@@ -62,7 +62,7 @@ impl FlowingProcess for EmptyProcess {
 
   async fn continue_run(
     &self,
-    consumes: impl io::Read,
+    previous_run_produced: impl io::Read,
     previous_run_yielded: PreviousRunYieldedAt,
   ) -> IntermediateRunResult<Self::Produces> {
     Ok(Continue(HNil))
@@ -136,7 +136,7 @@ where
 
   async fn continue_run(
     &self,
-    consumes: impl io::Read,
+    previous_run_produced: impl io::Read,
     previous_run_yielded: PreviousRunYieldedAt,
   ) -> IntermediateRunResult<Self::Produces> {
     if previous_run_yielded.0 < self.step_index {

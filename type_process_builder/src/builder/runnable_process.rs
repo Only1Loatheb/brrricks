@@ -1,7 +1,8 @@
 use crate::builder::finalized_process::FinalizedProcess;
-use crate::builder::CurrentRunYieldedAt;
+use crate::builder::{CurrentRunYieldedAt, IntermediateRunResult, PreviousRunYieldedAt};
 use process_builder_common::process_domain::Message;
 use serde_json::Value;
+use std::io;
 
 pub enum RunOutcome {
   Yield(Message, Value, CurrentRunYieldedAt),
@@ -20,5 +21,7 @@ impl<FINALIZED_PROCESS: FinalizedProcess> RunnableProcess<FINALIZED_PROCESS> {
     Self { finalized_process }
   }
 
-  pub fn run(&mut self, step_index: usize) -> RunResult {}
+  pub fn run(&self, previous_run_produced: impl io::Read, previous_run_yielded: PreviousRunYieldedAt) -> RunResult {
+    self.finalized_process.continue_run(consumes, previous_run_yielded)
+  }
 }
