@@ -19,9 +19,15 @@ const WILL_BE_RENUMBERED: usize = 0;
 
 type InterpretationResult<T: ParamList> = anyhow::Result<InterpretationOutcome<T>>;
 
+pub trait ProcessBuilder: Sized {
+  fn build(self, last_used_index: usize) -> usize;
+}
+
 pub mod flowing_process {
   use crate::builder::InterpretationOutcome::*;
-  use crate::builder::{CurrentInterpretationYieldsAt, InterpretationResult, PreviousInterpretationYieldedAt, WILL_BE_RENUMBERED};
+  use crate::builder::{
+    CurrentInterpretationYieldsAt, InterpretationResult, PreviousInterpretationYieldedAt, ProcessBuilder, WILL_BE_RENUMBERED,
+  };
   use crate::hlist_concat::Concat;
   use crate::hlist_transformer::TransformTo;
   use crate::step::param_list::ParamList;
@@ -31,7 +37,7 @@ pub mod flowing_process {
   use std::io;
   use std::marker::PhantomData;
 
-  pub trait FlowingProcess: Sized {
+  pub trait FlowingProcess: ProcessBuilder {
     type ProcessBeforeProduces: ParamList;
     type Produces: ParamList;
 
@@ -69,6 +75,13 @@ pub mod flowing_process {
   }
 
   pub struct EmptyProcess;
+
+  impl ProcessBuilder for EmptyProcess {
+    fn build(self, last_used_index: usize) -> usize {
+      last_used_index
+    }
+  }
+
   impl FlowingProcess for EmptyProcess {
     type ProcessBeforeProduces = HNil;
     type Produces = HNil;
@@ -101,6 +114,30 @@ pub mod flowing_process {
       LINEAR_PRODUCES,
       PROCESS_BEFORE_PRODUCES_TO_LAST_STEP_CONSUMES_INDICES,
     )>,
+  }
+
+  impl<
+      PROCESS_BEFORE: FlowingProcess,
+      LAST_STEP_CONSUMES: ParamList,
+      LAST_STEP_PRODUCES: ParamList + Concat<PROCESS_BEFORE::Produces>,
+      LAST_STEP: Linear<LAST_STEP_CONSUMES, LAST_STEP_PRODUCES>,
+      PROCESS_BEFORE_PRODUCES_TO_LAST_STEP_CONSUMES_INDICES,
+    > ProcessBuilder
+    for LinearFlowingProcess<
+      PROCESS_BEFORE,
+      LAST_STEP_CONSUMES,
+      LAST_STEP_PRODUCES,
+      LAST_STEP,
+      PROCESS_BEFORE_PRODUCES_TO_LAST_STEP_CONSUMES_INDICES,
+    >
+  where
+    <PROCESS_BEFORE as FlowingProcess>::Produces: TransformTo<LAST_STEP_CONSUMES, PROCESS_BEFORE_PRODUCES_TO_LAST_STEP_CONSUMES_INDICES>,
+  {
+    fn build(mut self, last_used_index: usize) -> usize {
+      let used_index = self.process_before.build(last_used_index);
+      self.step_index = used_index + 1;
+      self.step_index
+    }
   }
 
   impl<
@@ -204,14 +241,14 @@ pub mod flowing_process {
 pub mod finalized_process {
   use crate::builder::finalized_split_process::FinalizedSplitProcess;
   use crate::builder::flowing_process::FlowingProcess;
-  use crate::builder::{InterpretationResult, PreviousInterpretationYieldedAt};
+  use crate::builder::{InterpretationResult, PreviousInterpretationYieldedAt, ProcessBuilder};
   use crate::step::param_list::ParamList;
   use crate::step::step::Final;
   use frunk_core::hlist::HNil;
   use serde_json::Value;
   use std::marker::PhantomData;
 
-  pub trait FinalizedProcess: Sized {
+  pub trait FinalizedProcess: ProcessBuilder {
     async fn interpret_resume(
       &self,
       previous_interpretation_produced: Value,
@@ -223,6 +260,15 @@ pub mod finalized_process {
     pub process_before: PROCESS_BEFORE,
     pub final_step: FINAL_STEP,
     pub phantom_data: PhantomData<FINAL_CONSUMES>,
+  }
+
+  impl<PROCESS_BEFORE: FlowingProcess, FINAL_CONSUMES: ParamList, FINAL_STEP: Final<FINAL_CONSUMES>> ProcessBuilder
+    for FlowingFinalizedProcess<PROCESS_BEFORE, FINAL_CONSUMES, FINAL_STEP>
+  {
+    fn build(self, last_used_index: usize) -> usize {
+      // most likely not worth to assign an index to final steps, but maybe test
+      self.process_before.build(last_used_index)
+    }
   }
 
   impl<PROCESS_BEFORE: FlowingProcess, FINAL_CONSUMES: ParamList, FINAL_STEP: Final<FINAL_CONSUMES>> FinalizedProcess
@@ -240,6 +286,14 @@ pub mod finalized_process {
   pub struct SplitFinalizedProcess<FINALIZED_SPLIT_PROCESS: FinalizedSplitProcess> {
     process: FINALIZED_SPLIT_PROCESS, // maybe box?
   }
+
+  impl<FINALIZED_SPLIT_PROCESS: FinalizedSplitProcess> ProcessBuilder for SplitFinalizedProcess<FINALIZED_SPLIT_PROCESS> {
+    fn build(self, last_used_index: usize) -> usize {
+      // most likely not worth to assign an index to final steps, but maybe test
+      self.process.build(last_used_index)
+    }
+  }
+
   impl<FINALIZED_SPLIT_PROCESS: FinalizedSplitProcess> FinalizedProcess for SplitFinalizedProcess<FINALIZED_SPLIT_PROCESS> {
     async fn interpret_resume(
       &self,
@@ -255,7 +309,7 @@ pub mod finalized_split_process {
   use crate::builder::finalized_process::FinalizedProcess;
   use crate::builder::flowing_process::FlowingProcess;
   use crate::builder::InterpretationOutcome::*;
-  use crate::builder::{InterpretationResult, PreviousInterpretationYieldedAt};
+  use crate::builder::{InterpretationResult, PreviousInterpretationYieldedAt, ProcessBuilder};
   use crate::step::param_list::ParamList;
   use crate::step::splitter_output_repr::SplitterOutput;
   use crate::step::step::Splitter;
@@ -264,7 +318,7 @@ pub mod finalized_split_process {
   use serde_json::Value;
   use std::marker::PhantomData;
 
-  pub trait FinalizedSplitProcess: Sized {
+  pub trait FinalizedSplitProcess: ProcessBuilder {
     async fn interpret_resume(
       &self,
       previous_interpretation_produced: Value,
@@ -284,6 +338,23 @@ pub mod finalized_split_process {
     pub step_index: usize,
     pub first_case: FIRST_CASE,
     pub phantom_data: PhantomData<(SPLITTER_CONSUMES, SPLITTER_PRODUCES)>,
+  }
+
+  impl<
+      PROCESS_BEFORE: FlowingProcess,
+      SPLITTER_CONSUMES: ParamList,
+      CASE_THIS: ParamList,
+      CASE_OTHER: SplitterOutput,
+      SPLITTER_STEP: Splitter<SPLITTER_CONSUMES, Coproduct<CASE_THIS, CASE_OTHER>>,
+      FIRST_CASE: FinalizedProcess,
+    > ProcessBuilder
+    for FirstCaseOfFinalizedSplitProcess<PROCESS_BEFORE, SPLITTER_CONSUMES, Coproduct<CASE_THIS, CASE_OTHER>, SPLITTER_STEP, FIRST_CASE>
+  {
+    fn build(mut self, last_used_index: usize) -> usize {
+      let used_index = self.process_before.build(last_used_index);
+      self.step_index = used_index + 1;
+      self.step_index
+    }
   }
 
   impl<
@@ -328,9 +399,21 @@ pub mod finalized_split_process {
     }
   }
 
+  // maybe the case_step_index overlaps with FinalizedProcess or maybe it allows for a skip
   pub struct NextCaseOfFinalizedSplitProcess<PROCESS_BEFORE: FinalizedSplitProcess, NEXT_CASE: FinalizedProcess> {
     pub split_process_before: PROCESS_BEFORE,
+    pub case_step_index: usize,
     pub next_case: NEXT_CASE,
+  }
+
+  impl<PROCESS_BEFORE: FinalizedSplitProcess, NEXT_CASE: FinalizedProcess> ProcessBuilder
+    for NextCaseOfFinalizedSplitProcess<PROCESS_BEFORE, NEXT_CASE>
+  {
+    fn build(mut self, last_used_index: usize) -> usize {
+      let used_index = self.split_process_before.build(last_used_index);
+      self.case_step_index = used_index + 1;
+      self.case_step_index
+    }
   }
 
   impl<PROCESS_BEFORE: FinalizedSplitProcess, NEXT_CASE: FinalizedProcess> FinalizedSplitProcess
