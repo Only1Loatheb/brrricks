@@ -1,7 +1,7 @@
 use crate::builder::finalized_process::FinalizedProcess;
 use crate::builder::flowing_process::FlowingProcess;
-use crate::builder::InterpretationOutcome::*;
-use crate::builder::{InterpretationResult, PreviousInterpretationYieldedAt, ProcessBuilder};
+use crate::builder::IntermediateRunOutcome::*;
+use crate::builder::{IntermediateRunResult, PreviousRunYieldedAt, ProcessBuilder};
 use crate::step::param_list::ParamList;
 use crate::step::splitter_output_repr::SplitterOutput;
 use crate::step::step::Splitter;
@@ -11,11 +11,11 @@ use serde_json::Value;
 use std::marker::PhantomData;
 
 pub trait FinalizedSplitProcess: ProcessBuilder {
-  async fn interpret_resume(
+  async fn continue_run(
     &self,
-    previous_interpretation_produced: Value,
-    previous_interpretation_yielded: PreviousInterpretationYieldedAt,
-  ) -> InterpretationResult<HNil>; // fixme create result for finalised process, or undo changes
+    previous_run_produced: Value,
+    previous_run_yielded: PreviousRunYieldedAt,
+  ) -> IntermediateRunResult<HNil>; // fixme create result for finalised process, or undo changes
 }
 
 pub struct FirstCaseOfFinalizedSplitProcess<
@@ -61,23 +61,23 @@ impl<
 {
   // type SplitterOutput = <CASE_THIS as Concat<PROCESS_BEFORE::Produces>>::Concatenated;
 
-  async fn interpret_resume(
+  async fn continue_run(
     &self,
-    previous_interpretation_produced: Value,
-    previous_interpretation_yielded: PreviousInterpretationYieldedAt,
-  ) -> InterpretationResult<HNil> {
+    previous_run_produced: Value,
+    previous_run_yielded: PreviousRunYieldedAt,
+  ) -> IntermediateRunResult<HNil> {
     todo!()
-    // if last_interpreted.0 < self.step_index {
+    // if last_run.0 < self.step_index {
     //   // no yielding from splitter step todo maybe implement
     //   let process_before_output = self
     //     .process_before
-    //     .interpret_resume(previous_interpretation_produced, last_interpreted)
+    //     .continue_run(previous_run_produced, last_run)
     //     .await?;
     //   match process_before_output {
     //     Continue(process_before_produces) => {
     //       let splitter_output = self.splitter.handle(process_before_produces).await?;
     //       match splitter_output {
-    //         Coproduct::Inl(a) => self.first_case.interpret_resume(previous_interpretation_produced, last_interpreted),
+    //         Coproduct::Inl(a) => self.first_case.continue_run(previous_run_produced, last_run),
     //         Coproduct::Inr(b) => {}
     //       }
     //     }
@@ -85,7 +85,7 @@ impl<
     //     result @ Finish(_) => Ok(result),
     //   }
     // } else {
-    //   let params = serde_json::from_value::<SPLITTER_PRODUCES>(previous_interpretation_produced)?;
+    //   let params = serde_json::from_value::<SPLITTER_PRODUCES>(previous_run_produced)?;
     //   Ok(Continue(params))
     // }
   }
@@ -111,11 +111,11 @@ impl<PROCESS_BEFORE: FinalizedSplitProcess, NEXT_CASE: FinalizedProcess> Process
 impl<PROCESS_BEFORE: FinalizedSplitProcess, NEXT_CASE: FinalizedProcess> FinalizedSplitProcess
   for NextCaseOfFinalizedSplitProcess<PROCESS_BEFORE, NEXT_CASE>
 {
-  async fn interpret_resume(
+  async fn continue_run(
     &self,
-    previous_interpretation_produced: Value,
-    previous_interpretation_yielded: PreviousInterpretationYieldedAt,
-  ) -> InterpretationResult<HNil> {
+    previous_run_produced: Value,
+    previous_run_yielded: PreviousRunYieldedAt,
+  ) -> IntermediateRunResult<HNil> {
     //Self::SplitterOutput
     todo!()
   }

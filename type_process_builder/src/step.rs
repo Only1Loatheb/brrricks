@@ -1,7 +1,7 @@
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 
-/// clone (required by interpret method) should be used in brick instead
+/// clone (required by run method) should be used in brick instead
 pub trait ParamValue: Clone + Serialize + DeserializeOwned {
   const NAME: &'static str;
 } 

@@ -1,6 +1,6 @@
-pub mod flowing_process;
 pub mod finalized_process;
 pub mod finalized_split_process;
+pub mod flowing_process;
 pub mod flowing_split_process;
 pub mod runnable_process;
 
@@ -12,23 +12,22 @@ use process_builder_common::process_domain::Message;
 use serde::{Deserialize, Deserializer, Serialize};
 use serde_json::Value;
 
-pub struct PreviousInterpretationYieldedAt(usize);
-pub struct CurrentInterpretationYieldsAt(usize);
+pub struct PreviousRunYieldedAt(usize);
+pub struct CurrentRunYieldedAt(usize);
+pub(crate) const WILL_BE_RENUMBERED: usize = 0;
 
-pub enum InterpretationOutcome<T: ParamList> {
+pub enum IntermediateRunOutcome<T: ParamList> {
   Continue(T),
-  Yield(Message, Value, CurrentInterpretationYieldsAt),
+  Yield(Message, Value, CurrentRunYieldedAt),
   Finish(Message),
 }
 
-pub(crate) const WILL_BE_RENUMBERED: usize = 0;
+type IntermediateRunResult<T: ParamList> = anyhow::Result<IntermediateRunOutcome<T>>;
 
-type InterpretationResult<T: ParamList> = anyhow::Result<InterpretationOutcome<T>>;
-
+// should most likely be sealed, but someone might argue
 pub trait ProcessBuilder: Sized {
   fn enumerate_steps(&mut self, last_used_index: usize) -> usize;
 }
-
 
 // pub struct SplitFlowingProcess<FLOWING_SPLIT_PROCESS: FlowingSplitProcess> {
 //   pub process: FLOWING_SPLIT_PROCESS,
@@ -63,9 +62,6 @@ pub trait ProcessBuilder: Sized {
 //     }
 //   }
 // }
-
-
-
 
 // pub struct FlowingProcess<'same_process> {
 //   pub(crate) process: InternalFlowingProcess,

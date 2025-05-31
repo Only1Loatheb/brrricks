@@ -1,4 +1,14 @@
 use crate::builder::finalized_process::FinalizedProcess;
+use crate::builder::CurrentRunYieldedAt;
+use process_builder_common::process_domain::Message;
+use serde_json::Value;
+
+pub enum RunOutcome {
+  Yield(Message, Value, CurrentRunYieldedAt),
+  Finish(Message),
+}
+
+type RunResult = anyhow::Result<RunOutcome>;
 
 pub struct RunnableProcess<FINALIZED_PROCESS: FinalizedProcess> {
   finalized_process: FINALIZED_PROCESS, // shouldn't be public
@@ -9,4 +19,6 @@ impl<FINALIZED_PROCESS: FinalizedProcess> RunnableProcess<FINALIZED_PROCESS> {
     finalized_process.enumerate_steps(0);
     Self { finalized_process }
   }
+
+  pub fn run(&mut self, step_index: usize) -> RunResult {}
 }

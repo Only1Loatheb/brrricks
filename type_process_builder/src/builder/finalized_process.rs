@@ -1,6 +1,6 @@
 use crate::builder::finalized_split_process::FinalizedSplitProcess;
 use crate::builder::flowing_process::FlowingProcess;
-use crate::builder::{InterpretationResult, PreviousInterpretationYieldedAt, ProcessBuilder};
+use crate::builder::{IntermediateRunResult, PreviousRunYieldedAt, ProcessBuilder};
 use crate::step::param_list::ParamList;
 use crate::step::step::Final;
 use frunk_core::hlist::HNil;
@@ -8,11 +8,11 @@ use serde_json::Value;
 use std::marker::PhantomData;
 
 pub trait FinalizedProcess: ProcessBuilder {
-  async fn interpret_resume(
+  async fn continue_run(
     &self,
-    previous_interpretation_produced: Value,
-    previous_interpretation_yielded: PreviousInterpretationYieldedAt,
-  ) -> InterpretationResult<HNil>; // fixme create result type for finalised process, or undo changes
+    previous_run_produced: Value,
+    previous_run_yielded: PreviousRunYieldedAt,
+  ) -> IntermediateRunResult<HNil>; // fixme create result type for finalised process, or undo changes
 }
 
 pub struct FlowingFinalizedProcess<PROCESS_BEFORE: FlowingProcess, FINAL_CONSUMES: ParamList, FINAL_STEP: Final<FINAL_CONSUMES>> {
@@ -33,11 +33,11 @@ impl<PROCESS_BEFORE: FlowingProcess, FINAL_CONSUMES: ParamList, FINAL_STEP: Fina
 impl<PROCESS_BEFORE: FlowingProcess, FINAL_CONSUMES: ParamList, FINAL_STEP: Final<FINAL_CONSUMES>> FinalizedProcess
   for FlowingFinalizedProcess<PROCESS_BEFORE, FINAL_CONSUMES, FINAL_STEP>
 {
-  async fn interpret_resume(
+  async fn continue_run(
     &self,
-    previous_interpretation_produced: Value,
-    previous_interpretation_yielded: PreviousInterpretationYieldedAt,
-  ) -> InterpretationResult<HNil> {
+    previous_run_produced: Value,
+    previous_run_yielded: PreviousRunYieldedAt,
+  ) -> IntermediateRunResult<HNil> {
     todo!()
   }
 }
@@ -54,11 +54,11 @@ impl<FINALIZED_SPLIT_PROCESS: FinalizedSplitProcess> ProcessBuilder for SplitFin
 }
 
 impl<FINALIZED_SPLIT_PROCESS: FinalizedSplitProcess> FinalizedProcess for SplitFinalizedProcess<FINALIZED_SPLIT_PROCESS> {
-  async fn interpret_resume(
+  async fn continue_run(
     &self,
-    previous_interpretation_produced: Value,
-    previous_interpretation_yielded: PreviousInterpretationYieldedAt,
-  ) -> InterpretationResult<HNil> {
+    previous_run_produced: Value,
+    previous_run_yielded: PreviousRunYieldedAt,
+  ) -> IntermediateRunResult<HNil> {
     todo!()
   }
 }
