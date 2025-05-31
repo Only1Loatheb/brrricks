@@ -9,17 +9,13 @@ rust-version = "1.84.1"
 [workspace]
 members = [
     "process_builder_common",
-    "graphical_process_builder",
     "type_process_builder",
-    "type_process_adapter",
     "process_runner",
 ]
 
 [dependencies]
 process_builder_common = { path = "process_builder_common" }
-graphical_process_builder = { path = "graphical_process_builder" }
 type_process_builder = { path = "type_process_builder" }
-type_process_adapter = { path = "type_process_adapter" }
 process_runner = { path = "process_runner" }
 
 #todo https://doc.rust-lang.org/cargo/reference/workspaces.html
