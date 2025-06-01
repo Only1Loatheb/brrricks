@@ -24,6 +24,13 @@ pub enum IntermediateRunOutcome<T: ParamList> {
 
 type IntermediateRunResult<T: ParamList> = anyhow::Result<IntermediateRunOutcome<T>>;
 
+pub enum RunOutcome {
+  Yield(Message, Value, CurrentRunYieldedAt),
+  Finish(Message),
+}
+
+type RunResult = anyhow::Result<RunOutcome>;
+
 // should most likely be sealed, but someone might argue
 pub trait ProcessBuilder: Sized {
   fn enumerate_steps(&mut self, last_used_index: usize) -> usize;

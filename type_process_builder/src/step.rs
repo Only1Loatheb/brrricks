@@ -4,7 +4,7 @@ use serde::Serialize;
 /// clone (required by run method) should be used in brick instead
 pub trait ParamValue: Clone + Serialize + DeserializeOwned {
   const NAME: &'static str;
-} 
+}
 
 pub mod param_list {
   use crate::step::ParamValue;
@@ -12,7 +12,7 @@ pub mod param_list {
   use serde::de::MapAccess;
   use serde::ser::SerializeMap;
   use serde::{Deserializer, Serializer};
-  
+
   pub trait ParamList: HList + Clone {
     fn _serialize<S: Serializer>(&self, serialize_map: &mut S::SerializeMap) -> Result<(), S::Error>;
 
@@ -60,11 +60,6 @@ pub mod step {
   use crate::step::param_list::ParamList;
   use crate::step::splitter_output_repr::SplitterOutput;
   use process_builder_common::process_domain::Message;
-  use serde::de::DeserializeOwned;
-
-  pub trait Entry<PRODUCES: ParamList, DESERIALIZE_OWNED: DeserializeOwned> {
-    async fn handle(&self, input: DESERIALIZE_OWNED) -> anyhow::Result<PRODUCES>;
-  }
 
   pub trait Linear<CONSUMES: ParamList, PRODUCES: ParamList> {
     async fn handle(&self, input: CONSUMES) -> anyhow::Result<(Option<Message>, PRODUCES)>;

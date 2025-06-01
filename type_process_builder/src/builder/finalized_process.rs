@@ -4,13 +4,13 @@ use crate::builder::{IntermediateRunResult, PreviousRunYieldedAt, ProcessBuilder
 use crate::step::param_list::ParamList;
 use crate::step::step::Final;
 use frunk_core::hlist::HNil;
-use serde_json::Value;
+use std::io;
 use std::marker::PhantomData;
 
 pub trait FinalizedProcess: ProcessBuilder {
   async fn continue_run(
     &self,
-    previous_run_produced: Value,
+    previous_run_produced: impl io::Read,
     previous_run_yielded: PreviousRunYieldedAt,
   ) -> IntermediateRunResult<HNil>; // fixme create result type for finalised process, or undo changes
 }
@@ -35,7 +35,7 @@ impl<PROCESS_BEFORE: FlowingProcess, FINAL_CONSUMES: ParamList, FINAL_STEP: Fina
 {
   async fn continue_run(
     &self,
-    previous_run_produced: Value,
+    previous_run_produced: impl io::Read,
     previous_run_yielded: PreviousRunYieldedAt,
   ) -> IntermediateRunResult<HNil> {
     todo!()
@@ -56,7 +56,7 @@ impl<FINALIZED_SPLIT_PROCESS: FinalizedSplitProcess> ProcessBuilder for SplitFin
 impl<FINALIZED_SPLIT_PROCESS: FinalizedSplitProcess> FinalizedProcess for SplitFinalizedProcess<FINALIZED_SPLIT_PROCESS> {
   async fn continue_run(
     &self,
-    previous_run_produced: Value,
+    previous_run_produced: impl io::Read,
     previous_run_yielded: PreviousRunYieldedAt,
   ) -> IntermediateRunResult<HNil> {
     todo!()

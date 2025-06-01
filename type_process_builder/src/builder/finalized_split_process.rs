@@ -1,3 +1,4 @@
+use std::io;
 use crate::builder::finalized_process::FinalizedProcess;
 use crate::builder::flowing_process::FlowingProcess;
 use crate::builder::IntermediateRunOutcome::*;
@@ -13,7 +14,7 @@ use std::marker::PhantomData;
 pub trait FinalizedSplitProcess: ProcessBuilder {
   async fn continue_run(
     &self,
-    previous_run_produced: Value,
+    previous_run_produced: impl io::Read,
     previous_run_yielded: PreviousRunYieldedAt,
   ) -> IntermediateRunResult<HNil>; // fixme create result for finalised process, or undo changes
 }
@@ -63,7 +64,7 @@ impl<
 
   async fn continue_run(
     &self,
-    previous_run_produced: Value,
+    previous_run_produced: impl io::Read,
     previous_run_yielded: PreviousRunYieldedAt,
   ) -> IntermediateRunResult<HNil> {
     todo!()
@@ -113,7 +114,7 @@ impl<PROCESS_BEFORE: FinalizedSplitProcess, NEXT_CASE: FinalizedProcess> Finaliz
 {
   async fn continue_run(
     &self,
-    previous_run_produced: Value,
+    previous_run_produced: impl io::Read,
     previous_run_yielded: PreviousRunYieldedAt,
   ) -> IntermediateRunResult<HNil> {
     //Self::SplitterOutput

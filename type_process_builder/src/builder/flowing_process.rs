@@ -5,7 +5,7 @@ use crate::builder::{
 use crate::hlist_concat::Concat;
 use crate::hlist_transformer::TransformTo;
 use crate::step::param_list::ParamList;
-use crate::step::step::{Entry, Linear};
+use crate::step::step::{Linear};
 use frunk_core::hlist::HNil;
 use serde::de::DeserializeOwned;
 use std::io;
@@ -142,7 +142,7 @@ where
     if previous_run_yielded.0 < self.step_index {
       let process_before_output = self
         .process_before
-        .continue_run(consumes, previous_run_yielded)
+        .continue_run(previous_run_produced, previous_run_yielded)
         .await?;
       match process_before_output {
         Continue(process_before_produces) => self.run(process_before_produces).await,
