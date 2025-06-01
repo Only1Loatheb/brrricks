@@ -2,7 +2,7 @@ use crate::builder::finalized_process::FinalizedProcess;
 use crate::builder::flowing_process::FlowingProcess;
 use crate::builder::IntermediateRunOutcome::*;
 use crate::builder::{PreviousRunYieldedAt, ProcessBuilder, RunResult};
-use crate::step::param_list::ParamList;
+use crate::param_list::ParamList;
 use crate::step::splitter_output_repr::SplitterOutput;
 use crate::step::step::Splitter;
 use frunk_core::coproduct::Coproduct;

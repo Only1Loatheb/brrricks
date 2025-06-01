@@ -1,12 +1,13 @@
 use crate::builder::finalized_split_process::FinalizedSplitProcess;
 use crate::builder::flowing_process::FlowingProcess;
 use crate::builder::{IntermediateRunResult, PreviousRunYieldedAt, ProcessBuilder, RunResult};
-use crate::step::param_list::ParamList;
 use crate::step::step::Final;
 use frunk_core::hlist::HNil;
 use std::io;
 use std::marker::PhantomData;
 use serde_value::Value;
+use crate::builder::runnable_process::RunnableProcess;
+use crate::param_list::ParamList;
 
 pub trait FinalizedProcess: ProcessBuilder {
   async fn continue_run(
@@ -14,6 +15,10 @@ pub trait FinalizedProcess: ProcessBuilder {
     previous_run_produced: Value,
     previous_run_yielded: PreviousRunYieldedAt,
   ) -> RunResult; // fixme create result type for finalised process, or undo changes
+  
+  fn build(self) -> RunnableProcess<Self> {
+    RunnableProcess::new(self)
+  }
 }
 
 pub struct FlowingFinalizedProcess<PROCESS_BEFORE: FlowingProcess, FINAL_CONSUMES: ParamList, FINAL_STEP: Final<FINAL_CONSUMES>> {

@@ -1,17 +1,22 @@
 pub mod builder;
 mod hlist_concat;
 mod hlist_transformer;
+mod param_list;
 pub mod step;
 
 pub mod process_builder {}
 
 #[cfg(test)]
 mod tests {
+  use crate::builder::finalized_process::FinalizedProcess;
   use crate::builder::flowing_process::{EmptyProcess, FlowingProcess};
-  use crate::step::step::Linear;
-  use crate::step::ParamValue;
+  use crate::param_list::ParamValue;
+  use crate::step::step::{Final, Linear};
   use frunk_core::hlist::HNil;
   use process_builder_common::process_domain::Message;
+  use serde_value::Value;
+  use std::collections::BTreeMap;
+  use crate::builder::RunResult;
 
   #[derive(Clone, serde::Deserialize, serde::Serialize)]
   struct Param1;
@@ -21,7 +26,6 @@ mod tests {
   }
 
   struct LinearA;
-
   impl Linear<HNil, HNil> for LinearA {
     async fn handle(&self, input: HNil) -> anyhow::Result<(Option<Message>, HNil)> {
       todo!()
@@ -30,7 +34,6 @@ mod tests {
   // impl Linear<HNil, HCons<Param1, HNil>> for LinearA { async fn handle(&self, input: HNil) -> anyhow::Result<(Option<Message>, HCons<Param1, HNil>)> {todo!()}}
 
   struct LinearB;
-
   impl Linear<HNil, HNil> for LinearB {
     async fn handle(&self, input: HNil) -> anyhow::Result<(Option<Message>, HNil)> {
       todo!()
@@ -38,12 +41,23 @@ mod tests {
   }
   // impl Linear<HCons<Param1, HNil>, HNil> for LinearB { async fn handle(&self, input: HCons<Param1, HNil>) -> anyhow::Result<(Option<Message>, HNil)> { todo!() } }
 
-  #[test]
-  fn test_hcons() {
+  struct FinalA;
+  impl Final<HNil> for FinalA {
+    async fn handle(&self, input: HNil) -> anyhow::Result<Message> {
+      todo!()
+    }
+  }
+  // impl Linear<HCons<Param1, HNil>, HNil> for LinearB { async fn handle(&self, input: HCons<Param1, HNil>) -> anyhow::Result<(Option<Message>, HNil)> { todo!() } }
+
+  #[tokio::test]
+  async fn test_hcons() {
     let empty = EmptyProcess;
     let one_step = empty.then(LinearA);
     let two_steps = one_step.then(LinearB);
-    assert_eq!(1, 1);
+    let with_final_step = two_steps.end(FinalA);
+    let my_process = with_final_step.build();
+    let run_result = my_process.run(Value::Map(BTreeMap::new())).await;
+    assert!(run_result.is_err());
   }
 }
 

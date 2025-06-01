@@ -1,6 +1,6 @@
-use crate::step::param_list::ParamList;
-use crate::step::ParamValue;
+
 use frunk_core::hlist::{HCons, HNil};
+use crate::param_list::{ParamList, ParamValue};
 
 /// Using ParamList instead of HList simplifies where clauses
 /// Like `impl<RHS> Add<RHS> for HNil` in [frunk_core::hlist]

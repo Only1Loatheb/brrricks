@@ -1,6 +1,5 @@
 use crate::builder::finalized_process::FinalizedProcess;
 use crate::builder::{PreviousRunYieldedAt, RunResult};
-use std::io;
 use serde_value::Value;
 
 pub struct RunnableProcess<FINALIZED_PROCESS: FinalizedProcess> {

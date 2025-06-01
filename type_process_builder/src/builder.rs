@@ -4,7 +4,7 @@ pub mod flowing_process;
 pub mod flowing_split_process;
 pub mod runnable_process;
 
-use crate::step::param_list::ParamList;
+use crate::param_list::{ParamList, ParamValue};
 use crate::step::step::Linear;
 use crate::step::*;
 use frunk_core::hlist::{HList, Selector};
@@ -12,7 +12,9 @@ use process_builder_common::process_domain::Message;
 use serde::{Deserialize, Deserializer, Serialize};
 use serde_value::Value;
 
+#[derive(PartialEq, Debug, Eq, Clone, PartialOrd, Ord, Hash)]
 pub struct PreviousRunYieldedAt(usize);
+#[derive(PartialEq, Debug, Eq, Clone, PartialOrd, Ord, Hash)]
 pub struct CurrentRunYieldedAt(usize);
 pub(crate) const WILL_BE_RENUMBERED: usize = 0;
 
@@ -22,14 +24,16 @@ pub enum IntermediateRunOutcome<T: ParamList> {
   Finish(Message),
 }
 
-type IntermediateRunResult<T: ParamList> = anyhow::Result<IntermediateRunOutcome<T>>;
+pub type IntermediateRunResult<T: ParamList> = anyhow::Result<IntermediateRunOutcome<T>>;
 
+
+#[derive(PartialEq, Debug, Eq, Clone, PartialOrd, Ord, Hash)]
 pub enum RunOutcome {
   Yield(Message, Value, CurrentRunYieldedAt),
   Finish(Message),
 }
 
-type RunResult = anyhow::Result<RunOutcome>;
+pub type RunResult = anyhow::Result<RunOutcome>;
 
 // should most likely be sealed, but someone might argue
 pub trait ProcessBuilder: Sized {

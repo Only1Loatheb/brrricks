@@ -1,7 +1,7 @@
   use crate::builder::finalized_process::FinalizedProcess;
   use crate::builder::finalized_split_process::FinalizedSplitProcess;
   use crate::builder::flowing_process::FlowingProcess;
-  use crate::step::param_list::ParamList;
+  use crate::param_list::ParamList;
   use crate::step::splitter_output_repr::SplitterOutput;
   use crate::step::step::Splitter;
   use std::marker::PhantomData;
@@ -58,4 +58,3 @@
     for NextCaseFromFinalizedOfFlowingSplitProcess<PROCESS_BEFORE, NEXT_CASE>
   {
   }
-

@@ -4,13 +4,14 @@ use crate::builder::{
 };
 use crate::hlist_concat::Concat;
 use crate::hlist_transformer::TransformTo;
-use crate::step::param_list::ParamList;
-use crate::step::step::{Linear};
+use crate::param_list::ParamList;
+use crate::step::step::{Final, Linear};
 use frunk_core::hlist::HNil;
 use serde::de::DeserializeOwned;
 use std::io;
 use std::marker::PhantomData;
 use serde_value::Value;
+use crate::builder::finalized_process::{FinalizedProcess, FlowingFinalizedProcess};
 
 pub trait FlowingProcess: ProcessBuilder {
   type ProcessBeforeProduces: ParamList;
@@ -44,6 +45,24 @@ pub trait FlowingProcess: ProcessBuilder {
       process_before: self,
       last_step: step,
       step_index: WILL_BE_RENUMBERED,
+      phantom_data: Default::default(),
+    }
+  }
+  
+  fn end<
+    FINAL_CONSUMES: ParamList,
+    FINAL_STEP: Final<FINAL_CONSUMES>,
+    PROCESS_BEFORE_PRODUCES_TO_LAST_STEP_CONSUMES_INDICES,
+  >(
+    self,
+    step: FINAL_STEP,
+  ) -> impl FinalizedProcess
+  where
+    <Self as FlowingProcess>::Produces: TransformTo<FINAL_CONSUMES, PROCESS_BEFORE_PRODUCES_TO_LAST_STEP_CONSUMES_INDICES>,
+  {
+    FlowingFinalizedProcess {
+      process_before: self,
+      final_step: step,
       phantom_data: Default::default(),
     }
   }
