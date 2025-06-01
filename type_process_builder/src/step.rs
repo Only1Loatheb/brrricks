@@ -1,4 +1,6 @@
+use crate::step::param_list::ParamList;
 use serde::de::DeserializeOwned;
+use serde::de::{Deserialize, Deserializer, MapAccess, Visitor};
 use serde::Serialize;
 
 /// clone (required by run method) should be used in brick instead
@@ -14,14 +16,13 @@ pub mod param_list {
   use std::collections::BTreeMap;
 
   pub trait ParamList: HList + Clone {
-    fn _serialize(&self, serialize_map: &mut BTreeMap<Value, Value>) -> Result<(), SerializerError>;
-
     /// maybe serialize as a list if the same list is always serialized and deserialized?
     fn serialize(&self) -> Result<Value, SerializerError> {
       let mut serialize_map = BTreeMap::new();
       self._serialize(&mut serialize_map)?;
       Ok(Value::Map(serialize_map))
     }
+    fn _serialize(&self, serialize_map: &mut BTreeMap<Value, Value>) -> Result<(), SerializerError>;
   }
 
   impl ParamList for HNil {
@@ -36,7 +37,10 @@ pub mod param_list {
       let old_value = serialize_map.insert(Value::String(PARAM_VALUE::NAME.into()), to_value(&self.head)?);
       match old_value {
         None => Ok(()),
-        Some(_) => Err(Custom(format!("Two ParamValues have the same name: {}", PARAM_VALUE::NAME))),
+        Some(_) => Err(Custom(format!(
+          "Two ParamValues have the same name: {}",
+          PARAM_VALUE::NAME
+        ))),
       }
     }
   }
