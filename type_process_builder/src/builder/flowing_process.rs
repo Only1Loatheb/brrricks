@@ -166,9 +166,7 @@ where
       {
         Ok(Yield(
           msg,
-          last_step_produces
-            .concat(process_before_produces)
-            .serialize(serde_json::value::Serializer)?, // fixme make it generic over format i.e. json
+          last_step_produces.concat(process_before_produces).serialize()?, 
           CurrentRunYieldedAt(self.step_index),
         ))
       }

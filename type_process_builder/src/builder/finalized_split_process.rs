@@ -1,14 +1,12 @@
-use std::io;
 use crate::builder::finalized_process::FinalizedProcess;
 use crate::builder::flowing_process::FlowingProcess;
 use crate::builder::IntermediateRunOutcome::*;
-use crate::builder::{IntermediateRunResult, PreviousRunYieldedAt, ProcessBuilder};
+use crate::builder::{PreviousRunYieldedAt, ProcessBuilder, RunResult};
 use crate::step::param_list::ParamList;
 use crate::step::splitter_output_repr::SplitterOutput;
 use crate::step::step::Splitter;
 use frunk_core::coproduct::Coproduct;
-use frunk_core::hlist::HNil;
-use serde_json::Value;
+use std::io;
 use std::marker::PhantomData;
 
 pub trait FinalizedSplitProcess: ProcessBuilder {
@@ -16,7 +14,7 @@ pub trait FinalizedSplitProcess: ProcessBuilder {
     &self,
     previous_run_produced: impl io::Read,
     previous_run_yielded: PreviousRunYieldedAt,
-  ) -> IntermediateRunResult<HNil>; // fixme create result for finalised process, or undo changes
+  ) -> RunResult;
 }
 
 pub struct FirstCaseOfFinalizedSplitProcess<
@@ -41,7 +39,13 @@ impl<
     SPLITTER_STEP: Splitter<SPLITTER_CONSUMES, Coproduct<CASE_THIS, CASE_OTHER>>,
     FIRST_CASE: FinalizedProcess,
   > ProcessBuilder
-  for FirstCaseOfFinalizedSplitProcess<PROCESS_BEFORE, SPLITTER_CONSUMES, Coproduct<CASE_THIS, CASE_OTHER>, SPLITTER_STEP, FIRST_CASE>
+  for FirstCaseOfFinalizedSplitProcess<
+    PROCESS_BEFORE,
+    SPLITTER_CONSUMES,
+    Coproduct<CASE_THIS, CASE_OTHER>,
+    SPLITTER_STEP,
+    FIRST_CASE,
+  >
 {
   fn enumerate_steps(&mut self, last_used_index: usize) -> usize {
     let used_index = self.process_before.enumerate_steps(last_used_index);
@@ -58,7 +62,13 @@ impl<
     SPLITTER_STEP: Splitter<SPLITTER_CONSUMES, Coproduct<CASE_THIS, CASE_OTHER>>,
     FIRST_CASE: FinalizedProcess,
   > FinalizedSplitProcess
-  for FirstCaseOfFinalizedSplitProcess<PROCESS_BEFORE, SPLITTER_CONSUMES, Coproduct<CASE_THIS, CASE_OTHER>, SPLITTER_STEP, FIRST_CASE>
+  for FirstCaseOfFinalizedSplitProcess<
+    PROCESS_BEFORE,
+    SPLITTER_CONSUMES,
+    Coproduct<CASE_THIS, CASE_OTHER>,
+    SPLITTER_STEP,
+    FIRST_CASE,
+  >
 {
   // type SplitterOutput = <CASE_THIS as Concat<PROCESS_BEFORE::Produces>>::Concatenated;
 
@@ -66,7 +76,7 @@ impl<
     &self,
     previous_run_produced: impl io::Read,
     previous_run_yielded: PreviousRunYieldedAt,
-  ) -> IntermediateRunResult<HNil> {
+  ) -> RunResult {
     todo!()
     // if last_run.0 < self.step_index {
     //   // no yielding from splitter step todo maybe implement
@@ -116,7 +126,7 @@ impl<PROCESS_BEFORE: FinalizedSplitProcess, NEXT_CASE: FinalizedProcess> Finaliz
     &self,
     previous_run_produced: impl io::Read,
     previous_run_yielded: PreviousRunYieldedAt,
-  ) -> IntermediateRunResult<HNil> {
+  ) -> RunResult {
     //Self::SplitterOutput
     todo!()
   }

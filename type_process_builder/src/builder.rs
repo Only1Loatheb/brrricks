@@ -10,7 +10,7 @@ use crate::step::*;
 use frunk_core::hlist::{HList, Selector};
 use process_builder_common::process_domain::Message;
 use serde::{Deserialize, Deserializer, Serialize};
-use serde_json::Value;
+use serde_value::Value;
 
 pub struct PreviousRunYieldedAt(usize);
 pub struct CurrentRunYieldedAt(usize);

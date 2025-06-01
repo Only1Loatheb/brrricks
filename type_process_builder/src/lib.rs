@@ -12,7 +12,6 @@ mod tests {
   use crate::step::ParamValue;
   use frunk_core::hlist::HNil;
   use process_builder_common::process_domain::Message;
-  use serde::{Deserializer, Serializer};
 
   #[derive(Clone, serde::Deserialize, serde::Serialize)]
   struct Param1;
@@ -23,12 +22,20 @@ mod tests {
 
   struct LinearA;
 
-  impl Linear<HNil, HNil> for LinearA { async fn handle(&self, input: HNil) -> anyhow::Result<(Option<Message>, HNil)> { todo!() }}
+  impl Linear<HNil, HNil> for LinearA {
+    async fn handle(&self, input: HNil) -> anyhow::Result<(Option<Message>, HNil)> {
+      todo!()
+    }
+  }
   // impl Linear<HNil, HCons<Param1, HNil>> for LinearA { async fn handle(&self, input: HNil) -> anyhow::Result<(Option<Message>, HCons<Param1, HNil>)> {todo!()}}
 
   struct LinearB;
 
-  impl Linear<HNil, HNil> for LinearB { async fn handle(&self, input: HNil) -> anyhow::Result<(Option<Message>, HNil)> { todo!() } }
+  impl Linear<HNil, HNil> for LinearB {
+    async fn handle(&self, input: HNil) -> anyhow::Result<(Option<Message>, HNil)> {
+      todo!()
+    }
+  }
   // impl Linear<HCons<Param1, HNil>, HNil> for LinearB { async fn handle(&self, input: HCons<Param1, HNil>) -> anyhow::Result<(Option<Message>, HNil)> { todo!() } }
 
   #[test]

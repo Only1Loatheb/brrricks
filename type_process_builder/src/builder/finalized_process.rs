@@ -1,6 +1,6 @@
 use crate::builder::finalized_split_process::FinalizedSplitProcess;
 use crate::builder::flowing_process::FlowingProcess;
-use crate::builder::{IntermediateRunResult, PreviousRunYieldedAt, ProcessBuilder};
+use crate::builder::{IntermediateRunResult, PreviousRunYieldedAt, ProcessBuilder, RunResult};
 use crate::step::param_list::ParamList;
 use crate::step::step::Final;
 use frunk_core::hlist::HNil;
@@ -12,7 +12,7 @@ pub trait FinalizedProcess: ProcessBuilder {
     &self,
     previous_run_produced: impl io::Read,
     previous_run_yielded: PreviousRunYieldedAt,
-  ) -> IntermediateRunResult<HNil>; // fixme create result type for finalised process, or undo changes
+  ) -> RunResult; // fixme create result type for finalised process, or undo changes
 }
 
 pub struct FlowingFinalizedProcess<PROCESS_BEFORE: FlowingProcess, FINAL_CONSUMES: ParamList, FINAL_STEP: Final<FINAL_CONSUMES>> {
@@ -37,7 +37,7 @@ impl<PROCESS_BEFORE: FlowingProcess, FINAL_CONSUMES: ParamList, FINAL_STEP: Fina
     &self,
     previous_run_produced: impl io::Read,
     previous_run_yielded: PreviousRunYieldedAt,
-  ) -> IntermediateRunResult<HNil> {
+  ) -> RunResult {
     todo!()
   }
 }
@@ -58,7 +58,7 @@ impl<FINALIZED_SPLIT_PROCESS: FinalizedSplitProcess> FinalizedProcess for SplitF
     &self,
     previous_run_produced: impl io::Read,
     previous_run_yielded: PreviousRunYieldedAt,
-  ) -> IntermediateRunResult<HNil> {
+  ) -> RunResult {
     todo!()
   }
 }

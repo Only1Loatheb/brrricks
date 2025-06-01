@@ -12,7 +12,18 @@ impl<FINALIZED_PROCESS: FinalizedProcess> RunnableProcess<FINALIZED_PROCESS> {
     Self { finalized_process }
   }
 
-  pub fn run(&self, previous_run_produced: impl io::Read, previous_run_yielded: PreviousRunYieldedAt) -> RunResult {
-    self.finalized_process.continue_run(previous_run_produced, previous_run_yielded)
+  pub async fn run(&self, previous_run_produced: impl io::Read) -> RunResult {
+    self.continue_run(previous_run_produced, PreviousRunYieldedAt(0)).await
+  }
+
+  pub async fn continue_run(
+    &self,
+    previous_run_produced: impl io::Read,
+    previous_run_yielded: PreviousRunYieldedAt,
+  ) -> RunResult {
+    self
+      .finalized_process
+      .continue_run(previous_run_produced, previous_run_yielded)
+      .await
   }
 }

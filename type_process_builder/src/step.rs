@@ -9,32 +9,35 @@ pub trait ParamValue: Clone + Serialize + DeserializeOwned {
 pub mod param_list {
   use crate::step::ParamValue;
   use frunk_core::hlist::{HCons, HList, HNil};
-  use serde::de::MapAccess;
-  use serde::ser::SerializeMap;
-  use serde::{Deserializer, Serializer};
+  use serde_value::SerializerError::Custom;
+  use serde_value::{to_value, SerializerError, Value};
+  use std::collections::BTreeMap;
 
   pub trait ParamList: HList + Clone {
-    fn _serialize<S: Serializer>(&self, serialize_map: &mut S::SerializeMap) -> Result<(), S::Error>;
+    fn _serialize(&self, serialize_map: &mut BTreeMap<Value, Value>) -> Result<(), SerializerError>;
 
     /// maybe serialize as a list if the same list is always serialized and deserialized?
-    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
-      // https://serde.rs/impl-serialize.html#serializing-a-sequence-or-map
-      let mut serialize_map = serializer.serialize_map(Some(self.len()))?;
-      self._serialize::<S>(&mut serialize_map)?;
-      serialize_map.end()
+    fn serialize(&self) -> Result<Value, SerializerError> {
+      let mut serialize_map = BTreeMap::new();
+      self._serialize(&mut serialize_map)?;
+      Ok(Value::Map(serialize_map))
     }
   }
 
   impl ParamList for HNil {
-    fn _serialize<S: Serializer>(&self, serialize_map: &mut S::SerializeMap) -> Result<(), S::Error> {
+    fn _serialize(&self, serialize_map: &mut BTreeMap<Value, Value>) -> Result<(), SerializerError> {
       Ok(())
     }
   }
 
   impl<PARAM_VALUE: ParamValue, TAIL: ParamList> ParamList for HCons<PARAM_VALUE, TAIL> {
-    fn _serialize<S: Serializer>(&self, serialize_map: &mut S::SerializeMap) -> Result<(), S::Error> {
-      self.tail._serialize::<S>(serialize_map)?;
-      serialize_map.serialize_entry(PARAM_VALUE::NAME, &self.head)
+    fn _serialize(&self, serialize_map: &mut BTreeMap<Value, Value>) -> Result<(), SerializerError> {
+      self.tail._serialize(serialize_map)?;
+      let old_value = serialize_map.insert(Value::String(PARAM_VALUE::NAME.into()), to_value(&self.head)?);
+      match old_value {
+        None => Ok(()),
+        Some(_) => Err(Custom(format!("Two ParamValues have the same name: {}", PARAM_VALUE::NAME))),
+      }
     }
   }
 }
