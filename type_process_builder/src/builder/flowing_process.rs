@@ -10,6 +10,7 @@ use frunk_core::hlist::HNil;
 use serde::de::DeserializeOwned;
 use std::io;
 use std::marker::PhantomData;
+use serde_value::Value;
 
 pub trait FlowingProcess: ProcessBuilder {
   type ProcessBeforeProduces: ParamList;
@@ -17,7 +18,7 @@ pub trait FlowingProcess: ProcessBuilder {
 
   async fn continue_run(
     &self,
-    previous_run_produced: impl io::Read,
+    previous_run_produced: Value,
     previous_run_yielded: PreviousRunYieldedAt,
   ) -> IntermediateRunResult<Self::Produces>;
 
@@ -62,7 +63,7 @@ impl FlowingProcess for EmptyProcess {
 
   async fn continue_run(
     &self,
-    previous_run_produced: impl io::Read,
+    previous_run_produced: Value,
     previous_run_yielded: PreviousRunYieldedAt,
   ) -> IntermediateRunResult<Self::Produces> {
     Ok(Continue(HNil))
@@ -136,7 +137,7 @@ where
 
   async fn continue_run(
     &self,
-    previous_run_produced: impl io::Read,
+    previous_run_produced: Value,
     previous_run_yielded: PreviousRunYieldedAt,
   ) -> IntermediateRunResult<Self::Produces> {
     if previous_run_yielded.0 < self.step_index {
@@ -151,7 +152,7 @@ where
       }
     } else {
       // fixme deserialize only values required only up to the next interaction
-      let process_before_produces: PROCESS_BEFORE::Produces = todo!(); // serde_json::from_reader(consumes)?;
+      let process_before_produces: PROCESS_BEFORE::Produces = PROCESS_BEFORE::Produces::deserialize(previous_run_produced)?;
       self.run(process_before_produces).await
     }
   }

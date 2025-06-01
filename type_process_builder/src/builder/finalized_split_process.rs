@@ -8,11 +8,12 @@ use crate::step::step::Splitter;
 use frunk_core::coproduct::Coproduct;
 use std::io;
 use std::marker::PhantomData;
+use serde_value::Value;
 
 pub trait FinalizedSplitProcess: ProcessBuilder {
   async fn continue_run(
     &self,
-    previous_run_produced: impl io::Read,
+    previous_run_produced: Value,
     previous_run_yielded: PreviousRunYieldedAt,
   ) -> RunResult;
 }
@@ -74,7 +75,7 @@ impl<
 
   async fn continue_run(
     &self,
-    previous_run_produced: impl io::Read,
+    previous_run_produced: Value,
     previous_run_yielded: PreviousRunYieldedAt,
   ) -> RunResult {
     todo!()
@@ -124,7 +125,7 @@ impl<PROCESS_BEFORE: FinalizedSplitProcess, NEXT_CASE: FinalizedProcess> Finaliz
 {
   async fn continue_run(
     &self,
-    previous_run_produced: impl io::Read,
+    previous_run_produced: Value,
     previous_run_yielded: PreviousRunYieldedAt,
   ) -> RunResult {
     //Self::SplitterOutput
