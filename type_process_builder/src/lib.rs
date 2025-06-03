@@ -13,7 +13,7 @@ mod tests {
   use crate::param_list::ParamValue;
   use crate::step::step::{Final, Linear};
   use frunk_core::hlist::HNil;
-  use process_builder_common::process_domain::Message;
+  use crate::step::Message;
   use serde_value::Value;
   use std::collections::BTreeMap;
   use crate::builder::RunResult;

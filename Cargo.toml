@@ -8,13 +8,11 @@ rust-version = "1.84.1"
 
 [workspace]
 members = [
-    "process_builder_common",
     "type_process_builder",
     "process_runner",
 ]
 
 [dependencies]
-process_builder_common = { path = "process_builder_common" }
 type_process_builder = { path = "type_process_builder" }
 process_runner = { path = "process_runner" }
 

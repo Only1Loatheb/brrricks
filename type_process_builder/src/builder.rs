@@ -8,7 +8,7 @@ use crate::param_list::{ParamList, ParamValue};
 use crate::step::step::Linear;
 use crate::step::*;
 use frunk_core::hlist::{HList, Selector};
-use process_builder_common::process_domain::Message;
+use crate::step::Message;
 use serde::{Deserialize, Deserializer, Serialize};
 use serde_value::Value;
 
