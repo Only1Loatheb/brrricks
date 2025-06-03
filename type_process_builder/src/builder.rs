@@ -36,8 +36,8 @@ pub enum RunOutcome {
 pub type RunResult = anyhow::Result<RunOutcome>;
 
 // should most likely be sealed, but someone might argue
-pub trait ProcessBuilder: Sized {
-  fn enumerate_steps(&mut self, last_used_index: usize) -> usize;
+pub trait ProcessBuilder {
+  
 }
 
 // pub struct SplitFlowingProcess<FLOWING_SPLIT_PROCESS: FlowingSplitProcess> {

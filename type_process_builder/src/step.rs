@@ -1,7 +1,3 @@
-use serde::de::DeserializeOwned;
-use serde::de::{Deserialize, Deserializer, MapAccess, Visitor};
-use serde::Serialize;
-
 pub mod splitter_output_repr {
   use crate::param_list::ParamList;
   use frunk_core::coproduct::{CNil, Coproduct};
@@ -25,11 +21,13 @@ pub struct Message(pub String);
 pub mod step {
   use crate::param_list::ParamList;
   use crate::step::splitter_output_repr::SplitterOutput;
-  use serde::de::DeserializeOwned;
   use crate::step::Message;
+  use serde::de::DeserializeOwned;
+  use std::collections::BTreeMap;
 
-  pub trait Entry<PRODUCES: ParamList, DESERIALIZE_OWNED: DeserializeOwned> {
-    async fn handle(&self, input: DESERIALIZE_OWNED) -> anyhow::Result<PRODUCES>;
+  pub trait Entry<DESERIALIZE: DeserializeOwned> {
+    type Produces: ParamList;
+    async fn handle(&self, input: BTreeMap<DESERIALIZE, DESERIALIZE>) -> anyhow::Result<Self::Produces>;
   }
 
   pub trait Linear<CONSUMES: ParamList, PRODUCES: ParamList> {

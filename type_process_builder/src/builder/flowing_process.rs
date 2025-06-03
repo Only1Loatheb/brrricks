@@ -1,3 +1,4 @@
+use crate::builder::finalized_process::{FinalizedProcess, FlowingFinalizedProcess};
 use crate::builder::IntermediateRunOutcome::*;
 use crate::builder::{
   CurrentRunYieldedAt, IntermediateRunResult, PreviousRunYieldedAt, ProcessBuilder, WILL_BE_RENUMBERED,
@@ -5,15 +6,16 @@ use crate::builder::{
 use crate::hlist_concat::Concat;
 use crate::hlist_transformer::TransformTo;
 use crate::param_list::ParamList;
-use crate::step::step::{Final, Linear};
+use crate::step::step::{Entry, Final, Linear};
+use anyhow::anyhow;
 use frunk_core::hlist::HNil;
 use serde::de::DeserializeOwned;
+use serde_value::{DeserializerError, Value};
+use std::hint::unreachable_unchecked;
 use std::io;
 use std::marker::PhantomData;
-use serde_value::Value;
-use crate::builder::finalized_process::{FinalizedProcess, FlowingFinalizedProcess};
 
-pub trait FlowingProcess: ProcessBuilder {
+pub trait FlowingProcess: Sized {
   type ProcessBeforeProduces: ParamList;
   type Produces: ParamList;
 
@@ -39,7 +41,8 @@ pub trait FlowingProcess: ProcessBuilder {
     Produces = <LINEAR_PRODUCES as Concat<Self::Produces>>::Concatenated,
   >
   where
-    <Self as FlowingProcess>::Produces: TransformTo<LINEAR_CONSUMES, PROCESS_BEFORE_PRODUCES_TO_LAST_STEP_CONSUMES_INDICES>,
+    <Self as FlowingProcess>::Produces:
+      TransformTo<LINEAR_CONSUMES, PROCESS_BEFORE_PRODUCES_TO_LAST_STEP_CONSUMES_INDICES>,
   {
     LinearFlowingProcess {
       process_before: self,
@@ -48,7 +51,7 @@ pub trait FlowingProcess: ProcessBuilder {
       phantom_data: Default::default(),
     }
   }
-  
+
   fn end<
     FINAL_CONSUMES: ParamList,
     FINAL_STEP: Final<FINAL_CONSUMES>,
@@ -58,7 +61,8 @@ pub trait FlowingProcess: ProcessBuilder {
     step: FINAL_STEP,
   ) -> impl FinalizedProcess
   where
-    <Self as FlowingProcess>::Produces: TransformTo<FINAL_CONSUMES, PROCESS_BEFORE_PRODUCES_TO_LAST_STEP_CONSUMES_INDICES>,
+    <Self as FlowingProcess>::Produces:
+      TransformTo<FINAL_CONSUMES, PROCESS_BEFORE_PRODUCES_TO_LAST_STEP_CONSUMES_INDICES>,
   {
     FlowingFinalizedProcess {
       process_before: self,
@@ -66,30 +70,33 @@ pub trait FlowingProcess: ProcessBuilder {
       phantom_data: Default::default(),
     }
   }
+
+  fn enumerate_steps(&mut self, last_used_index: usize) -> usize;
 }
 
-pub struct EmptyProcess;
-
-impl ProcessBuilder for EmptyProcess {
-  fn enumerate_steps(&mut self, last_used_index: usize) -> usize {
-    last_used_index
-  }
-}
-
-impl FlowingProcess for EmptyProcess {
+impl<PRODUCES: ParamList, ENTRY: Entry<Value, Produces=PRODUCES>> FlowingProcess for ENTRY {
   type ProcessBeforeProduces = HNil;
-  type Produces = HNil;
+  type Produces = ENTRY::Produces;
 
   async fn continue_run(
     &self,
     previous_run_produced: Value,
-    previous_run_yielded: PreviousRunYieldedAt,
+    _: PreviousRunYieldedAt,
   ) -> IntermediateRunResult<Self::Produces> {
-    Ok(Continue(HNil))
+    let map = match previous_run_produced {
+      Value::Map(m) => m,
+      _ => return Err(anyhow!("Not a map")),
+    };
+    let result: PRODUCES = ENTRY::handle(self, map).await?;
+    Ok(Continue(result))
   }
 
-  async fn run(&self, process_before_produces: Self::ProcessBeforeProduces) -> IntermediateRunResult<Self::Produces> {
-    Ok(Continue(HNil))
+  async fn run(&self, _: Self::ProcessBeforeProduces) -> IntermediateRunResult<Self::Produces> {
+    unsafe { unreachable_unchecked() }
+  }
+
+  fn enumerate_steps(&mut self, last_used_index: usize) -> usize {
+    last_used_index
   }
 }
 
@@ -116,30 +123,6 @@ impl<
     LAST_STEP_PRODUCES: ParamList + Concat<PROCESS_BEFORE::Produces>,
     LAST_STEP: Linear<LAST_STEP_CONSUMES, LAST_STEP_PRODUCES>,
     PROCESS_BEFORE_PRODUCES_TO_LAST_STEP_CONSUMES_INDICES,
-  > ProcessBuilder
-  for LinearFlowingProcess<
-    PROCESS_BEFORE,
-    LAST_STEP_CONSUMES,
-    LAST_STEP_PRODUCES,
-    LAST_STEP,
-    PROCESS_BEFORE_PRODUCES_TO_LAST_STEP_CONSUMES_INDICES,
-  >
-where
-  <PROCESS_BEFORE as FlowingProcess>::Produces: TransformTo<LAST_STEP_CONSUMES, PROCESS_BEFORE_PRODUCES_TO_LAST_STEP_CONSUMES_INDICES>,
-{
-  fn enumerate_steps(&mut self, last_used_index: usize) -> usize {
-    let used_index = self.process_before.enumerate_steps(last_used_index);
-    self.step_index = used_index + 1;
-    self.step_index
-  }
-}
-
-impl<
-    PROCESS_BEFORE: FlowingProcess,
-    LAST_STEP_CONSUMES: ParamList,
-    LAST_STEP_PRODUCES: ParamList + Concat<PROCESS_BEFORE::Produces>,
-    LAST_STEP: Linear<LAST_STEP_CONSUMES, LAST_STEP_PRODUCES>,
-    PROCESS_BEFORE_PRODUCES_TO_LAST_STEP_CONSUMES_INDICES,
   > FlowingProcess
   for LinearFlowingProcess<
     PROCESS_BEFORE,
@@ -149,7 +132,8 @@ impl<
     PROCESS_BEFORE_PRODUCES_TO_LAST_STEP_CONSUMES_INDICES,
   >
 where
-  <PROCESS_BEFORE as FlowingProcess>::Produces: TransformTo<LAST_STEP_CONSUMES, PROCESS_BEFORE_PRODUCES_TO_LAST_STEP_CONSUMES_INDICES>,
+  <PROCESS_BEFORE as FlowingProcess>::Produces:
+    TransformTo<LAST_STEP_CONSUMES, PROCESS_BEFORE_PRODUCES_TO_LAST_STEP_CONSUMES_INDICES>,
 {
   type ProcessBeforeProduces = PROCESS_BEFORE::Produces;
   type Produces = <LAST_STEP_PRODUCES as Concat<PROCESS_BEFORE::Produces>>::Concatenated;
@@ -171,7 +155,8 @@ where
       }
     } else {
       // fixme deserialize only values required only up to the next interaction
-      let process_before_produces: PROCESS_BEFORE::Produces = PROCESS_BEFORE::Produces::deserialize(previous_run_produced)?;
+      let process_before_produces: PROCESS_BEFORE::Produces =
+        PROCESS_BEFORE::Produces::deserialize(previous_run_produced)?;
       self.run(process_before_produces).await
     }
   }
@@ -186,11 +171,17 @@ where
       {
         Ok(Yield(
           msg,
-          last_step_produces.concat(process_before_produces).serialize()?, 
+          last_step_produces.concat(process_before_produces).serialize()?,
           CurrentRunYieldedAt(self.step_index),
         ))
       }
       (None, last_step_produces) => Ok(Continue(last_step_produces.concat(process_before_produces))),
     }
+  }
+
+  fn enumerate_steps(&mut self, last_used_index: usize) -> usize {
+    let used_index = self.process_before.enumerate_steps(last_used_index);
+    self.step_index = used_index + 1;
+    self.step_index
   }
 }
