@@ -1,7 +1,7 @@
 digraph {
     # https://dreampuf.github.io/GraphvizOnline/
     bgcolor=transparent
-    ranksep=1.2;
+    ranksep=1;
 
     Entry [label="Entry", shape=box, color=mediumorchid1, fontcolor=white]
     End [label="RunnableProcess", shape=box, color=mediumorchid1, fontcolor=white]
@@ -29,11 +29,14 @@ digraph {
 
     FinalizedSplitProcess -> finalized_split_cases_final [label="  FinalizedProcess  ", color=blue, fontcolor=skyblue]
     finalized_split_cases_final -> FinalizedSplitProcess [label="  cases left  ", color=blue, fontcolor=skyblue]
-    finalized_split_cases_final -> FinalizedProcess [label="  all cases  \n  covered  ", color=blue, fontcolor=skyblue]
+
+    x [shape=point,color=blue,width=0.01, height=0.01, label=""]
+    finalized_split_cases_final -> x [label="", color=blue, dir=none, minlen=0]
+    x -> FinalizedProcess [label="  all cases  \n  covered  ", color=blue, fontcolor=skyblue, minlen=0]
 
     FinalizedSplitProcess -> FlowingSplitProcess [label="  FlowingProcess  ", color=blue, fontcolor=skyblue]
 
     FlowingSplitProcess -> flowing_split_cases [label="  FinalizedProcess  \n  or FlowingProcess  ", color=blue, fontcolor=skyblue]
     flowing_split_cases -> FlowingSplitProcess [label="  cases left  ", color=blue, fontcolor=skyblue]
-    flowing_split_cases -> FlowingProcess [taillabel="  all cases  \n  covered  ", color=blue, fontcolor=skyblue  , labeldistance=5, labelangle=30]
+    flowing_split_cases -> FlowingProcess [taillabel="  all cases  \n  covered  ", color=blue, fontcolor=skyblue, labeldistance=5, labelangle=30]
 }
