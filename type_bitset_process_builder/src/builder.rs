@@ -13,14 +13,14 @@ pub struct FlowingProcess<
   USES: ParamBitSet,
   REQUIRES: Unsigned,
   FORBIDS: Unsigned,
-  PRODUCES: ParamBitSet,
+  Produces: ParamBitSet,
   ACCOMPLISHES: Unsigned,
 > {
   pub(crate) process: InternalFlowingProcess,
   pub(crate) uses: PhantomData<USES>,
   pub(crate) requires: PhantomData<REQUIRES>,
   pub(crate) forbids: PhantomData<FORBIDS>,
-  pub(crate) produces: PhantomData<PRODUCES>,
+  pub(crate) produces: PhantomData<Produces>,
   pub(crate) accomplishes: PhantomData<ACCOMPLISHES>,
 }
 
@@ -28,12 +28,12 @@ impl<
   USES: ParamBitSet,
   REQUIRES: Unsigned,
   FORBIDS: Unsigned,
-  PRODUCES: ParamBitSet,
+  Produces: ParamBitSet,
   ACCOMPLISHES: Unsigned,
-> FlowingProcess<USES, REQUIRES, FORBIDS, PRODUCES, ACCOMPLISHES> {
+> FlowingProcess<USES, REQUIRES, FORBIDS, Produces, ACCOMPLISHES> {
   pub fn finnish<
-    BRICK_USES: ParamBitSet + BitOr<USES> + BitAnd<PRODUCES> + Cmp<<BRICK_USES as BitAnd<PRODUCES>>::Output> + IsEqualPrivate<<BRICK_USES as BitAnd<PRODUCES>>::Output, <BRICK_USES as Cmp<<BRICK_USES as BitAnd<PRODUCES>>::Output>>::Output>,
-    BRICK_REQUIRES: Unsigned + BitAnd<ACCOMPLISHES> + BitAnd<PRODUCES> + BitOr<REQUIRES> + Cmp<<BRICK_REQUIRES as BitAnd<ACCOMPLISHES>>::Output> + IsEqualPrivate<<BRICK_REQUIRES as BitAnd<ACCOMPLISHES>>::Output, <BRICK_REQUIRES as Cmp<<BRICK_REQUIRES as BitAnd<ACCOMPLISHES>>::Output>>::Output>,
+    BRICK_USES: ParamBitSet + BitOr<USES> + BitAnd<Produces> + Cmp<<BRICK_USES as BitAnd<Produces>>::Output> + IsEqualPrivate<<BRICK_USES as BitAnd<Produces>>::Output, <BRICK_USES as Cmp<<BRICK_USES as BitAnd<Produces>>::Output>>::Output>,
+    BRICK_REQUIRES: Unsigned + BitAnd<ACCOMPLISHES> + BitAnd<Produces> + BitOr<REQUIRES> + Cmp<<BRICK_REQUIRES as BitAnd<ACCOMPLISHES>>::Output> + IsEqualPrivate<<BRICK_REQUIRES as BitAnd<ACCOMPLISHES>>::Output, <BRICK_REQUIRES as Cmp<<BRICK_REQUIRES as BitAnd<ACCOMPLISHES>>::Output>>::Output>,
     BRICK_FORBIDS: Unsigned + BitOr<ACCOMPLISHES> + BitAnd<ACCOMPLISHES> + BitOr<FORBIDS>,
     BRICK_ACCOMPLISHES: Unsigned + BitOr<ACCOMPLISHES> + BitAnd<ACCOMPLISHES>,
   >(
@@ -43,7 +43,7 @@ impl<
     Or<BRICK_USES, USES>,
     Or<BRICK_REQUIRES, REQUIRES>,
     Or<BRICK_FORBIDS, FORBIDS>,
-    PRODUCES,
+    Produces,
     Or<BRICK_ACCOMPLISHES, ACCOMPLISHES>,
   >
   where
@@ -53,7 +53,7 @@ impl<
     <BRICK_FORBIDS as BitOr<FORBIDS>>::Output: Unsigned,
     <BRICK_ACCOMPLISHES as BitOr<ACCOMPLISHES>>::Output: Unsigned,
   // constraint
-    Eq<BRICK_USES, And<BRICK_USES, PRODUCES>>: NonZero, // PRODUCES contain BRICK_USES
+    Eq<BRICK_USES, And<BRICK_USES, Produces>>: NonZero, // Produces contain BRICK_USES
     Eq<BRICK_REQUIRES, And<BRICK_REQUIRES, ACCOMPLISHES>>: NonZero, // ACCOMPLISHES contain BRICK_REQUIRES
     And<BRICK_FORBIDS, ACCOMPLISHES>: Zero, // BRICK_FORBIDS are not in ACCOMPLISHES
     And<BRICK_ACCOMPLISHES, ACCOMPLISHES>: Zero, // doesn't accomplish what was already accomplished
@@ -69,13 +69,13 @@ impl<
   }
 
   pub fn split<
-    PARAM_HEAD: ParamBitSet + BitOr<PRODUCES> + BitOr<<PRODUCES_AND_ACCOMPLISHES_TAIL as CaseArray>::PARAM_UNION> + BitAnd<<PRODUCES_AND_ACCOMPLISHES_TAIL as CaseArray>::PARAM_INTERSECTION>,
+    PARAM_HEAD: ParamBitSet + BitOr<Produces> + BitOr<<PRODUCES_AND_ACCOMPLISHES_TAIL as CaseArray>::PARAM_UNION> + BitAnd<<PRODUCES_AND_ACCOMPLISHES_TAIL as CaseArray>::PARAM_INTERSECTION>,
     ACTION_HEAD: Unsigned + BitOr<ACCOMPLISHES> + BitOr<<PRODUCES_AND_ACCOMPLISHES_TAIL as CaseArray>::ACTION_UNION> + BitAnd<<PRODUCES_AND_ACCOMPLISHES_TAIL as CaseArray>::ACTION_INTERSECTION>,
     PRODUCES_AND_ACCOMPLISHES_TAIL: CaseArray + Len,
     BRICK_USES: ParamBitSet + BitOr<USES>,
     BRICK_REQUIRES: Unsigned + BitAnd<<ACTION_HEAD as BitOr<ACCOMPLISHES>>::Output> + Cmp<<BRICK_REQUIRES as BitAnd<<ACTION_HEAD as BitOr<ACCOMPLISHES>>::Output>>::Output> + IsEqualPrivate<<BRICK_REQUIRES as BitAnd<<ACTION_HEAD as BitOr<ACCOMPLISHES>>::Output>>::Output, <BRICK_REQUIRES as Cmp<<BRICK_REQUIRES as BitAnd<<ACTION_HEAD as BitOr<ACCOMPLISHES>>::Output>>::Output>>::Output> + BitOr<REQUIRES>,
     BRICK_FORBIDS: Unsigned + BitAnd<<ACTION_HEAD as BitOr<ACCOMPLISHES>>::Output> + BitOr<FORBIDS>,
-    CASE_USES: ParamBitSet + BitAnd<<PARAM_HEAD as BitOr<PRODUCES>>::Output> + Cmp<<CASE_USES as BitAnd<<PARAM_HEAD as BitOr<PRODUCES>>::Output>>::Output> + Cmp<<CASE_USES as BitAnd<<PARAM_HEAD as BitOr<PRODUCES>>::Output>>::Output> + IsEqualPrivate<<CASE_USES as BitAnd<<PARAM_HEAD as BitOr<PRODUCES>>::Output>>::Output, <CASE_USES as Cmp<<CASE_USES as BitAnd<<PARAM_HEAD as BitOr<PRODUCES>>::Output>>::Output>>::Output>,
+    CASE_USES: ParamBitSet + BitAnd<<PARAM_HEAD as BitOr<Produces>>::Output> + Cmp<<CASE_USES as BitAnd<<PARAM_HEAD as BitOr<Produces>>::Output>>::Output> + Cmp<<CASE_USES as BitAnd<<PARAM_HEAD as BitOr<Produces>>::Output>>::Output> + IsEqualPrivate<<CASE_USES as BitAnd<<PARAM_HEAD as BitOr<Produces>>::Output>>::Output, <CASE_USES as Cmp<<CASE_USES as BitAnd<<PARAM_HEAD as BitOr<Produces>>::Output>>::Output>>::Output>,
     CASE_REQUIRES: Unsigned,
     CASE_FORBIDS: Unsigned,
     CASE_PRODUCES: ParamBitSet,
@@ -89,7 +89,7 @@ impl<
     Or<BRICK_USES, USES>,
     Or<BRICK_REQUIRES, REQUIRES>,
     Or<BRICK_FORBIDS, FORBIDS>,
-    Or<And<PARAM_HEAD, PRODUCES_AND_ACCOMPLISHES_TAIL::PARAM_INTERSECTION>, PRODUCES>,
+    Or<And<PARAM_HEAD, PRODUCES_AND_ACCOMPLISHES_TAIL::PARAM_INTERSECTION>, Produces>,
     Or<And<ACTION_HEAD, PRODUCES_AND_ACCOMPLISHES_TAIL::ACTION_INTERSECTION>, ACCOMPLISHES>,
     CASE_USES,
     CASE_REQUIRES,
@@ -100,7 +100,7 @@ impl<
   where
     // compiler generated types
     <ACTION_HEAD as BitOr<<PRODUCES_AND_ACCOMPLISHES_TAIL as CaseArray>::ACTION_UNION>>::Output: BitAnd<ACCOMPLISHES>,
-    <PARAM_HEAD as BitOr<<PRODUCES_AND_ACCOMPLISHES_TAIL as CaseArray>::PARAM_UNION>>::Output: BitAnd<PRODUCES>,
+    <PARAM_HEAD as BitOr<<PRODUCES_AND_ACCOMPLISHES_TAIL as CaseArray>::PARAM_UNION>>::Output: BitAnd<Produces>,
     <PRODUCES_AND_ACCOMPLISHES_TAIL as Len>::Output: Add<B1>,
     <PRODUCES_AND_ACCOMPLISHES_TAIL as Len>::Output: Add<U1>,
     <<PRODUCES_AND_ACCOMPLISHES_TAIL as Len>::Output as Add<B1>>::Output: Unsigned,
@@ -109,7 +109,7 @@ impl<
     <<PRODUCES_AND_ACCOMPLISHES_TAIL as Len>::Output as Add<B1>>::Output: IsGreaterPrivate<U1, <<<PRODUCES_AND_ACCOMPLISHES_TAIL as Len>::Output as Add<B1>>::Output as Cmp<U1>>::Output>,
     <<<PRODUCES_AND_ACCOMPLISHES_TAIL as Len>::Output as Add<B1>>::Output as IsGreaterPrivate<U1, <<<PRODUCES_AND_ACCOMPLISHES_TAIL as Len>::Output as Add<B1>>::Output as Cmp<U1>>::Output>>::Output: NonZero,
     <ACTION_HEAD as BitOr<<PRODUCES_AND_ACCOMPLISHES_TAIL as CaseArray>::ACTION_UNION>>::Output: ParamBitSet,
-    <PARAM_HEAD as BitAnd<<PRODUCES_AND_ACCOMPLISHES_TAIL as CaseArray>::PARAM_INTERSECTION>>::Output: BitOr<PRODUCES>,
+    <PARAM_HEAD as BitAnd<<PRODUCES_AND_ACCOMPLISHES_TAIL as CaseArray>::PARAM_INTERSECTION>>::Output: BitOr<Produces>,
     <ACTION_HEAD as BitAnd<<PRODUCES_AND_ACCOMPLISHES_TAIL as CaseArray>::ACTION_INTERSECTION>>::Output: BitOr<ACCOMPLISHES>,
     <PARAM_HEAD as BitAnd<<PRODUCES_AND_ACCOMPLISHES_TAIL as CaseArray>::PARAM_INTERSECTION>>::Output: ParamBitSet,
     <ACTION_HEAD as BitAnd<<PRODUCES_AND_ACCOMPLISHES_TAIL as CaseArray>::ACTION_INTERSECTION>>::Output: Unsigned,
@@ -117,13 +117,13 @@ impl<
     <BRICK_USES as BitOr<USES>>::Output: ParamBitSet,
     <BRICK_REQUIRES as BitOr<REQUIRES>>::Output: Unsigned,
     <BRICK_FORBIDS as BitOr<FORBIDS>>::Output: Unsigned,
-    <<PARAM_HEAD as BitAnd<<PRODUCES_AND_ACCOMPLISHES_TAIL as CaseArray>::PARAM_INTERSECTION>>::Output as BitOr<PRODUCES>>::Output: ParamBitSet,
+    <<PARAM_HEAD as BitAnd<<PRODUCES_AND_ACCOMPLISHES_TAIL as CaseArray>::PARAM_INTERSECTION>>::Output as BitOr<Produces>>::Output: ParamBitSet,
     <<ACTION_HEAD as BitAnd<<PRODUCES_AND_ACCOMPLISHES_TAIL as CaseArray>::ACTION_INTERSECTION>>::Output as BitOr<ACCOMPLISHES>>::Output: Unsigned,
   // constraint
-    Eq<CASE_USES, And<CASE_USES, Or<PARAM_HEAD, PRODUCES>>>: NonZero, // (PRODUCES union BRICK_PRODUCES) contain CASE_USES
+    Eq<CASE_USES, And<CASE_USES, Or<PARAM_HEAD, Produces>>>: NonZero, // (Produces union BRICK_PRODUCES) contain CASE_USES
     Eq<BRICK_REQUIRES, And<BRICK_REQUIRES, Or<ACTION_HEAD, ACCOMPLISHES>>>: NonZero, // ACCOMPLISHES contain BRICK_REQUIRES
     And<BRICK_FORBIDS, Or<ACTION_HEAD, ACCOMPLISHES>>: Zero, // BRICK_FORBIDS are not in ACCOMPLISHES
-    And<Or<PARAM_HEAD, PRODUCES_AND_ACCOMPLISHES_TAIL::PARAM_UNION>, PRODUCES>: Zero, // splitter doesn't produce what was already produced
+    And<Or<PARAM_HEAD, PRODUCES_AND_ACCOMPLISHES_TAIL::PARAM_UNION>, Produces>: Zero, // splitter doesn't produce what was already produced
     And<Or<ACTION_HEAD, PRODUCES_AND_ACCOMPLISHES_TAIL::ACTION_UNION>, ACCOMPLISHES>: Zero, // splitter doesn't accomplish what was already accomplished
   {
     FlowingSplitterProcess {
@@ -374,14 +374,14 @@ pub struct FinalizedProcess<
   USES: ParamBitSet,
   REQUIRES: Unsigned,
   FORBIDS: Unsigned,
-  PRODUCES: ParamBitSet,
+  Produces: ParamBitSet,
   ACCOMPLISHES: Unsigned,
 > {
   pub(crate) process: InternalFinalizedProcess,
   pub(crate) uses: PhantomData<USES>,
   pub(crate) requires: PhantomData<REQUIRES>,
   pub(crate) forbids: PhantomData<FORBIDS>,
-  pub(crate) produces: PhantomData<PRODUCES>,
+  pub(crate) produces: PhantomData<Produces>,
   pub(crate) accomplishes: PhantomData<ACCOMPLISHES>,
 }
 
@@ -389,9 +389,9 @@ impl<
   USES: ParamBitSet,
   REQUIRES: Unsigned,
   FORBIDS: Unsigned,
-  PRODUCES: ParamBitSet,
+  Produces: ParamBitSet,
   ACCOMPLISHES: Unsigned,
-> FinalizedProcess<USES, REQUIRES, FORBIDS, PRODUCES, ACCOMPLISHES> {
+> FinalizedProcess<USES, REQUIRES, FORBIDS, Produces, ACCOMPLISHES> {
   pub fn close(self, path: String) -> NamedProcess {
     NamedProcess {
       path,
@@ -402,7 +402,7 @@ impl<
 
 //
 //   pub fn and_then<
-//     BRICK_USES: ParamBitSet + IsEqual<And<PRODUCES, BRICK_USES>>, // a_includes_b(a & b == b)
+//     BRICK_USES: ParamBitSet + IsEqual<And<Produces, BRICK_USES>>, // a_includes_b(a & b == b)
 //     BRICK_REQUIRES: Unsigned + IsEqual<And<ACCOMPLISHES, BRICK_REQUIRES>>, // a_includes_b(a & b == b)
 //     BRICK_FORBIDS: Unsigned,
 //     BRICK_PRODUCES: ParamBitSet,
@@ -420,7 +420,7 @@ impl<
 //     Or<USES, BRICK_USES>,
 //     Or<REQUIRES, BRICK_REQUIRES>,
 //     Or<FORBIDS, BRICK_FORBIDS>,
-//     Or<PRODUCES, BRICK_PRODUCES>,
+//     Or<Produces, BRICK_PRODUCES>,
 //     Or<ACCOMPLISHES, BRICK_ACCOMPLISHES>,
 //   >
 //   where

@@ -78,14 +78,14 @@
 //   USES: ParamBitSet,
 //   REQUIRES: Unsigned,
 //   FORBIDS: Unsigned,
-//   PRODUCES: ParamBitSet,
+//   Produces: ParamBitSet,
 //   ACCOMPLISHES: Unsigned,
 // > {
 //   pub name: String,
 //   pub uses: PhantomData<USES>,
 //   pub requires_prior_completion: PhantomData<REQUIRES>,
 //   pub forbids_prior_completion: PhantomData<FORBIDS>,
-//   pub produces: PhantomData<PRODUCES>,
+//   pub produces: PhantomData<Produces>,
 //   pub accomplishes: PhantomData<ACCOMPLISHES>,
 //   pub handler: Box<dyn LinearBrickHandler>,
 // }
@@ -94,14 +94,14 @@
 //   USES: ParamBitSet,
 //   REQUIRES: Unsigned,
 //   FORBIDS: Unsigned,
-//   PRODUCES: ParamBitSet,
+//   Produces: ParamBitSet,
 //   ACCOMPLISHES: Unsigned,
-// > LinearBrick<USES, REQUIRES, FORBIDS, PRODUCES, ACCOMPLISHES> {
+// > LinearBrick<USES, REQUIRES, FORBIDS, Produces, ACCOMPLISHES> {
 //   pub(crate) fn to_internal(self) -> InternalLinearBrick {
 //     InternalLinearBrick {
 //       name: self.name,
 //       uses: USES::get().0,
-//       produces: PRODUCES::get().0,
+//       produces: Produces::get().0,
 //       handler: self.handler,
 //     }
 //   }

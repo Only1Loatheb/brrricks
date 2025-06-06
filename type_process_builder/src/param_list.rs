@@ -41,27 +41,27 @@ impl ParamList for HNil {
   }
 }
 
-impl<PARAM_VALUE: ParamValue, TAIL: ParamList> ParamList for HCons<PARAM_VALUE, TAIL> {
+impl<Head: ParamValue, Tail: ParamList> ParamList for HCons<Head, Tail> {
   fn _serialize(&self, serialize_map: &mut BTreeMap<Value, Value>) -> Result<(), SerializerError> {
     self.tail._serialize(serialize_map)?;
-    let old_value = serialize_map.insert(Value::String(PARAM_VALUE::NAME.into()), to_value(&self.head)?);
+    let old_value = serialize_map.insert(Value::String(Head::NAME.into()), to_value(&self.head)?);
     match old_value {
       None => Ok(()),
       Some(_) => Err(Custom(format!(
         "Two ParamValues have the same name: {}",
-        PARAM_VALUE::NAME
+        Head::NAME
       ))),
     }
   }
 
   fn _deserialize(map: &mut BTreeMap<Value, Value>) -> Result<Self, DeserializerError> {
-    let key = Value::String(PARAM_VALUE::NAME.into());
+    let key = Value::String(Head::NAME.into());
     let value = map
       .remove(&key)
-      .ok_or_else(|| DeserializerError::Custom(format!("Missing key: {}", PARAM_VALUE::NAME)))?;
+      .ok_or_else(|| DeserializerError::Custom(format!("Missing key: {}", Head::NAME)))?;
 
-    let head: PARAM_VALUE = PARAM_VALUE::deserialize(value)?;
-    let tail = TAIL::_deserialize(map)?;
+    let head: Head = Head::deserialize(value)?;
+    let tail = Tail::_deserialize(map)?;
     Ok(HCons { head, tail })
   }
 }

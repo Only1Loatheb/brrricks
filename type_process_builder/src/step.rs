@@ -3,15 +3,15 @@ pub mod splitter_output_repr {
   use frunk_core::coproduct::{CNil, Coproduct};
 
   pub trait SplitterOutput {
-    type VALUE;
+    type NonEmptyCoproduct;
   }
 
-  impl<CASE_THIS: ParamList> SplitterOutput for Coproduct<CASE_THIS, CNil> {
-    type VALUE = Coproduct<CASE_THIS, CNil>;
+  impl<ThisCase: ParamList> SplitterOutput for Coproduct<ThisCase, CNil> {
+    type NonEmptyCoproduct = Coproduct<ThisCase, CNil>;
   }
 
-  impl<CASE_THIS: ParamList, CASE_OTHER: SplitterOutput> SplitterOutput for Coproduct<CASE_THIS, CASE_OTHER> {
-    type VALUE = Coproduct<CASE_THIS, CASE_OTHER::VALUE>;
+  impl<ThisCase: ParamList, OtherCase: SplitterOutput> SplitterOutput for Coproduct<ThisCase, OtherCase> {
+    type NonEmptyCoproduct = Coproduct<ThisCase, OtherCase::NonEmptyCoproduct>;
   }
 }
 
@@ -26,20 +26,20 @@ pub mod step {
   use std::collections::BTreeMap;
   use std::future::Future;
 
-  pub trait Entry<VALUE: DeserializeOwned> {
+  pub trait Entry<RawConsume: DeserializeOwned> {
     type Produces: ParamList;
-    fn handle(&self, input: BTreeMap<VALUE, VALUE>) -> impl Future<Output = anyhow::Result<Self::Produces>>;
+    fn handle(&self, input: BTreeMap<RawConsume, RawConsume>) -> impl Future<Output = anyhow::Result<Self::Produces>>;
   }
 
-  pub trait Linear<CONSUMES: ParamList, PRODUCES: ParamList> {
-    fn handle(&self, input: CONSUMES) -> impl Future<Output = anyhow::Result<(Option<Message>, PRODUCES)>>;
+  pub trait Linear<Consumes: ParamList, Produces: ParamList> {
+    fn handle(&self, input: Consumes) -> impl Future<Output = anyhow::Result<(Option<Message>, Produces)>>;
   }
 
-  pub trait Splitter<CONSUMES: ParamList, PRODUCES: SplitterOutput> {
-    fn handle(&self, input: CONSUMES) -> impl Future<Output = anyhow::Result<PRODUCES>>;
+  pub trait Splitter<Consumes: ParamList, Produces: SplitterOutput> {
+    fn handle(&self, input: Consumes) -> impl Future<Output = anyhow::Result<Produces>>;
   }
 
-  pub trait Final<CONSUMES: ParamList> {
-    fn handle(&self, input: CONSUMES) -> impl Future<Output = anyhow::Result<Message>>;
+  pub trait Final<Consumes: ParamList> {
+    fn handle(&self, input: Consumes) -> impl Future<Output = anyhow::Result<Message>>;
   }
 }

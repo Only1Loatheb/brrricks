@@ -2,12 +2,12 @@ use crate::builder::finalized_process::FinalizedProcess;
 use crate::builder::{PreviousRunYieldedAt, RunResult};
 use serde_value::Value;
 
-pub struct RunnableProcess<FINALIZED_PROCESS: FinalizedProcess> {
-  finalized_process: FINALIZED_PROCESS, // shouldn't be public
+pub struct RunnableProcess<UnderlyingProcess: FinalizedProcess> {
+  finalized_process: UnderlyingProcess, // shouldn't be public
 }
 
-impl<FINALIZED_PROCESS: FinalizedProcess> RunnableProcess<FINALIZED_PROCESS> {
-  pub fn new(mut finalized_process: FINALIZED_PROCESS) -> Self {
+impl<UnderlyingProcess: FinalizedProcess> RunnableProcess<UnderlyingProcess> {
+  pub fn new(mut finalized_process: UnderlyingProcess) -> Self {
     finalized_process.enumerate_steps(0);
     Self { finalized_process }
   }

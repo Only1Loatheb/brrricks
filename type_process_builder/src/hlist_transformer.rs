@@ -18,7 +18,7 @@ impl<Source> TransformTo<HNil, HNil> for Source {
 
 /// Implementation for when we have a non-empty HCons target
 ///
-/// Indices is HCons<IndexHead, IndexTail> here because the compiler is being asked to figure out the
+/// Indices are HCons<IndexHead, IndexTail> here because the compiler is being asked to figure out the
 /// Index for Plucking the first item of type THead out of Self and the rest (IndexTail) is for the
 /// Plucker's remainder induce.
 impl<TargetHead, TargetTail, SourceHead, SourceTail, IndexHead, IndexTail>

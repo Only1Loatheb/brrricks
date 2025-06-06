@@ -23,17 +23,17 @@ pub trait FinalizedProcess: Sized {
 }
 
 pub struct FlowingFinalizedProcess<
-  PROCESS_BEFORE: FlowingProcess,
-  FINAL_CONSUMES: ParamList,
-  FINAL_STEP: Final<FINAL_CONSUMES>,
+  ProcessBefore: FlowingProcess,
+  FinalConsumes: ParamList,
+  FinalStep: Final<FinalConsumes>,
 > {
-  pub process_before: PROCESS_BEFORE,
-  pub final_step: FINAL_STEP,
-  pub phantom_data: PhantomData<FINAL_CONSUMES>,
+  pub process_before: ProcessBefore,
+  pub final_step: FinalStep,
+  pub phantom_data: PhantomData<FinalConsumes>,
 }
 
-impl<PROCESS_BEFORE: FlowingProcess, FINAL_CONSUMES: ParamList, FINAL_STEP: Final<FINAL_CONSUMES>> FinalizedProcess
-  for FlowingFinalizedProcess<PROCESS_BEFORE, FINAL_CONSUMES, FINAL_STEP>
+impl<ProcessBefore: FlowingProcess, FinalConsumes: ParamList, FinalStep: Final<FinalConsumes>> FinalizedProcess
+  for FlowingFinalizedProcess<ProcessBefore, FinalConsumes, FinalStep>
 {
   async fn continue_run(&self, previous_run_produced: Value, previous_run_yielded: PreviousRunYieldedAt) -> RunResult {
     todo!()
@@ -45,12 +45,12 @@ impl<PROCESS_BEFORE: FlowingProcess, FINAL_CONSUMES: ParamList, FINAL_STEP: Fina
   }
 }
 
-pub struct SplitFinalizedProcess<FINALIZED_SPLIT_PROCESS: FinalizedSplitProcess> {
-  process: FINALIZED_SPLIT_PROCESS, // maybe box?
+pub struct SplitFinalizedProcess<FinalizedExhaustiveSplit: FinalizedSplitProcess> {
+  process: FinalizedExhaustiveSplit, // maybe box?
 }
 
-impl<FINALIZED_SPLIT_PROCESS: FinalizedSplitProcess> FinalizedProcess
-  for SplitFinalizedProcess<FINALIZED_SPLIT_PROCESS>
+impl<FinalizedExhaustiveSplit: FinalizedSplitProcess> FinalizedProcess
+  for SplitFinalizedProcess<FinalizedExhaustiveSplit>
 {
   async fn continue_run(&self, previous_run_produced: Value, previous_run_yielded: PreviousRunYieldedAt) -> RunResult {
     todo!()

@@ -27,22 +27,22 @@ pub trait FlowingProcess: Sized {
     process_before_produces: Self::ProcessBeforeProduces,
   ) -> impl Future<Output = IntermediateRunResult<Self::Produces>>;
 
-  // LINEAR_PRODUCES and Self::Produces overlap is prevented https://github.com/lloydmeta/frunk/issues/187
+  // LinearProduces and Self::Produces overlap is prevented https://github.com/lloydmeta/frunk/issues/187
   fn then<
-    LINEAR_CONSUMES: ParamList,
-    LINEAR_PRODUCES: ParamList + Concat<Self::Produces>,
-    LINEAR_STEP: Linear<LINEAR_CONSUMES, LINEAR_PRODUCES>,
-    PROCESS_BEFORE_PRODUCES_TO_LAST_STEP_CONSUMES_INDICES,
+    LinearConsumes: ParamList,
+    LinearProduces: ParamList + Concat<Self::Produces>,
+    LinearStep: Linear<LinearConsumes, LinearProduces>,
+    ProcessBeforeProducesToLastStepConsumesIndices,
   >(
     self,
-    step: LINEAR_STEP,
+    step: LinearStep,
   ) -> impl FlowingProcess<
     ProcessBeforeProduces = <Self as FlowingProcess>::Produces,
-    Produces = <LINEAR_PRODUCES as Concat<Self::Produces>>::Concatenated,
+    Produces = <LinearProduces as Concat<Self::Produces>>::Concatenated,
   >
   where
     <Self as FlowingProcess>::Produces:
-      TransformTo<LINEAR_CONSUMES, PROCESS_BEFORE_PRODUCES_TO_LAST_STEP_CONSUMES_INDICES>,
+      TransformTo<LinearConsumes, ProcessBeforeProducesToLastStepConsumesIndices>,
   {
     LinearFlowingProcess {
       process_before: self,
@@ -53,16 +53,16 @@ pub trait FlowingProcess: Sized {
   }
 
   fn end<
-    FINAL_CONSUMES: ParamList,
-    FINAL_STEP: Final<FINAL_CONSUMES>,
-    PROCESS_BEFORE_PRODUCES_TO_LAST_STEP_CONSUMES_INDICES,
+    FinalConsumes: ParamList,
+    FinalStep: Final<FinalConsumes>,
+    ProcessBeforeProducesToLastStepConsumesIndices,
   >(
     self,
-    step: FINAL_STEP,
+    step: FinalStep,
   ) -> impl FinalizedProcess
   where
     <Self as FlowingProcess>::Produces:
-      TransformTo<FINAL_CONSUMES, PROCESS_BEFORE_PRODUCES_TO_LAST_STEP_CONSUMES_INDICES>,
+      TransformTo<FinalConsumes, ProcessBeforeProducesToLastStepConsumesIndices>,
   {
     FlowingFinalizedProcess {
       process_before: self,
@@ -74,9 +74,9 @@ pub trait FlowingProcess: Sized {
   fn enumerate_steps(&mut self, last_used_index: usize) -> usize;
 }
 
-impl<PRODUCES: ParamList, ENTRY: Entry<Value, Produces = PRODUCES>> FlowingProcess for ENTRY {
+impl<Produces: ParamList, EntryStep: Entry<Value, Produces = Produces>> FlowingProcess for EntryStep {
   type ProcessBeforeProduces = HNil;
-  type Produces = ENTRY::Produces;
+  type Produces = EntryStep::Produces;
 
   async fn continue_run(
     &self,
@@ -87,7 +87,7 @@ impl<PRODUCES: ParamList, ENTRY: Entry<Value, Produces = PRODUCES>> FlowingProce
       Value::Map(m) => m,
       _ => return Err(anyhow!("Not a map")),
     };
-    let result: PRODUCES = ENTRY::handle(self, map).await?;
+    let result: Produces = EntryStep::handle(self, map).await?;
     Ok(Continue(result))
   }
 
@@ -101,42 +101,42 @@ impl<PRODUCES: ParamList, ENTRY: Entry<Value, Produces = PRODUCES>> FlowingProce
 }
 
 pub struct LinearFlowingProcess<
-  PROCESS_BEFORE: FlowingProcess,
-  LINEAR_CONSUMES: ParamList,
-  LINEAR_PRODUCES: ParamList,
-  LINEAR_STEP: Linear<LINEAR_CONSUMES, LINEAR_PRODUCES>,
-  PROCESS_BEFORE_PRODUCES_TO_LAST_STEP_CONSUMES_INDICES,
+  ProcessBefore: FlowingProcess,
+  LinearConsumes: ParamList,
+  LinearProduces: ParamList,
+  LinearStep: Linear<LinearConsumes, LinearProduces>,
+  ProcessBeforeProducesToLastStepConsumesIndices,
 > {
-  pub process_before: PROCESS_BEFORE,
-  pub last_step: LINEAR_STEP,
+  pub process_before: ProcessBefore,
+  pub last_step: LinearStep,
   pub step_index: usize,
   pub phantom_data: PhantomData<(
-    LINEAR_CONSUMES,
-    LINEAR_PRODUCES,
-    PROCESS_BEFORE_PRODUCES_TO_LAST_STEP_CONSUMES_INDICES,
+    LinearConsumes,
+    LinearProduces,
+    ProcessBeforeProducesToLastStepConsumesIndices,
   )>,
 }
 
 impl<
-    PROCESS_BEFORE: FlowingProcess,
-    LAST_STEP_CONSUMES: ParamList,
-    LAST_STEP_PRODUCES: ParamList + Concat<PROCESS_BEFORE::Produces>,
-    LAST_STEP: Linear<LAST_STEP_CONSUMES, LAST_STEP_PRODUCES>,
-    PROCESS_BEFORE_PRODUCES_TO_LAST_STEP_CONSUMES_INDICES,
+    ProcessBefore: FlowingProcess,
+    LastStepConsumes: ParamList,
+    LastStepProduces: ParamList + Concat<ProcessBefore::Produces>,
+    LastStep: Linear<LastStepConsumes, LastStepProduces>,
+    ProcessBeforeProducesToLastStepConsumesIndices,
   > FlowingProcess
   for LinearFlowingProcess<
-    PROCESS_BEFORE,
-    LAST_STEP_CONSUMES,
-    LAST_STEP_PRODUCES,
-    LAST_STEP,
-    PROCESS_BEFORE_PRODUCES_TO_LAST_STEP_CONSUMES_INDICES,
+    ProcessBefore,
+    LastStepConsumes,
+    LastStepProduces,
+    LastStep,
+    ProcessBeforeProducesToLastStepConsumesIndices,
   >
 where
-  <PROCESS_BEFORE as FlowingProcess>::Produces:
-    TransformTo<LAST_STEP_CONSUMES, PROCESS_BEFORE_PRODUCES_TO_LAST_STEP_CONSUMES_INDICES>,
+  <ProcessBefore as FlowingProcess>::Produces:
+    TransformTo<LastStepConsumes, ProcessBeforeProducesToLastStepConsumesIndices>,
 {
-  type ProcessBeforeProduces = PROCESS_BEFORE::Produces;
-  type Produces = <LAST_STEP_PRODUCES as Concat<PROCESS_BEFORE::Produces>>::Concatenated;
+  type ProcessBeforeProduces = ProcessBefore::Produces;
+  type Produces = <LastStepProduces as Concat<ProcessBefore::Produces>>::Concatenated;
 
   async fn continue_run(
     &self,
@@ -155,14 +155,14 @@ where
       }
     } else {
       // fixme deserialize only values required only up to the next interaction
-      let process_before_produces: PROCESS_BEFORE::Produces =
-        PROCESS_BEFORE::Produces::deserialize(previous_run_produced)?;
+      let process_before_produces: ProcessBefore::Produces =
+        ProcessBefore::Produces::deserialize(previous_run_produced)?;
       self.run(process_before_produces).await
     }
   }
 
   async fn run(&self, process_before_produces: Self::ProcessBeforeProduces) -> IntermediateRunResult<Self::Produces> {
-    let last_step_consumes: LAST_STEP_CONSUMES = process_before_produces.clone().transform();
+    let last_step_consumes: LastStepConsumes = process_before_produces.clone().transform();
     let last_step_output = self.last_step.handle(last_step_consumes).await?;
     match last_step_output {
       (Some(msg), last_step_produces) =>
