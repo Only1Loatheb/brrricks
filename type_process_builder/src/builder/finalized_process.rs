@@ -5,10 +5,15 @@ use crate::builder::{PreviousRunYieldedAt, RunResult};
 use crate::param_list::ParamList;
 use crate::step::step::Final;
 use serde_value::Value;
+use std::future::Future;
 use std::marker::PhantomData;
 
 pub trait FinalizedProcess: Sized {
-  async fn continue_run(&self, previous_run_produced: Value, previous_run_yielded: PreviousRunYieldedAt) -> RunResult; // fixme create result type for finalised process, or undo changes
+  fn continue_run(
+    &self,
+    previous_run_produced: Value,
+    previous_run_yielded: PreviousRunYieldedAt,
+  ) -> impl Future<Output = RunResult>;
 
   fn build(self) -> RunnableProcess<Self> {
     RunnableProcess::new(self)

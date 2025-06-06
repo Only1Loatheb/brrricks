@@ -24,21 +24,22 @@ pub mod step {
   use crate::step::Message;
   use serde::de::DeserializeOwned;
   use std::collections::BTreeMap;
+  use std::future::Future;
 
-  pub trait Entry<DESERIALIZE: DeserializeOwned> {
+  pub trait Entry<VALUE: DeserializeOwned> {
     type Produces: ParamList;
-    async fn handle(&self, input: BTreeMap<DESERIALIZE, DESERIALIZE>) -> anyhow::Result<Self::Produces>;
+    fn handle(&self, input: BTreeMap<VALUE, VALUE>) -> impl Future<Output = anyhow::Result<Self::Produces>>;
   }
 
   pub trait Linear<CONSUMES: ParamList, PRODUCES: ParamList> {
-    async fn handle(&self, input: CONSUMES) -> anyhow::Result<(Option<Message>, PRODUCES)>;
+    fn handle(&self, input: CONSUMES) -> impl Future<Output = anyhow::Result<(Option<Message>, PRODUCES)>>;
   }
 
   pub trait Splitter<CONSUMES: ParamList, PRODUCES: SplitterOutput> {
-    async fn handle(&self, input: CONSUMES) -> anyhow::Result<PRODUCES>;
+    fn handle(&self, input: CONSUMES) -> impl Future<Output = anyhow::Result<PRODUCES>>;
   }
 
   pub trait Final<CONSUMES: ParamList> {
-    async fn handle(&self, input: CONSUMES) -> anyhow::Result<Message>;
+    fn handle(&self, input: CONSUMES) -> impl Future<Output = anyhow::Result<Message>>;
   }
 }

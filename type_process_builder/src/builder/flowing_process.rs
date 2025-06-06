@@ -1,31 +1,31 @@
 use crate::builder::finalized_process::{FinalizedProcess, FlowingFinalizedProcess};
 use crate::builder::IntermediateRunOutcome::*;
-use crate::builder::{
-  CurrentRunYieldedAt, IntermediateRunResult, PreviousRunYieldedAt, ProcessBuilder, WILL_BE_RENUMBERED,
-};
+use crate::builder::{CurrentRunYieldedAt, IntermediateRunResult, PreviousRunYieldedAt, WILL_BE_RENUMBERED};
 use crate::hlist_concat::Concat;
 use crate::hlist_transformer::TransformTo;
 use crate::param_list::ParamList;
 use crate::step::step::{Entry, Final, Linear};
 use anyhow::anyhow;
 use frunk_core::hlist::HNil;
-use serde::de::DeserializeOwned;
-use serde_value::{DeserializerError, Value};
+use serde_value::Value;
+use std::future::Future;
 use std::hint::unreachable_unchecked;
-use std::io;
 use std::marker::PhantomData;
 
 pub trait FlowingProcess: Sized {
   type ProcessBeforeProduces: ParamList;
   type Produces: ParamList;
 
-  async fn continue_run(
+  fn continue_run(
     &self,
     previous_run_produced: Value,
     previous_run_yielded: PreviousRunYieldedAt,
-  ) -> IntermediateRunResult<Self::Produces>;
+  ) -> impl Future<Output = IntermediateRunResult<Self::Produces>>;
 
-  async fn run(&self, process_before_produces: Self::ProcessBeforeProduces) -> IntermediateRunResult<Self::Produces>;
+  fn run(
+    &self,
+    process_before_produces: Self::ProcessBeforeProduces,
+  ) -> impl Future<Output = IntermediateRunResult<Self::Produces>>;
 
   // LINEAR_PRODUCES and Self::Produces overlap is prevented https://github.com/lloydmeta/frunk/issues/187
   fn then<
@@ -74,7 +74,7 @@ pub trait FlowingProcess: Sized {
   fn enumerate_steps(&mut self, last_used_index: usize) -> usize;
 }
 
-impl<PRODUCES: ParamList, ENTRY: Entry<Value, Produces=PRODUCES>> FlowingProcess for ENTRY {
+impl<PRODUCES: ParamList, ENTRY: Entry<Value, Produces = PRODUCES>> FlowingProcess for ENTRY {
   type ProcessBeforeProduces = HNil;
   type Produces = ENTRY::Produces;
 

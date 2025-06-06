@@ -32,7 +32,7 @@ pub trait ParamList: HList + Clone {
 }
 
 impl ParamList for HNil {
-  fn _serialize(&self, serialize_map: &mut BTreeMap<Value, Value>) -> Result<(), SerializerError> {
+  fn _serialize(&self, _: &mut BTreeMap<Value, Value>) -> Result<(), SerializerError> {
     Ok(())
   }
 

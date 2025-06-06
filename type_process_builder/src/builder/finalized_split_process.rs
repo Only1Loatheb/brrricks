@@ -1,17 +1,20 @@
 use crate::builder::finalized_process::FinalizedProcess;
 use crate::builder::flowing_process::FlowingProcess;
-use crate::builder::IntermediateRunOutcome::*;
-use crate::builder::{PreviousRunYieldedAt, ProcessBuilder, RunResult};
+use crate::builder::{PreviousRunYieldedAt, RunResult};
 use crate::param_list::ParamList;
 use crate::step::splitter_output_repr::SplitterOutput;
 use crate::step::step::Splitter;
 use frunk_core::coproduct::Coproduct;
 use serde_value::Value;
-use std::io;
+use std::future::Future;
 use std::marker::PhantomData;
 
 pub trait FinalizedSplitProcess: Sized {
-  async fn continue_run(&self, previous_run_produced: Value, previous_run_yielded: PreviousRunYieldedAt) -> RunResult;
+  fn continue_run(
+    &self,
+    previous_run_produced: Value,
+    previous_run_yielded: PreviousRunYieldedAt,
+  ) -> impl Future<Output = RunResult>;
 
   fn enumerate_steps(&mut self, last_used_index: usize) -> usize;
 }
