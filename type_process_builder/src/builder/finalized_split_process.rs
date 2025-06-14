@@ -96,8 +96,7 @@ where
         IntermediateRunOutcome::Finish(a) => Ok(IntermediateSplitOutcome::Finish(a)),
       }
     } else {
-      let process_before_produces: ProcessBefore::Produces =
-        ProcessBefore::Produces::deserialize(previous_run_produced)?;
+      let process_before_produces = ProcessBefore::Produces::deserialize(previous_run_produced)?;
       self.run(process_before_produces).await
     }
   }
@@ -159,7 +158,20 @@ impl<
     previous_run_produced: Value,
     previous_run_yielded_at: PreviousRunYieldedAt,
   ) -> IntermediateSplitResult<Self::PassesToOtherCases> {
-    todo!()
+    if previous_run_yielded_at.0 < self.case_step_index {
+      let process_before_output = self
+        .split_process_before
+        .continue_run(previous_run_produced, previous_run_yielded_at)
+        .await?;
+      match process_before_output {
+        IntermediateSplitOutcome::Continue(process_before_produces) => self.run(process_before_produces).await,
+        IntermediateSplitOutcome::Yield(a, b, c) => Ok(IntermediateSplitOutcome::Yield(a, b, c)),
+        IntermediateSplitOutcome::Finish(a) => Ok(IntermediateSplitOutcome::Finish(a)),
+      }
+    } else {
+      let process_before_produces = ProcessBefore::ProcessBeforeProduces::deserialize(previous_run_produced)?;
+      self.run(process_before_produces).await
+    }
   }
 
   async fn run(

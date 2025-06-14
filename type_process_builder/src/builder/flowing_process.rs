@@ -149,8 +149,7 @@ where
       }
     } else {
       // fixme deserialize only values required only up to the next interaction
-      let process_before_produces: ProcessBefore::Produces =
-        ProcessBefore::Produces::deserialize(previous_run_produced)?;
+      let process_before_produces = ProcessBefore::Produces::deserialize(previous_run_produced)?;
       self.run(process_before_produces).await
     }
   }
