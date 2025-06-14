@@ -6,7 +6,6 @@ use crate::hlist_transformer::TransformTo;
 use crate::param_list::ParamList;
 use crate::step::splitter_output_repr::SplitterOutput;
 use crate::step::step::Splitter;
-use frunk_core::coproduct::Coproduct;
 use serde_value::Value;
 use std::future::Future;
 use std::marker::PhantomData;
@@ -95,8 +94,10 @@ where
     &self,
     process_before_produces: Self::ProcessBeforeProduces,
   ) -> IntermediateSplitResult<Self::PassesToCases> {
-    let splitter_step_consumes: SplitterStepConsumes = process_before_produces.clone().transform();
-    self.splitter.handle(splitter_step_consumes)
+    let splitter_step_consumes: SplitterStepConsumes = process_before_produces.transform();
+    Ok(IntermediateSplitOutcome::Continue(
+      self.splitter.handle(splitter_step_consumes).await?,
+    ))
   }
 
   fn enumerate_steps(&mut self, last_used_index: usize) -> usize {
@@ -165,10 +166,10 @@ impl<
       match process_before_output {
         IntermediateSplitOutcome::Continue(process_before_produces) => {
           // self.run(process_before_produces).await
-          match process_before_produces {
-            Coproduct::Inl(_) => {}
-            Coproduct::Inr(produces) => {}
-          }
+          // match process_before_produces {
+          //
+          // }
+          todo!()
         }
         IntermediateSplitOutcome::Yield(a, b, c) => Ok(IntermediateSplitOutcome::Yield(a, b, c)),
         IntermediateSplitOutcome::Finish(a) => Ok(IntermediateSplitOutcome::Finish(a)),
