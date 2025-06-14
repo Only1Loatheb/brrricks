@@ -9,11 +9,15 @@ use std::future::Future;
 use std::marker::PhantomData;
 
 pub trait FinalizedProcess: Sized {
+  type ProcessBeforeProduces: ParamList;
+
   fn continue_run(
     &self,
     previous_run_produced: Value,
     previous_run_yielded_at: PreviousRunYieldedAt,
   ) -> impl Future<Output = RunResult>;
+
+  fn run(&self, process_before_produces: Self::ProcessBeforeProduces) -> impl Future<Output = RunResult>;
 
   fn build(self) -> RunnableProcess<Self> {
     RunnableProcess::new(self)
@@ -35,11 +39,17 @@ pub struct FlowingFinalizedProcess<
 impl<ProcessBefore: FlowingProcess, FinalConsumes: ParamList, FinalStep: Final<FinalConsumes>> FinalizedProcess
   for FlowingFinalizedProcess<ProcessBefore, FinalConsumes, FinalStep>
 {
+  type ProcessBeforeProduces = ProcessBefore::Produces;
+
   async fn continue_run(
     &self,
     previous_run_produced: Value,
     previous_run_yielded_at: PreviousRunYieldedAt,
   ) -> RunResult {
+    todo!()
+  }
+
+  async fn run(&self, process_before_produces: Self::ProcessBeforeProduces) -> RunResult {
     todo!()
   }
 
@@ -56,11 +66,17 @@ pub struct SplitFinalizedProcess<FinalizedExhaustiveSplit: FinalizedSplitProcess
 impl<FinalizedExhaustiveSplit: FinalizedSplitProcess> FinalizedProcess
   for SplitFinalizedProcess<FinalizedExhaustiveSplit>
 {
+  type ProcessBeforeProduces = FinalizedExhaustiveSplit::ProcessBeforeProduces;
+
   async fn continue_run(
     &self,
     previous_run_produced: Value,
     previous_run_yielded_at: PreviousRunYieldedAt,
   ) -> RunResult {
+    todo!()
+  }
+
+  async fn run(&self, process_before_produces: Self::ProcessBeforeProduces) -> RunResult {
     todo!()
   }
 

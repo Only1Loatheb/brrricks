@@ -10,25 +10,25 @@ pub trait FlowingSplitProcess {}
 
 pub struct FirstCaseOfFlowingSplitProcess<
   ProcessBefore: FlowingProcess,
-  SplitterConsumes: ParamList,
+  SplitterStepConsumes: ParamList,
   SplitterProduces: SplitterOutput,
-  SplitterStep: Splitter<SplitterConsumes, SplitterProduces>,
+  SplitterStep: Splitter<SplitterStepConsumes, SplitterProduces>,
   FirstCase: FlowingProcess,
 > {
   pub process_before: ProcessBefore,
   pub splitter: SplitterStep,
   pub first_case: FirstCase,
-  pub phantom_data: PhantomData<(SplitterConsumes, SplitterProduces)>,
+  pub phantom_data: PhantomData<(SplitterStepConsumes, SplitterProduces)>,
 }
 
 impl<
     ProcessBefore: FlowingProcess,
-    SplitterConsumes: ParamList,
+    SplitterStepConsumes: ParamList,
     SplitterProduces: SplitterOutput,
-    SplitterStep: Splitter<SplitterConsumes, SplitterProduces>,
+    SplitterStep: Splitter<SplitterStepConsumes, SplitterProduces>,
     FirstCase: FlowingProcess,
   > FlowingSplitProcess
-  for FirstCaseOfFlowingSplitProcess<ProcessBefore, SplitterConsumes, SplitterProduces, SplitterStep, FirstCase>
+  for FirstCaseOfFlowingSplitProcess<ProcessBefore, SplitterStepConsumes, SplitterProduces, SplitterStep, FirstCase>
 {
 }
 

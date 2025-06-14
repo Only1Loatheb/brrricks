@@ -2,6 +2,8 @@ use crate::builder::finalized_process::FinalizedProcess;
 use crate::builder::flowing_process::FlowingProcess;
 use crate::builder::IntermediateRunOutcome::{Continue, Finish, Yield};
 use crate::builder::{PreviousRunYieldedAt, RunOutcome, RunResult};
+use crate::hlist_concat::Concat;
+use crate::hlist_transformer::TransformTo;
 use crate::param_list::ParamList;
 use crate::step::splitter_output_repr::SplitterOutput;
 use crate::step::step::Splitter;
@@ -24,35 +26,53 @@ pub trait FinalizedSplitProcess: Sized {
   fn enumerate_steps(&mut self, last_used_index: usize) -> usize;
 }
 
+// one additional trait could be introduced to make split() and first_case() separate methods, but I am who I am
 pub struct FirstCaseOfFinalizedSplitProcess<
   ProcessBefore: FlowingProcess,
-  SplitterConsumes: ParamList,
+  SplitterStepConsumes: ParamList,
   SplitterProduces: SplitterOutput,
-  SplitterStep: Splitter<SplitterConsumes, SplitterProduces>,
+  SplitterStep: Splitter<SplitterStepConsumes, SplitterProduces>,
   FirstCase: FinalizedProcess,
+  ProcessBeforeProducesToSplitterStepConsumesIndices,
+  SplitProducesForThisCaseConcatProcessBeforeProducesToFirstCaseConsumesIndices,
 > {
   pub process_before: ProcessBefore,
   pub splitter: SplitterStep,
   pub split_step_index: usize,
   pub first_case: FirstCase,
-  pub phantom_data: PhantomData<(SplitterConsumes, SplitterProduces)>,
+  pub phantom_data: PhantomData<(
+    SplitterStepConsumes,
+    SplitterProduces,
+    ProcessBeforeProducesToSplitterStepConsumesIndices,
+    SplitProducesForThisCaseConcatProcessBeforeProducesToFirstCaseConsumesIndices,
+  )>,
 }
 
 impl<
     ProcessBefore: FlowingProcess,
-    SplitterConsumes: ParamList,
-    ThisCase: ParamList,
-    OtherCase: SplitterOutput,
-    SplitterStep: Splitter<SplitterConsumes, Coproduct<ThisCase, OtherCase>>,
+    SplitterStepConsumes: ParamList,
+    SplitProducesForThisCase: ParamList + Concat<ProcessBefore::Produces>,
+    SplitProducesForOtherCases: SplitterOutput,
+    SplitterStep: Splitter<SplitterStepConsumes, Coproduct<SplitProducesForThisCase, SplitProducesForOtherCases>>,
     FirstCase: FinalizedProcess,
+    ProcessBeforeProducesToSplitterStepConsumesIndices,
+    SplitProducesForThisCaseConcatProcessBeforeProducesToFirstCaseConsumesIndices,
   > FinalizedSplitProcess
   for FirstCaseOfFinalizedSplitProcess<
     ProcessBefore,
-    SplitterConsumes,
-    Coproduct<ThisCase, OtherCase>,
+    SplitterStepConsumes,
+    Coproduct<SplitProducesForThisCase, SplitProducesForOtherCases>,
     SplitterStep,
     FirstCase,
+    ProcessBeforeProducesToSplitterStepConsumesIndices,
+    SplitProducesForThisCaseConcatProcessBeforeProducesToFirstCaseConsumesIndices,
   >
+where
+  ProcessBefore::Produces: TransformTo<SplitterStepConsumes, ProcessBeforeProducesToSplitterStepConsumesIndices>,
+  <SplitProducesForThisCase as Concat<ProcessBefore::Produces>>::Concatenated: TransformTo<
+    FirstCase::ProcessBeforeProduces,
+    SplitProducesForThisCaseConcatProcessBeforeProducesToFirstCaseConsumesIndices,
+  >,
 {
   type ProcessBeforeProduces = ProcessBefore::Produces;
 
@@ -79,16 +99,20 @@ impl<
   }
 
   async fn run(&self, process_before_produces: Self::ProcessBeforeProduces) -> RunResult {
-    // Continue(process_before_produces) => {
-    //   let splitter_output = self.splitter.handle(process_before_produces).await?;
-    //   match splitter_output {
-    //     Coproduct::Inl(a) => self.first_case.continue_run(previous_run_produced, last_run),
-    //     Coproduct::Inr(b) => {}
-    //   }
-    // }
-    // result @ Yield(_, _, _) => Ok(result),
-    // result @ Finish(_) => Ok(result),
-    todo!()
+    let splitter_step_consumes: SplitterStepConsumes = process_before_produces.clone().transform();
+    let splitter_step_output: Coproduct<SplitProducesForThisCase, SplitProducesForOtherCases> =
+      self.splitter.handle(splitter_step_consumes).await?;
+    match splitter_step_output {
+      Coproduct::Inl(splitter_step_produces) => {
+        // we could get rid of params unused here, but well
+        let first_case_consumes: FirstCase::ProcessBeforeProduces =
+          splitter_step_produces.concat(process_before_produces).transform();
+        self.first_case.run(first_case_consumes).await
+      }
+      Coproduct::Inr(_) => {
+        todo!()
+      }
+    }
   }
 
   fn enumerate_steps(&mut self, last_used_index: usize) -> usize {
