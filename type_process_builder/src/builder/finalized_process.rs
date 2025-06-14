@@ -12,7 +12,7 @@ pub trait FinalizedProcess: Sized {
   fn continue_run(
     &self,
     previous_run_produced: Value,
-    previous_run_yielded: PreviousRunYieldedAt,
+    previous_run_yielded_at: PreviousRunYieldedAt,
   ) -> impl Future<Output = RunResult>;
 
   fn build(self) -> RunnableProcess<Self> {
@@ -35,7 +35,11 @@ pub struct FlowingFinalizedProcess<
 impl<ProcessBefore: FlowingProcess, FinalConsumes: ParamList, FinalStep: Final<FinalConsumes>> FinalizedProcess
   for FlowingFinalizedProcess<ProcessBefore, FinalConsumes, FinalStep>
 {
-  async fn continue_run(&self, previous_run_produced: Value, previous_run_yielded: PreviousRunYieldedAt) -> RunResult {
+  async fn continue_run(
+    &self,
+    previous_run_produced: Value,
+    previous_run_yielded_at: PreviousRunYieldedAt,
+  ) -> RunResult {
     todo!()
   }
 
@@ -52,7 +56,11 @@ pub struct SplitFinalizedProcess<FinalizedExhaustiveSplit: FinalizedSplitProcess
 impl<FinalizedExhaustiveSplit: FinalizedSplitProcess> FinalizedProcess
   for SplitFinalizedProcess<FinalizedExhaustiveSplit>
 {
-  async fn continue_run(&self, previous_run_produced: Value, previous_run_yielded: PreviousRunYieldedAt) -> RunResult {
+  async fn continue_run(
+    &self,
+    previous_run_produced: Value,
+    previous_run_yielded_at: PreviousRunYieldedAt,
+  ) -> RunResult {
     todo!()
   }
 

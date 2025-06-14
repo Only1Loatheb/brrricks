@@ -19,7 +19,7 @@ pub trait FlowingProcess: Sized {
   fn continue_run(
     &self,
     previous_run_produced: Value,
-    previous_run_yielded: PreviousRunYieldedAt,
+    previous_run_yielded_at: PreviousRunYieldedAt,
   ) -> impl Future<Output = IntermediateRunResult<Self::Produces>>;
 
   fn run(
@@ -41,8 +41,7 @@ pub trait FlowingProcess: Sized {
     Produces = <LinearProduces as Concat<Self::Produces>>::Concatenated,
   >
   where
-    <Self as FlowingProcess>::Produces:
-      TransformTo<LinearConsumes, ProcessBeforeProducesToLastStepConsumesIndices>,
+    <Self as FlowingProcess>::Produces: TransformTo<LinearConsumes, ProcessBeforeProducesToLastStepConsumesIndices>,
   {
     LinearFlowingProcess {
       process_before: self,
@@ -52,17 +51,12 @@ pub trait FlowingProcess: Sized {
     }
   }
 
-  fn end<
-    FinalConsumes: ParamList,
-    FinalStep: Final<FinalConsumes>,
-    ProcessBeforeProducesToLastStepConsumesIndices,
-  >(
+  fn end<FinalConsumes: ParamList, FinalStep: Final<FinalConsumes>, ProcessBeforeProducesToLastStepConsumesIndices>(
     self,
     step: FinalStep,
   ) -> impl FinalizedProcess
   where
-    <Self as FlowingProcess>::Produces:
-      TransformTo<FinalConsumes, ProcessBeforeProducesToLastStepConsumesIndices>,
+    <Self as FlowingProcess>::Produces: TransformTo<FinalConsumes, ProcessBeforeProducesToLastStepConsumesIndices>,
   {
     FlowingFinalizedProcess {
       process_before: self,
@@ -141,12 +135,12 @@ where
   async fn continue_run(
     &self,
     previous_run_produced: Value,
-    previous_run_yielded: PreviousRunYieldedAt,
+    previous_run_yielded_at: PreviousRunYieldedAt,
   ) -> IntermediateRunResult<Self::Produces> {
-    if previous_run_yielded.0 < self.step_index {
+    if previous_run_yielded_at.0 < self.step_index {
       let process_before_output = self
         .process_before
-        .continue_run(previous_run_produced, previous_run_yielded)
+        .continue_run(previous_run_produced, previous_run_yielded_at)
         .await?;
       match process_before_output {
         Continue(process_before_produces) => self.run(process_before_produces).await,

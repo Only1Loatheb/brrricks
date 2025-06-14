@@ -19,11 +19,11 @@ impl<UnderlyingProcess: FinalizedProcess> RunnableProcess<UnderlyingProcess> {
   pub async fn continue_run(
     &self,
     previous_run_produced: Value,
-    previous_run_yielded: PreviousRunYieldedAt,
+    previous_run_yielded_at: PreviousRunYieldedAt,
   ) -> RunResult {
     self
       .finalized_process
-      .continue_run(previous_run_produced, previous_run_yielded)
+      .continue_run(previous_run_produced, previous_run_yielded_at)
       .await
   }
 }
