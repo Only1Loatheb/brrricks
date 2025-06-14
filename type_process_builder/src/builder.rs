@@ -5,6 +5,7 @@ pub mod flowing_split_process;
 pub mod runnable_process;
 
 use crate::param_list::ParamList;
+use crate::step::splitter_output_repr::SplitterOutput;
 use crate::step::Message;
 use serde_value::Value;
 
@@ -24,7 +25,14 @@ pub enum IntermediateRunOutcome<T: ParamList> {
 
 pub type IntermediateRunResult<T> = anyhow::Result<IntermediateRunOutcome<T>>;
 
-#[derive(PartialEq, Debug, Eq, Clone, PartialOrd, Ord, Hash)]
+pub enum IntermediateSplitOutcome<T: SplitterOutput> {
+  Continue(T),
+  Yield(Message, Value, CurrentRunYieldedAt),
+  Finish(Message),
+}
+
+pub type IntermediateSplitResult<T> = anyhow::Result<IntermediateSplitOutcome<T>>;
+
 pub enum RunOutcome {
   Yield(Message, Value, CurrentRunYieldedAt),
   Finish(Message),

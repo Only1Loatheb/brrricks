@@ -1,7 +1,6 @@
 use crate::builder::finalized_process::FinalizedProcess;
 use crate::builder::flowing_process::FlowingProcess;
-use crate::builder::IntermediateRunOutcome::{Continue, Finish, Yield};
-use crate::builder::{PreviousRunYieldedAt, RunOutcome, RunResult};
+use crate::builder::*;
 use crate::hlist_concat::Concat;
 use crate::hlist_transformer::TransformTo;
 use crate::param_list::ParamList;
@@ -14,14 +13,18 @@ use std::marker::PhantomData;
 
 pub trait FinalizedSplitProcess: Sized {
   type ProcessBeforeProduces: ParamList;
+  type PassesToOtherCases: SplitterOutput;
 
   fn continue_run(
     &self,
     previous_run_produced: Value,
     previous_run_yielded_at: PreviousRunYieldedAt,
-  ) -> impl Future<Output = RunResult>;
+  ) -> impl Future<Output = IntermediateSplitResult<Self::PassesToOtherCases>>;
 
-  fn run(&self, process_before_produces: Self::ProcessBeforeProduces) -> impl Future<Output = RunResult>;
+  fn run(
+    &self,
+    process_before_produces: Self::ProcessBeforeProduces,
+  ) -> impl Future<Output = IntermediateSplitResult<Self::PassesToOtherCases>>;
 
   fn enumerate_steps(&mut self, last_used_index: usize) -> usize;
 }
@@ -75,21 +78,22 @@ where
   >,
 {
   type ProcessBeforeProduces = ProcessBefore::Produces;
+  type PassesToOtherCases = SplitProducesForOtherCases;
 
   async fn continue_run(
     &self,
     previous_run_produced: Value,
     previous_run_yielded_at: PreviousRunYieldedAt,
-  ) -> RunResult {
+  ) -> IntermediateSplitResult<Self::PassesToOtherCases> {
     if previous_run_yielded_at.0 < self.split_step_index {
       let process_before_output = self
         .process_before
         .continue_run(previous_run_produced, previous_run_yielded_at)
         .await?;
       match process_before_output {
-        Continue(process_before_produces) => self.run(process_before_produces).await,
-        Yield(a, b, c) => Ok(RunOutcome::Yield(a, b, c)),
-        Finish(a) => Ok(RunOutcome::Finish(a)),
+        IntermediateRunOutcome::Continue(process_before_produces) => self.run(process_before_produces).await,
+        IntermediateRunOutcome::Yield(a, b, c) => Ok(IntermediateSplitOutcome::Yield(a, b, c)),
+        IntermediateRunOutcome::Finish(a) => Ok(IntermediateSplitOutcome::Finish(a)),
       }
     } else {
       let process_before_produces: ProcessBefore::Produces =
@@ -98,20 +102,24 @@ where
     }
   }
 
-  async fn run(&self, process_before_produces: Self::ProcessBeforeProduces) -> RunResult {
+  async fn run(
+    &self,
+    process_before_produces: Self::ProcessBeforeProduces,
+  ) -> IntermediateSplitResult<Self::PassesToOtherCases> {
     let splitter_step_consumes: SplitterStepConsumes = process_before_produces.clone().transform();
     let splitter_step_output: Coproduct<SplitProducesForThisCase, SplitProducesForOtherCases> =
       self.splitter.handle(splitter_step_consumes).await?;
     match splitter_step_output {
-      Coproduct::Inl(splitter_step_produces) => {
+      Coproduct::Inl(produces_for_first_case) => {
         // we could get rid of params unused here, but well
         let first_case_consumes: FirstCase::ProcessBeforeProduces =
-          splitter_step_produces.concat(process_before_produces).transform();
-        self.first_case.run(first_case_consumes).await
+          produces_for_first_case.concat(process_before_produces).transform();
+        match self.first_case.run(first_case_consumes).await? {
+          RunOutcome::Yield(a, b, c) => Ok(IntermediateSplitOutcome::Yield(a, b, c)),
+          RunOutcome::Finish(a) => Ok(IntermediateSplitOutcome::Finish(a)),
+        }
       }
-      Coproduct::Inr(_) => {
-        todo!()
-      }
+      Coproduct::Inr(produces_for_other_cases) => Ok(IntermediateSplitOutcome::Continue(produces_for_other_cases)),
     }
   }
 
@@ -123,27 +131,41 @@ where
 }
 
 // maybe the case_step_index overlaps with FinalizedProcess or maybe it allows for a skip
-pub struct NextCaseOfFinalizedSplitProcess<ProcessBefore: FinalizedSplitProcess, NextCase: FinalizedProcess> {
+pub struct NextCaseOfFinalizedSplitProcess<
+  ProcessBefore: FinalizedSplitProcess,
+  PassedForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeProduces>,
+  PassesToOtherCases: SplitterOutput,
+  NextCase: FinalizedProcess,
+> {
   pub split_process_before: ProcessBefore,
   pub case_step_index: usize,
   pub next_case: NextCase,
+  pub phantom_data: PhantomData<(PassedForThisCase, PassesToOtherCases)>,
 }
 
-impl<ProcessBefore: FinalizedSplitProcess, NextCase: FinalizedProcess> FinalizedSplitProcess
-  for NextCaseOfFinalizedSplitProcess<ProcessBefore, NextCase>
+impl<
+    ProcessBefore: FinalizedSplitProcess,
+    PassedForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeProduces>,
+    PassesToOtherCases: SplitterOutput,
+    NextCase: FinalizedProcess,
+  > FinalizedSplitProcess
+  for NextCaseOfFinalizedSplitProcess<ProcessBefore, PassedForThisCase, PassesToOtherCases, NextCase>
 {
   type ProcessBeforeProduces = ProcessBefore::ProcessBeforeProduces;
+  type PassesToOtherCases = PassesToOtherCases;
 
   async fn continue_run(
     &self,
     previous_run_produced: Value,
     previous_run_yielded_at: PreviousRunYieldedAt,
-  ) -> RunResult {
-    //Self::SplitterOutput
+  ) -> IntermediateSplitResult<Self::PassesToOtherCases> {
     todo!()
   }
 
-  async fn run(&self, process_before_produces: Self::ProcessBeforeProduces) -> RunResult {
+  async fn run(
+    &self,
+    process_before_produces: Self::ProcessBeforeProduces,
+  ) -> IntermediateSplitResult<Self::PassesToOtherCases> {
     todo!()
   }
 
