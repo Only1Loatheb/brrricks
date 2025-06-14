@@ -162,11 +162,8 @@ where
       // Should only pass params required in further part of the process, but I don't know what they are.
       // todo Make all the methods generic over Serializer
       {
-        Ok(Yield(
-          msg,
-          last_step_produces.concat(process_before_produces).serialize()?,
-          CurrentRunYieldedAt(self.step_index),
-        ))
+        let value = last_step_produces.concat(process_before_produces).serialize()?;
+        Ok(Yield(msg, value, CurrentRunYieldedAt(self.step_index)))
       }
       (None, last_step_produces) => Ok(Continue(last_step_produces.concat(process_before_produces))),
     }

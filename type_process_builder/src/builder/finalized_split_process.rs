@@ -13,36 +13,33 @@ use std::marker::PhantomData;
 
 pub trait FinalizedSplitProcess: Sized {
   type ProcessBeforeProduces: ParamList;
-  type PassesToOtherCases: SplitterOutput;
+  type PassesToCases: SplitterOutput;
 
   fn continue_run(
     &self,
     previous_run_produced: Value,
     previous_run_yielded_at: PreviousRunYieldedAt,
-  ) -> impl Future<Output = IntermediateSplitResult<Self::PassesToOtherCases>>;
+  ) -> impl Future<Output = IntermediateSplitResult<Self::PassesToCases>>;
 
   fn run(
     &self,
     process_before_produces: Self::ProcessBeforeProduces,
-  ) -> impl Future<Output = IntermediateSplitResult<Self::PassesToOtherCases>>;
+  ) -> impl Future<Output = IntermediateSplitResult<Self::PassesToCases>>;
 
   fn enumerate_steps(&mut self, last_used_index: usize) -> usize;
 }
 
-// one additional trait could be introduced to make split() and first_case() separate methods, but I am who I am
 pub struct FirstCaseOfFinalizedSplitProcess<
   ProcessBefore: FlowingProcess,
   SplitterStepConsumes: ParamList,
   SplitterProduces: SplitterOutput,
   SplitterStep: Splitter<SplitterStepConsumes, SplitterProduces>,
-  FirstCase: FinalizedProcess,
   ProcessBeforeProducesToSplitterStepConsumesIndices,
   SplitProducesForThisCaseConcatProcessBeforeProducesToFirstCaseConsumesIndices,
 > {
   pub process_before: ProcessBefore,
   pub splitter: SplitterStep,
   pub split_step_index: usize,
-  pub first_case: FirstCase,
   pub phantom_data: PhantomData<(
     SplitterStepConsumes,
     SplitterProduces,
@@ -54,37 +51,30 @@ pub struct FirstCaseOfFinalizedSplitProcess<
 impl<
     ProcessBefore: FlowingProcess,
     SplitterStepConsumes: ParamList,
-    SplitProducesForThisCase: ParamList + Concat<ProcessBefore::Produces>,
-    SplitProducesForOtherCases: SplitterOutput,
-    SplitterStep: Splitter<SplitterStepConsumes, Coproduct<SplitProducesForThisCase, SplitProducesForOtherCases>>,
-    FirstCase: FinalizedProcess,
+    SplitterStepProduces: SplitterOutput,
+    SplitterStep: Splitter<SplitterStepConsumes, SplitterStepProduces>,
     ProcessBeforeProducesToSplitterStepConsumesIndices,
     SplitProducesForThisCaseConcatProcessBeforeProducesToFirstCaseConsumesIndices,
   > FinalizedSplitProcess
   for FirstCaseOfFinalizedSplitProcess<
     ProcessBefore,
     SplitterStepConsumes,
-    Coproduct<SplitProducesForThisCase, SplitProducesForOtherCases>,
+    SplitterStepProduces,
     SplitterStep,
-    FirstCase,
     ProcessBeforeProducesToSplitterStepConsumesIndices,
     SplitProducesForThisCaseConcatProcessBeforeProducesToFirstCaseConsumesIndices,
   >
 where
   ProcessBefore::Produces: TransformTo<SplitterStepConsumes, ProcessBeforeProducesToSplitterStepConsumesIndices>,
-  <SplitProducesForThisCase as Concat<ProcessBefore::Produces>>::Concatenated: TransformTo<
-    FirstCase::ProcessBeforeProduces,
-    SplitProducesForThisCaseConcatProcessBeforeProducesToFirstCaseConsumesIndices,
-  >,
 {
   type ProcessBeforeProduces = ProcessBefore::Produces;
-  type PassesToOtherCases = SplitProducesForOtherCases;
+  type PassesToCases = SplitterStepProduces;
 
   async fn continue_run(
     &self,
     previous_run_produced: Value,
     previous_run_yielded_at: PreviousRunYieldedAt,
-  ) -> IntermediateSplitResult<Self::PassesToOtherCases> {
+  ) -> IntermediateSplitResult<Self::PassesToCases> {
     if previous_run_yielded_at.0 < self.split_step_index {
       let process_before_output = self
         .process_before
@@ -104,22 +94,9 @@ where
   async fn run(
     &self,
     process_before_produces: Self::ProcessBeforeProduces,
-  ) -> IntermediateSplitResult<Self::PassesToOtherCases> {
+  ) -> IntermediateSplitResult<Self::PassesToCases> {
     let splitter_step_consumes: SplitterStepConsumes = process_before_produces.clone().transform();
-    let splitter_step_output: Coproduct<SplitProducesForThisCase, SplitProducesForOtherCases> =
-      self.splitter.handle(splitter_step_consumes).await?;
-    match splitter_step_output {
-      Coproduct::Inl(produces_for_first_case) => {
-        // we could get rid of params unused here, but well
-        let first_case_consumes: FirstCase::ProcessBeforeProduces =
-          produces_for_first_case.concat(process_before_produces).transform();
-        match self.first_case.run(first_case_consumes).await? {
-          RunOutcome::Yield(a, b, c) => Ok(IntermediateSplitOutcome::Yield(a, b, c)),
-          RunOutcome::Finish(a) => Ok(IntermediateSplitOutcome::Finish(a)),
-        }
-      }
-      Coproduct::Inr(produces_for_other_cases) => Ok(IntermediateSplitOutcome::Continue(produces_for_other_cases)),
-    }
+    self.splitter.handle(splitter_step_consumes)
   }
 
   fn enumerate_steps(&mut self, last_used_index: usize) -> usize {
@@ -127,6 +104,27 @@ where
     self.split_step_index = used_index + 1;
     self.split_step_index
   }
+}
+
+pub trait FinalizedSplitProcessCase: Sized {
+  type ProcessBeforeProduces: ParamList;
+  type SplitterProducesForThisCase: ParamList + Concat<Self::ProcessBeforeProduces>;
+  type SplitterProducesForOtherCases: SplitterOutput;
+
+  fn continue_run(
+    &self,
+    previous_run_produced: Value,
+    previous_run_yielded_at: PreviousRunYieldedAt,
+  ) -> impl Future<Output = IntermediateSplitResult<Self::SplitterProducesForOtherCases>>;
+
+  fn run(
+    &self,
+    process_before_with_split_step_produces: <Self::SplitterProducesForThisCase as Concat<
+      Self::ProcessBeforeProduces,
+    >>::Concatenated,
+  ) -> impl Future<Output = IntermediateSplitResult<Self::SplitterProducesForOtherCases>>;
+
+  fn enumerate_steps(&mut self, last_used_index: usize) -> usize;
 }
 
 // maybe the case_step_index overlaps with FinalizedProcess or maybe it allows for a skip
@@ -147,37 +145,49 @@ impl<
     PassedForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeProduces>,
     PassesToOtherCases: SplitterOutput,
     NextCase: FinalizedProcess,
-  > FinalizedSplitProcess
+  > FinalizedSplitProcessCase
   for NextCaseOfFinalizedSplitProcess<ProcessBefore, PassedForThisCase, PassesToOtherCases, NextCase>
 {
   type ProcessBeforeProduces = ProcessBefore::ProcessBeforeProduces;
-  type PassesToOtherCases = PassesToOtherCases;
+  type SplitterProducesForThisCase = PassedForThisCase;
+  type SplitterProducesForOtherCases = PassesToOtherCases;
 
   async fn continue_run(
     &self,
     previous_run_produced: Value,
     previous_run_yielded_at: PreviousRunYieldedAt,
-  ) -> IntermediateSplitResult<Self::PassesToOtherCases> {
+  ) -> IntermediateSplitResult<Self::SplitterProducesForOtherCases> {
     if previous_run_yielded_at.0 < self.case_step_index {
       let process_before_output = self
         .split_process_before
         .continue_run(previous_run_produced, previous_run_yielded_at)
         .await?;
       match process_before_output {
-        IntermediateSplitOutcome::Continue(process_before_produces) => self.run(process_before_produces).await,
+        IntermediateSplitOutcome::Continue(process_before_produces) => {
+          // self.run(process_before_produces).await
+          match process_before_produces {
+            Coproduct::Inl(_) => {}
+            Coproduct::Inr(produces) => {}
+          }
+        }
         IntermediateSplitOutcome::Yield(a, b, c) => Ok(IntermediateSplitOutcome::Yield(a, b, c)),
         IntermediateSplitOutcome::Finish(a) => Ok(IntermediateSplitOutcome::Finish(a)),
       }
     } else {
-      let process_before_produces = ProcessBefore::ProcessBeforeProduces::deserialize(previous_run_produced)?;
+      let process_before_produces =
+        <Self::SplitterProducesForThisCase as Concat<Self::ProcessBeforeProduces>>::Concatenated::deserialize(
+          previous_run_produced,
+        )?;
       self.run(process_before_produces).await
     }
   }
 
   async fn run(
     &self,
-    process_before_produces: Self::ProcessBeforeProduces,
-  ) -> IntermediateSplitResult<Self::PassesToOtherCases> {
+    process_before_with_split_step_produces: <Self::SplitterProducesForThisCase as Concat<
+      Self::ProcessBeforeProduces,
+    >>::Concatenated,
+  ) -> IntermediateSplitResult<Self::SplitterProducesForOtherCases> {
     todo!()
   }
 
