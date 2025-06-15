@@ -66,7 +66,7 @@ pub struct SplitFinalizedProcess<FinalizedExhaustiveSplit: FinalizedSplitProcess
 impl<FinalizedExhaustiveSplit: FinalizedSplitProcess> FinalizedProcess
   for SplitFinalizedProcess<FinalizedExhaustiveSplit>
 {
-  type ProcessBeforeProduces = FinalizedExhaustiveSplit::ProcessBeforeProduces;
+  type ProcessBeforeProduces = FinalizedExhaustiveSplit::ProcessBeforeSplitProduces;
 
   async fn continue_run(
     &self,

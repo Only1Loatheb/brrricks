@@ -17,21 +17,25 @@ pub struct CurrentRunYieldedAt(usize);
 
 pub(crate) const WILL_BE_RENUMBERED: usize = 0;
 
-pub enum IntermediateRunOutcome<T: ParamList> {
-  Continue(T),
+pub enum IntermediateRunOutcome<Produced: ParamList> {
+  Continue(Produced),
   Yield(Message, Value, CurrentRunYieldedAt),
   Finish(Message),
 }
 
 pub type IntermediateRunResult<T> = anyhow::Result<IntermediateRunOutcome<T>>;
 
-pub enum IntermediateSplitOutcome<T: SplitterOutput> {
-  Continue(T),
+pub enum IntermediateSplitOutcome<ProcessBeforeSplitProduced: ParamList, ThisCaseProduced: SplitterOutput> {
+  Continue {
+    process_before_split_produced: ProcessBeforeSplitProduced,
+    this_case_produced: ThisCaseProduced,
+  },
   Yield(Message, Value, CurrentRunYieldedAt),
   Finish(Message),
 }
 
-pub type IntermediateSplitResult<T> = anyhow::Result<IntermediateSplitOutcome<T>>;
+pub type IntermediateSplitResult<ProcessBeforeSplitProduced: ParamList, ThisCaseProduced: SplitterOutput> =
+  anyhow::Result<IntermediateSplitOutcome<ProcessBeforeSplitProduced, ThisCaseProduced>>;
 
 pub enum RunOutcome {
   Yield(Message, Value, CurrentRunYieldedAt),
