@@ -34,7 +34,7 @@ pub enum IntermediateSplitOutcome<ProcessBeforeSplitProduced: ParamList, ThisCas
   Finish(Message),
 }
 
-pub type IntermediateSplitResult<ProcessBeforeSplitProduced: ParamList, ThisCaseProduced: SplitterOutput> =
+pub type IntermediateSplitResult<ProcessBeforeSplitProduced, ThisCaseProduced> =
   anyhow::Result<IntermediateSplitOutcome<ProcessBeforeSplitProduced, ThisCaseProduced>>;
 
 pub enum RunOutcome {
