@@ -1,9 +1,9 @@
 use frunk_core::hlist::{HCons, HList, HNil};
+use serde::de::DeserializeOwned;
+use serde::Serialize;
 use serde_value::SerializerError::Custom;
 use serde_value::{to_value, DeserializerError, SerializerError, Value};
 use std::collections::BTreeMap;
-use serde::de::DeserializeOwned;
-use serde::Serialize;
 
 /// clone (required by run method) should be used in brick instead
 pub trait ParamValue: Clone + Serialize + DeserializeOwned {
@@ -47,10 +47,7 @@ impl<Head: ParamValue, Tail: ParamList> ParamList for HCons<Head, Tail> {
     let old_value = serialize_map.insert(Value::String(Head::NAME.into()), to_value(&self.head)?);
     match old_value {
       None => Ok(()),
-      Some(_) => Err(Custom(format!(
-        "Two ParamValues have the same name: {}",
-        Head::NAME
-      ))),
+      Some(_) => Err(Custom(format!("Two ParamValues have the same name: {}", Head::NAME))),
     }
   }
 

@@ -2,7 +2,7 @@ use crate::builder::finalized_process::FinalizedProcess;
 use crate::builder::flowing_process::FlowingProcess;
 use crate::builder::*;
 use crate::hlist_concat::Concat;
-use crate::hlist_transformer::TransformTo;
+use crate::hlist_transform_to::TransformTo;
 use crate::param_list::ParamList;
 use crate::step::splitter_output_repr::SplitterOutput;
 use crate::step::step::Splitter;
