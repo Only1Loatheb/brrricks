@@ -1,22 +1,18 @@
+#[derive(serde::Deserialize, serde::Serialize, PartialEq, Debug, Eq, Clone, PartialOrd, Ord, Hash)]
+pub struct Message(pub String);
+
+// We want to allow defining split with one case for Confirmation forms
 pub mod splitter_output_repr {
   use crate::param_list::ParamList;
-  use frunk_core::coproduct::{CNil, Coproduct};
+  use frunk_core::coproduct::Coproduct;
 
   pub trait SplitterOutput {
     type NonEmptyCoproduct;
   }
-
-  impl<ThisCase: ParamList> SplitterOutput for Coproduct<ThisCase, CNil> {
-    type NonEmptyCoproduct = Coproduct<ThisCase, CNil>;
-  }
-
-  impl<ThisCase: ParamList, OtherCase: SplitterOutput> SplitterOutput for Coproduct<ThisCase, OtherCase> {
-    type NonEmptyCoproduct = Coproduct<ThisCase, OtherCase::NonEmptyCoproduct>;
+  impl<ThisCase: ParamList, OtherCase> SplitterOutput for Coproduct<ThisCase, OtherCase> {
+    type NonEmptyCoproduct = Coproduct<ThisCase, OtherCase>;
   }
 }
-
-#[derive(serde::Deserialize, serde::Serialize, PartialEq, Debug, Eq, Clone, PartialOrd, Ord, Hash)]
-pub struct Message(pub String);
 
 pub mod step {
   use crate::param_list::ParamList;

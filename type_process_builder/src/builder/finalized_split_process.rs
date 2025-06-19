@@ -4,7 +4,6 @@ use crate::builder::*;
 use crate::hlist_concat::Concat;
 use crate::hlist_transform_to::TransformTo;
 use crate::param_list::ParamList;
-use crate::step::splitter_output_repr::SplitterOutput;
 use crate::step::step::Splitter;
 use frunk_core::coproduct::Coproduct;
 use serde_value::Value;
@@ -14,7 +13,7 @@ use std::marker::PhantomData;
 pub trait FinalizedSplitProcess: Sized {
   type ProcessBeforeSplitProduces: ParamList;
   type SplitterProducesForFirstCase: ParamList;
-  type SplitterProducesForOtherCases: SplitterOutput;
+  type SplitterProducesForOtherCases;
 
   fn continue_run(
     &self,
@@ -68,7 +67,7 @@ pub struct SplitProcess<
   ProcessBefore: FlowingProcess,
   SplitterStepConsumes: ParamList,
   SplitterProducesForFirstCase: ParamList,
-  SplitterProducesForOtherCases: SplitterOutput,
+  SplitterProducesForOtherCases,
   SplitterStep: Splitter<SplitterStepConsumes, Coproduct<SplitterProducesForFirstCase, SplitterProducesForOtherCases>>,
   ProcessBeforeProducesToSplitterStepConsumesIndices,
   SplitProducesForThisCaseConcatProcessBeforeProducesToFirstCaseConsumesIndices,
@@ -89,7 +88,7 @@ impl<
     ProcessBefore: FlowingProcess,
     SplitterStepConsumes: ParamList,
     SplitterProducesForFirstCase: ParamList,
-    SplitterProducesForOtherCases: SplitterOutput,
+    SplitterProducesForOtherCases,
     SplitterStep: Splitter<SplitterStepConsumes, Coproduct<SplitterProducesForFirstCase, SplitterProducesForOtherCases>>,
     ProcessBeforeProducesToSplitterStepConsumesIndices,
     SplitProducesForThisCaseConcatProcessBeforeProducesToFirstCaseConsumesIndices,

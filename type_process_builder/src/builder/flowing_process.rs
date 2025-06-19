@@ -5,7 +5,6 @@ use crate::builder::{CurrentRunYieldedAt, IntermediateRunResult, PreviousRunYiel
 use crate::hlist_concat::Concat;
 use crate::hlist_transform_to::TransformTo;
 use crate::param_list::ParamList;
-use crate::step::splitter_output_repr::SplitterOutput;
 use crate::step::step::{Entry, Final, Linear, Splitter};
 use anyhow::anyhow;
 use frunk_core::coproduct::Coproduct;
@@ -60,7 +59,7 @@ pub trait FlowingProcess: Sized {
     ProcessBefore: FlowingProcess,
     SplitterStepConsumes: ParamList,
     SplitterProducesForFirstCase: ParamList,
-    SplitterProducesForOtherCases: SplitterOutput,
+    SplitterProducesForOtherCases,
     SplitterStep: Splitter<SplitterStepConsumes, Coproduct<SplitterProducesForFirstCase, SplitterProducesForOtherCases>>,
     ProcessBeforeProducesToSplitterStepConsumesIndices,
     SplitProducesForThisCaseConcatProcessBeforeProducesToFirstCaseConsumesIndices,
