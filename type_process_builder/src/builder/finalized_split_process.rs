@@ -37,10 +37,34 @@ pub trait FinalizedSplitProcess: Sized {
     >,
   >;
 
+  // fn case<
+  //   LinearConsumes: ParamList,
+  //   LinearProduces: ParamList + Concat<Self::Produces>,
+  //   LinearStep: Linear<LinearConsumes, LinearProduces>,
+  //   ProcessBeforeProducesToLastStepConsumesIndices,
+  // >(
+  //   self,
+  //   step: LinearStep,
+  // ) -> impl FlowingProcess<
+  //   ProcessBeforeProduces = <Self as FlowingProcess>::Produces,
+  //   Produces = <LinearProduces as Concat<Self::Produces>>::Concatenated,
+  // >
+  // where
+  //   <Self as FlowingProcess>::Produces: TransformTo<LinearConsumes, ProcessBeforeProducesToLastStepConsumesIndices>,
+  // {
+  //   // aaa
+  //   LinearFlowingProcess {
+  //     process_before: self,
+  //     last_step: step,
+  //     step_index: WILL_BE_RENUMBERED,
+  //     phantom_data: Default::default(),
+  //   }
+  // }
+
   fn enumerate_steps(&mut self, last_used_index: usize) -> usize;
 }
 
-pub struct FirstCaseOfFinalizedSplitProcess<
+pub struct SplitProcess<
   ProcessBefore: FlowingProcess,
   SplitterStepConsumes: ParamList,
   SplitterProducesForFirstCase: ParamList,
@@ -70,7 +94,7 @@ impl<
     ProcessBeforeProducesToSplitterStepConsumesIndices,
     SplitProducesForThisCaseConcatProcessBeforeProducesToFirstCaseConsumesIndices,
   > FinalizedSplitProcess
-  for FirstCaseOfFinalizedSplitProcess<
+  for SplitProcess<
     ProcessBefore,
     SplitterStepConsumes,
     SplitterProducesForFirstCase,

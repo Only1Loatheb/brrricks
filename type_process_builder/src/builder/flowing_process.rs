@@ -1,11 +1,14 @@
 use crate::builder::finalized_process::{FinalizedProcess, FlowingFinalizedProcess};
+use crate::builder::finalized_split_process::{FinalizedSplitProcess, SplitProcess};
 use crate::builder::IntermediateRunOutcome::*;
 use crate::builder::{CurrentRunYieldedAt, IntermediateRunResult, PreviousRunYieldedAt, WILL_BE_RENUMBERED};
 use crate::hlist_concat::Concat;
 use crate::hlist_transform_to::TransformTo;
 use crate::param_list::ParamList;
-use crate::step::step::{Entry, Final, Linear};
+use crate::step::splitter_output_repr::SplitterOutput;
+use crate::step::step::{Entry, Final, Linear, Splitter};
 use anyhow::anyhow;
+use frunk_core::coproduct::Coproduct;
 use frunk_core::hlist::HNil;
 use serde_value::Value;
 use std::future::Future;
@@ -27,7 +30,9 @@ pub trait FlowingProcess: Sized {
     process_before_produces: Self::ProcessBeforeProduces,
   ) -> impl Future<Output = IntermediateRunResult<Self::Produces>>;
 
-  // LinearProduces and Self::Produces overlap is prevented https://github.com/lloydmeta/frunk/issues/187
+  // Param value overlap is prevented by making reading them cumbersome https://github.com/lloydmeta/frunk/issues/187
+  // Well you can work around this `limitation` by providing the indices explicitly.
+  // Don't do that.
   fn then<
     LinearConsumes: ParamList,
     LinearProduces: ParamList + Concat<Self::Produces>,
@@ -47,6 +52,42 @@ pub trait FlowingProcess: Sized {
       process_before: self,
       last_step: step,
       step_index: WILL_BE_RENUMBERED,
+      phantom_data: Default::default(),
+    }
+  }
+
+  fn split<
+    ProcessBefore: FlowingProcess,
+    SplitterStepConsumes: ParamList,
+    SplitterProducesForFirstCase: ParamList,
+    SplitterProducesForOtherCases: SplitterOutput,
+    SplitterStep: Splitter<SplitterStepConsumes, Coproduct<SplitterProducesForFirstCase, SplitterProducesForOtherCases>>,
+    ProcessBeforeProducesToSplitterStepConsumesIndices,
+    SplitProducesForThisCaseConcatProcessBeforeProducesToFirstCaseConsumesIndices,
+  >(
+    self,
+    step: SplitterStep,
+  ) -> impl FinalizedSplitProcess<
+    ProcessBeforeSplitProduces = <Self as FlowingProcess>::Produces,
+    SplitterProducesForFirstCase = SplitterProducesForFirstCase,
+    SplitterProducesForOtherCases = SplitterProducesForOtherCases,
+  >
+  where
+    <Self as FlowingProcess>::Produces:
+      TransformTo<SplitterStepConsumes, ProcessBeforeProducesToSplitterStepConsumesIndices>,
+  {
+    SplitProcess::<
+      Self,
+      SplitterStepConsumes,
+      SplitterProducesForFirstCase,
+      SplitterProducesForOtherCases,
+      SplitterStep,
+      ProcessBeforeProducesToSplitterStepConsumesIndices,
+      SplitProducesForThisCaseConcatProcessBeforeProducesToFirstCaseConsumesIndices,
+    > {
+      process_before: self,
+      splitter: step,
+      split_step_index: WILL_BE_RENUMBERED,
       phantom_data: Default::default(),
     }
   }
