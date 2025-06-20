@@ -1,7 +1,8 @@
 use crate::builder::{
-  FlowingProcess, IntermediateRunOutcome, IntermediateSplitOutcome, IntermediateSplitResult, ParamList,
-  PreviousRunYieldedAt,
+  FinalizedProcess, FinalizedSplitProcessCase, FlowingProcess, IntermediateRunOutcome, IntermediateSplitOutcome,
+  IntermediateSplitResult, NextCaseOfFinalizedSplitProcess, ParamList, PreviousRunYieldedAt, SplitterOutput,
 };
+use crate::hlist_concat::Concat;
 use crate::hlist_transform_to::TransformTo;
 use crate::step::step::Splitter;
 use frunk_core::coproduct::Coproduct;
@@ -35,29 +36,25 @@ pub trait SplitProcess: Sized {
     >,
   >;
 
-  // fn case<
-  //   LinearConsumes: ParamList,
-  //   LinearProduces: ParamList + Concat<Self::Produces>,
-  //   LinearStep: Linear<LinearConsumes, LinearProduces>,
-  //   ProcessBeforeProducesToLastStepConsumesIndices,
-  // >(
-  //   self,
-  //   step: LinearStep,
-  // ) -> impl FlowingProcess<
-  //   ProcessBeforeProduces = <Self as FlowingProcess>::Produces,
-  //   Produces = <LinearProduces as Concat<Self::Produces>>::Concatenated,
-  // >
-  // where
-  //   <Self as FlowingProcess>::Produces: TransformTo<LinearConsumes, ProcessBeforeProducesToLastStepConsumesIndices>,
-  // {
-  //   // aaa
-  //   LinearFlowingProcess {
-  //     process_before: self,
-  //     last_step: step,
-  //     step_index: WILL_BE_RENUMBERED,
-  //     phantom_data: Default::default(),
-  //   }
-  // }
+  fn case<
+    PassedForThisCase: ParamList + Concat<Self::ProcessBeforeSplitProduces>,
+    PassesToOtherCases: SplitterOutput,
+    ThisCase: FinalizedProcess,
+    SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
+  >(
+    self,
+    this_case: ThisCase,
+  ) -> impl FinalizedSplitProcessCase<
+    ProcessBeforeSplitProduces = Self::ProcessBeforeSplitProduces,
+    SplitterProducesForThisCase = PassedForThisCase,
+    SplitterProducesForOtherCases = PassesToOtherCases,
+  > {
+    NextCaseOfFinalizedSplitProcess {
+      split_process_before: self,
+      this_case,
+      phantom_data: Default::default(),
+    }
+  }
 
   fn enumerate_steps(&mut self, last_used_index: usize) -> usize;
 }

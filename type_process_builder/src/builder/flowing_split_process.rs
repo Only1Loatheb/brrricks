@@ -32,29 +32,29 @@ impl<
 {
 }
 
-pub struct NextCaseFlowingOfFlowingSplitProcess<ProcessBefore: FlowingSplitProcess, NextCase: FlowingProcess> {
+pub struct NextCaseFlowingOfFlowingSplitProcess<ProcessBefore: FlowingSplitProcess, ThisCase: FlowingProcess> {
   pub split_process_before: ProcessBefore,
-  pub next_case: NextCase,
+  pub next_case: ThisCase,
 }
-impl<ProcessBefore: FlowingSplitProcess, NextCase: FlowingProcess> FlowingSplitProcess
-  for NextCaseFlowingOfFlowingSplitProcess<ProcessBefore, NextCase>
+impl<ProcessBefore: FlowingSplitProcess, ThisCase: FlowingProcess> FlowingSplitProcess
+  for NextCaseFlowingOfFlowingSplitProcess<ProcessBefore, ThisCase>
 {
 }
 
-pub struct NextCaseFinalizedOfFlowingSplitProcess<ProcessBefore: FlowingSplitProcess, NextCase: FinalizedProcess> {
+pub struct NextCaseFinalizedOfFlowingSplitProcess<ProcessBefore: FlowingSplitProcess, ThisCase: FinalizedProcess> {
   pub split_process_before: ProcessBefore,
-  pub next_case: NextCase,
+  pub next_case: ThisCase,
 }
-impl<ProcessBefore: FlowingSplitProcess, NextCase: FinalizedProcess> FlowingSplitProcess
-  for NextCaseFinalizedOfFlowingSplitProcess<ProcessBefore, NextCase>
+impl<ProcessBefore: FlowingSplitProcess, ThisCase: FinalizedProcess> FlowingSplitProcess
+  for NextCaseFinalizedOfFlowingSplitProcess<ProcessBefore, ThisCase>
 {
 }
 
-pub struct NextCaseFromFinalizedOfFlowingSplitProcess<ProcessBefore: SplitProcess, NextCase: FlowingProcess> {
+pub struct NextCaseFromFinalizedOfFlowingSplitProcess<ProcessBefore: SplitProcess, ThisCase: FlowingProcess> {
   pub split_process_before: ProcessBefore,
-  pub next_case: NextCase,
+  pub next_case: ThisCase,
 }
-impl<ProcessBefore: SplitProcess, NextCase: FlowingProcess> FlowingSplitProcess
-  for NextCaseFromFinalizedOfFlowingSplitProcess<ProcessBefore, NextCase>
+impl<ProcessBefore: SplitProcess, ThisCase: FlowingProcess> FlowingSplitProcess
+  for NextCaseFromFinalizedOfFlowingSplitProcess<ProcessBefore, ThisCase>
 {
 }

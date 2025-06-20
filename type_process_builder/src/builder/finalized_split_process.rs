@@ -35,11 +35,11 @@ pub struct NextCaseOfFinalizedSplitProcess<
   ProcessBefore: SplitProcess,
   PassedForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
   PassesToOtherCases: SplitterOutput,
-  NextCase: FinalizedProcess,
+  ThisCase: FinalizedProcess,
   SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
 > {
   pub split_process_before: ProcessBefore,
-  pub next_case: NextCase,
+  pub this_case: ThisCase,
   pub phantom_data: PhantomData<(
     PassedForThisCase,
     PassesToOtherCases,
@@ -51,19 +51,19 @@ impl<
     ProcessBefore: SplitProcess<SplitterProducesForFirstCase = PassedForThisCase, SplitterProducesForOtherCases = PassesToOtherCases>,
     PassedForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
     PassesToOtherCases: SplitterOutput,
-    NextCase: FinalizedProcess,
+    ThisCase: FinalizedProcess,
     SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
   > FinalizedSplitProcessCase
   for NextCaseOfFinalizedSplitProcess<
     ProcessBefore,
     PassedForThisCase,
     PassesToOtherCases,
-    NextCase,
+    ThisCase,
     SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
   >
 where
   <PassedForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated:
-    TransformTo<NextCase::ProcessBeforeProduces, SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices>,
+    TransformTo<ThisCase::ProcessBeforeProduces, SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices>,
 {
   type ProcessBeforeSplitProduces = ProcessBefore::ProcessBeforeSplitProduces;
   type SplitterProducesForThisCase = PassedForThisCase;
@@ -95,9 +95,9 @@ where
   ) -> IntermediateSplitResult<Self::ProcessBeforeSplitProduces, Self::SplitterProducesForOtherCases> {
     match this_case_or_other_cases_input {
       Coproduct::Inl(this_case_input) => {
-        let next_case_consumes: NextCase::ProcessBeforeProduces =
+        let next_case_consumes: ThisCase::ProcessBeforeProduces =
           this_case_input.concat(process_before_split_produces).transform();
-        match self.next_case.run(next_case_consumes).await? {
+        match self.this_case.run(next_case_consumes).await? {
           RunOutcome::Yield(a, b, c) => Ok(IntermediateSplitOutcome::Yield(a, b, c)),
           RunOutcome::Finish(a) => Ok(IntermediateSplitOutcome::Finish(a)),
         }

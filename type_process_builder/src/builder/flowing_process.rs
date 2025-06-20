@@ -41,11 +41,11 @@ pub trait FlowingProcess: Sized {
     self,
     step: LinearStep,
   ) -> impl FlowingProcess<
-    ProcessBeforeProduces = <Self as FlowingProcess>::Produces,
+    ProcessBeforeProduces = Self::Produces,
     Produces = <LinearProduces as Concat<Self::Produces>>::Concatenated,
   >
   where
-    <Self as FlowingProcess>::Produces: TransformTo<LinearConsumes, ProcessBeforeProducesToLastStepConsumesIndices>,
+    Self::Produces: TransformTo<LinearConsumes, ProcessBeforeProducesToLastStepConsumesIndices>,
   {
     LinearFlowingProcess {
       process_before: self,
@@ -67,13 +67,12 @@ pub trait FlowingProcess: Sized {
     self,
     step: SplitterStep,
   ) -> impl SplitProcess<
-    ProcessBeforeSplitProduces = <Self as FlowingProcess>::Produces,
+    ProcessBeforeSplitProduces = Self::Produces,
     SplitterProducesForFirstCase = SplitterProducesForFirstCase,
     SplitterProducesForOtherCases = SplitterProducesForOtherCases,
   >
   where
-    <Self as FlowingProcess>::Produces:
-      TransformTo<SplitterStepConsumes, ProcessBeforeProducesToSplitterStepConsumesIndices>,
+    Self::Produces: TransformTo<SplitterStepConsumes, ProcessBeforeProducesToSplitterStepConsumesIndices>,
   {
     SplitProcessSplitter::<
       Self,
@@ -96,7 +95,7 @@ pub trait FlowingProcess: Sized {
     step: FinalStep,
   ) -> impl FinalizedProcess
   where
-    <Self as FlowingProcess>::Produces: TransformTo<FinalConsumes, ProcessBeforeProducesToLastStepConsumesIndices>,
+    Self::Produces: TransformTo<FinalConsumes, ProcessBeforeProducesToLastStepConsumesIndices>,
   {
     FlowingFinalizedProcess {
       process_before: self,

@@ -68,7 +68,7 @@
 //         );
 //         runnable_process.add_process(next_brick_idx, process_before)
 //       }
-//       InternalFlowingSplitProcess::NextCase { next_case, split_process_before } => {
+//       InternalFlowingSplitProcess::ThisCase { next_case, split_process_before } => {
 //         self
 //       }
 //       InternalFlowingSplitProcess::NextCaseFlowing { next_case, split_process_before } => {
