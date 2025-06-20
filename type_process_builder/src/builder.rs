@@ -3,6 +3,7 @@ pub mod finalized_split_process;
 pub mod flowing_process;
 pub mod flowing_split_process;
 pub mod runnable_process;
+mod split_process;
 
 pub use crate::param_list::*;
 pub use crate::step::splitter_output_repr::SplitterOutput;

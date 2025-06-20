@@ -1,6 +1,6 @@
-use crate::builder::finalized_split_process::FinalizedSplitProcess;
 use crate::builder::flowing_process::FlowingProcess;
 use crate::builder::runnable_process::RunnableProcess;
+use crate::builder::split_process::SplitProcess;
 use crate::builder::{PreviousRunYieldedAt, RunResult};
 use crate::param_list::ParamList;
 use crate::step::step::Final;
@@ -59,13 +59,11 @@ impl<ProcessBefore: FlowingProcess, FinalConsumes: ParamList, FinalStep: Final<F
   }
 }
 
-pub struct SplitFinalizedProcess<FinalizedExhaustiveSplit: FinalizedSplitProcess> {
+pub struct SplitFinalizedProcess<FinalizedExhaustiveSplit: SplitProcess> {
   process: FinalizedExhaustiveSplit, // maybe box?
 }
 
-impl<FinalizedExhaustiveSplit: FinalizedSplitProcess> FinalizedProcess
-  for SplitFinalizedProcess<FinalizedExhaustiveSplit>
-{
+impl<FinalizedExhaustiveSplit: SplitProcess> FinalizedProcess for SplitFinalizedProcess<FinalizedExhaustiveSplit> {
   type ProcessBeforeProduces = FinalizedExhaustiveSplit::ProcessBeforeSplitProduces;
 
   async fn continue_run(

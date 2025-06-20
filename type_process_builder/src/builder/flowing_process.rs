@@ -1,5 +1,5 @@
 use crate::builder::finalized_process::{FinalizedProcess, FlowingFinalizedProcess};
-use crate::builder::finalized_split_process::{FinalizedSplitProcess, SplitProcess};
+use crate::builder::split_process::{SplitProcess, SplitProcessSplitter};
 use crate::builder::IntermediateRunOutcome::*;
 use crate::builder::{CurrentRunYieldedAt, IntermediateRunResult, PreviousRunYieldedAt, WILL_BE_RENUMBERED};
 use crate::hlist_concat::Concat;
@@ -66,7 +66,7 @@ pub trait FlowingProcess: Sized {
   >(
     self,
     step: SplitterStep,
-  ) -> impl FinalizedSplitProcess<
+  ) -> impl SplitProcess<
     ProcessBeforeSplitProduces = <Self as FlowingProcess>::Produces,
     SplitterProducesForFirstCase = SplitterProducesForFirstCase,
     SplitterProducesForOtherCases = SplitterProducesForOtherCases,
@@ -75,7 +75,7 @@ pub trait FlowingProcess: Sized {
     <Self as FlowingProcess>::Produces:
       TransformTo<SplitterStepConsumes, ProcessBeforeProducesToSplitterStepConsumesIndices>,
   {
-    SplitProcess::<
+    SplitProcessSplitter::<
       Self,
       SplitterStepConsumes,
       SplitterProducesForFirstCase,

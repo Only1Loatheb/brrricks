@@ -1,6 +1,6 @@
 use crate::builder::finalized_process::FinalizedProcess;
-use crate::builder::finalized_split_process::FinalizedSplitProcess;
 use crate::builder::flowing_process::FlowingProcess;
+use crate::builder::split_process::SplitProcess;
 use crate::param_list::ParamList;
 use crate::step::splitter_output_repr::SplitterOutput;
 use crate::step::step::Splitter;
@@ -50,11 +50,11 @@ impl<ProcessBefore: FlowingSplitProcess, NextCase: FinalizedProcess> FlowingSpli
 {
 }
 
-pub struct NextCaseFromFinalizedOfFlowingSplitProcess<ProcessBefore: FinalizedSplitProcess, NextCase: FlowingProcess> {
+pub struct NextCaseFromFinalizedOfFlowingSplitProcess<ProcessBefore: SplitProcess, NextCase: FlowingProcess> {
   pub split_process_before: ProcessBefore,
   pub next_case: NextCase,
 }
-impl<ProcessBefore: FinalizedSplitProcess, NextCase: FlowingProcess> FlowingSplitProcess
+impl<ProcessBefore: SplitProcess, NextCase: FlowingProcess> FlowingSplitProcess
   for NextCaseFromFinalizedOfFlowingSplitProcess<ProcessBefore, NextCase>
 {
 }
