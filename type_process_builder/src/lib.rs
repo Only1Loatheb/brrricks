@@ -5,12 +5,9 @@ mod hlist_transform_to;
 mod param_list;
 pub mod step;
 
-pub mod process_builder {}
-
 #[cfg(test)]
 mod tests {
-  use crate::builder::finalized_process::FinalizedProcess;
-  use crate::builder::flowing_process::FlowingProcess;
+  use crate::builder::*;
   use crate::param_list::ParamValue;
   use crate::step::step::{Entry, Final, Linear, Splitter};
   use crate::step::Message;

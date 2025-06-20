@@ -4,9 +4,14 @@ pub mod flowing_process;
 pub mod flowing_split_process;
 pub mod runnable_process;
 
-use crate::param_list::ParamList;
-use crate::step::splitter_output_repr::SplitterOutput;
-use crate::step::Message;
+pub use crate::param_list::*;
+pub use crate::step::splitter_output_repr::SplitterOutput;
+pub use crate::step::Message;
+pub use finalized_process::*;
+pub use finalized_split_process::*;
+pub use flowing_process::*;
+pub use flowing_split_process::*;
+pub use runnable_process::*;
 use serde_value::Value;
 
 #[derive(PartialEq, Debug, Eq, Clone, PartialOrd, Ord, Hash)]
