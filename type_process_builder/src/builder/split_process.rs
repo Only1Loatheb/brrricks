@@ -37,9 +37,11 @@ pub trait SplitProcess: Sized {
   >;
 
   fn case<
-    PassedForThisCase: ParamList + Concat<Self::ProcessBeforeSplitProduces>,
+    PassedForThisCase: ParamList + Concat<<Self as SplitProcess>::ProcessBeforeSplitProduces>,
     PassesToOtherCases: SplitterOutput,
-    ThisCase: FinalizedProcess,
+    ThisCase: FinalizedProcess<
+      ProcessBeforeProduces = <PassedForThisCase as Concat<Self::ProcessBeforeSplitProduces>>::Concatenated,
+    >,
     SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
   >(
     self,

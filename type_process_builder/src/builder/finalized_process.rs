@@ -43,8 +43,8 @@ impl<ProcessBefore: FlowingProcess, FinalConsumes: ParamList, FinalStep: Final<F
 
   async fn continue_run(
     &self,
-    previous_run_produced: Value,
-    previous_run_yielded_at: PreviousRunYieldedAt,
+    _previous_run_produced: Value,
+    _previous_run_yielded_at: PreviousRunYieldedAt,
   ) -> RunResult {
     todo!()
   }
@@ -68,13 +68,13 @@ impl<FinalizedExhaustiveSplit: SplitProcess> FinalizedProcess for SplitFinalized
 
   async fn continue_run(
     &self,
-    previous_run_produced: Value,
-    previous_run_yielded_at: PreviousRunYieldedAt,
+    _previous_run_produced: Value,
+    _previous_run_yielded_at: PreviousRunYieldedAt,
   ) -> RunResult {
     todo!()
   }
 
-  async fn run(&self, process_before_produces: Self::ProcessBeforeProduces) -> RunResult {
+  async fn run(&self, _process_before_produces: Self::ProcessBeforeProduces) -> RunResult {
     todo!()
   }
 
