@@ -1,5 +1,4 @@
 use crate::builder::finalized_process::FinalizedProcess;
-use crate::builder::flowing_process::FlowingProcess;
 use crate::builder::split_process::SplitProcess;
 use crate::builder::*;
 use crate::hlist_concat::Concat;
