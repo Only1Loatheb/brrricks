@@ -1,6 +1,6 @@
 use crate::builder::{
   FinalizedProcess, FinalizedSplitProcessCase, FlowingProcess, IntermediateRunOutcome, IntermediateSplitOutcome,
-  IntermediateSplitResult, NextCaseOfFinalizedSplitProcess, ParamList, PreviousRunYieldedAt, SplitterOutput,
+  IntermediateSplitResult, NextCaseOfFinalizedSplitProcess, ParamList, PreviousRunYieldedAt,
 };
 use crate::hlist_concat::Concat;
 use crate::hlist_transform_to::TransformTo;
@@ -52,18 +52,9 @@ pub trait SplitProcess: Sized {
     Self::SplitterProducesForFirstCase: Concat<Self::ProcessBeforeSplitProduces>,
     <Self::SplitterProducesForFirstCase as Concat<Self::ProcessBeforeSplitProduces>>::Concatenated:
       TransformTo<ThisCase::ProcessBeforeProduces, SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices>,
-    <Self as SplitProcess>::SplitterProducesForOtherCases: SplitterOutput,
+    // <Self as SplitProcess>::SplitterProducesForOtherCases: SplitterOutput,
   {
-    NextCaseOfFinalizedSplitProcess
-    //   ::<
-    //   Self,
-    //   Self::ProcessBeforeSplitProduces,
-    //   Coproduct<SplitterProducesForNextCase, SplitterProducesForOtherCases>,
-    //   ThisCaseConsumes,
-    //   ThisCase,
-    //   SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
-    // >
-    {
+    NextCaseOfFinalizedSplitProcess {
       split_process_before: self,
       this_case,
       phantom_data: Default::default(),

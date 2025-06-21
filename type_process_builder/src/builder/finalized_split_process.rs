@@ -12,7 +12,7 @@ use std::marker::PhantomData;
 pub trait FinalizedSplitProcessCase: Sized {
   type ProcessBeforeSplitProduces: ParamList;
   type SplitterProducesForThisCase: ParamList + Concat<Self::ProcessBeforeSplitProduces>;
-  type SplitterProducesForOtherCases: SplitterOutput;
+  type SplitterProducesForOtherCases;
 
   fn continue_run(
     &self,
@@ -33,7 +33,7 @@ pub trait FinalizedSplitProcessCase: Sized {
 pub struct NextCaseOfFinalizedSplitProcess<
   ProcessBefore: SplitProcess,
   PassedForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
-  PassesToOtherCases: SplitterOutput,
+  PassesToOtherCases,
   ThisCaseConsumes: ParamList,
   ThisCase: FinalizedProcess<ProcessBeforeProduces = ThisCaseConsumes>,
   SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
@@ -50,7 +50,7 @@ pub struct NextCaseOfFinalizedSplitProcess<
 impl<
     ProcessBefore: SplitProcess<SplitterProducesForFirstCase = PassedForThisCase, SplitterProducesForOtherCases = PassesToOtherCases>,
     PassedForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
-    PassesToOtherCases: SplitterOutput,
+    PassesToOtherCases,
     ThisCaseConsumes: ParamList,
     ThisCase: FinalizedProcess<ProcessBeforeProduces = ThisCaseConsumes>,
     SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,

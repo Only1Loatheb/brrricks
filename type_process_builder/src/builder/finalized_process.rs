@@ -1,7 +1,8 @@
 use crate::builder::flowing_process::FlowingProcess;
 use crate::builder::runnable_process::RunnableProcess;
 use crate::builder::split_process::SplitProcess;
-use crate::builder::{PreviousRunYieldedAt, RunResult};
+use crate::builder::{PreviousRunYieldedAt, RunOutcome, RunResult};
+use crate::hlist_transform_to::TransformTo;
 use crate::param_list::ParamList;
 use crate::step::step::Final;
 use serde_value::Value;
@@ -24,6 +25,68 @@ pub trait FinalizedProcess: Sized {
   }
 
   fn enumerate_steps(&mut self, last_used_index: usize) -> usize;
+}
+
+pub struct FinalStepProcess<
+  ProcessBeforeProduces: ParamList + TransformTo<FinalConsumes, ProcessBeforeProducesToFinalConsumesIndices>,
+  FinalConsumes: ParamList,
+  FinalStep: Final<FinalConsumes>,
+  ProcessBeforeProducesToFinalConsumesIndices,
+> {
+  pub final_step: FinalStep,
+  pub phantom_data: PhantomData<(
+    ProcessBeforeProduces,
+    FinalConsumes,
+    ProcessBeforeProducesToFinalConsumesIndices,
+  )>,
+}
+
+impl<
+    ProcessBeforeProduces: ParamList + TransformTo<FinalConsumes, ProcessBeforeProducesToFinalConsumesIndices>,
+    FinalConsumes: ParamList,
+    FinalStep: Final<FinalConsumes>,
+    ProcessBeforeProducesToFinalConsumesIndices,
+  > FinalizedProcess
+  for FinalStepProcess<ProcessBeforeProduces, FinalConsumes, FinalStep, ProcessBeforeProducesToFinalConsumesIndices>
+{
+  type ProcessBeforeProduces = ProcessBeforeProduces;
+
+  async fn continue_run(
+    &self,
+    previous_run_produced: Value,
+    _previous_run_yielded_at: PreviousRunYieldedAt,
+  ) -> RunResult {
+    let process_before_produces = ProcessBeforeProduces::deserialize(previous_run_produced)?;
+    self.run(process_before_produces).await
+  }
+
+  async fn run(&self, process_before_produces: Self::ProcessBeforeProduces) -> RunResult {
+    let a = process_before_produces.transform();
+    Ok(RunOutcome::Finish(self.final_step.handle(a).await?))
+  }
+
+  fn enumerate_steps(&mut self, last_used_index: usize) -> usize {
+    last_used_index
+  }
+}
+
+impl<
+    ProcessBeforeProduces: ParamList + TransformTo<FinalConsumes, ProcessBeforeProducesToFinalConsumesIndices>,
+    FinalConsumes: ParamList,
+    FinalStep: Final<FinalConsumes>,
+    ProcessBeforeProducesToFinalConsumesIndices,
+  > From<FinalStep>
+  for FinalStepProcess<ProcessBeforeProduces, FinalConsumes, FinalStep, ProcessBeforeProducesToFinalConsumesIndices>
+{
+  fn from(
+    final_step: FinalStep,
+  ) -> FinalStepProcess<ProcessBeforeProduces, FinalConsumes, FinalStep, ProcessBeforeProducesToFinalConsumesIndices>
+  {
+    FinalStepProcess {
+      final_step,
+      phantom_data: Default::default(),
+    }
+  }
 }
 
 pub struct FlowingFinalizedProcess<
@@ -59,6 +122,7 @@ impl<ProcessBefore: FlowingProcess, FinalConsumes: ParamList, FinalStep: Final<F
   }
 }
 
+// fixme if the traits will impls overlap wrap it in a struct like this:
 pub struct SplitFinalizedProcess<FinalizedExhaustiveSplit: SplitProcess> {
   process: FinalizedExhaustiveSplit, // maybe box?
 }

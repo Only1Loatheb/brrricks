@@ -75,7 +75,7 @@ mod tests {
     let one_step = entry.then(LinearA);
     let two_steps = one_step.then(LinearB);
     let split_steps = two_steps.split(SplitA);
-    let with_final_step = split_steps.case(FinalA);
+    let with_final_step = split_steps.case(FinalA.into());
     let my_process = with_final_step.build();
     let run_result = my_process.run(Value::Map(BTreeMap::new())).await;
     assert!(run_result.is_err());

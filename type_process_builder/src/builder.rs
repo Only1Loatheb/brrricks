@@ -14,6 +14,7 @@ pub use flowing_process::*;
 pub use flowing_split_process::*;
 pub use runnable_process::*;
 use serde_value::Value;
+pub use split_process::*;
 
 #[derive(PartialEq, Debug, Eq, Clone, PartialOrd, Ord, Hash)]
 pub struct PreviousRunYieldedAt(usize);
@@ -31,7 +32,7 @@ pub enum IntermediateRunOutcome<Produced: ParamList> {
 
 pub type IntermediateRunResult<T> = anyhow::Result<IntermediateRunOutcome<T>>;
 
-pub enum IntermediateSplitOutcome<ProcessBeforeSplitProduced: ParamList, ThisCaseProduced: SplitterOutput> {
+pub enum IntermediateSplitOutcome<ProcessBeforeSplitProduced: ParamList, ThisCaseProduced> {
   Continue {
     process_before_split_produced: ProcessBeforeSplitProduced,
     this_case_produced: ThisCaseProduced,
