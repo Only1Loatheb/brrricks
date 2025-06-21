@@ -37,8 +37,6 @@ pub trait SplitProcess: Sized {
   >;
 
   fn case<
-    SplitterProducesForNextCase: ParamList + Concat<Self::ProcessBeforeSplitProduces>,
-    SplitterProducesForOtherCases: SplitterOutput,
     ThisCaseConsumes: ParamList,
     ThisCase: FinalizedProcess<ProcessBeforeProduces = ThisCaseConsumes>,
     SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
@@ -47,22 +45,25 @@ pub trait SplitProcess: Sized {
     this_case: ThisCase,
   ) -> impl FinalizedSplitProcessCase<
     ProcessBeforeSplitProduces = Self::ProcessBeforeSplitProduces,
-    SplitterProducesForThisCase = SplitterProducesForNextCase,
-    SplitterProducesForOtherCases = SplitterProducesForOtherCases,
+    SplitterProducesForThisCase = Self::SplitterProducesForFirstCase,
+    SplitterProducesForOtherCases = Self::SplitterProducesForOtherCases,
   >
   where
     Self::SplitterProducesForFirstCase: Concat<Self::ProcessBeforeSplitProduces>,
     <Self::SplitterProducesForFirstCase as Concat<Self::ProcessBeforeSplitProduces>>::Concatenated:
       TransformTo<ThisCase::ProcessBeforeProduces, SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices>,
+    <Self as SplitProcess>::SplitterProducesForOtherCases: SplitterOutput,
   {
-    NextCaseOfFinalizedSplitProcess::<
-      Self,
-      SplitterProducesForNextCase,
-      SplitterProducesForOtherCases,
-      ThisCaseConsumes,
-      ThisCase,
-      SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
-    > {
+    NextCaseOfFinalizedSplitProcess
+    //   ::<
+    //   Self,
+    //   Self::ProcessBeforeSplitProduces,
+    //   Coproduct<SplitterProducesForNextCase, SplitterProducesForOtherCases>,
+    //   ThisCaseConsumes,
+    //   ThisCase,
+    //   SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
+    // >
+    {
       split_process_before: self,
       this_case,
       phantom_data: Default::default(),
