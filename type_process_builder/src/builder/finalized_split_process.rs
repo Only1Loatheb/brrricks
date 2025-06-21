@@ -159,10 +159,11 @@ pub struct NextCaseOfFinalizedSplitProcess<
 impl<
     ProcessBefore: FinalizedSplitProcess<
       SplitterProducesForThisCase = PassedForThisCase,
-      SplitterProducesForOtherCases = PassesToOtherCases,
+      SplitterProducesForOtherCases = Coproduct<SplitterProducesForThisCase, SplitterProducesForOtherCases>,
     >,
     PassedForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
-    PassesToOtherCases,
+    SplitterProducesForThisCase,
+    SplitterProducesForOtherCases,
     ThisCaseConsumes: ParamList,
     ThisCase: FinalizedProcess<ProcessBeforeProduces = ThisCaseConsumes>,
     SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
@@ -170,7 +171,7 @@ impl<
   for NextCaseOfFinalizedSplitProcess<
     ProcessBefore,
     PassedForThisCase,
-    PassesToOtherCases,
+    Coproduct<SplitterProducesForThisCase, SplitterProducesForOtherCases>,
     ThisCaseConsumes,
     ThisCase,
     SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
@@ -181,7 +182,8 @@ where
 {
   type ProcessBeforeSplitProduces = ProcessBefore::ProcessBeforeSplitProduces;
   type SplitterProducesForThisCase = PassedForThisCase;
-  type SplitterProducesForOtherCases = PassesToOtherCases;
+  type SplitterProducesForOtherCases =
+    Coproduct<Self::SplitterProducesForThisCase, Self::SplitterProducesForOtherCases>;
 
   async fn continue_run(
     &self,
