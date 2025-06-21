@@ -52,7 +52,6 @@ pub trait SplitProcess: Sized {
     Self::SplitterProducesForFirstCase: Concat<Self::ProcessBeforeSplitProduces>,
     <Self::SplitterProducesForFirstCase as Concat<Self::ProcessBeforeSplitProduces>>::Concatenated:
       TransformTo<ThisCase::ProcessBeforeProduces, SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices>,
-    // <Self as SplitProcess>::SplitterProducesForOtherCases: SplitterOutput,
   {
     NextCaseOfFinalizedSplitProcess {
       split_process_before: self,
@@ -60,21 +59,6 @@ pub trait SplitProcess: Sized {
       phantom_data: Default::default(),
     }
   }
-
-  // fn case<FinalConsumes: ParamList, FinalStep: Final<FinalConsumes>, ProcessBeforeProducesToLastStepConsumesIndices>(
-  //   self,
-  //   final_step: ,
-  // ) -> impl FinalizedSplitProcessCase<
-  //   ProcessBeforeSplitProduces = Self::ProcessBeforeSplitProduces,
-  //   SplitterProducesForThisCase = Self::SplitterProducesForFirstCase,
-  //   SplitterProducesForOtherCases = Self::SplitterProducesForOtherCases,
-  // > {
-  //   NextCaseOfFinalizedSplitProcess {
-  //     split_process_before: self,
-  //     this_case: final_step,
-  //     phantom_data: Default::default(),
-  //   }
-  // }
 
   fn enumerate_steps(&mut self, last_used_index: usize) -> usize;
 }

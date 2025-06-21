@@ -55,15 +55,15 @@ mod tests {
   // impl Linear<HCons<Param1, HNil>, HNil> for LinearB { async fn handle(&self, input: HCons<Param1, HNil>) -> anyhow::Result<(Option<Message>, HNil)> { todo!() } }
 
   struct SplitA;
-  impl Splitter<HNil, Coproduct<HNil, CNil>> for SplitA {
-    async fn handle(&self, input: HNil) -> anyhow::Result<Coproduct<HNil, CNil>> {
+  impl Splitter<HNil, Coproduct<HNil, Coproduct<HNil, CNil>>> for SplitA {
+    async fn handle(&self, input: HNil) -> anyhow::Result<Coproduct<HNil, Coproduct<HNil, CNil>>> {
       todo!()
     }
   }
 
   struct FinalA;
-  impl Final<HNil> for FinalA {
-    async fn handle(&self, input: HNil) -> anyhow::Result<Message> {
+  impl Final<HCons<Param1, HNil>> for FinalA {
+    async fn handle(&self, input: HCons<Param1, HNil>) -> anyhow::Result<Message> {
       todo!()
     }
   }
@@ -75,8 +75,9 @@ mod tests {
     let one_step = entry.then(LinearA);
     let two_steps = one_step.then(LinearB);
     let split_steps = two_steps.split(SplitA);
-    let with_final_step = split_steps.case(FinalA.into());
-    let my_process = with_final_step.build();
+    let with_one_final_step = split_steps.case(FinalA.into());
+    let with_two_final_steps = with_one_final_step.case(subprocess().end(FinalA));
+    let my_process = with_two_final_steps.build();
     let run_result = my_process.run(Value::Map(BTreeMap::new())).await;
     assert!(run_result.is_err());
   }

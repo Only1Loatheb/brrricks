@@ -29,7 +29,6 @@ pub trait FinalizedSplitProcessCase: Sized {
   fn enumerate_steps(&mut self, last_used_index: usize) -> usize;
 }
 
-// maybe the case_step_index overlaps with FinalizedProcess or maybe it allows for a skip
 pub struct NextCaseOfFinalizedSplitProcess<
   ProcessBefore: SplitProcess,
   PassedForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,

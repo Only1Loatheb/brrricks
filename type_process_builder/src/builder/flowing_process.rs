@@ -1,7 +1,6 @@
 use crate::builder::finalized_process::{FinalizedProcess, FlowingFinalizedProcess};
 use crate::builder::split_process::{SplitProcess, SplitProcessSplitter};
-use crate::builder::IntermediateRunOutcome::*;
-use crate::builder::{CurrentRunYieldedAt, IntermediateRunResult, PreviousRunYieldedAt, WILL_BE_RENUMBERED};
+use crate::builder::*;
 use crate::hlist_concat::Concat;
 use crate::hlist_transform_to::TransformTo;
 use crate::param_list::ParamList;
@@ -121,11 +120,44 @@ impl<Produces: ParamList, EntryStep: Entry<Value, Produces = Produces>> FlowingP
       _ => return Err(anyhow!("Not a map")),
     };
     let result: Produces = EntryStep::handle(self, map).await?;
-    Ok(Continue(result))
+    Ok(IntermediateRunOutcome::Continue(result))
   }
 
   async fn run(&self, _: Self::ProcessBeforeProduces) -> IntermediateRunResult<Self::Produces> {
     unsafe { unreachable_unchecked() }
+  }
+
+  fn enumerate_steps(&mut self, last_used_index: usize) -> usize {
+    last_used_index
+  }
+}
+
+pub struct Subprocess<ProcessBeforeProduces> {
+  pub phantom_data: PhantomData<ProcessBeforeProduces>,
+}
+
+pub fn subprocess<ProcessBeforeProduces: ParamList>(
+) -> impl FlowingProcess<ProcessBeforeProduces = ProcessBeforeProduces, Produces = ProcessBeforeProduces> {
+  Subprocess {
+    phantom_data: Default::default(),
+  }
+}
+
+impl<ProcessBeforeProduces: ParamList> FlowingProcess for Subprocess<ProcessBeforeProduces> {
+  type ProcessBeforeProduces = ProcessBeforeProduces;
+  type Produces = ProcessBeforeProduces;
+
+  async fn continue_run(
+    &self,
+    previous_run_produced: Value,
+    _previous_run_yielded_at: PreviousRunYieldedAt,
+  ) -> IntermediateRunResult<Self::Produces> {
+    let process_before_produces = ProcessBeforeProduces::deserialize(previous_run_produced)?;
+    self.run(process_before_produces).await
+  }
+
+  async fn run(&self, process_before_produces: Self::ProcessBeforeProduces) -> IntermediateRunResult<Self::Produces> {
+    Ok(IntermediateRunOutcome::Continue(process_before_produces))
   }
 
   fn enumerate_steps(&mut self, last_used_index: usize) -> usize {
@@ -182,9 +214,9 @@ where
         .continue_run(previous_run_produced, previous_run_yielded_at)
         .await?;
       match process_before_output {
-        Continue(process_before_produces) => self.run(process_before_produces).await,
-        Yield(a, b, c) => Ok(Yield(a, b, c)),
-        Finish(a) => Ok(Finish(a)),
+        IntermediateRunOutcome::Continue(process_before_produces) => self.run(process_before_produces).await,
+        IntermediateRunOutcome::Yield(a, b, c) => Ok(IntermediateRunOutcome::Yield(a, b, c)),
+        IntermediateRunOutcome::Finish(a) => Ok(IntermediateRunOutcome::Finish(a)),
       }
     } else {
       // fixme deserialize only values required only up to the next interaction
@@ -202,9 +234,15 @@ where
       // todo Make all the methods generic over Serializer
       {
         let value = last_step_produces.concat(process_before_produces).serialize()?;
-        Ok(Yield(msg, value, CurrentRunYieldedAt(self.step_index)))
+        Ok(IntermediateRunOutcome::Yield(
+          msg,
+          value,
+          CurrentRunYieldedAt(self.step_index),
+        ))
       }
-      (None, last_step_produces) => Ok(Continue(last_step_produces.concat(process_before_produces))),
+      (None, last_step_produces) => Ok(IntermediateRunOutcome::Continue(
+        last_step_produces.concat(process_before_produces),
+      )),
     }
   }
 
