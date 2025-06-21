@@ -1,6 +1,6 @@
 use crate::builder::{
   FinalizedProcess, FinalizedSplitProcessCase, FlowingProcess, IntermediateRunOutcome, IntermediateSplitOutcome,
-  IntermediateSplitResult, NextCaseOfFinalizedSplitProcess, ParamList, PreviousRunYieldedAt, SplitterOutput,
+  IntermediateSplitResult, NextCaseOfFinalizedSplitProcess, ParamList, PreviousRunYieldedAt,
 };
 use crate::hlist_concat::Concat;
 use crate::hlist_transform_to::TransformTo;
@@ -20,7 +20,7 @@ pub trait SplitProcess: Sized {
     previous_run_produced: Value,
     previous_run_yielded_at: PreviousRunYieldedAt,
   ) -> impl Future<
-    Output = IntermediateSplitResult<
+    Output=IntermediateSplitResult<
       Self::ProcessBeforeSplitProduces,
       Coproduct<Self::SplitterProducesForFirstCase, Self::SplitterProducesForOtherCases>,
     >,
@@ -30,26 +30,24 @@ pub trait SplitProcess: Sized {
     &self,
     process_before_split_produces: Self::ProcessBeforeSplitProduces,
   ) -> impl Future<
-    Output = IntermediateSplitResult<
+    Output=IntermediateSplitResult<
       Self::ProcessBeforeSplitProduces,
       Coproduct<Self::SplitterProducesForFirstCase, Self::SplitterProducesForOtherCases>,
     >,
   >;
 
   fn case<
-    PassedForThisCase: ParamList + Concat<<Self as SplitProcess>::ProcessBeforeSplitProduces>,
-    PassesToOtherCases: SplitterOutput,
     ThisCase: FinalizedProcess<
-      ProcessBeforeProduces = <PassedForThisCase as Concat<Self::ProcessBeforeSplitProduces>>::Concatenated,
+      ProcessBeforeProduces=<Self::SplitterProducesForFirstCase as Concat<Self::ProcessBeforeSplitProduces>>::Concatenated,
     >,
     SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
   >(
     self,
     this_case: ThisCase,
   ) -> impl FinalizedSplitProcessCase<
-    ProcessBeforeSplitProduces = Self::ProcessBeforeSplitProduces,
-    SplitterProducesForThisCase = PassedForThisCase,
-    SplitterProducesForOtherCases = PassesToOtherCases,
+    ProcessBeforeSplitProduces=Self::ProcessBeforeSplitProduces,
+    SplitterProducesForThisCase=Self::SplitterProducesForFirstCase,
+    SplitterProducesForOtherCases=Self::SplitterProducesForOtherCases,
   > {
     NextCaseOfFinalizedSplitProcess {
       split_process_before: self,
@@ -83,23 +81,23 @@ pub struct SplitProcessSplitter<
 }
 
 impl<
-    ProcessBefore: FlowingProcess,
-    SplitterStepConsumes: ParamList,
-    SplitterProducesForFirstCase: ParamList,
-    SplitterProducesForOtherCases,
-    SplitterStep: Splitter<SplitterStepConsumes, Coproduct<SplitterProducesForFirstCase, SplitterProducesForOtherCases>>,
-    ProcessBeforeProducesToSplitterStepConsumesIndices,
-    SplitProducesForThisCaseConcatProcessBeforeProducesToFirstCaseConsumesIndices,
-  > SplitProcess
-  for SplitProcessSplitter<
-    ProcessBefore,
-    SplitterStepConsumes,
-    SplitterProducesForFirstCase,
-    SplitterProducesForOtherCases,
-    SplitterStep,
-    ProcessBeforeProducesToSplitterStepConsumesIndices,
-    SplitProducesForThisCaseConcatProcessBeforeProducesToFirstCaseConsumesIndices,
-  >
+  ProcessBefore: FlowingProcess,
+  SplitterStepConsumes: ParamList,
+  SplitterProducesForFirstCase: ParamList,
+  SplitterProducesForOtherCases,
+  SplitterStep: Splitter<SplitterStepConsumes, Coproduct<SplitterProducesForFirstCase, SplitterProducesForOtherCases>>,
+  ProcessBeforeProducesToSplitterStepConsumesIndices,
+  SplitProducesForThisCaseConcatProcessBeforeProducesToFirstCaseConsumesIndices,
+> SplitProcess
+for SplitProcessSplitter<
+  ProcessBefore,
+  SplitterStepConsumes,
+  SplitterProducesForFirstCase,
+  SplitterProducesForOtherCases,
+  SplitterStep,
+  ProcessBeforeProducesToSplitterStepConsumesIndices,
+  SplitProducesForThisCaseConcatProcessBeforeProducesToFirstCaseConsumesIndices,
+>
 where
   ProcessBefore::Produces: TransformTo<SplitterStepConsumes, ProcessBeforeProducesToSplitterStepConsumesIndices>,
 {
