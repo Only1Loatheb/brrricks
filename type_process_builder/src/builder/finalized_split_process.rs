@@ -2,6 +2,7 @@ use crate::builder::finalized_process::FinalizedProcess;
 use crate::builder::split_process::SplitProcess;
 use crate::builder::*;
 use crate::hlist_concat::Concat;
+use crate::hlist_transform_to::TransformTo;
 use crate::param_list::ParamList;
 use frunk_core::coproduct::Coproduct;
 use serde_value::Value;
@@ -33,9 +34,8 @@ pub struct NextCaseOfFinalizedSplitProcess<
   ProcessBefore: SplitProcess,
   PassedForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
   PassesToOtherCases: SplitterOutput,
-  ThisCase: FinalizedProcess<
-    ProcessBeforeProduces = <PassedForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
-  >,
+  ThisCaseConsumes: ParamList,
+  ThisCase: FinalizedProcess<ProcessBeforeProduces = ThisCaseConsumes>,
   SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
 > {
   pub split_process_before: ProcessBefore,
@@ -51,18 +51,21 @@ impl<
     ProcessBefore: SplitProcess<SplitterProducesForFirstCase = PassedForThisCase, SplitterProducesForOtherCases = PassesToOtherCases>,
     PassedForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
     PassesToOtherCases: SplitterOutput,
-    ThisCase: FinalizedProcess<
-      ProcessBeforeProduces = <PassedForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
-    >,
+    ThisCaseConsumes: ParamList,
+    ThisCase: FinalizedProcess<ProcessBeforeProduces = ThisCaseConsumes>,
     SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
   > FinalizedSplitProcessCase
   for NextCaseOfFinalizedSplitProcess<
     ProcessBefore,
     PassedForThisCase,
     PassesToOtherCases,
+    ThisCaseConsumes,
     ThisCase,
     SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
   >
+where
+  <PassedForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated:
+    TransformTo<ThisCase::ProcessBeforeProduces, SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices>,
 {
   type ProcessBeforeSplitProduces = ProcessBefore::ProcessBeforeSplitProduces;
   type SplitterProducesForThisCase = PassedForThisCase;
@@ -94,7 +97,8 @@ impl<
   ) -> IntermediateSplitResult<Self::ProcessBeforeSplitProduces, Self::SplitterProducesForOtherCases> {
     match this_case_or_other_cases_input {
       Coproduct::Inl(this_case_input) => {
-        let next_case_consumes: ThisCase::ProcessBeforeProduces = this_case_input.concat(process_before_split_produces);
+        let next_case_consumes: ThisCase::ProcessBeforeProduces =
+          this_case_input.concat(process_before_split_produces).transform();
         match self.this_case.run(next_case_consumes).await? {
           RunOutcome::Yield(a, b, c) => Ok(IntermediateSplitOutcome::Yield(a, b, c)),
           RunOutcome::Finish(a) => Ok(IntermediateSplitOutcome::Finish(a)),

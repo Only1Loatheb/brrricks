@@ -37,26 +37,29 @@ pub trait SplitProcess: Sized {
   >;
 
   fn case<
-      SplitterProducesForNextCase: ParamList + Concat<Self::ProcessBeforeSplitProduces>,
-  SplitterProducesForOtherCases: SplitterOutput,
-    ThisCase: FinalizedProcess<
-      ProcessBeforeProduces=<Self::SplitterProducesForFirstCase as Concat<Self::ProcessBeforeSplitProduces>>::Concatenated,
-    >,
-  SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
+    SplitterProducesForNextCase: ParamList + Concat<Self::ProcessBeforeSplitProduces>,
+    SplitterProducesForOtherCases: SplitterOutput,
+    ThisCaseConsumes: ParamList,
+    ThisCase: FinalizedProcess<ProcessBeforeProduces = ThisCaseConsumes>,
+    SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
   >(
     self,
     this_case: ThisCase,
   ) -> impl FinalizedSplitProcessCase<
-    ProcessBeforeSplitProduces=Self::ProcessBeforeSplitProduces,
-    SplitterProducesForThisCase=SplitterProducesForNextCase,
-    SplitterProducesForOtherCases=SplitterProducesForOtherCases,
+    ProcessBeforeSplitProduces = Self::ProcessBeforeSplitProduces,
+    SplitterProducesForThisCase = SplitterProducesForNextCase,
+    SplitterProducesForOtherCases = SplitterProducesForOtherCases,
   >
-   where Self::SplitterProducesForFirstCase: Concat<Self::ProcessBeforeSplitProduces>,
+  where
+    Self::SplitterProducesForFirstCase: Concat<Self::ProcessBeforeSplitProduces>,
+    <Self::SplitterProducesForFirstCase as Concat<Self::ProcessBeforeSplitProduces>>::Concatenated:
+      TransformTo<ThisCase::ProcessBeforeProduces, SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices>,
   {
     NextCaseOfFinalizedSplitProcess::<
       Self,
       SplitterProducesForNextCase,
       SplitterProducesForOtherCases,
+      ThisCaseConsumes,
       ThisCase,
       SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
     > {
