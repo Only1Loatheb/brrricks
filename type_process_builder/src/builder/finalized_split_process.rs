@@ -27,7 +27,6 @@ pub trait FinalizedSplitProcess: Sized {
   ) -> impl Future<Output = IntermediateSplitResult<Self::ProcessBeforeSplitProduces, Self::SplitterProducesForOtherCases>>;
 
   fn case<
-    ProcessBefore: FinalizedSplitProcess<SplitterProducesForOtherCases = Coproduct<PassedForThisCase, PassesToOtherCases>>,
     PassedForThisCase: ParamList + Concat<Self::ProcessBeforeSplitProduces>,
     PassesToOtherCases,
     ThisCaseConsumes: ParamList,
@@ -38,8 +37,8 @@ pub trait FinalizedSplitProcess: Sized {
     this_case: ThisCase,
   ) -> impl FinalizedSplitProcess<
     ProcessBeforeSplitProduces = Self::ProcessBeforeSplitProduces,
-    SplitterProducesForThisCase = PassedForThisCase,
-    SplitterProducesForOtherCases = PassesToOtherCases,
+    SplitterProducesForThisCase = Self::SplitterProducesForThisCase,
+    SplitterProducesForOtherCases = Self::SplitterProducesForOtherCases,
   >
   where
     Self::SplitterProducesForThisCase: Concat<Self::ProcessBeforeSplitProduces>,
