@@ -69,20 +69,6 @@ impl<
   }
 }
 
-pub fn process<
-  ProcessBeforeProduces: ParamList + TransformTo<FinalConsumes, ProcessBeforeProducesToFinalConsumesIndices>,
-  FinalConsumes: ParamList,
-  FinalStep: Final<FinalConsumes>,
-  ProcessBeforeProducesToFinalConsumesIndices,
->(
-  final_step: FinalStep,
-) -> FinalStepProcess<ProcessBeforeProduces, FinalConsumes, FinalStep, ProcessBeforeProducesToFinalConsumesIndices> {
-  FinalStepProcess {
-    final_step,
-    phantom_data: Default::default(),
-  }
-}
-
 pub struct FlowingFinalizedProcess<
   ProcessBefore: FlowingProcess,
   FinalConsumes: ParamList,
