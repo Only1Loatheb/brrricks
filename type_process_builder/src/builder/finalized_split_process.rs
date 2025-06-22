@@ -207,7 +207,7 @@ where
             this_case_input.concat(process_before_split_produced).transform();
           self.this_case.run(this_case_consumes).await
         }
-        Coproduct::Inr(cNil) => match cNil {},
+        Coproduct::Inr(c_nil) => match c_nil {},
       },
       IntermediateSplitOutcome::Yield(a, b, c) => Ok(RunOutcome::Yield(a, b, c)),
       IntermediateSplitOutcome::Finish(a) => Ok(RunOutcome::Finish(a)),
