@@ -44,9 +44,9 @@ pub trait SplitProcess: Sized {
     self,
     this_case: ThisCase,
   ) -> impl FinalizedSplitProcess<
+    Self::SplitterProducesForOtherCases,
     ProcessBeforeSplitProduces = Self::ProcessBeforeSplitProduces,
     SplitterProducesForThisCase = Self::SplitterProducesForFirstCase,
-    SplitterProducesForOtherCases = Self::SplitterProducesForOtherCases,
   >
   where
     Self::SplitterProducesForFirstCase: Concat<Self::ProcessBeforeSplitProduces>,
@@ -145,7 +145,7 @@ where
     let splitter_step_consumes: SplitterStepConsumes = process_before_split_produces.clone().transform();
     Ok(IntermediateSplitOutcome::Continue {
       process_before_split_produced: process_before_split_produces,
-      this_case_produced: self.splitter.handle(splitter_step_consumes).await?,
+      passes_to_other_ceses: self.splitter.handle(splitter_step_consumes).await?,
     })
   }
 
