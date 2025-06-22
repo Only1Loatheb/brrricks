@@ -11,7 +11,6 @@ pub use crate::step::Message;
 pub use finalized_process::*;
 pub use finalized_split_process::*;
 pub use flowing_process::*;
-pub use flowing_split_process::*;
 pub use runnable_process::*;
 use serde_value::Value;
 pub use split_process::*;

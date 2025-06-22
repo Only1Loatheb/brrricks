@@ -68,7 +68,15 @@ impl<
     PassesToOtherCases,
     ProcessBeforeSplitProduces = ProcessBefore::ProcessBeforeSplitProduces,
     SplitterProducesForThisCase = PassesToNextCase,
-  > {
+  >
+  where
+    <PassedForThisCase as Concat<
+      <ProcessBefore as SplitProcess<Coproduct<PassesToNextCase, PassesToOtherCases>>>::ProcessBeforeSplitProduces,
+    >>::Concatenated: TransformTo<
+      <ThisCase as FinalizedProcess>::ProcessBeforeProduces,
+      SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
+    >,
+  {
     NextCaseOfFinalizedSplitProcess {
       split_process_before: self,
       this_case,
