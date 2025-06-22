@@ -77,8 +77,11 @@ impl<
     ProcessBeforeProducesToSplitterStepConsumesIndices,
     SplitProducesForThisCaseConcatProcessBeforeProducesToFirstCaseConsumesIndices,
   >
+where
+  SplitterProducesForFirstCase: Concat<ProcessBefore::ProcessBeforeProduces>,
+  ProcessBefore::Produces: TransformTo<SplitterStepConsumes, ProcessBeforeProducesToSplitterStepConsumesIndices>,
 {
-  fn case<ThisCase: FinalizedProcess, SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices>(
+  pub fn case<ThisCase: FinalizedProcess, SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices>(
     self,
     this_case: ThisCase,
   ) -> FirstCaseOfFinalizedSplitProcess<
@@ -89,7 +92,6 @@ impl<
     SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
   >
   where
-    SplitterProducesForFirstCase: Concat<ProcessBefore::ProcessBeforeProduces>,
     <SplitterProducesForFirstCase as Concat<ProcessBefore::ProcessBeforeProduces>>::Concatenated:
       TransformTo<ThisCase::ProcessBeforeProduces, SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices>,
   {

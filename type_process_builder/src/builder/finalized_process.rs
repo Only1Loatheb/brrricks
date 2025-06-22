@@ -69,22 +69,17 @@ impl<
   }
 }
 
-impl<
-    ProcessBeforeProduces: ParamList + TransformTo<FinalConsumes, ProcessBeforeProducesToFinalConsumesIndices>,
-    FinalConsumes: ParamList,
-    FinalStep: Final<FinalConsumes>,
-    ProcessBeforeProducesToFinalConsumesIndices,
-  > From<FinalStep>
-  for FinalStepProcess<ProcessBeforeProduces, FinalConsumes, FinalStep, ProcessBeforeProducesToFinalConsumesIndices>
-{
-  fn from(
-    final_step: FinalStep,
-  ) -> FinalStepProcess<ProcessBeforeProduces, FinalConsumes, FinalStep, ProcessBeforeProducesToFinalConsumesIndices>
-  {
-    FinalStepProcess {
-      final_step,
-      phantom_data: Default::default(),
-    }
+pub fn process<
+  ProcessBeforeProduces: ParamList + TransformTo<FinalConsumes, ProcessBeforeProducesToFinalConsumesIndices>,
+  FinalConsumes: ParamList,
+  FinalStep: Final<FinalConsumes>,
+  ProcessBeforeProducesToFinalConsumesIndices,
+>(
+  final_step: FinalStep,
+) -> FinalStepProcess<ProcessBeforeProduces, FinalConsumes, FinalStep, ProcessBeforeProducesToFinalConsumesIndices> {
+  FinalStepProcess {
+    final_step,
+    phantom_data: Default::default(),
   }
 }
 
