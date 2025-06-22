@@ -52,6 +52,7 @@ impl<
     ProcessBefore: SplitProcess<Coproduct<PassesToNextCase, PassesToOtherCases>, SplitterProducesForFirstCase = PassedForThisCase>,
     ThisCase: FinalizedProcess,
     SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
+    SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndicesA,
   >
   FirstCaseOfFinalizedSplitProcess<
     PassedForThisCase,
@@ -72,8 +73,16 @@ impl<
   where
     <PassedForThisCase as Concat<<ProcessBefore>::ProcessBeforeSplitProduces>>::Concatenated:
       TransformTo<ThisCase::ProcessBeforeProduces, SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices>,
+    <PassesToNextCase as Concat<<ProcessBefore>::ProcessBeforeSplitProduces>>::Concatenated:
+      TransformTo<NextCase::ProcessBeforeProduces, SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndicesA>,
   {
-    NextCaseOfFinalizedSplitProcess {
+    NextCaseOfFinalizedSplitProcess::<
+      PassesToNextCase,
+      PassesToOtherCases,
+      Self,
+      NextCase,
+      SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndicesA,
+    > {
       split_process_before: self,
       this_case,
       phantom_data: Default::default(),
