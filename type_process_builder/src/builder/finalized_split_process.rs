@@ -67,22 +67,18 @@ where
   fn case<NextCase: FinalizedProcess, SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndicesA>(
     self,
     this_case: NextCase,
-  ) -> impl FinalizedSplitProcess<
+  ) -> NextCaseOfFinalizedSplitProcess<
+    PassesToNextCase,
     PassesToOtherCases,
-    ProcessBeforeSplitProduces = ProcessBefore::ProcessBeforeSplitProduces,
-    SplitterProducesForThisCase = PassesToNextCase,
+    Self,
+    NextCase,
+    SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndicesA,
   >
   where
     <PassesToNextCase as Concat<<ProcessBefore>::ProcessBeforeSplitProduces>>::Concatenated:
       TransformTo<NextCase::ProcessBeforeProduces, SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndicesA>,
   {
-    NextCaseOfFinalizedSplitProcess::<
-      PassesToNextCase,
-      PassesToOtherCases,
-      Self,
-      NextCase,
-      SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndicesA,
-    > {
+    NextCaseOfFinalizedSplitProcess {
       split_process_before: self,
       this_case,
       phantom_data: Default::default(),
