@@ -79,8 +79,9 @@ mod tests {
     let one_step = entry.then(LinearA);
     let two_steps = one_step.then(LinearB);
     let split_steps = two_steps.split(SplitA);
-    let with_one_final_step = split_steps.case(subprocess().end(FinalA));
-    let with_one_final_step_w = with_one_final_step.case(subprocess().end(FinalA));
+    // todo get rid of that turbo fish nonsense with FnOnce or dark Magic
+    let with_one_final_step = split_steps.case(subprocess::<HCons<Param1, HNil>>().end(FinalA));
+    let with_one_final_step_w = with_one_final_step.case(subprocess::<HCons<Param1, HNil>>().end(FinalA));
     let with_one_final_step_e = with_one_final_step_w.build();
     // let with_two_final_steps = with_one_final_step.case(subprocess().end(FinalA));
     // let my_process = with_two_final_steps.build();
