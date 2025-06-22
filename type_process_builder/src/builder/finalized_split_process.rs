@@ -205,10 +205,7 @@ where
   ) -> RunResult {
     let this_case_consumes: ThisCase::ProcessBeforeProduces =
       this_case_input.concat(process_before_split_produces).transform();
-    match self.this_case.run(this_case_consumes).await? {
-      RunOutcome::Yield(a, b, c) => Ok(RunOutcome::Yield(a, b, c)),
-      RunOutcome::Finish(a) => Ok(RunOutcome::Finish(a)),
-    }
+    self.this_case.run(this_case_consumes).await
   }
 }
 
