@@ -88,7 +88,7 @@ pub trait FlowingProcess: Sized {
   fn end<FinalConsumes: ParamList, FinalStep: Final<FinalConsumes>, ProcessBeforeProducesToLastStepConsumesIndices>(
     self,
     step: FinalStep,
-  ) -> impl FinalizedProcess
+  ) -> impl FinalizedProcess<ProcessBeforeProduces = Self::Produces>
   where
     Self::Produces: TransformTo<FinalConsumes, ProcessBeforeProducesToLastStepConsumesIndices>,
   {
