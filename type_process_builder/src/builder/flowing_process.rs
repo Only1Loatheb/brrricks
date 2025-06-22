@@ -55,13 +55,11 @@ pub trait FlowingProcess: Sized {
   }
 
   fn split<
-    ProcessBefore: FlowingProcess,
     SplitterStepConsumes: ParamList,
     SplitterProducesForFirstCase: ParamList,
     SplitterProducesForOtherCases,
     SplitterStep: Splitter<SplitterStepConsumes, Coproduct<SplitterProducesForFirstCase, SplitterProducesForOtherCases>>,
     ProcessBeforeProducesToSplitterStepConsumesIndices,
-    SplitProducesForThisCaseConcatProcessBeforeProducesToFirstCaseConsumesIndices,
   >(
     self,
     step: SplitterStep,
@@ -80,7 +78,6 @@ pub trait FlowingProcess: Sized {
       SplitterProducesForOtherCases,
       SplitterStep,
       ProcessBeforeProducesToSplitterStepConsumesIndices,
-      SplitProducesForThisCaseConcatProcessBeforeProducesToFirstCaseConsumesIndices,
     > {
       process_before: self,
       splitter: step,

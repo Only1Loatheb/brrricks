@@ -292,3 +292,46 @@ where
     self.split_process_before.enumerate_steps(last_used_index)
   }
 }
+
+// impl<
+//     PassedForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
+//     PassesToNextCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
+//     PassesToOtherCases,
+//     ProcessBefore: // NextCaseOfFinalizedSplitProcess, SplitProcess<Coproduct<PassesToNextCase, PassesToOtherCases>,
+//     // SplitterProducesForFirstCase =
+// PassedForThisCase>,
+//     ThisCase: FinalizedProcess,
+//     SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
+//   >
+//   NextCaseOfFinalizedSplitProcess<
+//     PassedForThisCase,
+//     Coproduct<PassesToNextCase, PassesToOtherCases>,
+//     ProcessBefore,
+//     ThisCase,
+//     SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
+//   >
+// where
+//   <PassedForThisCase as Concat<<ProcessBefore>::ProcessBeforeSplitProduces>>::Concatenated:
+//     TransformTo<ThisCase::ProcessBeforeProduces, SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices>,
+// {
+//   pub fn case<NextCase: FinalizedProcess, SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndicesA>(
+//     self,
+//     this_case: NextCase,
+//   ) -> NextCaseOfFinalizedSplitProcess<
+//     PassesToNextCase,
+//     PassesToOtherCases,
+//     Self,
+//     NextCase,
+//     SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndicesA,
+//   >
+//   where
+//     <PassesToNextCase as Concat<<ProcessBefore>::ProcessBeforeSplitProduces>>::Concatenated:
+//       TransformTo<NextCase::ProcessBeforeProduces, SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndicesA>,
+//   {
+//     NextCaseOfFinalizedSplitProcess {
+//       split_process_before: self,
+//       this_case,
+//       phantom_data: Default::default(),
+//     }
+//   }
+// }

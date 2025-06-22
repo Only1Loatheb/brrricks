@@ -67,7 +67,6 @@ pub struct SplitProcessSplitter<
   SplitterProducesForOtherCases,
   SplitterStep: Splitter<SplitterStepConsumes, Coproduct<SplitterProducesForFirstCase, SplitterProducesForOtherCases>>,
   ProcessBeforeProducesToSplitterStepConsumesIndices,
-  SplitProducesForThisCaseConcatProcessBeforeProducesToFirstCaseConsumesIndices,
 > {
   pub process_before: ProcessBefore,
   pub splitter: SplitterStep,
@@ -77,7 +76,6 @@ pub struct SplitProcessSplitter<
     SplitterProducesForFirstCase,
     SplitterProducesForOtherCases,
     ProcessBeforeProducesToSplitterStepConsumesIndices,
-    SplitProducesForThisCaseConcatProcessBeforeProducesToFirstCaseConsumesIndices,
   )>,
 }
 
@@ -88,7 +86,6 @@ impl<
     SplitterProducesForOtherCases,
     SplitterStep: Splitter<SplitterStepConsumes, Coproduct<SplitterProducesForFirstCase, SplitterProducesForOtherCases>>,
     ProcessBeforeProducesToSplitterStepConsumesIndices,
-    SplitProducesForThisCaseConcatProcessBeforeProducesToFirstCaseConsumesIndices,
   > SplitProcess<SplitterProducesForOtherCases>
   for SplitProcessSplitter<
     ProcessBefore,
@@ -97,7 +94,6 @@ impl<
     SplitterProducesForOtherCases,
     SplitterStep,
     ProcessBeforeProducesToSplitterStepConsumesIndices,
-    SplitProducesForThisCaseConcatProcessBeforeProducesToFirstCaseConsumesIndices,
   >
 where
   ProcessBefore::Produces: TransformTo<SplitterStepConsumes, ProcessBeforeProducesToSplitterStepConsumesIndices>,

@@ -75,17 +75,15 @@ mod tests {
 
   #[tokio::test]
   async fn test_hcons() {
-    let entry = EntryA;
-    let one_step = entry.then(LinearA);
-    let two_steps = one_step.then(LinearB);
-    let split_steps = two_steps.split(SplitA);
-    // todo get rid of that turbo fish nonsense with FnOnce or dark Magic
-    let with_one_final_step = split_steps.case(subprocess::<HCons<Param1, HNil>>().end(FinalA));
-    let with_one_final_step_w = with_one_final_step.case(subprocess::<HCons<Param1, HNil>>().end(FinalA));
-    let with_one_final_step_e = with_one_final_step_w.build();
-    // let with_two_final_steps = with_one_final_step.case(subprocess().end(FinalA));
-    // let my_process = with_two_final_steps.build();
-    let run_result = with_one_final_step_e.run(Value::Map(BTreeMap::new())).await;
+    let process = EntryA
+      .then(LinearA)
+      .then(LinearB)
+      .split(SplitA)
+      .case(subprocess::<HCons<Param1, HNil>>().end(FinalA))
+      .case(subprocess::<HCons<Param1, HNil>>().end(FinalA))
+      // .case(subprocess::<HCons<Param1, HNil>>().end(FinalA))
+      .build();
+    let run_result = process.run(Value::Map(BTreeMap::new())).await;
     assert!(run_result.is_err());
   }
 }
