@@ -35,17 +35,15 @@ pub trait SplitProcess<SplitterProducesForOtherCases>: Sized {
     >,
   >;
 
-  fn case<
-    ThisCaseConsumes: ParamList,
-    ThisCase: FinalizedProcess<ProcessBeforeProduces = ThisCaseConsumes>,
-    SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
-  >(
+  fn case<ThisCase: FinalizedProcess, SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices>(
     self,
     this_case: ThisCase,
-  ) -> impl FinalizedSplitProcess<
+  ) -> FirstCaseOfFinalizedSplitProcess<
+    Self::SplitterProducesForFirstCase,
     SplitterProducesForOtherCases,
-    ProcessBeforeSplitProduces = Self::ProcessBeforeSplitProduces,
-    SplitterProducesForThisCase = Self::SplitterProducesForFirstCase,
+    Self,
+    ThisCase,
+    SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
   >
   where
     Self::SplitterProducesForFirstCase: Concat<Self::ProcessBeforeSplitProduces>,

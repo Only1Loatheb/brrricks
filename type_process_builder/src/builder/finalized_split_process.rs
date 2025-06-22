@@ -46,18 +46,25 @@ pub struct FirstCaseOfFinalizedSplitProcess<
 }
 
 impl<
-    ProcessBeforeSplitProduces: ParamList,
-    PassedForThisCase: ParamList + Concat<ProcessBeforeSplitProduces>,
-    PassesToNextCase: ParamList + Concat<ProcessBeforeSplitProduces>,
+    PassedForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
+    PassesToNextCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
     PassesToOtherCases,
+    ProcessBefore: SplitProcess<Coproduct<PassesToNextCase, PassesToOtherCases>, SplitterProducesForFirstCase = PassedForThisCase>,
+    ThisCase: FinalizedProcess,
+    SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
   >
-  FinalizedSplitProcess<
+  FirstCaseOfFinalizedSplitProcess<
+    PassedForThisCase,
     Coproduct<PassesToNextCase, PassesToOtherCases>,
-    ProcessBeforeSplitProduces = ProcessBeforeSplitProduces,
-    SplitterProducesForThisCase = PassedForThisCase,
+    ProcessBefore,
+    ThisCase,
+    SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
   >
+where
+  <PassedForThisCase as Concat<<ProcessBefore>::ProcessBeforeSplitProduces>>::Concatenated:
+    TransformTo<ThisCase::ProcessBeforeProduces, SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices>,
 {
-  fn case<NextCase: FinalizedProcess, SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices>(
+  pub fn case<NextCase: FinalizedProcess, SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndicesA>(
     self,
     this_case: NextCase,
   ) -> NextCaseOfFinalizedSplitProcess<
@@ -65,11 +72,11 @@ impl<
     PassesToOtherCases,
     Self,
     NextCase,
-    SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
+    SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndicesA,
   >
   where
-    <PassesToNextCase as Concat<ProcessBeforeSplitProduces>>::Concatenated:
-      TransformTo<NextCase::ProcessBeforeProduces, SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices>,
+    <PassesToNextCase as Concat<<ProcessBefore>::ProcessBeforeSplitProduces>>::Concatenated:
+      TransformTo<NextCase::ProcessBeforeProduces, SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndicesA>,
   {
     NextCaseOfFinalizedSplitProcess {
       split_process_before: self,
@@ -163,7 +170,7 @@ pub struct NextCaseOfFinalizedSplitProcess<
 
 impl<
     PassedForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
-    ProcessBefore: FinalizedSplitProcess<Coproduct<PassedForThisCase, CNil>, SplitterProducesForThisCase = PassedForThisCase>,
+    ProcessBefore: FinalizedSplitProcess<Coproduct<PassedForThisCase, CNil>>,
     ThisCase: FinalizedProcess,
     SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
   > FinalizedProcess
@@ -175,6 +182,7 @@ impl<
     SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
   >
 where
+  ProcessBefore::SplitterProducesForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
   <PassedForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated:
     TransformTo<ThisCase::ProcessBeforeProduces, SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices>,
 {
