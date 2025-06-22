@@ -95,10 +95,7 @@ impl<
     PassedForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
     PassesToNextCase,
     PassesToOtherCases,
-    ProcessBefore: SplitProcess<
-      SplitterProducesForFirstCase = PassedForThisCase,
-      SplitterProducesForOtherCases = Coproduct<PassesToNextCase, PassesToOtherCases>,
-    >,
+    ProcessBefore: SplitProcess<Coproduct<PassesToNextCase, PassesToOtherCases>, SplitterProducesForFirstCase = PassedForThisCase>,
     ThisCase: FinalizedProcess,
     SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
   > FinalizedSplitProcess<PassesToNextCase, PassesToOtherCases>
