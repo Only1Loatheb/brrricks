@@ -1,7 +1,8 @@
 use crate::builder::{
-  FinalizedSplitProcess, FlowingProcess, IntermediateRunOutcome,
+  FinalizedProcess, FinalizedSplitProcess, FirstCaseOfFinalizedSplitProcess, FlowingProcess, IntermediateRunOutcome,
   IntermediateSplitOutcome, IntermediateSplitResult, ParamList, PreviousRunYieldedAt,
 };
+use crate::hlist_concat::Concat;
 use crate::hlist_transform_to::TransformTo;
 use crate::step::step::Splitter;
 use frunk_core::coproduct::Coproduct;
@@ -33,32 +34,33 @@ pub trait SplitProcess<SplitterProducesForOtherCases>: Sized {
       Coproduct<Self::SplitterProducesForFirstCase, SplitterProducesForOtherCases>,
     >,
   >;
+
+  fn case<
+    ThisCaseConsumes: ParamList,
+    ThisCase: FinalizedProcess<ProcessBeforeProduces = ThisCaseConsumes>,
+    SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
+  >(
+    self,
+    this_case: ThisCase,
+  ) -> impl FinalizedSplitProcess<
+    SplitterProducesForOtherCases,
+    ProcessBeforeSplitProduces = Self::ProcessBeforeSplitProduces,
+    SplitterProducesForThisCase = Self::SplitterProducesForFirstCase,
+  >
+  where
+    Self::SplitterProducesForFirstCase: Concat<Self::ProcessBeforeSplitProduces>,
+    <Self::SplitterProducesForFirstCase as Concat<Self::ProcessBeforeSplitProduces>>::Concatenated:
+      TransformTo<ThisCase::ProcessBeforeProduces, SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices>,
+  {
+    FirstCaseOfFinalizedSplitProcess {
+      split_process_before: self,
+      this_case,
+      phantom_data: Default::default(),
+    }
+  }
+
   fn enumerate_steps(&mut self, last_used_index: usize) -> usize;
 }
-
-// fn case<
-//   ThisCaseConsumes: ParamList,
-//   ThisCase: FinalizedProcess<ProcessBeforeProduces = ThisCaseConsumes>,
-//   SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
-// >(
-//   self,
-//   this_case: ThisCase,
-// ) -> impl FinalizedSplitProcess<
-//   SplitterProducesForOtherCases,
-//   ProcessBeforeSplitProduces = crate::builder::IntellijRustImportsMock::SplitProcess::ProcessBeforeSplitProduces,
-//   SplitterProducesForThisCase = crate::builder::IntellijRustImportsMock::SplitProcess::SplitterProducesForFirstCase,
-// >
-// where
-//   crate::builder::IntellijRustImportsMock::SplitProcess::SplitterProducesForFirstCase: Concat<crate::builder::IntellijRustImportsMock::SplitProcess::ProcessBeforeSplitProduces>,
-//   <crate::builder::IntellijRustImportsMock::SplitProcess::SplitterProducesForFirstCase as Concat<crate::builder::IntellijRustImportsMock::SplitProcess::ProcessBeforeSplitProduces>>::Concatenated:
-//     TransformTo<ThisCase::ProcessBeforeProduces, SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices>,
-// {
-//   FirstCaseOfFinalizedSplitProcess {
-//     split_process_before: self,
-//     this_case,
-//     phantom_data: Default::default(),
-//   }
-// }
 
 pub struct SplitProcessSplitter<
   ProcessBefore: FlowingProcess,
