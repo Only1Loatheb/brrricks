@@ -150,8 +150,7 @@ pub struct NextCaseOfFinalizedSplitProcess<
   PassedForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
   PassesToOtherCases,
   ProcessBefore: FinalizedSplitProcess<PassesToOtherCases>,
-  ThisCaseConsumes: ParamList,
-  ThisCase: FinalizedProcess<ProcessBeforeProduces = ThisCaseConsumes>,
+  ThisCase: FinalizedProcess,
   SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
 > {
   pub split_process_before: ProcessBefore,
@@ -163,19 +162,16 @@ pub struct NextCaseOfFinalizedSplitProcess<
   )>,
 }
 
-// last case
 impl<
     PassedForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
-    ProcessBefore: FinalizedSplitProcess<Coproduct<PassedForThisCase, CNil>>,
-    ThisCaseConsumes: ParamList,
-    ThisCase: FinalizedProcess<ProcessBeforeProduces = ThisCaseConsumes>,
+    ProcessBefore: FinalizedSplitProcess<CNil, SplitterProducesForThisCase = PassedForThisCase>,
+    ThisCase: FinalizedProcess,
     SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
   >
   NextCaseOfFinalizedSplitProcess<
     PassedForThisCase,
-    Coproduct<PassedForThisCase, CNil>,
+    CNil,
     ProcessBefore,
-    ThisCaseConsumes,
     ThisCase,
     SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
   >
@@ -183,6 +179,40 @@ where
   <PassedForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated:
     TransformTo<ThisCase::ProcessBeforeProduces, SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices>,
 {
+  async fn run(
+    &self,
+    process_before_split_produces: ProcessBefore::ProcessBeforeSplitProduces,
+    this_case_input: ProcessBefore::SplitterProducesForThisCase,
+  ) -> RunResult {
+    let this_case_consumes: ThisCase::ProcessBeforeProduces =
+      this_case_input.concat(process_before_split_produces).transform();
+    match self.this_case.run(this_case_consumes).await? {
+      RunOutcome::Yield(a, b, c) => Ok(RunOutcome::Yield(a, b, c)),
+      RunOutcome::Finish(a) => Ok(RunOutcome::Finish(a)),
+    }
+  }
+}
+
+impl<
+    PassedForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
+    ProcessBefore: FinalizedSplitProcess<CNil>,
+    ThisCaseConsumes: ParamList,
+    ThisCase: FinalizedProcess<ProcessBeforeProduces = ThisCaseConsumes>,
+    SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
+  > FinalizedProcess
+  for NextCaseOfFinalizedSplitProcess<
+    PassedForThisCase,
+    CNil,
+    ProcessBefore,
+    ThisCase,
+    SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
+  >
+where
+  <PassedForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated:
+    TransformTo<ThisCase::ProcessBeforeProduces, SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices>,
+{
+  type ProcessBeforeProduces = ProcessBefore::ProcessBeforeSplitProduces;
+
   async fn continue_run(
     &self,
     previous_run_produced: Value,
@@ -195,96 +225,14 @@ where
     match process_before_output {
       IntermediateSplitOutcome::Continue {
         process_before_split_produced,
-        passes_to_other_ceses,
-      } => match passes_to_other_ceses {
-        Coproduct::Inl(pass_to_last_case) => self.run(process_before_split_produced, pass_to_last_case).await,
-        Coproduct::Inr(cNil) => match cNil {},
-      },
-      IntermediateSplitOutcome::Finish(a) => Ok(RunOutcome::Finish(a)),
+        passes_to_other_ceses: passes_to_other_cases,
+      } => match passes_to_other_cases {},
       IntermediateSplitOutcome::Yield(a, b, c) => Ok(RunOutcome::Yield(a, b, c)),
+      IntermediateSplitOutcome::Finish(a) => Ok(RunOutcome::Finish(a)),
     }
-  }
-
-  async fn run(
-    &self,
-    process_before_split_produces: ProcessBefore::ProcessBeforeSplitProduces,
-    pass_to_last_case: PassedForThisCase,
-  ) -> RunResult {
-    let this_case_consumes: ThisCase::ProcessBeforeProduces =
-      pass_to_last_case.concat(process_before_split_produces).transform();
-    self.this_case.run(this_case_consumes).await
   }
 
   fn enumerate_steps(&mut self, last_used_index: usize) -> usize {
     self.split_process_before.enumerate_steps(last_used_index)
   }
 }
-
-// // not last case
-// impl<
-//     PassesToOtherCases,
-//     PassedForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
-//     ProcessBefore: FinalizedSplitProcess<PassesToOtherCases>,
-//     ThisCaseConsumes: ParamList,
-//     ThisCase: FinalizedProcess<ProcessBeforeProduces = ThisCaseConsumes>,
-//     SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
-//   > FinalizedSplitProcess<PassesToOtherCases>
-//   for NextCaseOfFinalizedSplitProcess<
-//     PassesToOtherCases,
-//     PassedForThisCase,
-//     ProcessBefore,
-//     ThisCaseConsumes,
-//     ThisCase,
-//     SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
-//   >
-// where
-//   <PassedForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated:
-//     TransformTo<ThisCase::ProcessBeforeProduces, SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices>,
-// {
-//   type ProcessBeforeSplitProduces = ProcessBefore::ProcessBeforeSplitProduces;
-//   type SplitterProducesForThisCase = PassedForThisCase;
-//
-//   async fn continue_run(
-//     &self,
-//     previous_run_produced: Value,
-//     previous_run_yielded_at: PreviousRunYieldedAt,
-//   ) -> IntermediateSplitResult<Self::ProcessBeforeSplitProduces, PassesToOtherCases> {
-//     let process_before_output = self
-//       .split_process_before
-//       .continue_run(previous_run_produced, previous_run_yielded_at)
-//       .await?;
-//     match process_before_output {
-//       IntermediateSplitOutcome::Continue {
-//         process_before_split_produced,
-//         passes_to_other_ceses: passes_to_other_cases,
-//       } => self.run(process_before_split_produced, passes_to_other_cases).await,
-//       IntermediateSplitOutcome::Yield(a, b, c) => Ok(IntermediateSplitOutcome::Yield(a, b, c)),
-//       IntermediateSplitOutcome::Finish(a) => Ok(IntermediateSplitOutcome::Finish(a)),
-//     }
-//   }
-//
-//   async fn run(
-//     &self,
-//     process_before_split_produces: Self::ProcessBeforeSplitProduces,
-//     this_case_or_other_cases_input: Coproduct<Self::SplitterProducesForThisCase, PassesToOtherCases>,
-//   ) -> IntermediateSplitResult<Self::ProcessBeforeSplitProduces, PassesToOtherCases> {
-//     match this_case_or_other_cases_input {
-//       Coproduct::Inl(this_case_input) => {
-//         let this_case_consumes: ThisCase::ProcessBeforeProduces =
-//           this_case_input.concat(process_before_split_produces).transform();
-//         match self.this_case.run(this_case_consumes).await? {
-//           RunOutcome::Yield(a, b, c) => Ok(IntermediateSplitOutcome::Yield(a, b, c)),
-//           RunOutcome::Finish(a) => Ok(IntermediateSplitOutcome::Finish(a)),
-//         }
-//       }
-//       Coproduct::Inr(other_cases_input) => Ok(IntermediateSplitOutcome::Continue {
-//         process_before_split_produced: process_before_split_produces,
-//         passes_to_other_ceses: other_cases_input,
-//       }),
-//     }
-//   }
-//
-//   fn enumerate_steps(&mut self, last_used_index: usize) -> usize {
-//     self.split_process_before.enumerate_steps(last_used_index)
-//   }
-// }
