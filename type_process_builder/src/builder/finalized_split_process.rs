@@ -4,7 +4,7 @@ use crate::builder::*;
 use crate::hlist_concat::Concat;
 use crate::hlist_transform_to::TransformTo;
 use crate::param_list::ParamList;
-use frunk_core::coproduct::Coproduct;
+use frunk_core::coproduct::{CNil, Coproduct};
 use serde_value::Value;
 use std::future::Future;
 use std::marker::PhantomData;
@@ -163,16 +163,17 @@ pub struct NextCaseOfFinalizedSplitProcess<
   )>,
 }
 
+// last case
 impl<
-    PassesToOtherCases,
+    PassesToLastCase,
     PassedForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
-    ProcessBefore: FinalizedSplitProcess<PassesToOtherCases>,
+    ProcessBefore: FinalizedSplitProcess<Coproduct<PassesToLastCase, CNil>>,
     ThisCaseConsumes: ParamList,
     ThisCase: FinalizedProcess<ProcessBeforeProduces = ThisCaseConsumes>,
     SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
-  > FinalizedSplitProcess<PassesToOtherCases>
+  > FinalizedSplitProcess<Coproduct<PassesToLastCase, CNil>>
   for NextCaseOfFinalizedSplitProcess<
-    PassesToOtherCases,
+    Coproduct<PassesToLastCase, CNil>,
     PassedForThisCase,
     ProcessBefore,
     ThisCaseConsumes,
@@ -190,7 +191,7 @@ where
     &self,
     previous_run_produced: Value,
     previous_run_yielded_at: PreviousRunYieldedAt,
-  ) -> IntermediateSplitResult<Self::ProcessBeforeSplitProduces, PassesToOtherCases> {
+  ) -> RunResult {
     let process_before_output = self
       .split_process_before
       .continue_run(previous_run_produced, previous_run_yielded_at)
@@ -200,33 +201,90 @@ where
         process_before_split_produced,
         passes_to_other_ceses: passes_to_other_cases,
       } => self.run(process_before_split_produced, passes_to_other_cases).await,
-      IntermediateSplitOutcome::Yield(a, b, c) => Ok(IntermediateSplitOutcome::Yield(a, b, c)),
-      IntermediateSplitOutcome::Finish(a) => Ok(IntermediateSplitOutcome::Finish(a)),
+      IntermediateSplitOutcome::Yield(a, b, c) => Ok(RunOutcome::Yield(a, b, c)),
+      IntermediateSplitOutcome::Finish(a) => Ok(RunOutcome::Finish(a)),
     }
   }
 
   async fn run(
     &self,
     process_before_split_produces: Self::ProcessBeforeSplitProduces,
-    this_case_or_other_cases_input: Coproduct<Self::SplitterProducesForThisCase, PassesToOtherCases>,
-  ) -> IntermediateSplitResult<Self::ProcessBeforeSplitProduces, PassesToOtherCases> {
-    match this_case_or_other_cases_input {
-      Coproduct::Inl(this_case_input) => {
-        let this_case_consumes: ThisCase::ProcessBeforeProduces =
-          this_case_input.concat(process_before_split_produces).transform();
-        match self.this_case.run(this_case_consumes).await? {
-          RunOutcome::Yield(a, b, c) => Ok(IntermediateSplitOutcome::Yield(a, b, c)),
-          RunOutcome::Finish(a) => Ok(IntermediateSplitOutcome::Finish(a)),
-        }
-      }
-      Coproduct::Inr(other_cases_input) => Ok(IntermediateSplitOutcome::Continue {
-        process_before_split_produced: process_before_split_produces,
-        passes_to_other_ceses: other_cases_input,
-      }),
-    }
+     this_case_or_other_cases_input: Coproduct<Self::SplitterProducesForThisCase, Coproduct<PassesToLastCase, CNil>,
+  ) -> RunResult {
+    let this_case_consumes: ThisCase::ProcessBeforeProduces = this_case_input.concat(process_before_split_produces).transform();
+    self.this_case.run(this_case_consumes).await
   }
 
   fn enumerate_steps(&mut self, last_used_index: usize) -> usize {
     self.split_process_before.enumerate_steps(last_used_index)
   }
 }
+
+// // not last case
+// impl<
+//     PassesToOtherCases,
+//     PassedForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
+//     ProcessBefore: FinalizedSplitProcess<PassesToOtherCases>,
+//     ThisCaseConsumes: ParamList,
+//     ThisCase: FinalizedProcess<ProcessBeforeProduces = ThisCaseConsumes>,
+//     SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
+//   > FinalizedSplitProcess<PassesToOtherCases>
+//   for NextCaseOfFinalizedSplitProcess<
+//     PassesToOtherCases,
+//     PassedForThisCase,
+//     ProcessBefore,
+//     ThisCaseConsumes,
+//     ThisCase,
+//     SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
+//   >
+// where
+//   <PassedForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated:
+//     TransformTo<ThisCase::ProcessBeforeProduces, SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices>,
+// {
+//   type ProcessBeforeSplitProduces = ProcessBefore::ProcessBeforeSplitProduces;
+//   type SplitterProducesForThisCase = PassedForThisCase;
+// 
+//   async fn continue_run(
+//     &self,
+//     previous_run_produced: Value,
+//     previous_run_yielded_at: PreviousRunYieldedAt,
+//   ) -> IntermediateSplitResult<Self::ProcessBeforeSplitProduces, PassesToOtherCases> {
+//     let process_before_output = self
+//       .split_process_before
+//       .continue_run(previous_run_produced, previous_run_yielded_at)
+//       .await?;
+//     match process_before_output {
+//       IntermediateSplitOutcome::Continue {
+//         process_before_split_produced,
+//         passes_to_other_ceses: passes_to_other_cases,
+//       } => self.run(process_before_split_produced, passes_to_other_cases).await,
+//       IntermediateSplitOutcome::Yield(a, b, c) => Ok(IntermediateSplitOutcome::Yield(a, b, c)),
+//       IntermediateSplitOutcome::Finish(a) => Ok(IntermediateSplitOutcome::Finish(a)),
+//     }
+//   }
+// 
+//   async fn run(
+//     &self,
+//     process_before_split_produces: Self::ProcessBeforeSplitProduces,
+//     this_case_or_other_cases_input: Coproduct<Self::SplitterProducesForThisCase, PassesToOtherCases>,
+//   ) -> IntermediateSplitResult<Self::ProcessBeforeSplitProduces, PassesToOtherCases> {
+//     match this_case_or_other_cases_input {
+//       Coproduct::Inl(this_case_input) => {
+//         let this_case_consumes: ThisCase::ProcessBeforeProduces =
+//           this_case_input.concat(process_before_split_produces).transform();
+//         match self.this_case.run(this_case_consumes).await? {
+//           RunOutcome::Yield(a, b, c) => Ok(IntermediateSplitOutcome::Yield(a, b, c)),
+//           RunOutcome::Finish(a) => Ok(IntermediateSplitOutcome::Finish(a)),
+//         }
+//       }
+//       Coproduct::Inr(other_cases_input) => Ok(IntermediateSplitOutcome::Continue {
+//         process_before_split_produced: process_before_split_produces,
+//         passes_to_other_ceses: other_cases_input,
+//       }),
+//     }
+//   }
+// 
+//   fn enumerate_steps(&mut self, last_used_index: usize) -> usize {
+//     self.split_process_before.enumerate_steps(last_used_index)
+//   }
+// }
