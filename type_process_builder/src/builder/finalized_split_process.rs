@@ -26,39 +26,6 @@ pub trait FinalizedSplitProcess<SplitterProducesForOtherCases>: Sized {
     this_case_or_other_cases_input: Coproduct<Self::SplitterProducesForThisCase, SplitterProducesForOtherCases>,
   ) -> impl Future<Output = IntermediateSplitResult<Self::ProcessBeforeSplitProduces, SplitterProducesForOtherCases>>;
 
-  // fn case<
-  //   PassedForThisCase: ParamList + Concat<Self::ProcessBeforeSplitProduces>,
-  //   PassesToOtherCases,
-  //   ThisCaseConsumes: ParamList,
-  //   ThisCase: FinalizedProcess<ProcessBeforeProduces = ThisCaseConsumes>,
-  //   SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
-  // >(
-  //   self,
-  //   this_case: ThisCase,
-  // ) -> impl FinalizedSplitProcess<
-  //   ProcessBeforeSplitProduces = Self::ProcessBeforeSplitProduces,
-  //   SplitterProducesForThisCase = Self::SplitterProducesForThisCase,
-  //   SplitterProducesForOtherCases = SplitterProducesForOtherCases,
-  // >
-  // where
-  //   Self::SplitterProducesForThisCase: Concat<Self::ProcessBeforeSplitProduces>,
-  //   <Self::SplitterProducesForThisCase as Concat<Self::ProcessBeforeSplitProduces>>::Concatenated:
-  //     TransformTo<ThisCase::ProcessBeforeProduces, SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices>,
-  // {
-  //   NextCaseOfFinalizedSplitProcess::<
-  //     Self,
-  //     PassedForThisCase,
-  //     PassesToOtherCases,
-  //     ThisCaseConsumes,
-  //     ThisCase,
-  //     SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
-  //   > {
-  //     split_process_before: self,
-  //     this_case,
-  //     phantom_data: Default::default(),
-  //   }
-  // }
-
   fn enumerate_steps(&mut self, last_used_index: usize) -> usize;
 }
 
@@ -76,6 +43,38 @@ pub struct FirstCaseOfFinalizedSplitProcess<
     PassesToOtherCases,
     SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
   )>,
+}
+
+impl<
+    PassedForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
+    PassesToNextCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
+    PassesToOtherCases,
+    ProcessBefore: SplitProcess<Coproduct<PassesToNextCase, PassesToOtherCases>>,
+    ThisCase: FinalizedProcess,
+    SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
+  >
+  FirstCaseOfFinalizedSplitProcess<
+    PassedForThisCase,
+    Coproduct<PassesToNextCase, PassesToOtherCases>,
+    ProcessBefore,
+    ThisCase,
+    SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
+  >
+{
+  fn case<NextCase: FinalizedProcess>(
+    self,
+    this_case: NextCase,
+  ) -> impl FinalizedSplitProcess<
+    PassesToOtherCases,
+    ProcessBeforeSplitProduces = ProcessBefore::ProcessBeforeSplitProduces,
+    SplitterProducesForThisCase = PassesToNextCase,
+  > {
+    NextCaseOfFinalizedSplitProcess {
+      split_process_before: self,
+      this_case,
+      phantom_data: Default::default(),
+    }
+  }
 }
 
 impl<
