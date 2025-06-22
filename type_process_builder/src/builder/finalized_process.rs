@@ -120,29 +120,3 @@ impl<ProcessBefore: FlowingProcess, FinalConsumes: ParamList, FinalStep: Final<F
     self.process_before.enumerate_steps(last_used_index)
   }
 }
-
-// // fixme if the traits will impls overlap wrap it in a struct like this:
-// pub struct SplitFinalizedProcess<FinalizedExhaustiveSplit: SplitProcess> {
-//   process: FinalizedExhaustiveSplit, // maybe box?
-// }
-//
-// impl<FinalizedExhaustiveSplit: SplitProcess> FinalizedProcess for SplitFinalizedProcess<FinalizedExhaustiveSplit> {
-//   type ProcessBeforeProduces = FinalizedExhaustiveSplit::ProcessBeforeSplitProduces;
-//
-//   async fn continue_run(
-//     &self,
-//     _previous_run_produced: Value,
-//     _previous_run_yielded_at: PreviousRunYieldedAt,
-//   ) -> RunResult {
-//     todo!()
-//   }
-//
-//   async fn run(&self, _process_before_produces: Self::ProcessBeforeProduces) -> RunResult {
-//     todo!()
-//   }
-//
-//   fn enumerate_steps(&mut self, last_used_index: usize) -> usize {
-//     // most likely not worth to assign an index to final steps, but maybe test
-//     self.process.enumerate_steps(last_used_index)
-//   }
-// }
