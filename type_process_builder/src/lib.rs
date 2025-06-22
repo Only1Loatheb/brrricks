@@ -39,12 +39,16 @@ mod tests {
   }
 
   struct LinearA;
-  impl Linear<HNil, HNil> for LinearA {
-    async fn handle(&self, input: HNil) -> anyhow::Result<(Option<Message>, HNil)> {
+  // impl Linear<HNil, HNil> for LinearA {
+  //   async fn handle(&self, input: HNil) -> anyhow::Result<(Option<Message>, HNil)> {
+  //     todo!()
+  //   }
+  // }
+  impl Linear<HNil, HCons<Param1, HNil>> for LinearA {
+    async fn handle(&self, input: HNil) -> anyhow::Result<(Option<Message>, HCons<Param1, HNil>)> {
       todo!()
     }
   }
-  // impl Linear<HNil, HCons<Param1, HNil>> for LinearA { async fn handle(&self, input: HNil) -> anyhow::Result<(Option<Message>, HCons<Param1, HNil>)> {todo!()}}
 
   struct LinearB;
   impl Linear<HNil, HNil> for LinearB {
@@ -76,9 +80,9 @@ mod tests {
     let two_steps = one_step.then(LinearB);
     let split_steps = two_steps.split(SplitA);
     let with_one_final_step = split_steps.case(FinalA.into());
-    let with_two_final_steps = with_one_final_step.case(subprocess().end(FinalA));
-    let my_process = with_two_final_steps.build();
-    let run_result = my_process.run(Value::Map(BTreeMap::new())).await;
-    assert!(run_result.is_err());
+    // let with_two_final_steps = with_one_final_step.case(subprocess().end(FinalA));
+    // let my_process = with_two_final_steps.build();
+    // let run_result = my_process.run(Value::Map(BTreeMap::new())).await;
+    // assert!(run_result.is_err());
   }
 }

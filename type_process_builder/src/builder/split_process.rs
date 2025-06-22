@@ -35,28 +35,6 @@ pub trait SplitProcess<SplitterProducesForOtherCases>: Sized {
     >,
   >;
 
-  fn case<ThisCase: FinalizedProcess, SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices>(
-    self,
-    this_case: ThisCase,
-  ) -> FirstCaseOfFinalizedSplitProcess<
-    Self::SplitterProducesForFirstCase,
-    SplitterProducesForOtherCases,
-    Self,
-    ThisCase,
-    SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
-  >
-  where
-    Self::SplitterProducesForFirstCase: Concat<Self::ProcessBeforeSplitProduces>,
-    <Self::SplitterProducesForFirstCase as Concat<Self::ProcessBeforeSplitProduces>>::Concatenated:
-      TransformTo<ThisCase::ProcessBeforeProduces, SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices>,
-  {
-    FirstCaseOfFinalizedSplitProcess {
-      split_process_before: self,
-      this_case,
-      phantom_data: Default::default(),
-    }
-  }
-
   fn enumerate_steps(&mut self, last_used_index: usize) -> usize;
 }
 
@@ -79,6 +57,48 @@ pub struct SplitProcessSplitter<
     ProcessBeforeProducesToSplitterStepConsumesIndices,
     SplitProducesForThisCaseConcatProcessBeforeProducesToFirstCaseConsumesIndices,
   )>,
+}
+
+impl<
+    ProcessBefore: FlowingProcess,
+    SplitterStepConsumes: ParamList,
+    SplitterProducesForFirstCase: ParamList + Concat<ProcessBefore::Produces>,
+    SplitterProducesForOtherCases,
+    SplitterStep: Splitter<SplitterStepConsumes, Coproduct<SplitterProducesForFirstCase, SplitterProducesForOtherCases>>,
+    ProcessBeforeProducesToSplitterStepConsumesIndices,
+    SplitProducesForThisCaseConcatProcessBeforeProducesToFirstCaseConsumesIndices,
+  >
+  SplitProcessSplitter<
+    ProcessBefore,
+    SplitterStepConsumes,
+    SplitterProducesForFirstCase,
+    SplitterProducesForOtherCases,
+    SplitterStep,
+    ProcessBeforeProducesToSplitterStepConsumesIndices,
+    SplitProducesForThisCaseConcatProcessBeforeProducesToFirstCaseConsumesIndices,
+  >
+{
+  fn case<ThisCase: FinalizedProcess, SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices>(
+    self,
+    this_case: ThisCase,
+  ) -> FirstCaseOfFinalizedSplitProcess<
+    SplitterProducesForFirstCase,
+    SplitterProducesForOtherCases,
+    Self,
+    ThisCase,
+    SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
+  >
+  where
+    SplitterProducesForFirstCase: Concat<ProcessBefore::ProcessBeforeProduces>,
+    <SplitterProducesForFirstCase as Concat<ProcessBefore::ProcessBeforeProduces>>::Concatenated:
+      TransformTo<ThisCase::ProcessBeforeProduces, SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices>,
+  {
+    FirstCaseOfFinalizedSplitProcess {
+      split_process_before: self,
+      this_case,
+      phantom_data: Default::default(),
+    }
+  }
 }
 
 impl<
