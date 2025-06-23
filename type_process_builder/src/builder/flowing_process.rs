@@ -133,12 +133,6 @@ pub struct Subprocess<ProcessBeforeProduces> {
   pub phantom_data: PhantomData<ProcessBeforeProduces>,
 }
 
-pub fn subprocess<ProcessBeforeProduces: ParamList>() -> Subprocess<ProcessBeforeProduces> {
-  Subprocess {
-    phantom_data: Default::default(),
-  }
-}
-
 impl<ProcessBeforeProduces: ParamList> FlowingProcess for Subprocess<ProcessBeforeProduces> {
   type ProcessBeforeProduces = ProcessBeforeProduces;
   type Produces = ProcessBeforeProduces;
@@ -158,6 +152,12 @@ impl<ProcessBeforeProduces: ParamList> FlowingProcess for Subprocess<ProcessBefo
 
   fn enumerate_steps(&mut self, last_used_index: usize) -> usize {
     last_used_index
+  }
+}
+
+pub fn subprocess<ProcessBeforeProduces: ParamList>() -> Subprocess<ProcessBeforeProduces> {
+  Subprocess {
+    phantom_data: Default::default(),
   }
 }
 
