@@ -66,7 +66,7 @@ where
 {
   pub fn case<NextCase: FinalizedProcess, SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndicesA>(
     self,
-    this_case: NextCase,
+    create_case: impl FnOnce(Subprocess<ProcessBefore::ProcessBeforeSplitProduces>) -> NextCase,
   ) -> NextCaseOfFinalizedSplitProcess<
     PassesToNextCase,
     PassesToOtherCases,
@@ -80,7 +80,7 @@ where
   {
     NextCaseOfFinalizedSplitProcess {
       split_process_before: self,
-      this_case,
+      this_case: create_case(subprocess::<ProcessBefore::ProcessBeforeSplitProduces>()),
       phantom_data: Default::default(),
     }
   }

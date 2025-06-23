@@ -79,9 +79,8 @@ mod tests {
       .then(LinearA)
       .then(LinearB)
       .split(SplitA)
-      .case(subprocess::<HCons<Param1, HNil>>().end(FinalA))
-      .case(subprocess::<HCons<Param1, HNil>>().end(FinalA))
-      // .case(subprocess::<HCons<Param1, HNil>>().end(FinalA))
+      .case(|x| x.end(FinalA))
+      .case(|x| x.end(FinalA))
       .build();
     let run_result = process.run(Value::Map(BTreeMap::new())).await;
     assert!(run_result.is_err());

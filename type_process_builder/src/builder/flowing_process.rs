@@ -133,8 +133,7 @@ pub struct Subprocess<ProcessBeforeProduces> {
   pub phantom_data: PhantomData<ProcessBeforeProduces>,
 }
 
-pub fn subprocess<ProcessBeforeProduces: ParamList>(
-) -> impl FlowingProcess<ProcessBeforeProduces = ProcessBeforeProduces, Produces = ProcessBeforeProduces> {
+pub fn subprocess<ProcessBeforeProduces: ParamList>() -> Subprocess<ProcessBeforeProduces> {
   Subprocess {
     phantom_data: Default::default(),
   }
