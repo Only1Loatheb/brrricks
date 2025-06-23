@@ -59,8 +59,8 @@ mod tests {
   // impl Linear<HCons<Param1, HNil>, HNil> for LinearB { async fn handle(&self, input: HCons<Param1, HNil>) -> anyhow::Result<(Option<Message>, HNil)> { todo!() } }
 
   struct SplitA;
-  impl Splitter<HNil, Coproduct<HNil, Coproduct<HNil, CNil>>> for SplitA {
-    async fn handle(&self, input: HNil) -> anyhow::Result<Coproduct<HNil, Coproduct<HNil, CNil>>> {
+  impl Splitter<HNil, Coproduct<HNil, Coproduct<HNil, Coproduct<HNil, CNil>>>> for SplitA {
+    async fn handle(&self, input: HNil) -> anyhow::Result<Coproduct<HNil, Coproduct<HNil, Coproduct<HNil, CNil>>>> {
       todo!()
     }
   }
@@ -79,6 +79,7 @@ mod tests {
       .then(LinearA)
       .then(LinearB)
       .split(SplitA)
+      .case(|x| x.end(FinalA))
       .case(|x| x.end(FinalA))
       .case(|x| x.end(FinalA))
       .build();
