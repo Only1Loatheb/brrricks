@@ -29,14 +29,14 @@ pub mod step {
     fn handle(&self, input: BTreeMap<RawConsume, RawConsume>) -> impl Future<Output = anyhow::Result<Self::Produces>>;
   }
 
-  pub trait Linear<Consumes: ParamList, Produces: ParamList> {
+  pub trait Operation<Consumes: ParamList, Produces: ParamList> {
     fn handle(&self, input: Consumes) -> impl Future<Output = anyhow::Result<Produces>>;
   }
 
-  // pub trait Form<Consumes: ParamList, Produces: ParamList> {
-  //   fn handle(&self, input: Consumes) -> impl Future<Output = anyhow::Result<Produces>>;
-  //   fn handle(&self, input: Consumes) -> impl Future<Output = anyhow::Result<Produces>>;
-  // }
+  pub trait Form<Consumes: ParamList, Produces: ParamList> {
+    fn proompt(&self, input: Consumes) -> impl Future<Output = anyhow::Result<Message>>;
+    fn handle_input(&self, input: Consumes) -> impl Future<Output = anyhow::Result<Produces>>;
+  }
 
   pub trait Splitter<Consumes: ParamList, Produces: SplitterOutput> {
     fn handle(&self, input: Consumes) -> impl Future<Output = anyhow::Result<Produces>>;

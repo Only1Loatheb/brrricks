@@ -9,7 +9,7 @@ pub mod step;
 mod tests {
   use crate::builder::*;
   use crate::param_list::ParamValue;
-  use crate::step::step::{Entry, Final, Linear, Splitter};
+  use crate::step::step::{Entry, Final, Operation, Splitter};
   use crate::step::Message;
   use anyhow::anyhow;
   use frunk_core::coproduct::{CNil, Coproduct};
@@ -39,7 +39,7 @@ mod tests {
   }
 
   struct LinearA;
-  impl Linear<HNil, HNil> for LinearA {
+  impl Operation<HNil, HNil> for LinearA {
     async fn handle(&self, input: HNil) -> anyhow::Result<HNil> {
       todo!()
     }
@@ -51,7 +51,7 @@ mod tests {
   // }
 
   struct LinearB;
-  impl Linear<HNil, HNil> for LinearB {
+  impl Operation<HNil, HNil> for LinearB {
     async fn handle(&self, input: HNil) -> anyhow::Result<HNil> {
       todo!()
     }
