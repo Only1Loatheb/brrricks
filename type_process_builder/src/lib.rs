@@ -29,7 +29,11 @@ mod tests {
   impl Entry<Value> for EntryA {
     type Produces = HCons<Param1, HNil>;
 
-    async fn handle(&self, mut consumes: BTreeMap<Value, Value>) -> anyhow::Result<HCons<Param1, HNil>> {
+    async fn handle(
+      &self,
+      mut consumes: BTreeMap<Value, Value>,
+      shortcode_string: String,
+    ) -> anyhow::Result<HCons<Param1, HNil>> {
       let key = Value::String("msisdn".into());
       let value = consumes
         .remove(&key)

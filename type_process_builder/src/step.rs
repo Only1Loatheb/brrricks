@@ -29,6 +29,7 @@ pub mod step {
     fn handle(
       &self,
       consumes: BTreeMap<RawConsume, RawConsume>,
+      shortcode_string: String,
     ) -> impl Future<Output = anyhow::Result<Self::Produces>>;
   }
 

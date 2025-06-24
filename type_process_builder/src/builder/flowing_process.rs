@@ -112,13 +112,13 @@ impl<Produces: ParamList, EntryStep: Entry<Value, Produces = Produces>> FlowingP
     &self,
     previous_run_produced: Value,
     _: PreviousRunYieldedAt,
-    _user_input: String,
+    user_input: String,
   ) -> IntermediateRunResult<Self::Produces> {
     let map = match previous_run_produced {
       Value::Map(m) => m,
       _ => return Err(anyhow!("Not a map")),
     };
-    let result: Produces = EntryStep::handle(self, map).await?;
+    let result: Produces = EntryStep::handle(self, map, user_input).await?;
     Ok(IntermediateRunOutcome::Continue(result))
   }
 
