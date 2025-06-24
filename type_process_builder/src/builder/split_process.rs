@@ -19,6 +19,7 @@ pub trait SplitProcess<SplitterProducesForOtherCases>: Sized {
     &self,
     previous_run_produced: Value,
     previous_run_yielded_at: PreviousRunYieldedAt,
+    user_input: String,
   ) -> impl Future<
     Output = IntermediateSplitResult<
       Self::ProcessBeforeSplitProduces,
@@ -106,6 +107,7 @@ where
     &self,
     previous_run_produced: Value,
     previous_run_yielded_at: PreviousRunYieldedAt,
+    user_input: String,
   ) -> IntermediateSplitResult<
     Self::ProcessBeforeSplitProduces,
     Coproduct<Self::SplitterProducesForFirstCase, SplitterProducesForOtherCases>,
@@ -113,7 +115,7 @@ where
     if previous_run_yielded_at.0 < self.split_step_index {
       let process_before_output = self
         .process_before
-        .continue_run(previous_run_produced, previous_run_yielded_at)
+        .continue_run(previous_run_produced, previous_run_yielded_at, user_input)
         .await?;
       match process_before_output {
         IntermediateRunOutcome::Continue(process_before_split_produces) => {

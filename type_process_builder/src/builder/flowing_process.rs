@@ -21,6 +21,7 @@ pub trait FlowingProcess: Sized {
     &self,
     previous_run_produced: Value,
     previous_run_yielded_at: PreviousRunYieldedAt,
+    user_input: String,
   ) -> impl Future<Output = IntermediateRunResult<Self::Produces>>;
 
   fn run(
@@ -111,6 +112,7 @@ impl<Produces: ParamList, EntryStep: Entry<Value, Produces = Produces>> FlowingP
     &self,
     previous_run_produced: Value,
     _: PreviousRunYieldedAt,
+    _user_input: String,
   ) -> IntermediateRunResult<Self::Produces> {
     let map = match previous_run_produced {
       Value::Map(m) => m,
@@ -141,6 +143,7 @@ impl<ProcessBeforeProduces: ParamList> FlowingProcess for Subprocess<ProcessBefo
     &self,
     previous_run_produced: Value,
     _previous_run_yielded_at: PreviousRunYieldedAt,
+    _user_input: String,
   ) -> IntermediateRunResult<Self::Produces> {
     let process_before_produces = ProcessBeforeProduces::deserialize(previous_run_produced)?;
     self.run(process_before_produces).await
@@ -202,11 +205,12 @@ where
     &self,
     previous_run_produced: Value,
     previous_run_yielded_at: PreviousRunYieldedAt,
+    user_input: String,
   ) -> IntermediateRunResult<Self::Produces> {
     if previous_run_yielded_at.0 < self.step_index {
       let process_before_output = self
         .process_before
-        .continue_run(previous_run_produced, previous_run_yielded_at)
+        .continue_run(previous_run_produced, previous_run_yielded_at, user_input)
         .await?;
       match process_before_output {
         IntermediateRunOutcome::Continue(process_before_produces) => self.run(process_before_produces).await,
@@ -276,11 +280,12 @@ where
     &self,
     previous_run_produced: Value,
     previous_run_yielded_at: PreviousRunYieldedAt,
+    user_input: String,
   ) -> IntermediateRunResult<Self::Produces> {
     if previous_run_yielded_at.0 < self.step_index {
       let process_before_output = self
         .process_before
-        .continue_run(previous_run_produced, previous_run_yielded_at)
+        .continue_run(previous_run_produced, previous_run_yielded_at, user_input)
         .await?;
       match process_before_output {
         IntermediateRunOutcome::Continue(process_before_produces) => self.run(process_before_produces).await,
@@ -294,7 +299,7 @@ where
       Ok(IntermediateRunOutcome::Continue(
         self
           .last_step
-          .handle_consumes(last_step_consumes)
+          .handle_input(last_step_consumes, user_input)
           .await?
           .concat(process_before_produces),
       ))

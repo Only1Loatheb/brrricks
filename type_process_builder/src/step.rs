@@ -38,7 +38,7 @@ pub mod step {
 
   pub trait Form<Consumes: ParamList, Produces: ParamList> {
     fn proompt(&self, consumes: Consumes) -> impl Future<Output = anyhow::Result<Message>>;
-    fn handle_consumes(&self, consumes: Consumes) -> impl Future<Output = anyhow::Result<Produces>>;
+    fn handle_input(&self, consumes: Consumes, user_input: String) -> impl Future<Output = anyhow::Result<Produces>>;
   }
 
   pub trait Splitter<Consumes: ParamList, Produces: SplitterOutput> {

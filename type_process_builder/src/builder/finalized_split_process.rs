@@ -18,6 +18,7 @@ pub trait FinalizedSplitProcess<SplitterProducesForOtherCases>: Sized {
     &self,
     previous_run_produced: Value,
     previous_run_yielded_at: PreviousRunYieldedAt,
+    user_input: String,
   ) -> impl Future<Output = IntermediateSplitResult<Self::ProcessBeforeSplitProduces, SplitterProducesForOtherCases>>;
 
   fn run(
@@ -108,10 +109,11 @@ where
     &self,
     previous_run_produced: Value,
     previous_run_yielded_at: PreviousRunYieldedAt,
+    user_input: String,
   ) -> RunResult {
     let process_before_output = self
       .split_process_before
-      .continue_run(previous_run_produced, previous_run_yielded_at)
+      .continue_run(previous_run_produced, previous_run_yielded_at, user_input)
       .await?;
     match process_before_output {
       IntermediateSplitOutcome::Continue {
@@ -165,10 +167,11 @@ where
     &self,
     previous_run_produced: Value,
     previous_run_yielded_at: PreviousRunYieldedAt,
+    user_input: String,
   ) -> IntermediateSplitResult<Self::ProcessBeforeSplitProduces, PassesToOtherCases> {
     let process_before_output = self
       .split_process_before
-      .continue_run(previous_run_produced, previous_run_yielded_at)
+      .continue_run(previous_run_produced, previous_run_yielded_at, user_input)
       .await?;
     match process_before_output {
       IntermediateSplitOutcome::Continue {
@@ -246,10 +249,11 @@ where
     &self,
     previous_run_produced: Value,
     previous_run_yielded_at: PreviousRunYieldedAt,
+    user_input: String,
   ) -> RunResult {
     let process_before_output = self
       .split_process_before
-      .continue_run(previous_run_produced, previous_run_yielded_at)
+      .continue_run(previous_run_produced, previous_run_yielded_at, user_input)
       .await?;
     match process_before_output {
       IntermediateSplitOutcome::Continue {
@@ -303,10 +307,11 @@ where
     &self,
     previous_run_produced: Value,
     previous_run_yielded_at: PreviousRunYieldedAt,
+    user_input: String,
   ) -> IntermediateSplitResult<Self::ProcessBeforeSplitProduces, SplitterProducesForOtherCases> {
     let process_before_output = self
       .split_process_before
-      .continue_run(previous_run_produced, previous_run_yielded_at)
+      .continue_run(previous_run_produced, previous_run_yielded_at, user_input)
       .await?;
     match process_before_output {
       IntermediateSplitOutcome::Continue {

@@ -15,6 +15,7 @@ pub trait FinalizedProcess: Sized {
     &self,
     previous_run_produced: Value,
     previous_run_yielded_at: PreviousRunYieldedAt,
+    user_input: String,
   ) -> impl Future<Output = RunResult>;
 
   fn run(&self, process_before_produces: Self::ProcessBeforeProduces) -> impl Future<Output = RunResult>;
@@ -54,6 +55,7 @@ impl<
     &self,
     previous_run_produced: Value,
     _previous_run_yielded_at: PreviousRunYieldedAt,
+    _user_input: String,
   ) -> RunResult {
     let process_before_produces = ProcessBeforeProduces::deserialize(previous_run_produced)?;
     self.run(process_before_produces).await
@@ -88,6 +90,7 @@ impl<ProcessBefore: FlowingProcess, FinalConsumes: ParamList, FinalStep: Final<F
     &self,
     _previous_run_produced: Value,
     _previous_run_yielded_at: PreviousRunYieldedAt,
+    user_input: String,
   ) -> RunResult {
     todo!()
   }

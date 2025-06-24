@@ -83,7 +83,13 @@ mod tests {
       .case(|x| x.end(FinalA))
       .case(|x| x.end(FinalA))
       .build();
-    let run_result = process.run(Value::Map(BTreeMap::new())).await;
+    let run_result = process
+      .continue_run(
+        Value::Map(BTreeMap::new()),
+        PreviousRunYieldedAt(0),
+        "*123#".to_string(),
+      )
+      .await;
     assert!(run_result.is_err());
   }
 }

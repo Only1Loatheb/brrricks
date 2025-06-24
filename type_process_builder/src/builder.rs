@@ -16,7 +16,7 @@ use serde_value::Value;
 pub use split_process::*;
 
 #[derive(PartialEq, Debug, Eq, Clone, PartialOrd, Ord, Hash)]
-pub struct PreviousRunYieldedAt(usize);
+pub struct PreviousRunYieldedAt(pub usize);
 
 #[derive(PartialEq, Debug, Eq, Clone, PartialOrd, Ord, Hash)]
 pub struct CurrentRunYieldedAt(usize);

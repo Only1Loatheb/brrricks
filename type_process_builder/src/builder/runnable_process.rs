@@ -12,18 +12,15 @@ impl<UnderlyingProcess: FinalizedProcess> RunnableProcess<UnderlyingProcess> {
     Self { finalized_process }
   }
 
-  pub async fn run(&self, previous_run_produced: Value) -> RunResult {
-    self.continue_run(previous_run_produced, PreviousRunYieldedAt(0)).await
-  }
-
   pub async fn continue_run(
     &self,
     previous_run_produced: Value,
     previous_run_yielded_at: PreviousRunYieldedAt,
+    user_input: String,
   ) -> RunResult {
     self
       .finalized_process
-      .continue_run(previous_run_produced, previous_run_yielded_at)
+      .continue_run(previous_run_produced, previous_run_yielded_at, user_input)
       .await
   }
 }
