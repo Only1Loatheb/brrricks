@@ -29,9 +29,9 @@ mod tests {
   impl Entry<Value> for EntryA {
     type Produces = HCons<Param1, HNil>;
 
-    async fn handle(&self, mut input: BTreeMap<Value, Value>) -> anyhow::Result<HCons<Param1, HNil>> {
+    async fn handle(&self, mut consumes: BTreeMap<Value, Value>) -> anyhow::Result<HCons<Param1, HNil>> {
       let key = Value::String("msisdn".into());
-      let value = input
+      let value = consumes
         .remove(&key)
         .ok_or_else(|| anyhow!("Admin error or error on frontend."))?;
       Ok(hlist!(value.deserialize_into()?))
@@ -40,38 +40,38 @@ mod tests {
 
   struct LinearA;
   impl Operation<HNil, HNil> for LinearA {
-    async fn handle(&self, input: HNil) -> anyhow::Result<HNil> {
+    async fn handle(&self, consumes: HNil) -> anyhow::Result<HNil> {
       todo!()
     }
   }
   // impl Linear<HNil, HCons<Param1, HNil>> for LinearA {
-  //   async fn handle(&self, input: HNil) -> anyhow::Result<(Option<Message>, HCons<Param1, HNil>)> {
+  //   async fn handle(&self, consumes: HNil) -> anyhow::Result<(Option<Message>, HCons<Param1, HNil>)> {
   //     todo!()
   //   }
   // }
 
   struct LinearB;
   impl Operation<HNil, HNil> for LinearB {
-    async fn handle(&self, input: HNil) -> anyhow::Result<HNil> {
+    async fn handle(&self, consumes: HNil) -> anyhow::Result<HNil> {
       todo!()
     }
   }
-  // impl Linear<HCons<Param1, HNil>, HNil> for LinearB { async fn handle(&self, input: HCons<Param1, HNil>) -> anyhow::Result<(Option<Message>, HNil)> { todo!() } }
+  // impl Linear<HCons<Param1, HNil>, HNil> for LinearB { async fn handle(&self, consumes: HCons<Param1, HNil>) -> anyhow::Result<(Option<Message>, HNil)> { todo!() } }
 
   struct SplitA;
   impl Splitter<HNil, Coproduct<HNil, Coproduct<HNil, Coproduct<HNil, CNil>>>> for SplitA {
-    async fn handle(&self, input: HNil) -> anyhow::Result<Coproduct<HNil, Coproduct<HNil, Coproduct<HNil, CNil>>>> {
+    async fn handle(&self, consumes: HNil) -> anyhow::Result<Coproduct<HNil, Coproduct<HNil, Coproduct<HNil, CNil>>>> {
       todo!()
     }
   }
 
   struct FinalA;
   impl Final<HCons<Param1, HNil>> for FinalA {
-    async fn handle(&self, input: HCons<Param1, HNil>) -> anyhow::Result<Message> {
+    async fn handle(&self, consumes: HCons<Param1, HNil>) -> anyhow::Result<Message> {
       todo!()
     }
   }
-  // impl Linear<HCons<Param1, HNil>, HNil> for LinearB { async fn handle(&self, input: HCons<Param1, HNil>) -> anyhow::Result<(Option<Message>, HNil)> { todo!() } }
+  // impl Linear<HCons<Param1, HNil>, HNil> for LinearB { async fn handle(&self, consumes: HCons<Param1, HNil>) -> anyhow::Result<(Option<Message>, HNil)> { todo!() } }
 
   #[tokio::test]
   async fn test_hcons() {

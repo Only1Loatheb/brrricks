@@ -26,23 +26,26 @@ pub mod step {
 
   pub trait Entry<RawConsume: DeserializeOwned> {
     type Produces: ParamList;
-    fn handle(&self, input: BTreeMap<RawConsume, RawConsume>) -> impl Future<Output = anyhow::Result<Self::Produces>>;
+    fn handle(
+      &self,
+      consumes: BTreeMap<RawConsume, RawConsume>,
+    ) -> impl Future<Output = anyhow::Result<Self::Produces>>;
   }
 
   pub trait Operation<Consumes: ParamList, Produces: ParamList> {
-    fn handle(&self, input: Consumes) -> impl Future<Output = anyhow::Result<Produces>>;
+    fn handle(&self, consumes: Consumes) -> impl Future<Output = anyhow::Result<Produces>>;
   }
 
   pub trait Form<Consumes: ParamList, Produces: ParamList> {
-    fn proompt(&self, input: Consumes) -> impl Future<Output = anyhow::Result<Message>>;
-    fn handle_input(&self, input: Consumes) -> impl Future<Output = anyhow::Result<Produces>>;
+    fn proompt(&self, consumes: Consumes) -> impl Future<Output = anyhow::Result<Message>>;
+    fn handle_consumes(&self, consumes: Consumes) -> impl Future<Output = anyhow::Result<Produces>>;
   }
 
   pub trait Splitter<Consumes: ParamList, Produces: SplitterOutput> {
-    fn handle(&self, input: Consumes) -> impl Future<Output = anyhow::Result<Produces>>;
+    fn handle(&self, consumes: Consumes) -> impl Future<Output = anyhow::Result<Produces>>;
   }
 
   pub trait Final<Consumes: ParamList> {
-    fn handle(&self, input: Consumes) -> impl Future<Output = anyhow::Result<Message>>;
+    fn handle(&self, consumes: Consumes) -> impl Future<Output = anyhow::Result<Message>>;
   }
 }

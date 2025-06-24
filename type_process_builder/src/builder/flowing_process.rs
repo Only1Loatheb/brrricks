@@ -294,7 +294,7 @@ where
       Ok(IntermediateRunOutcome::Continue(
         self
           .last_step
-          .handle_input(last_step_consumes)
+          .handle_consumes(last_step_consumes)
           .await?
           .concat(process_before_produces),
       ))
