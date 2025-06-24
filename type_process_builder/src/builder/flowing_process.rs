@@ -193,8 +193,7 @@ impl<
     ProcessBeforeProducesToLastStepConsumesIndices,
   >
 where
-  <ProcessBefore as FlowingProcess>::Produces:
-    TransformTo<LastStepConsumes, ProcessBeforeProducesToLastStepConsumesIndices>,
+  ProcessBefore::Produces: TransformTo<LastStepConsumes, ProcessBeforeProducesToLastStepConsumesIndices>,
 {
   type ProcessBeforeProduces = ProcessBefore::Produces;
   type Produces = <LastStepProduces as Concat<ProcessBefore::Produces>>::Concatenated;
@@ -224,22 +223,9 @@ where
   async fn run(&self, process_before_produces: Self::ProcessBeforeProduces) -> IntermediateRunResult<Self::Produces> {
     let last_step_consumes: LastStepConsumes = process_before_produces.clone().transform();
     let last_step_output = self.last_step.handle(last_step_consumes).await?;
-    match last_step_output {
-      (Some(msg), last_step_produces) =>
-      // Should only pass params required in further part of the process, but I don't know what they are.
-      // todo Make all the methods generic over Serializer
-      {
-        let value = last_step_produces.concat(process_before_produces).serialize()?;
-        Ok(IntermediateRunOutcome::Yield(
-          msg,
-          value,
-          CurrentRunYieldedAt(self.step_index),
-        ))
-      }
-      (None, last_step_produces) => Ok(IntermediateRunOutcome::Continue(
-        last_step_produces.concat(process_before_produces),
-      )),
-    }
+    Ok(IntermediateRunOutcome::Continue(
+      last_step_output.concat(process_before_produces),
+    ))
   }
 
   fn enumerate_steps(&mut self, last_used_index: usize) -> usize {
@@ -248,3 +234,74 @@ where
     self.step_index
   }
 }
+
+// impl<
+//     ProcessBefore: FlowingProcess,
+//     LastStepConsumes: ParamList,
+//     LastStepProduces: ParamList + Concat<ProcessBefore::Produces>,
+//     LastStep: Linear<LastStepConsumes, LastStepProduces>,
+//     ProcessBeforeProducesToLastStepConsumesIndices,
+//   > FlowingProcess
+//   for LinearFlowingProcess<
+//     ProcessBefore,
+//     LastStepConsumes,
+//     LastStepProduces,
+//     LastStep,
+//     ProcessBeforeProducesToLastStepConsumesIndices,
+//   >
+// where
+//   <ProcessBefore as FlowingProcess>::Produces:
+//     TransformTo<LastStepConsumes, ProcessBeforeProducesToLastStepConsumesIndices>,
+// {
+//   type ProcessBeforeProduces = ProcessBefore::Produces;
+//   type Produces = <LastStepProduces as Concat<ProcessBefore::Produces>>::Concatenated;
+//
+//   async fn continue_run(
+//     &self,
+//     previous_run_produced: Value,
+//     previous_run_yielded_at: PreviousRunYieldedAt,
+//   ) -> IntermediateRunResult<Self::Produces> {
+//     if previous_run_yielded_at.0 < self.step_index {
+//       let process_before_output = self
+//         .process_before
+//         .continue_run(previous_run_produced, previous_run_yielded_at)
+//         .await?;
+//       match process_before_output {
+//         IntermediateRunOutcome::Continue(process_before_produces) => self.run(process_before_produces).await,
+//         IntermediateRunOutcome::Yield(a, b, c) => Ok(IntermediateRunOutcome::Yield(a, b, c)),
+//         IntermediateRunOutcome::Finish(a) => Ok(IntermediateRunOutcome::Finish(a)),
+//       }
+//     } else {
+//       // fixme deserialize only values required only up to the next interaction
+//       let process_before_produces = ProcessBefore::Produces::deserialize(previous_run_produced)?;
+//       self.run(process_before_produces).await
+//     }
+//   }
+//
+//   async fn run(&self, process_before_produces: Self::ProcessBeforeProduces) -> IntermediateRunResult<Self::Produces> {
+//     let last_step_consumes: LastStepConsumes = process_before_produces.clone().transform();
+//     let last_step_output = self.last_step.handle(last_step_consumes).await?;
+//     match last_step_output {
+//       (Some(msg), last_step_produces) =>
+//       // Should only pass params required in further part of the process, but I don't know what they are.
+//       // todo Make all the methods generic over Serializer
+//       {
+//         let value = last_step_produces.concat(process_before_produces).serialize()?;
+//         Ok(IntermediateRunOutcome::Yield(
+//           msg,
+//           value,
+//           CurrentRunYieldedAt(self.step_index),
+//         ))
+//       }
+//       (None, last_step_produces) => Ok(IntermediateRunOutcome::Continue(
+//         last_step_produces.concat(process_before_produces),
+//       )),
+//     }
+//   }
+//
+//   fn enumerate_steps(&mut self, last_used_index: usize) -> usize {
+//     let used_index = self.process_before.enumerate_steps(last_used_index);
+//     self.step_index = used_index + 1;
+//     self.step_index
+//   }
+// }

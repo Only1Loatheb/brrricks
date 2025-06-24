@@ -40,7 +40,7 @@ mod tests {
 
   struct LinearA;
   impl Linear<HNil, HNil> for LinearA {
-    async fn handle(&self, input: HNil) -> anyhow::Result<(Option<Message>, HNil)> {
+    async fn handle(&self, input: HNil) -> anyhow::Result<HNil> {
       todo!()
     }
   }
@@ -52,7 +52,7 @@ mod tests {
 
   struct LinearB;
   impl Linear<HNil, HNil> for LinearB {
-    async fn handle(&self, input: HNil) -> anyhow::Result<(Option<Message>, HNil)> {
+    async fn handle(&self, input: HNil) -> anyhow::Result<HNil> {
       todo!()
     }
   }

@@ -14,6 +14,8 @@ pub mod splitter_output_repr {
   }
 }
 
+// Should only pass params required in further part of the process, but I don't know what they are.
+// todo Make all the methods generic over Serializer
 pub mod step {
   use crate::param_list::ParamList;
   use crate::step::splitter_output_repr::SplitterOutput;
@@ -28,8 +30,13 @@ pub mod step {
   }
 
   pub trait Linear<Consumes: ParamList, Produces: ParamList> {
-    fn handle(&self, input: Consumes) -> impl Future<Output = anyhow::Result<(Option<Message>, Produces)>>;
+    fn handle(&self, input: Consumes) -> impl Future<Output = anyhow::Result<Produces>>;
   }
+
+  // pub trait Form<Consumes: ParamList, Produces: ParamList> {
+  //   fn handle(&self, input: Consumes) -> impl Future<Output = anyhow::Result<Produces>>;
+  //   fn handle(&self, input: Consumes) -> impl Future<Output = anyhow::Result<Produces>>;
+  // }
 
   pub trait Splitter<Consumes: ParamList, Produces: SplitterOutput> {
     fn handle(&self, input: Consumes) -> impl Future<Output = anyhow::Result<Produces>>;
