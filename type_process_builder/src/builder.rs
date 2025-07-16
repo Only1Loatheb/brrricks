@@ -6,7 +6,7 @@ pub mod runnable_process;
 mod split_process;
 
 pub use crate::param_list::*;
-pub use crate::step::splitter_output_repr::SplitterOutput;
+pub use crate::step::splitter_output_repr::*;
 pub use crate::step::Message;
 pub use finalized_process::*;
 pub use finalized_split_process::*;

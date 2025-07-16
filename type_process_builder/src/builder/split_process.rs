@@ -5,7 +5,9 @@ use crate::builder::{
 };
 use crate::hlist_concat::Concat;
 use crate::hlist_transform_to::TransformTo;
+use crate::step::splitter_output_repr::CaseParamList;
 use crate::step::step::Splitter;
+use crate::type_eq::TypeEq;
 use frunk_core::coproduct::Coproduct;
 use serde_value::Value;
 use std::future::Future;
@@ -13,7 +15,7 @@ use std::marker::PhantomData;
 
 pub trait SplitProcess<SplitterProducesForOtherCases>: Sized {
   type ProcessBeforeSplitProduces: ParamList;
-  type SplitterProducesForFirstCase: ParamList;
+  type SplitterProducesForFirstCase: CaseParamList;
 
   fn continue_run(
     &self,
@@ -37,19 +39,25 @@ pub trait SplitProcess<SplitterProducesForOtherCases>: Sized {
     >,
   >;
 
-  fn case<ThisCase: FinalizedProcess, SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices>(
+  fn case<
+    AssumedTag,
+    ThisCase: FinalizedProcess,
+    SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
+  >(
     self,
     create_case: impl FnOnce(Subprocess<Self::ProcessBeforeSplitProduces>) -> ThisCase,
   ) -> FirstCaseOfFinalizedSplitProcess<
-    Self::SplitterProducesForFirstCase,
+    <Self::SplitterProducesForFirstCase as CaseParamList>::Tag,
+    <Self::SplitterProducesForFirstCase as CaseParamList>::Params,
     SplitterProducesForOtherCases,
     Self,
     ThisCase,
     SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
   >
   where
-    Self::SplitterProducesForFirstCase: Concat<Self::ProcessBeforeSplitProduces>,
-    <Self::SplitterProducesForFirstCase as Concat<Self::ProcessBeforeSplitProduces>>::Concatenated:
+  (AssumedTag, PhantomData<<Self::SplitterProducesForFirstCase as CaseParamList>::Tag>): TypeEq,
+    <Self::SplitterProducesForFirstCase as CaseParamList>::Params: Concat<Self::ProcessBeforeSplitProduces>,
+    <<Self::SplitterProducesForFirstCase as CaseParamList>::Params as Concat<Self::ProcessBeforeSplitProduces>>::Concatenated:
       TransformTo<ThisCase::ProcessBeforeProduces, SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices>,
   {
     FirstCaseOfFinalizedSplitProcess {
@@ -63,17 +71,22 @@ pub trait SplitProcess<SplitterProducesForOtherCases>: Sized {
 }
 
 pub struct SplitProcessSplitter<
+  Tag,
   ProcessBefore: FlowingProcess,
   SplitterStepConsumes: ParamList,
   SplitterProducesForFirstCase: ParamList,
   SplitterProducesForOtherCases,
-  SplitterStep: Splitter<SplitterStepConsumes, Coproduct<SplitterProducesForFirstCase, SplitterProducesForOtherCases>>,
+  SplitterStep: Splitter<
+    SplitterStepConsumes,
+    Coproduct<(PhantomData<Tag>, SplitterProducesForFirstCase), SplitterProducesForOtherCases>,
+  >,
   ProcessBeforeProducesToSplitterStepConsumesIndices,
 > {
   pub process_before: ProcessBefore,
   pub splitter: SplitterStep,
   pub split_step_index: usize,
   pub phantom_data: PhantomData<(
+    Tag,
     SplitterStepConsumes,
     SplitterProducesForFirstCase,
     SplitterProducesForOtherCases,
@@ -82,14 +95,19 @@ pub struct SplitProcessSplitter<
 }
 
 impl<
+    Tag,
     ProcessBefore: FlowingProcess,
     SplitterStepConsumes: ParamList,
     SplitterProducesForFirstCase: ParamList,
     SplitterProducesForOtherCases,
-    SplitterStep: Splitter<SplitterStepConsumes, Coproduct<SplitterProducesForFirstCase, SplitterProducesForOtherCases>>,
+    SplitterStep: Splitter<
+      SplitterStepConsumes,
+      Coproduct<(PhantomData<Tag>, SplitterProducesForFirstCase), SplitterProducesForOtherCases>,
+    >,
     ProcessBeforeProducesToSplitterStepConsumesIndices,
   > SplitProcess<SplitterProducesForOtherCases>
   for SplitProcessSplitter<
+    Tag,
     ProcessBefore,
     SplitterStepConsumes,
     SplitterProducesForFirstCase,
@@ -101,7 +119,7 @@ where
   ProcessBefore::Produces: TransformTo<SplitterStepConsumes, ProcessBeforeProducesToSplitterStepConsumesIndices>,
 {
   type ProcessBeforeSplitProduces = ProcessBefore::Produces;
-  type SplitterProducesForFirstCase = SplitterProducesForFirstCase;
+  type SplitterProducesForFirstCase = (PhantomData<Tag>, SplitterProducesForFirstCase);
 
   async fn continue_run(
     &self,
