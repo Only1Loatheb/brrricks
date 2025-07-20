@@ -71,7 +71,8 @@ pub trait FlowingProcess: Sized {
   ) -> impl SplitProcess<
     SplitterProducesForOtherCases,
     ProcessBeforeSplitProduces = Self::Produces,
-    SplitterProducesForFirstCase = (PhantomData<Tag>, SplitterProducesForFirstCase),
+    SplitterProducesForFirstCase = SplitterProducesForFirstCase,
+    SplitterTagForFirstCase = Tag,
   >
   where
     Self::Produces: TransformTo<SplitterStepConsumes, ProcessBeforeProducesToSplitterStepConsumesIndices>,

@@ -13,16 +13,6 @@ pub mod splitter_output_repr {
   impl<Tag, ThisCase: ParamList, OtherCase> SplitterOutput for Coproduct<(PhantomData<Tag>, ThisCase), OtherCase> {
     type NonEmptyCoproduct = Coproduct<ThisCase, OtherCase>;
   }
-
-  pub trait CaseParamList {
-    type Tag;
-    type Params: ParamList;
-  }
-
-  impl<Tag, ThisCase: ParamList> CaseParamList for (PhantomData<Tag>, ThisCase) {
-    type Tag = Tag;
-    type Params = ThisCase;
-  }
 }
 
 // Should only pass params required in further part of the process, but I don't know what they are.
