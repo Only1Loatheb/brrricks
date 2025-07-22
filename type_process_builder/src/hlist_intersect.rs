@@ -1,66 +1,47 @@
 use frunk_core::hlist::*;
-use frunk_core::traits::*;
+use frunk_core::indices::{Here, There};
 
-/// Trait to compute intersection of two HLists
-pub trait Intersect<Rhs> {
-  type Output;
-  fn intersect(self, rhs: Rhs) -> Self::Output;
+pub trait Selector<S, I> {
+  fn get(&self) -> Option<&S>;
+
+  fn get_mut(&mut self) -> Option<&mut S>;
 }
 
-/// Base case: empty LHS results in empty output
-impl<Rhs> Intersect<Rhs> for HNil {
-  type Output = HNil;
-  fn intersect(self, _: Rhs) -> Self::Output {
-    HNil
+pub struct Missing {
+  _priv: (),
+}
+
+impl<T, Tail> Selector<T, Here> for HCons<T, Tail> {
+  fn get(&self) -> Option<&T> {
+    Some(&self.head)
+  }
+
+  fn get_mut(&mut self) -> Option<&mut T> {
+    Some(&mut self.head)
   }
 }
 
-/// Recursive case: if Head in RHS, keep it; else skip it
-impl<Head, TailL, Rhs, TailOut> Intersect<Rhs> for HCons<Head, TailL>
-where
-  Rhs: Plucker<Head>,
-  TailL: Intersect<Rhs, Output = TailOut>,
-{
-  type Output = HCons<Head, TailOut>;
-  fn intersect(self, rhs: Rhs) -> Self::Output {
-    let (_, rhs_without_head) = rhs.pluck();
-    HCons {
-      head: self.head,
-      tail: self.tail.intersect(rhs_without_head),
-    }
+impl<T: std::any::Any, NotT: std::any::Any> Selector<T, Missing> for HCons<NotT, HNil> {
+  fn get(&self) -> Option<&T> {
+    None
+  }
+
+  fn get_mut(&mut self) -> Option<&mut T> {
+    None
   }
 }
 
-// When Head not in Rhs, skip it
-impl<Head, TailL, Rhs, TailOut> Intersect<Rhs> for HCons<Head, TailL>
+impl<Head, Tail, FromTail, TailIndex> Selector<FromTail, There<TailIndex>> for HCons<Head, Tail>
 where
-  Rhs: NotContains<Head>,
-  TailL: Intersect<Rhs, Output = TailOut>,
+  Tail: Selector<FromTail, TailIndex>,
 {
-  type Output = TailOut;
-  fn intersect(self, rhs: Rhs) -> Self::Output {
-    self.tail.intersect(rhs)
+  fn get(&self) -> Option<&FromTail> {
+    self.tail.get()
   }
-}
 
-/// Trait that proves type is NOT contained in HList
-pub trait NotContains<T> {}
-impl<T> NotContains<T> for HNil {}
-
-impl<Head, Tail, T> NotContains<T> for HCons<Head, Tail>
-where
-  Head: NotSame<T>,
-  Tail: NotContains<T>,
-{
-}
-
-/// Helper trait to prove two types are NOT equal
-pub trait NotSame<T> {}
-impl<T, U> NotSame<U> for T
-where
-  T: std::any::Any,
-  U: std::any::Any,
-{
+  fn get_mut(&mut self) -> Option<&mut FromTail> {
+    self.tail.get_mut()
+  }
 }
 
 #[cfg(test)]
