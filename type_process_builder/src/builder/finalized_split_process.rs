@@ -287,7 +287,7 @@ where
       } => match passes_to_other_cases {
         Coproduct::Inl(this_case_consumes) => {
           let this_case_consumes: ThisCase::ProcessBeforeProduces =
-            this_case_consumes.1.concat(process_before_split_produced).transform();
+            this_case_consumes.concat(process_before_split_produced).transform();
           self.this_case.run(this_case_consumes).await
         }
         Coproduct::Inr(c_nil) => match c_nil {},

@@ -1,44 +1,79 @@
-// use frunk_core::hlist::{HCons, HList, HNil, Selector};
-//
-// // Trait to compute type-level intersection of two HLists
-// pub trait TypeIntersection<Other> {
-//   type Output;
-// }
-//
-// // Base case: HNil intersected with anything is HNil
-// impl<Other> TypeIntersection<Other> for HNil {
-//   type Output = HNil;
-// }
-//
-// // Recursive case: check if `Head` is in `Other`
-// impl<Head, Tail, Idx, Other: Selector<Head, Idx>> TypeIntersection<Other> for HCons<Head, Tail>
-// where
-//   Tail: TypeIntersection<Other>,
-//   IfContains<
-//     Head,
-//     Other,
-//     HCons<Head, <Tail as TypeIntersection<Other>>::Output>,
-//     <Tail as TypeIntersection<Other>>::Output,
-//   >: HList,
-// {
-//   type Output = IfContains<
-//     Head,
-//     Other,
-//     HCons<Head, <Tail as TypeIntersection<Other>>::Output>,
-//     <Tail as TypeIntersection<Other>>::Output,
-//   >;
-// }
-//
-// // Helper trait to conditionally include type if it exists in Other
-// pub type IfContains<Head, Other, Yes, No> = <SelectorHelper<Head, Other, Yes, No> as Select>::Result;
-//
-// pub trait Select {
-//   type Result: HList;
-// }
-//
-// pub struct SelectorHelper<Head, Other, Yes, No>(std::marker::PhantomData<(Head, Other, Yes, No)>);
-//
-// // If `Other: Selector<Head>` succeeds, use `Yes`
-// impl<Head, Idx, Other: Selector<Head, Idx>, Yes: HList, No: HList> Select for SelectorHelper<Head, Other, Yes, No> {
-//   type Result = Yes;
-// }
+use frunk_core::hlist::*;
+use frunk_core::traits::*;
+
+/// Trait to compute intersection of two HLists
+pub trait Intersect<Rhs> {
+  type Output;
+  fn intersect(self, rhs: Rhs) -> Self::Output;
+}
+
+/// Base case: empty LHS results in empty output
+impl<Rhs> Intersect<Rhs> for HNil {
+  type Output = HNil;
+  fn intersect(self, _: Rhs) -> Self::Output {
+    HNil
+  }
+}
+
+/// Recursive case: if Head in RHS, keep it; else skip it
+impl<Head, TailL, Rhs, TailOut> Intersect<Rhs> for HCons<Head, TailL>
+where
+  Rhs: Plucker<Head>,
+  TailL: Intersect<Rhs, Output = TailOut>,
+{
+  type Output = HCons<Head, TailOut>;
+  fn intersect(self, rhs: Rhs) -> Self::Output {
+    let (_, rhs_without_head) = rhs.pluck();
+    HCons {
+      head: self.head,
+      tail: self.tail.intersect(rhs_without_head),
+    }
+  }
+}
+
+// When Head not in Rhs, skip it
+impl<Head, TailL, Rhs, TailOut> Intersect<Rhs> for HCons<Head, TailL>
+where
+  Rhs: NotContains<Head>,
+  TailL: Intersect<Rhs, Output = TailOut>,
+{
+  type Output = TailOut;
+  fn intersect(self, rhs: Rhs) -> Self::Output {
+    self.tail.intersect(rhs)
+  }
+}
+
+/// Trait that proves type is NOT contained in HList
+pub trait NotContains<T> {}
+impl<T> NotContains<T> for HNil {}
+
+impl<Head, Tail, T> NotContains<T> for HCons<Head, Tail>
+where
+  Head: NotSame<T>,
+  Tail: NotContains<T>,
+{
+}
+
+/// Helper trait to prove two types are NOT equal
+pub trait NotSame<T> {}
+impl<T, U> NotSame<U> for T
+where
+  T: std::any::Any,
+  U: std::any::Any,
+{
+}
+
+#[cfg(test)]
+mod tests {
+  use frunk_core::hlist;
+
+  #[test]
+  fn test_add() {
+    let a = hlist![1u8, "hello", true];
+    let b = hlist![false, 1u8, 3.14f32];
+
+    let intersection = a.intersect(b);
+
+    assert_eq!(intersection, hlist![1u8, true]);
+  }
+}
