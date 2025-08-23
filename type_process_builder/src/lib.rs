@@ -96,7 +96,7 @@ mod tests {
       .split(SplitA)
       .case::<case1, _, _>(|x| x.end(FinalA))
       .case::<case2, _, _>(|x| x.end(FinalA))
-      .case(|x| x.end(FinalA))
+      .case::<case3, _, _>(|x| x.end(FinalA))
       .build();
     let run_result = process
       .continue_run(

@@ -57,7 +57,10 @@ impl<
     PassesToNextCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
     PassesToOtherCases,
     ProcessBefore: SplitProcess<
-      Coproduct<(PhantomData<NextTag>, PassesToNextCase), PassesToOtherCases>,
+      Coproduct<
+        (PhantomData<ThisTag>, PassedForThisCase),
+        Coproduct<(PhantomData<NextTag>, PassesToNextCase), PassesToOtherCases>,
+      >,
       SplitterProducesForFirstCase = PassedForThisCase,
       SplitterTagForFirstCase = ThisTag,
     >,
@@ -67,7 +70,10 @@ impl<
   FirstCaseOfFinalizedSplitProcess<
     ThisTag,
     PassedForThisCase,
-    Coproduct<PassesToNextCase, PassesToOtherCases>,
+    Coproduct<
+      (PhantomData<ThisTag>, PassedForThisCase),
+      Coproduct<(PhantomData<NextTag>, PassesToNextCase), PassesToOtherCases>,
+    >,
     ProcessBefore,
     ThisCase,
     SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
