@@ -31,6 +31,7 @@ pub trait FinalizedSplitProcess<SplitterProducesForOtherCases>: Sized {
 
   fn enumerate_steps(&mut self, last_used_index: usize) -> usize;
 }
+
 pub struct FirstCaseOfFinalizedSplitProcess<
   Tag,
   PassedForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
@@ -50,7 +51,7 @@ pub struct FirstCaseOfFinalizedSplitProcess<
 }
 
 impl<
-    Tag,
+    ThisTag,
     NextTag,
     PassedForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
     PassesToNextCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
@@ -58,13 +59,13 @@ impl<
     ProcessBefore: SplitProcess<
       Coproduct<(PhantomData<NextTag>, PassesToNextCase), PassesToOtherCases>,
       SplitterProducesForFirstCase = PassedForThisCase,
-      SplitterTagForFirstCase = Tag,
+      SplitterTagForFirstCase = ThisTag,
     >,
     ThisCase: FinalizedProcess,
     SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
   >
   FirstCaseOfFinalizedSplitProcess<
-    Tag,
+    ThisTag,
     PassedForThisCase,
     Coproduct<PassesToNextCase, PassesToOtherCases>,
     ProcessBefore,
@@ -103,6 +104,7 @@ where
   }
 }
 
+// could be removed to prevent having just one case.
 impl<
     Tag,
     ProcessBefore: SplitProcess<CNil>,
