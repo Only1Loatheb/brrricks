@@ -1,7 +1,6 @@
 use crate::builder::{
-  subprocess, FinalizedProcess, FinalizedSplitProcess, FirstCaseOfFinalizedSplitProcess, FlowingProcess,
-  IntermediateRunOutcome, IntermediateSplitOutcome, IntermediateSplitResult, ParamList, PreviousRunYieldedAt,
-  Subprocess,
+  subprocess, FinalizedProcess, FirstCaseOfFinalizedSplitProcess, FlowingProcess, IntermediateRunOutcome,
+  IntermediateSplitOutcome, IntermediateSplitResult, ParamList, PreviousRunYieldedAt, Subprocess,
 };
 use crate::hlist_concat::Concat;
 use crate::hlist_transform_to::TransformTo;
@@ -12,6 +11,8 @@ use serde_value::Value;
 use std::future::Future;
 use std::marker::PhantomData;
 
+/// We enforce at least two cases in the split.
+/// It removes an unnecessary option of implementing a linear proces with a series of splits with single case
 pub trait SplitProcess<SplitterProducesForOtherCases>: Sized {
   type ProcessBeforeSplitProduces: ParamList;
   type SplitterProducesForFirstCase: ParamList;
