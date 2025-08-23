@@ -162,7 +162,7 @@ where
 }
 
 impl<
-    Tag,
+    ThisTag,
     PassedForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
     PassesToOtherCases,
     ProcessBefore: SplitProcess<PassesToOtherCases, SplitterProducesForFirstCase = PassedForThisCase>,
@@ -170,7 +170,7 @@ impl<
     SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
   > FinalizedSplitProcess<PassesToOtherCases>
   for FirstCaseOfFinalizedSplitProcess<
-    Tag,
+    ThisTag,
     PassedForThisCase,
     PassesToOtherCases,
     ProcessBefore,
@@ -183,6 +183,7 @@ where
 {
   type ProcessBeforeSplitProduces = ProcessBefore::ProcessBeforeSplitProduces;
   type SplitterProducesForThisCase = PassedForThisCase;
+  type SplitterTagForThisCase = ThisTag;
 
   async fn continue_run(
     &self,
@@ -231,32 +232,33 @@ where
 }
 
 pub struct NextCaseOfFinalizedSplitProcess<
-  Tag,
+  ThisTag,
   PassedForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
   PassesToOtherCases,
-  ProcessBefore: FinalizedSplitProcess<Coproduct<Tag, PassesToOtherCases>>,
+  ProcessBefore: FinalizedSplitProcess<Coproduct<(PhantomData<ThisTag>, PassedForThisCase), PassesToOtherCases>>,
   ThisCase: FinalizedProcess,
   SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
 > {
   pub split_process_before: ProcessBefore,
   pub this_case: ThisCase,
   pub phantom_data: PhantomData<(
-    Tag,
+    ThisTag,
     PassedForThisCase,
     PassesToOtherCases,
     SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
   )>,
 }
 
+/// the last case
 impl<
-    Tag,
+    ThisTag,
     PassedForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
-    ProcessBefore: FinalizedSplitProcess<Coproduct<PassedForThisCase, CNil>>,
+    ProcessBefore: FinalizedSplitProcess<Coproduct<(PhantomData<ThisTag>, PassedForThisCase), CNil>>,
     ThisCase: FinalizedProcess,
     SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
   > FinalizedProcess
   for NextCaseOfFinalizedSplitProcess<
-    Tag,
+    ThisTag,
     PassedForThisCase,
     CNil,
     ProcessBefore,
@@ -285,9 +287,10 @@ where
         process_before_split_produced,
         passes_to_other_cases,
       } => match passes_to_other_cases {
-        Coproduct::Inl(this_case_consumes) => {
-          let this_case_consumes: ThisCase::ProcessBeforeProduces =
-            this_case_consumes.concat(process_before_split_produced).transform();
+        Coproduct::Inl((_pd, params_passed_to_other_cases)) => {
+          let this_case_consumes: ThisCase::ProcessBeforeProduces = params_passed_to_other_cases
+            .concat(process_before_split_produced)
+            .transform();
           self.this_case.run(this_case_consumes).await
         }
         Coproduct::Inr(c_nil) => match c_nil {},
@@ -308,15 +311,15 @@ where
 }
 
 impl<
-    Tag,
+    ThisTag,
     SplitterProducesForOtherCases,
     PassedForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
-    ProcessBefore: FinalizedSplitProcess<Coproduct<PassedForThisCase, SplitterProducesForOtherCases>>,
+    ProcessBefore: FinalizedSplitProcess<Coproduct<(PhantomData<ThisTag>, PassedForThisCase), SplitterProducesForOtherCases>>,
     ThisCase: FinalizedProcess,
     SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
   > FinalizedSplitProcess<SplitterProducesForOtherCases>
   for NextCaseOfFinalizedSplitProcess<
-    Tag,
+    ThisTag,
     PassedForThisCase,
     SplitterProducesForOtherCases,
     ProcessBefore,
@@ -329,6 +332,7 @@ where
 {
   type ProcessBeforeSplitProduces = ProcessBefore::ProcessBeforeSplitProduces;
   type SplitterProducesForThisCase = PassedForThisCase;
+  type SplitterTagForThisCase = ThisTag;
 
   async fn continue_run(
     &self,
@@ -344,7 +348,13 @@ where
       IntermediateSplitOutcome::Continue {
         process_before_split_produced,
         passes_to_other_cases: this_case_produced,
-      } => self.run(process_before_split_produced, this_case_produced).await,
+      } => {
+        let produced = match this_case_produced {
+          Coproduct::Inl((_pd, params)) => Coproduct::Inl(params),
+          Coproduct::Inr(inr_value) => Coproduct::Inr(inr_value),
+        };
+        self.run(process_before_split_produced, produced).await
+      }
       IntermediateSplitOutcome::Yield(a, b, c) => Ok(IntermediateSplitOutcome::Yield(a, b, c)),
       IntermediateSplitOutcome::Finish(a) => Ok(IntermediateSplitOutcome::Finish(a)),
     }
