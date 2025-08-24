@@ -1,60 +1,77 @@
-// use frunk_core::hlist::*;
-// use frunk_core::indices::{Here, There};
-//
-// pub trait Selector<S, I> {
-//   fn get(&self) -> Option<&S>;
-//
-//   fn get_mut(&mut self) -> Option<&mut S>;
-// }
-//
-// pub struct Missing {
-//   _priv: (),
-// }
-//
-// impl<T, Tail> Selector<T, Here> for HCons<T, Tail> {
-//   fn get(&self) -> Option<&T> {
-//     Some(&self.head)
-//   }
-//
-//   fn get_mut(&mut self) -> Option<&mut T> {
-//     Some(&mut self.head)
-//   }
-// }
-//
-// impl<T: std::any::Any, NotT: std::any::Any> Selector<T, Missing> for HCons<NotT, HNil> {
-//   fn get(&self) -> Option<&T> {
-//     None
-//   }
-//
-//   fn get_mut(&mut self) -> Option<&mut T> {
-//     None
-//   }
-// }
-//
-// impl<Head, Tail, FromTail, TailIndex> Selector<FromTail, There<TailIndex>> for HCons<Head, Tail>
-// where
-//   Tail: Selector<FromTail, TailIndex>,
-// {
-//   fn get(&self) -> Option<&FromTail> {
-//     self.tail.get()
-//   }
-//
-//   fn get_mut(&mut self) -> Option<&mut FromTail> {
-//     self.tail.get_mut()
-//   }
-// }
-//
-// #[cfg(test)]
-// mod tests {
-//   use frunk_core::hlist;
-//
-//   #[test]
-//   fn test_add() {
-//     let a = hlist![1u8, "hello", true];
-//     let b = hlist![false, 1u8, 3.14f32];
-//
-//     let intersection = a.intersect(b);
-//
-//     assert_eq!(intersection, hlist![1u8, true]);
-//   }
-// }
+use frunk_core::hlist::*;
+use frunk_core::indices::{Here, There};
+
+pub struct Missing {
+  _priv: (),
+}
+
+pub trait SelectOrAbsent<Target, Index> {
+  fn select(&self) -> Option<&Target>;
+
+  fn select_mut(&mut self) -> Option<&mut Target>;
+}
+
+impl<Target, Tail> SelectOrAbsent<Target, Here> for HCons<Target, Tail> {
+  fn select(&self) -> Option<&Target> {
+    Some(&self.head)
+  }
+
+  fn select_mut(&mut self) -> Option<&mut Target> {
+    Some(&mut self.head)
+  }
+}
+
+impl<Target> SelectOrAbsent<Target, Missing> for HNil {
+  fn select(&self) -> Option<&Target> {
+    None
+  }
+
+  fn select_mut(&mut self) -> Option<&mut Target> {
+    None
+  }
+}
+
+impl<Head, Tail, Target, Index> SelectOrAbsent<Target, There<Index>> for HCons<Head, Tail>
+where
+  Tail: SelectOrAbsent<Target, Index>,
+{
+  fn select(&self) -> Option<&Target> {
+    self.tail.select()
+  }
+
+  fn select_mut(&mut self) -> Option<&mut Target> {
+    self.tail.select_mut()
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use crate::hlist_intersect::SelectOrAbsent;
+  use frunk_core::hlist;
+  use frunk_core::hlist::{HCons, HNil};
+
+  #[test]
+  fn test_select_or_absent() {
+    let mut my_list = hlist![42u32, "hello", true];
+
+    // // Example 1: existing type
+    // let val: Option<&u32> = <HCons<u32, HCons<&str, HCons<bool, HNil>>>>::select(&my_list);
+    // println!("Found u32? {:?}", val); // Some(42)
+
+    // Example 2: mut reference
+    if let Some(val_mut) = <HCons<u32, HCons<&str, HCons<bool, HNil>>>>::select_mut(&mut my_list) {
+      *val_mut = 99;
+    }
+    println!("Mutated list: {:?}", my_list);
+
+    // Example 3: type not in HList (Missing)
+    let missing: Option<&f64> = my_list.select();
+    println!("Found f64? {:?}", missing); // None
+                                          // let a = hlist![1u8, "hello", true];
+                                          // let b = hlist![false, 1u8, 3.14f32];
+                                          //
+                                          // let intersection = a.intersect(b);
+                                          //
+                                          // assert_eq!(intersection, hlist![1u8, true]);
+  }
+}

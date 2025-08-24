@@ -117,7 +117,7 @@ where
     match process_before_output {
       IntermediateSplitOutcome::Continue {
         process_before_split_produced,
-        passes_to_other_cases: passes_to_other_cases,
+        passes_to_other_cases,
       } => match passes_to_other_cases {
         Coproduct::Inl(this_case_consumes) => {
           let this_case_consumes: ThisCase::ProcessBeforeProduces =
