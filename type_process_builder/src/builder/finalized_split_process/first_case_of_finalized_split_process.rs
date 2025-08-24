@@ -33,10 +33,7 @@ impl<
     NextTag,
     PassesToOtherCases,
     ProcessBefore: SplitProcess<
-      Coproduct<
-        (PhantomData<ThisTag>, PassedForThisCase),
-        Coproduct<(PhantomData<NextTag>, PassesToNextCase), PassesToOtherCases>,
-      >,
+      Coproduct<(PhantomData<NextTag>, PassesToNextCase), PassesToOtherCases>,
       SplitterProducesForFirstCase = PassedForThisCase,
       SplitterTagForFirstCase = ThisTag,
     >,
@@ -48,10 +45,7 @@ impl<
   FirstCaseOfFinalizedSplitProcess<
     ThisTag,
     PassedForThisCase,
-    Coproduct<
-      (PhantomData<ThisTag>, PassedForThisCase),
-      Coproduct<(PhantomData<NextTag>, PassesToNextCase), PassesToOtherCases>,
-    >,
+    Coproduct<(PhantomData<NextTag>, PassesToNextCase), PassesToOtherCases>,
     ProcessBefore,
     ThisCase,
     SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
