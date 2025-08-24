@@ -11,7 +11,7 @@ use std::hint::unreachable_unchecked;
 use std::marker::PhantomData;
 
 pub struct FirstCaseOfFinalizedSplitProcess<
-  Tag,
+  ThisTag,
   PassedForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
   PassesToOtherCases,
   ProcessBefore: SplitProcess<PassesToOtherCases>,
@@ -21,7 +21,7 @@ pub struct FirstCaseOfFinalizedSplitProcess<
   pub split_process_before: ProcessBefore,
   pub this_case: ThisCase,
   pub phantom_data: PhantomData<(
-    Tag,
+    ThisTag,
     PassedForThisCase,
     PassesToOtherCases,
     SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
@@ -31,8 +31,6 @@ pub struct FirstCaseOfFinalizedSplitProcess<
 impl<
     ThisTag,
     NextTag,
-    PassedForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
-    PassesToNextCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
     PassesToOtherCases,
     ProcessBefore: SplitProcess<
       Coproduct<
@@ -42,6 +40,8 @@ impl<
       SplitterProducesForFirstCase = PassedForThisCase,
       SplitterTagForFirstCase = ThisTag,
     >,
+    PassedForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
+    PassesToNextCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
     ThisCase: FinalizedProcess,
     SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
   >
@@ -88,15 +88,15 @@ where
   }
 }
 
-// could be removed to prevent having just one case.
+/// Removing this would forbid having just one case in a split
 impl<
-    Tag,
+    ThisTag,
     ProcessBefore: SplitProcess<CNil>,
     ThisCase: FinalizedProcess,
     SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
   > FinalizedProcess
   for FirstCaseOfFinalizedSplitProcess<
-    Tag,
+    ThisTag,
     ProcessBefore::SplitterProducesForFirstCase,
     CNil,
     ProcessBefore,
