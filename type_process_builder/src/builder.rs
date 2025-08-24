@@ -6,9 +6,11 @@ pub mod runnable_process;
 mod split_process;
 
 pub use crate::param_list::*;
-pub use crate::step::splitter_output_repr::SplitterOutput;
+pub use crate::step::splitter_output_repr::*;
 pub use crate::step::Message;
 pub use finalized_process::*;
+pub use finalized_split_process::first_case_of_finalized_split_process::*;
+pub use finalized_split_process::next_case_of_finalized_split_process::*;
 pub use finalized_split_process::*;
 pub use flowing_process::*;
 pub use runnable_process::*;
@@ -34,7 +36,7 @@ pub type IntermediateRunResult<T> = anyhow::Result<IntermediateRunOutcome<T>>;
 pub enum IntermediateSplitOutcome<ProcessBeforeSplitProduced: ParamList, ThisCaseProduced> {
   Continue {
     process_before_split_produced: ProcessBeforeSplitProduced,
-    passes_to_other_ceses: ThisCaseProduced,
+    passes_to_other_cases: ThisCaseProduced,
   },
   Yield(Message, Value, CurrentRunYieldedAt),
   Finish(Message),

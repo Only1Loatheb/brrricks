@@ -1,44 +1,60 @@
-// use frunk_core::hlist::{HCons, HList, HNil, Selector};
+// use frunk_core::hlist::*;
+// use frunk_core::indices::{Here, There};
 //
-// // Trait to compute type-level intersection of two HLists
-// pub trait TypeIntersection<Other> {
-//   type Output;
+// pub trait Selector<S, I> {
+//   fn get(&self) -> Option<&S>;
+//
+//   fn get_mut(&mut self) -> Option<&mut S>;
 // }
 //
-// // Base case: HNil intersected with anything is HNil
-// impl<Other> TypeIntersection<Other> for HNil {
-//   type Output = HNil;
+// pub struct Missing {
+//   _priv: (),
 // }
 //
-// // Recursive case: check if `Head` is in `Other`
-// impl<Head, Tail, Idx, Other: Selector<Head, Idx>> TypeIntersection<Other> for HCons<Head, Tail>
+// impl<T, Tail> Selector<T, Here> for HCons<T, Tail> {
+//   fn get(&self) -> Option<&T> {
+//     Some(&self.head)
+//   }
+//
+//   fn get_mut(&mut self) -> Option<&mut T> {
+//     Some(&mut self.head)
+//   }
+// }
+//
+// impl<T: std::any::Any, NotT: std::any::Any> Selector<T, Missing> for HCons<NotT, HNil> {
+//   fn get(&self) -> Option<&T> {
+//     None
+//   }
+//
+//   fn get_mut(&mut self) -> Option<&mut T> {
+//     None
+//   }
+// }
+//
+// impl<Head, Tail, FromTail, TailIndex> Selector<FromTail, There<TailIndex>> for HCons<Head, Tail>
 // where
-//   Tail: TypeIntersection<Other>,
-//   IfContains<
-//     Head,
-//     Other,
-//     HCons<Head, <Tail as TypeIntersection<Other>>::Output>,
-//     <Tail as TypeIntersection<Other>>::Output,
-//   >: HList,
+//   Tail: Selector<FromTail, TailIndex>,
 // {
-//   type Output = IfContains<
-//     Head,
-//     Other,
-//     HCons<Head, <Tail as TypeIntersection<Other>>::Output>,
-//     <Tail as TypeIntersection<Other>>::Output,
-//   >;
+//   fn get(&self) -> Option<&FromTail> {
+//     self.tail.get()
+//   }
+//
+//   fn get_mut(&mut self) -> Option<&mut FromTail> {
+//     self.tail.get_mut()
+//   }
 // }
 //
-// // Helper trait to conditionally include type if it exists in Other
-// pub type IfContains<Head, Other, Yes, No> = <SelectorHelper<Head, Other, Yes, No> as Select>::Result;
+// #[cfg(test)]
+// mod tests {
+//   use frunk_core::hlist;
 //
-// pub trait Select {
-//   type Result: HList;
-// }
+//   #[test]
+//   fn test_add() {
+//     let a = hlist![1u8, "hello", true];
+//     let b = hlist![false, 1u8, 3.14f32];
 //
-// pub struct SelectorHelper<Head, Other, Yes, No>(std::marker::PhantomData<(Head, Other, Yes, No)>);
+//     let intersection = a.intersect(b);
 //
-// // If `Other: Selector<Head>` succeeds, use `Yes`
-// impl<Head, Idx, Other: Selector<Head, Idx>, Yes: HList, No: HList> Select for SelectorHelper<Head, Other, Yes, No> {
-//   type Result = Yes;
+//     assert_eq!(intersection, hlist![1u8, true]);
+//   }
 // }

@@ -4,6 +4,7 @@ mod hlist_intersect;
 mod hlist_transform_to;
 mod param_list;
 pub mod step;
+mod type_eq;
 
 #[cfg(test)]
 mod tests {
@@ -17,6 +18,7 @@ mod tests {
   use frunk_core::hlist::{HCons, HNil};
   use serde_value::Value;
   use std::collections::BTreeMap;
+  use std::marker::PhantomData;
 
   #[derive(Clone, serde::Deserialize, serde::Serialize)]
   struct Param1;
@@ -62,9 +64,18 @@ mod tests {
   }
   // impl Linear<HCons<Param1, HNil>, HNil> for LinearB { async fn handle(&self, consumes: HCons<Param1, HNil>) -> anyhow::Result<(Option<Message>, HNil)> { todo!() } }
 
+  pub enum Case1 {}
+  pub enum Case2 {}
+  pub enum Case3 {}
+  type case1 = PhantomData<Case1>;
+  type case2 = PhantomData<Case2>;
+  type case3 = PhantomData<Case3>;
   struct SplitA;
-  impl Splitter<HNil, Coproduct<HNil, Coproduct<HNil, Coproduct<HNil, CNil>>>> for SplitA {
-    async fn handle(&self, consumes: HNil) -> anyhow::Result<Coproduct<HNil, Coproduct<HNil, Coproduct<HNil, CNil>>>> {
+  impl Splitter<HNil, Coproduct<(case1, HNil), Coproduct<(case2, HNil), Coproduct<(case3, HNil), CNil>>>> for SplitA {
+    async fn handle(
+      &self,
+      consumes: HNil,
+    ) -> anyhow::Result<Coproduct<(case1, HNil), Coproduct<(case2, HNil), Coproduct<(case3, HNil), CNil>>>> {
       todo!()
     }
   }
@@ -83,9 +94,9 @@ mod tests {
       .then(LinearA)
       .then(LinearB)
       .split(SplitA)
-      .case(|x| x.end(FinalA))
-      .case(|x| x.end(FinalA))
-      .case(|x| x.end(FinalA))
+      .case::<case1, _, _>(|x| x.end(FinalA))
+      .case::<case2, _, _>(|x| x.end(FinalA))
+      .case::<case3, _, _>(|x| x.end(FinalA))
       .build();
     let run_result = process
       .continue_run(

@@ -2,7 +2,7 @@ use crate::param_list::{ParamList, ParamValue};
 use frunk_core::hlist::{HCons, HNil};
 
 /// Using ParamList instead of HList simplifies where clauses
-/// Like `impl<RHS> Add<RHS> for HNil` in [frunk_core::hlist]
+/// Like `Add` and `extend` in [frunk_core::hlist], but with appropriate name
 pub trait Concat<RHS: ParamList>: ParamList {
   type Concatenated: ParamList;
 

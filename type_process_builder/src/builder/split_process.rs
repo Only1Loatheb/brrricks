@@ -1,19 +1,24 @@
 use crate::builder::{
-  subprocess, FinalizedProcess, FinalizedSplitProcess, FirstCaseOfFinalizedSplitProcess, FlowingProcess,
-  IntermediateRunOutcome, IntermediateSplitOutcome, IntermediateSplitResult, ParamList, PreviousRunYieldedAt,
-  Subprocess,
+  subprocess, FinalizedProcess, FirstCaseOfFinalizedSplitProcess, FlowingProcess, IntermediateRunOutcome,
+  IntermediateSplitOutcome, IntermediateSplitResult, ParamList, PreviousRunYieldedAt, Subprocess,
 };
 use crate::hlist_concat::Concat;
 use crate::hlist_transform_to::TransformTo;
 use crate::step::step::Splitter;
+use crate::type_eq::TypeEq;
 use frunk_core::coproduct::Coproduct;
 use serde_value::Value;
 use std::future::Future;
 use std::marker::PhantomData;
 
+/// We enforce at least one cases in the split.
+/// We could remove an unnecessary option of implementing a linear proces with a series of splits with single case,
+/// but sometimes the need arises to have a select form with one option that is different from input form.
+/// We at least remove an illegal state of unfinalized finalized split process.
 pub trait SplitProcess<SplitterProducesForOtherCases>: Sized {
   type ProcessBeforeSplitProduces: ParamList;
   type SplitterProducesForFirstCase: ParamList;
+  type SplitterTagForFirstCase;
 
   fn continue_run(
     &self,
@@ -29,7 +34,7 @@ pub trait SplitProcess<SplitterProducesForOtherCases>: Sized {
 
   fn run(
     &self,
-    process_before_split_produces: Self::ProcessBeforeSplitProduces,
+    process_before_split_produced: Self::ProcessBeforeSplitProduces,
   ) -> impl Future<
     Output = IntermediateSplitResult<
       Self::ProcessBeforeSplitProduces,
@@ -37,10 +42,11 @@ pub trait SplitProcess<SplitterProducesForOtherCases>: Sized {
     >,
   >;
 
-  fn case<ThisCase: FinalizedProcess, SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices>(
+  fn case<AssumedTag, ThisCase: FinalizedProcess, SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices>(
     self,
     create_case: impl FnOnce(Subprocess<Self::ProcessBeforeSplitProduces>) -> ThisCase,
   ) -> FirstCaseOfFinalizedSplitProcess<
+    Self::SplitterTagForFirstCase,
     Self::SplitterProducesForFirstCase,
     SplitterProducesForOtherCases,
     Self,
@@ -48,6 +54,7 @@ pub trait SplitProcess<SplitterProducesForOtherCases>: Sized {
     SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
   >
   where
+    (AssumedTag, PhantomData<Self::SplitterTagForFirstCase>): TypeEq,
     Self::SplitterProducesForFirstCase: Concat<Self::ProcessBeforeSplitProduces>,
     <Self::SplitterProducesForFirstCase as Concat<Self::ProcessBeforeSplitProduces>>::Concatenated:
       TransformTo<ThisCase::ProcessBeforeProduces, SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices>,
@@ -63,17 +70,22 @@ pub trait SplitProcess<SplitterProducesForOtherCases>: Sized {
 }
 
 pub struct SplitProcessSplitter<
+  Tag,
   ProcessBefore: FlowingProcess,
   SplitterStepConsumes: ParamList,
   SplitterProducesForFirstCase: ParamList,
   SplitterProducesForOtherCases,
-  SplitterStep: Splitter<SplitterStepConsumes, Coproduct<SplitterProducesForFirstCase, SplitterProducesForOtherCases>>,
+  SplitterStep: Splitter<
+    SplitterStepConsumes,
+    Coproduct<(PhantomData<Tag>, SplitterProducesForFirstCase), SplitterProducesForOtherCases>,
+  >,
   ProcessBeforeProducesToSplitterStepConsumesIndices,
 > {
   pub process_before: ProcessBefore,
   pub splitter: SplitterStep,
   pub split_step_index: usize,
   pub phantom_data: PhantomData<(
+    Tag,
     SplitterStepConsumes,
     SplitterProducesForFirstCase,
     SplitterProducesForOtherCases,
@@ -82,14 +94,19 @@ pub struct SplitProcessSplitter<
 }
 
 impl<
+    Tag,
     ProcessBefore: FlowingProcess,
     SplitterStepConsumes: ParamList,
     SplitterProducesForFirstCase: ParamList,
     SplitterProducesForOtherCases,
-    SplitterStep: Splitter<SplitterStepConsumes, Coproduct<SplitterProducesForFirstCase, SplitterProducesForOtherCases>>,
+    SplitterStep: Splitter<
+      SplitterStepConsumes,
+      Coproduct<(PhantomData<Tag>, SplitterProducesForFirstCase), SplitterProducesForOtherCases>,
+    >,
     ProcessBeforeProducesToSplitterStepConsumesIndices,
   > SplitProcess<SplitterProducesForOtherCases>
   for SplitProcessSplitter<
+    Tag,
     ProcessBefore,
     SplitterStepConsumes,
     SplitterProducesForFirstCase,
@@ -102,6 +119,7 @@ where
 {
   type ProcessBeforeSplitProduces = ProcessBefore::Produces;
   type SplitterProducesForFirstCase = SplitterProducesForFirstCase;
+  type SplitterTagForFirstCase = Tag;
 
   async fn continue_run(
     &self,
@@ -118,29 +136,33 @@ where
         .continue_run(previous_run_produced, previous_run_yielded_at, user_input)
         .await?;
       match process_before_output {
-        IntermediateRunOutcome::Continue(process_before_split_produces) => {
-          self.run(process_before_split_produces).await
+        IntermediateRunOutcome::Continue(process_before_split_produced) => {
+          self.run(process_before_split_produced).await
         }
         IntermediateRunOutcome::Yield(a, b, c) => Ok(IntermediateSplitOutcome::Yield(a, b, c)),
         IntermediateRunOutcome::Finish(a) => Ok(IntermediateSplitOutcome::Finish(a)),
       }
     } else {
-      let process_before_split_produces = ProcessBefore::Produces::deserialize(previous_run_produced)?;
-      self.run(process_before_split_produces).await
+      let process_before_split_produced = ProcessBefore::Produces::deserialize(previous_run_produced)?;
+      self.run(process_before_split_produced).await
     }
   }
 
   async fn run(
     &self,
-    process_before_split_produces: Self::ProcessBeforeSplitProduces,
+    process_before_split_produced: Self::ProcessBeforeSplitProduces,
   ) -> IntermediateSplitResult<
     Self::ProcessBeforeSplitProduces,
     Coproduct<Self::SplitterProducesForFirstCase, SplitterProducesForOtherCases>,
   > {
-    let splitter_step_consumes: SplitterStepConsumes = process_before_split_produces.clone().transform();
+    let splitter_step_consumes: SplitterStepConsumes = process_before_split_produced.clone().transform();
+    let passes_to_other_cases = match self.splitter.handle(splitter_step_consumes).await? {
+      Coproduct::Inl(a) => Coproduct::Inl(a.1),
+      Coproduct::Inr(b) => Coproduct::Inr(b),
+    };
     Ok(IntermediateSplitOutcome::Continue {
-      process_before_split_produced: process_before_split_produces,
-      passes_to_other_ceses: self.splitter.handle(splitter_step_consumes).await?,
+      process_before_split_produced,
+      passes_to_other_cases,
     })
   }
 

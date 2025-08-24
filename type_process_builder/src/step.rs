@@ -5,11 +5,12 @@ pub struct Message(pub String);
 pub mod splitter_output_repr {
   use crate::param_list::ParamList;
   use frunk_core::coproduct::Coproduct;
+  use std::marker::PhantomData;
 
   pub trait SplitterOutput {
     type NonEmptyCoproduct;
   }
-  impl<ThisCase: ParamList, OtherCase> SplitterOutput for Coproduct<ThisCase, OtherCase> {
+  impl<Tag, ThisCase: ParamList, OtherCase> SplitterOutput for Coproduct<(PhantomData<Tag>, ThisCase), OtherCase> {
     type NonEmptyCoproduct = Coproduct<ThisCase, OtherCase>;
   }
 }

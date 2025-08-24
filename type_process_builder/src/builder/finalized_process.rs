@@ -90,7 +90,7 @@ impl<ProcessBefore: FlowingProcess, FinalConsumes: ParamList, FinalStep: Final<F
     &self,
     _previous_run_produced: Value,
     _previous_run_yielded_at: PreviousRunYieldedAt,
-    user_input: String,
+    _user_input: String,
   ) -> RunResult {
     todo!()
   }
