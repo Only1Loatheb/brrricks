@@ -1,10 +1,6 @@
 use frunk_core::hlist::*;
 use frunk_core::indices::{Here, There};
 
-pub struct Missing {
-  _priv: (),
-}
-
 pub trait SelectOrAbsent<Target, Index> {
   fn select(&self) -> Option<&Target>;
 
@@ -21,7 +17,7 @@ impl<Target, Tail> SelectOrAbsent<Target, Here> for HCons<Target, Tail> {
   }
 }
 
-impl<Target> SelectOrAbsent<Target, Missing> for HNil {
+impl<Target> SelectOrAbsent<Target, Here> for HNil {
   fn select(&self) -> Option<&Target> {
     None
   }
@@ -55,7 +51,7 @@ mod tests {
     let mut my_list = hlist![42u32, "hello", true];
 
     // Example 1: existing type
-    let val: Option<&u32> = <HCons<u32, HCons<&str, HCons<bool, HNil>>>>::select(&my_list);
+    let val: Option<&u32> = <HCons<u32, HCons<&str, HCons<bool, HNil>>> as SelectOrAbsent<_, _>>::select(&my_list);
     println!("Found u32? {:?}", val); // Some(42)
 
     // Example 2: mut reference
