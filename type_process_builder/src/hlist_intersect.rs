@@ -1,150 +1,88 @@
-use frunk_core::hlist::{HCons, HList, HNil, Plucker};
-use frunk_core::{hlist, HList};
+use frunk_core::hlist::*;
 
-// ---------- Type-level booleans ----------
-pub trait Bool {}
-pub struct True;
-pub struct False;
-impl Bool for True {}
-impl Bool for False {}
+/// NotSameAs
+pub trait NotSameAs<T> {}
+impl<A, B> NotSameAs<B> for A {}
 
-// ---------- Compute Contains<M, H> at the type level ----------
-pub trait Contains<M: HList, H> {
-  type Out: Bool;
-}
+/// NotContains
+pub trait NotContains<T> {}
 
-// Base: empty M => not found
-impl<H> Contains<HNil, H> for () {
-  type Out = False;
-}
+// Empty list never contains anything => trivially NotContains
+impl<T> NotContains<T> for HNil {}
 
-// If head == H, found
-impl<T, H> Contains<HCons<H, T>, H> for ()
+impl<T, Head, Tail> NotContains<T> for HCons<Head, Tail>
 where
-  T: HList,
+  Tail: NotContains<T>,
+  T: NotSameAs<Head>,
 {
-  type Out = True;
 }
 
-// Otherwise, search tail
-impl<HH, T, H, Flag> Contains<HCons<HH, T>, H> for ()
-where
-  T: HList,
-  (): Contains<T, H, Out = Flag>,
-  Flag: Bool,
-  // Prevent overlap with the "head == H" impl:
-  // This impl only applies when HH != H, which we encode
-  // structurally by not matching H in the head position.
-{
-  type Out = Flag;
+/// HListIntersect
+pub trait HListIntersect<Other> {
+  type Output;
+
+  fn intersect(self, other: &Other) -> Self::Output;
 }
 
-// ---------- Intersection<L, M> (public facade) ----------
-pub trait Intersection<L: HList, M: HList> {
-  type Out: HList;
-  fn apply(l: L) -> Self::Out;
-}
+impl<Other> HListIntersect<Other> for HNil {
+  type Output = HNil;
 
-// Delegate to Intersect<L, M, Flag>
-impl<L, M, Flag, O> Intersection<L, M> for ()
-where
-  L: HList,
-  M: HList,
-  (): Intersect<L, M, Flag, Out = O>,
-  O: HList,
-  // compute Flag = Contains<M, Head(L)> recursively inside Intersect
-{
-  type Out = O;
-  fn apply(l: L) -> Self::Out {
-    <() as Intersect<_, _, Flag>>::apply(l)
-  }
-}
-
-// ---------- Internal worker with an explicit Flag ----------
-pub trait Intersect<L: HList, M: HList, Flag: Bool> {
-  type Out: HList;
-  fn apply(l: L) -> Self::Out;
-}
-
-// Base: ∅ ∩ M = ∅
-impl<M: HList> Intersect<HNil, M, False> for () {
-  type Out = HNil;
-  fn apply(_: HNil) -> Self::Out {
-    HNil
-  }
-}
-impl<M: HList> Intersect<HNil, M, True> for () {
-  type Out = HNil;
-  fn apply(_: HNil) -> Self::Out {
+  fn intersect(self, _other: &Other) -> Self::Output {
     HNil
   }
 }
 
-// Case 1: head is NOT in M (Flag = False)
-// (H :: T) ∩ M = T ∩ M
-impl<H, T, M, NextFlag, O> Intersect<HCons<H, T>, M, False> for ()
+/// HListIntersect Contains
+impl<Head, Tail, Other, Index> HListIntersect<Other> for HCons<Head, Tail>
 where
-  T: HList,
-  M: HList,
-  // recompute membership for next step:
-  (): Contains<M, HeadOf<T>, Out = NextFlag>,
-  (): Intersect<T, M, NextFlag, Out = O>,
-  O: HList,
-  // utility:
-  HeadOf<T>: ?Sized,
+  Tail: HListIntersect<Other>,
+  Other: Plucker<Head, Index>,
+  Head: Clone,
 {
-  type Out = O;
-  fn apply(l: HCons<H, T>) -> Self::Out {
-    // drop head, recurse on tail
-    <() as Intersect<_, _, NextFlag>>::apply(l.tail)
-  }
-}
+  type Output = HCons<Head, <Tail as HListIntersect<Other>>::Output>;
 
-// Case 2: head IS in M (Flag = True)
-// (H :: T) ∩ M = H :: (T ∩ (M - H))
-// We use Plucker to "consume" one H from M.
-impl<H, T, M, MR, NextFlag, O> Intersect<HCons<H, T>, M, True> for ()
-where
-  T: HList,
-  M: HList + Plucker<H, MR>,
-  MR: HList,
-  (): Contains<MR, HeadOf<T>, Out = NextFlag>,
-  (): Intersect<T, MR, NextFlag, Out = O>,
-  O: HList,
-  HeadOf<T>: ?Sized,
-{
-  type Out = HCons<H, O>;
-  fn apply(l: HCons<H, T>) -> Self::Out {
+  fn intersect(self, other: &Other) -> Self::Output {
+    let HCons { head, tail } = self;
     HCons {
-      head: l.head,
-      tail: <() as Intersect<_, _, NextFlag>>::apply(l.tail),
+      head: head.clone(),
+      tail: tail.intersect(other),
     }
   }
 }
 
-// ---------- Small helper: HeadOf<T> at the type level ----------
-pub trait HeadTy {
-  type Head;
+/// HListIntersect NotContains
+impl<Head, Tail, Other> HListIntersect<Other> for HCons<Head, Tail>
+where
+  Tail: HListIntersect<Other>,
+  Other: NotContains<Head>,
+{
+  type Output = <Tail as HListIntersect<Other>>::Output;
+
+  fn intersect(self, other: &Other) -> Self::Output {
+    self.tail.intersect(other)
+  }
 }
-impl HeadTy for HNil {
-  type Head = ();
-} // dummy
-impl<H, T> HeadTy for HCons<H, T> {
-  type Head = H;
-}
-type HeadOf<T> = <T as HeadTy>::Head;
 
-// ---------- Demo ----------
-pub type IntersectOut<L, M> = <() as Intersection<L, M>>::Out;
+#[cfg(test)]
+mod tests {
+  use crate::hlist_intersect::HListIntersect;
+  use frunk_core::{hlist, HList};
 
-fn main() {
-  let l = hlist![42u32, "hello", true];
-  type L = HList!(u32, &'static str, bool);
-  type M = HList!(bool, f64, u32);
+  #[test]
+  fn test_add() {
+    type L1 = HList![u8, u16, u32];
+    type L2 = HList![u16, bool, u8];
 
-  type R = IntersectOut<L, M>; // Hlist!(u32, bool)
-  let out: R = <() as Intersection<_, _>>::apply(l);
+    let list1 = hlist![1u8, 2u16, 3u32];
+    let list2 = hlist![4u16, true, 5u8];
 
-  assert_eq!(out.head, 42u32);
-  assert_eq!(out.tail.head, true);
+    // Type-level intersection
+    type Intersection = <L1 as HListIntersect<L2>>::Output;
+    // Intersection == Hlist![u8, u16]
+
+    // Value-level intersection
+    let intersected: Intersection = list1.intersect(&list2);
+
+    println!("{:?}", intersected); // prints (1, 2)
+  }
 }
