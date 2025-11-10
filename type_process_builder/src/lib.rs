@@ -6,6 +6,13 @@ mod param_list;
 pub mod step;
 mod type_eq;
 
+// cargo doc --no-deps --package type_process_builder --features docs
+/// A sequence diagram
+#[cfg(feature = "docs")]
+#[doc = simple_mermaid::mermaid!("process_builder_diagram.mermaid")]
+#[cfg_attr(not(feature = "docs"), doc = "")]
+pub mod a {}
+
 #[cfg(test)]
 mod tests {
   use crate::builder::*;
