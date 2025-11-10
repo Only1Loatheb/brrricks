@@ -1,7 +1,7 @@
 pub mod first_case_of_finalized_split_process;
 pub mod next_case_of_finalized_split_process;
 
-use crate::builder::*;
+use crate::builder::{IntermediateSplitResult, PreviousRunYieldedAt};
 use crate::hlist_concat::Concat;
 use crate::param_list::ParamList;
 use frunk_core::coproduct::Coproduct;

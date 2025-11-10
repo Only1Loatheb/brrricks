@@ -1,60 +1,31 @@
-// use crate::builder::finalized_process::FinalizedProcess;
-// use crate::builder::flowing_process::FlowingProcess;
-// use crate::builder::split_process::SplitProcess;
-// use crate::param_list::ParamList;
-// use crate::step::splitter_output_repr::SplitterOutput;
-// use crate::step::step::Splitter;
-// use std::marker::PhantomData;
-//
-// pub trait FlowingSplitProcess {}
-//
-// pub struct FirstCaseOfFlowingSplitProcess<
-//   ProcessBefore: FlowingProcess,
-//   SplitterStepConsumes: ParamList,
-//   SplitterProduces: SplitterOutput,
-//   SplitterStep: Splitter<SplitterStepConsumes, SplitterProduces>,
-//   FirstCase: FlowingProcess,
-// > {
-//   pub process_before: ProcessBefore,
-//   pub splitter: SplitterStep,
-//   pub first_case: FirstCase,
-//   pub phantom_data: PhantomData<(SplitterStepConsumes, SplitterProduces)>,
-// }
-//
-// impl<
-//     ProcessBefore: FlowingProcess,
-//     SplitterStepConsumes: ParamList,
-//     SplitterProduces: SplitterOutput,
-//     SplitterStep: Splitter<SplitterStepConsumes, SplitterProduces>,
-//     FirstCase: FlowingProcess,
-//   > FlowingSplitProcess
-//   for FirstCaseOfFlowingSplitProcess<ProcessBefore, SplitterStepConsumes, SplitterProduces, SplitterStep, FirstCase>
-// {
-// }
-//
-// pub struct NextCaseFlowingOfFlowingSplitProcess<ProcessBefore: FlowingSplitProcess, ThisCase: FlowingProcess> {
-//   pub split_process_before: ProcessBefore,
-//   pub next_case: ThisCase,
-// }
-// impl<ProcessBefore: FlowingSplitProcess, ThisCase: FlowingProcess> FlowingSplitProcess
-//   for NextCaseFlowingOfFlowingSplitProcess<ProcessBefore, ThisCase>
-// {
-// }
-//
-// pub struct NextCaseFinalizedOfFlowingSplitProcess<ProcessBefore: FlowingSplitProcess, ThisCase: FinalizedProcess> {
-//   pub split_process_before: ProcessBefore,
-//   pub next_case: ThisCase,
-// }
-// impl<ProcessBefore: FlowingSplitProcess, ThisCase: FinalizedProcess> FlowingSplitProcess
-//   for NextCaseFinalizedOfFlowingSplitProcess<ProcessBefore, ThisCase>
-// {
-// }
-//
-// pub struct NextCaseFromFinalizedOfFlowingSplitProcess<ProcessBefore: SplitProcess, ThisCase: FlowingProcess> {
-//   pub split_process_before: ProcessBefore,
-//   pub next_case: ThisCase,
-// }
-// impl<ProcessBefore: SplitProcess, ThisCase: FlowingProcess> FlowingSplitProcess
-//   for NextCaseFromFinalizedOfFlowingSplitProcess<ProcessBefore, ThisCase>
-// {
-// }
+pub mod first_case_of_flowing_split_process;
+pub mod next_case_of_flowing_split_process;
+
+use crate::builder::{IntermediateSplitResult, PreviousRunYieldedAt};
+use crate::hlist_concat::Concat;
+use crate::param_list::ParamList;
+use frunk_core::coproduct::Coproduct;
+use serde_value::Value;
+use std::future::Future;
+
+pub trait FlowingSplitProcess<SplitterProducesForOtherCases>: Sized {
+  type AvailableAfterJoin: ParamList;
+  type ProcessBeforeSplitProduces: ParamList;
+  type SplitterProducesForThisCase: ParamList + Concat<Self::ProcessBeforeSplitProduces>;
+  type SplitterTagForThisCase;
+
+  fn continue_run(
+    &self,
+    previous_run_produced: Value,
+    previous_run_yielded_at: PreviousRunYieldedAt,
+    user_input: String,
+  ) -> impl Future<Output = IntermediateSplitResult<Self::ProcessBeforeSplitProduces, SplitterProducesForOtherCases>>;
+
+  fn run(
+    &self,
+    process_before_split_produced: Self::ProcessBeforeSplitProduces,
+    this_case_or_other_cases_consumes: Coproduct<Self::SplitterProducesForThisCase, SplitterProducesForOtherCases>,
+  ) -> impl Future<Output = IntermediateSplitResult<Self::ProcessBeforeSplitProduces, SplitterProducesForOtherCases>>;
+
+  fn enumerate_steps(&mut self, last_used_index: usize) -> usize;
+}
