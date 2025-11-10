@@ -16,6 +16,7 @@ pub struct FirstCaseOfFlowingSplitProcess<
   PassedForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
   PassesToOtherCases,
   ProcessBefore: SplitProcess<PassesToOtherCases>,
+  AvailableAfterJoin: ParamList,
   ThisCase: FlowingProcess,
   SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
 > {
@@ -25,6 +26,7 @@ pub struct FirstCaseOfFlowingSplitProcess<
     ThisTag,
     PassedForThisCase,
     PassesToOtherCases,
+    AvailableAfterJoin,
     SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
   )>,
 }
@@ -40,6 +42,7 @@ impl<
     >,
     PassedForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
     PassesToNextCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
+    AvailableAfterJoin: ParamList,
     ThisCase: FinalizedProcess,
     SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
   >
@@ -48,6 +51,7 @@ impl<
     PassedForThisCase,
     Coproduct<(PhantomData<NextTag>, PassesToNextCase), PassesToOtherCases>,
     ProcessBefore,
+    AvailableAfterJoin,
     ThisCase,
     SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
   >

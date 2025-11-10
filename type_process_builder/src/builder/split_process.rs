@@ -80,6 +80,7 @@ pub trait SplitProcess<SplitterProducesForOtherCases>: Sized {
     Self::SplitterProducesForFirstCase,
     SplitterProducesForOtherCases,
     Self,
+    AvailableAfterJoin,
     ThisCase,
     SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
   >
