@@ -1,6 +1,7 @@
 use crate::builder::{
-  subprocess, FinalizedProcess, FinalizedSplitProcess, IntermediateSplitOutcome, IntermediateSplitResult,
-  NextCaseOfFlowingSplitProcess, ParamList, PreviousRunYieldedAt, RunOutcome, RunResult, SplitProcess, Subprocess,
+  subprocess, FinalizedProcess, FinalizedSplitProcess, FlowingProcess, IntermediateSplitOutcome,
+  IntermediateSplitResult, NextCaseOfFlowingSplitProcess, ParamList, PreviousRunYieldedAt, RunOutcome, RunResult,
+  SplitProcess, Subprocess,
 };
 use crate::hlist_concat::Concat;
 use crate::hlist_transform_to::TransformTo;
@@ -10,12 +11,12 @@ use serde_value::Value;
 use std::hint::unreachable_unchecked;
 use std::marker::PhantomData;
 
-pub struct FirstCaseOfFinalizedSplitProcess<
+pub struct FirstCaseOfFlowingSplitProcess<
   ThisTag,
   PassedForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
   PassesToOtherCases,
   ProcessBefore: SplitProcess<PassesToOtherCases>,
-  ThisCase: FinalizedProcess,
+  ThisCase: FlowingProcess,
   SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
 > {
   pub split_process_before: ProcessBefore,
@@ -42,7 +43,7 @@ impl<
     ThisCase: FinalizedProcess,
     SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
   >
-  FirstCaseOfFinalizedSplitProcess<
+  FirstCaseOfFlowingSplitProcess<
     ThisTag,
     PassedForThisCase,
     Coproduct<(PhantomData<NextTag>, PassesToNextCase), PassesToOtherCases>,
@@ -89,7 +90,7 @@ impl<
     ThisCase: FinalizedProcess,
     SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
   > FinalizedProcess
-  for FirstCaseOfFinalizedSplitProcess<
+  for FirstCaseOfFlowingSplitProcess<
     ThisTag,
     ProcessBefore::SplitterProducesForFirstCase,
     CNil,
@@ -149,7 +150,7 @@ impl<
     ThisCase: FinalizedProcess,
     SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
   > FinalizedSplitProcess<PassesToOtherCases>
-  for FirstCaseOfFinalizedSplitProcess<
+  for FirstCaseOfFlowingSplitProcess<
     ThisTag,
     PassedForThisCase,
     PassesToOtherCases,

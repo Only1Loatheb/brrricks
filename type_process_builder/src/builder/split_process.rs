@@ -1,3 +1,4 @@
+use crate::builder::first_case_of_flowing_split_process::FirstCaseOfFlowingSplitProcess;
 use crate::builder::{
   subprocess, FinalizedProcess, FirstCaseOfFinalizedSplitProcess, FlowingProcess, IntermediateRunOutcome,
   IntermediateSplitOutcome, IntermediateSplitResult, ParamList, PreviousRunYieldedAt, Subprocess,
@@ -60,6 +61,35 @@ pub trait SplitProcess<SplitterProducesForOtherCases>: Sized {
       TransformTo<ThisCase::ProcessBeforeProduces, SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices>,
   {
     FirstCaseOfFinalizedSplitProcess {
+      split_process_before: self,
+      this_case: create_case(subprocess::<Self::ProcessBeforeSplitProduces>()),
+      phantom_data: Default::default(),
+    }
+  }
+
+  fn case_flowing<
+    AssumedTag,
+    AvailableAfterJoin: ParamList,
+    ThisCase: FlowingProcess,
+    SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
+  >(
+    self,
+    create_case: impl FnOnce(Subprocess<Self::ProcessBeforeSplitProduces>) -> ThisCase,
+  ) -> FirstCaseOfFlowingSplitProcess<
+    Self::SplitterTagForFirstCase,
+    Self::SplitterProducesForFirstCase,
+    SplitterProducesForOtherCases,
+    Self,
+    ThisCase,
+    SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
+  >
+  where
+    (AssumedTag, PhantomData<Self::SplitterTagForFirstCase>): TypeEq,
+    Self::SplitterProducesForFirstCase: Concat<Self::ProcessBeforeSplitProduces>,
+    <Self::SplitterProducesForFirstCase as Concat<Self::ProcessBeforeSplitProduces>>::Concatenated:
+      TransformTo<ThisCase::ProcessBeforeProduces, SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices>,
+  {
+    FirstCaseOfFlowingSplitProcess {
       split_process_before: self,
       this_case: create_case(subprocess::<Self::ProcessBeforeSplitProduces>()),
       phantom_data: Default::default(),
