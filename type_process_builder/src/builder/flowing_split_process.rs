@@ -9,7 +9,7 @@ use serde_value::Value;
 use std::future::Future;
 
 pub trait FlowingSplitProcess<SplitterProducesForOtherCases>: Sized {
-  type AvailableAfterJoin: ParamList;
+  type EveryFlowingCaseProduces: ParamList;
   type ProcessBeforeSplitProduces: ParamList;
   type SplitterProducesForThisCase: ParamList + Concat<Self::ProcessBeforeSplitProduces>;
   type SplitterTagForThisCase;
@@ -19,13 +19,23 @@ pub trait FlowingSplitProcess<SplitterProducesForOtherCases>: Sized {
     previous_run_produced: Value,
     previous_run_yielded_at: PreviousRunYieldedAt,
     user_input: String,
-  ) -> impl Future<Output = IntermediateSplitResult<Self::ProcessBeforeSplitProduces, SplitterProducesForOtherCases>>;
+  ) -> impl Future<
+    Output = IntermediateSplitResult<
+      <Self::EveryFlowingCaseProduces as Concat<Self::ProcessBeforeSplitProduces>>::Concatenated,
+      SplitterProducesForOtherCases,
+    >,
+  >;
 
   fn run(
     &self,
     process_before_split_produced: Self::ProcessBeforeSplitProduces,
     this_case_or_other_cases_consumes: Coproduct<Self::SplitterProducesForThisCase, SplitterProducesForOtherCases>,
-  ) -> impl Future<Output = IntermediateSplitResult<Self::ProcessBeforeSplitProduces, SplitterProducesForOtherCases>>;
+  ) -> impl Future<
+    Output = IntermediateSplitResult<
+      <Self::EveryFlowingCaseProduces as Concat<Self::ProcessBeforeSplitProduces>>::Concatenated,
+      SplitterProducesForOtherCases,
+    >,
+  >;
 
   fn enumerate_steps(&mut self, last_used_index: usize) -> usize;
 }

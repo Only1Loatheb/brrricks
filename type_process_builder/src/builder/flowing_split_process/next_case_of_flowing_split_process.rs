@@ -1,5 +1,5 @@
 use crate::builder::{
-  subprocess, FinalizedProcess, FinalizedSplitProcess, IntermediateSplitOutcome, IntermediateSplitResult, ParamList,
+  subprocess, FinalizedProcess, FlowingSplitProcess, IntermediateSplitOutcome, IntermediateSplitResult, ParamList,
   PreviousRunYieldedAt, RunOutcome, RunResult, Subprocess,
 };
 use crate::hlist_concat::Concat;
@@ -14,7 +14,8 @@ pub struct NextCaseOfFlowingSplitProcess<
   ThisTag,
   PassedForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
   PassesToOtherCases,
-  ProcessBefore: FinalizedSplitProcess<Coproduct<(PhantomData<ThisTag>, PassedForThisCase), PassesToOtherCases>>,
+  ProcessBefore: FlowingSplitProcess<Coproduct<(PhantomData<ThisTag>, PassedForThisCase), PassesToOtherCases>>,
+  EveryFlowingCaseProduces: ParamList,
   ThisCase: FinalizedProcess,
   SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
 > {
@@ -24,6 +25,7 @@ pub struct NextCaseOfFlowingSplitProcess<
     ThisTag,
     PassedForThisCase,
     PassesToOtherCases,
+    EveryFlowingCaseProduces,
     SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
   )>,
 }
@@ -32,7 +34,7 @@ impl<
     ThisTag,
     NextTag,
     PassesToOtherCases,
-    ProcessBeforeProcessBefore: FinalizedSplitProcess<
+    ProcessBeforeProcessBefore: FlowingSplitProcess<
       Coproduct<
         (PhantomData<ThisTag>, PassedForThisCase),
         Coproduct<(PhantomData<NextTag>, PassesToNextCase), PassesToOtherCases>,
@@ -87,7 +89,7 @@ where
 impl<
     ThisTag,
     PassedForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
-    ProcessBefore: FinalizedSplitProcess<Coproduct<(PhantomData<ThisTag>, PassedForThisCase), CNil>>,
+    ProcessBefore: FlowingSplitProcess<Coproduct<(PhantomData<ThisTag>, PassedForThisCase), CNil>>,
     ThisCase: FinalizedProcess,
     SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
   > FinalizedProcess
@@ -148,10 +150,10 @@ impl<
     ThisTag,
     PassedForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
     SplitterProducesForOtherCases,
-    ProcessBefore: FinalizedSplitProcess<Coproduct<(PhantomData<ThisTag>, PassedForThisCase), SplitterProducesForOtherCases>>,
+    ProcessBefore: FlowingSplitProcess<Coproduct<(PhantomData<ThisTag>, PassedForThisCase), SplitterProducesForOtherCases>>,
     ThisCase: FinalizedProcess,
     SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
-  > FinalizedSplitProcess<SplitterProducesForOtherCases>
+  > FlowingSplitProcess<SplitterProducesForOtherCases>
   for NextCaseOfFlowingSplitProcess<
     ThisTag,
     PassedForThisCase,

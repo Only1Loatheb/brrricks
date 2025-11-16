@@ -69,7 +69,7 @@ pub trait SplitProcess<SplitterProducesForOtherCases>: Sized {
 
   fn case_flowing<
     AssumedTag,
-    AvailableAfterJoin: ParamList,
+    EveryFlowingCaseProduces: ParamList,
     ThisCase: FlowingProcess,
     SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
   >(
@@ -80,7 +80,7 @@ pub trait SplitProcess<SplitterProducesForOtherCases>: Sized {
     Self::SplitterProducesForFirstCase,
     SplitterProducesForOtherCases,
     Self,
-    AvailableAfterJoin,
+    EveryFlowingCaseProduces,
     ThisCase,
     SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
   >

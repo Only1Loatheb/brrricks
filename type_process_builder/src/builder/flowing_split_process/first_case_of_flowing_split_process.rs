@@ -1,7 +1,6 @@
 use crate::builder::{
-  subprocess, FinalizedProcess, FinalizedSplitProcess, FlowingProcess, IntermediateSplitOutcome,
-  IntermediateSplitResult, NextCaseOfFlowingSplitProcess, ParamList, PreviousRunYieldedAt, RunOutcome, RunResult,
-  SplitProcess, Subprocess,
+  subprocess, FinalizedProcess, FlowingProcess, FlowingSplitProcess, IntermediateSplitOutcome, IntermediateSplitResult,
+  NextCaseOfFlowingSplitProcess, ParamList, PreviousRunYieldedAt, RunOutcome, RunResult, SplitProcess, Subprocess,
 };
 use crate::hlist_concat::Concat;
 use crate::hlist_transform_to::TransformTo;
@@ -16,7 +15,7 @@ pub struct FirstCaseOfFlowingSplitProcess<
   PassedForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
   PassesToOtherCases,
   ProcessBefore: SplitProcess<PassesToOtherCases>,
-  AvailableAfterJoin: ParamList,
+  EveryFlowingCaseProduces: ParamList,
   ThisCase: FlowingProcess,
   SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
 > {
@@ -26,7 +25,7 @@ pub struct FirstCaseOfFlowingSplitProcess<
     ThisTag,
     PassedForThisCase,
     PassesToOtherCases,
-    AvailableAfterJoin,
+    EveryFlowingCaseProduces,
     SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
   )>,
 }
@@ -42,7 +41,7 @@ impl<
     >,
     PassedForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
     PassesToNextCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
-    AvailableAfterJoin: ParamList,
+    EveryFlowingCaseProduces: ParamList,
     ThisCase: FinalizedProcess,
     SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
   >
@@ -51,7 +50,7 @@ impl<
     PassedForThisCase,
     Coproduct<(PhantomData<NextTag>, PassesToNextCase), PassesToOtherCases>,
     ProcessBefore,
-    AvailableAfterJoin,
+    EveryFlowingCaseProduces,
     ThisCase,
     SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
   >
@@ -71,6 +70,7 @@ where
     PassesToNextCase,
     PassesToOtherCases,
     Self,
+    EveryFlowingCaseProduces,
     NextCase,
     SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndicesA,
   >
@@ -91,6 +91,7 @@ where
 impl<
     ThisTag,
     ProcessBefore: SplitProcess<CNil>,
+    EveryFlowingCaseProduces: ParamList,
     ThisCase: FinalizedProcess,
     SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
   > FinalizedProcess
@@ -99,6 +100,7 @@ impl<
     ProcessBefore::SplitterProducesForFirstCase,
     CNil,
     ProcessBefore,
+    EveryFlowingCaseProduces,
     ThisCase,
     SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
   >
@@ -151,14 +153,16 @@ impl<
     PassedForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
     PassesToOtherCases,
     ProcessBefore: SplitProcess<PassesToOtherCases, SplitterProducesForFirstCase = PassedForThisCase>,
+    EveryFlowingCaseProduces: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
     ThisCase: FinalizedProcess,
     SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
-  > FinalizedSplitProcess<PassesToOtherCases>
+  > FlowingSplitProcess<PassesToOtherCases>
   for FirstCaseOfFlowingSplitProcess<
     ThisTag,
     PassedForThisCase,
     PassesToOtherCases,
     ProcessBefore,
+    EveryFlowingCaseProduces,
     ThisCase,
     SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
   >
@@ -166,6 +170,7 @@ where
   <PassedForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated:
     TransformTo<ThisCase::ProcessBeforeProduces, SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices>,
 {
+  type EveryFlowingCaseProduces = EveryFlowingCaseProduces;
   type ProcessBeforeSplitProduces = ProcessBefore::ProcessBeforeSplitProduces;
   type SplitterProducesForThisCase = PassedForThisCase;
   type SplitterTagForThisCase = ThisTag;
@@ -175,7 +180,10 @@ where
     previous_run_produced: Value,
     previous_run_yielded_at: PreviousRunYieldedAt,
     user_input: String,
-  ) -> IntermediateSplitResult<Self::ProcessBeforeSplitProduces, PassesToOtherCases> {
+  ) -> IntermediateSplitResult<
+    <EveryFlowingCaseProduces as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
+    PassesToOtherCases,
+  > {
     let process_before_output = self
       .split_process_before
       .continue_run(previous_run_produced, previous_run_yielded_at, user_input)
@@ -194,7 +202,10 @@ where
     &self,
     process_before_split_produced: Self::ProcessBeforeSplitProduces,
     this_case_or_other_cases_consumes: Coproduct<Self::SplitterProducesForThisCase, PassesToOtherCases>,
-  ) -> IntermediateSplitResult<Self::ProcessBeforeSplitProduces, PassesToOtherCases> {
+  ) -> IntermediateSplitResult<
+    <EveryFlowingCaseProduces as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
+    PassesToOtherCases,
+  > {
     match this_case_or_other_cases_consumes {
       Coproduct::Inl(this_case_consumes) => {
         let next_case_consumes: ThisCase::ProcessBeforeProduces =
