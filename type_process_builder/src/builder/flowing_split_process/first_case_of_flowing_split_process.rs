@@ -1,6 +1,7 @@
 use crate::builder::{
-  subprocess, FinalizedProcess, FlowingProcess, FlowingSplitProcess, IntermediateSplitOutcome, IntermediateSplitResult,
-  NextCaseOfFlowingSplitProcess, ParamList, PreviousRunYieldedAt, RunOutcome, RunResult, SplitProcess, Subprocess,
+  subprocess, FinalizedProcess, FlowingProcess, FlowingSplitProcess, IntermediateRunOutcome, IntermediateRunResult,
+  IntermediateSplitOutcome, IntermediateSplitResult, NextCaseOfFlowingSplitProcess, ParamList, PreviousRunYieldedAt,
+  RunOutcome, SplitProcess, Subprocess,
 };
 use crate::hlist_concat::Concat;
 use crate::hlist_transform_to::TransformTo;
@@ -18,6 +19,7 @@ pub struct FirstCaseOfFlowingSplitProcess<
   EveryFlowingCaseProduces: ParamList,
   ThisCase: FlowingProcess,
   SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
+  Ix,
 > {
   pub split_process_before: ProcessBefore,
   pub this_case: ThisCase,
@@ -27,6 +29,7 @@ pub struct FirstCaseOfFlowingSplitProcess<
     PassesToOtherCases,
     EveryFlowingCaseProduces,
     SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
+    Ix,
   )>,
 }
 
@@ -91,10 +94,11 @@ where
 impl<
     ThisTag,
     ProcessBefore: SplitProcess<CNil>,
-    EveryFlowingCaseProduces: ParamList,
-    ThisCase: FinalizedProcess,
+    EveryFlowingCaseProduces: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
+    ThisCase: FlowingProcess,
     SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
-  > FinalizedProcess
+    Ix,
+  > FlowingProcess
   for FirstCaseOfFlowingSplitProcess<
     ThisTag,
     ProcessBefore::SplitterProducesForFirstCase,
@@ -103,20 +107,23 @@ impl<
     EveryFlowingCaseProduces,
     ThisCase,
     SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
+    Ix,
   >
 where
   ProcessBefore::SplitterProducesForFirstCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
   <ProcessBefore::SplitterProducesForFirstCase as Concat<<ProcessBefore>::ProcessBeforeSplitProduces>>::Concatenated:
     TransformTo<ThisCase::ProcessBeforeProduces, SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices>,
+  <ThisCase as FlowingProcess>::Produces: TransformTo<EveryFlowingCaseProduces, Ix>,
 {
   type ProcessBeforeProduces = ProcessBefore::ProcessBeforeSplitProduces;
+  type Produces = <EveryFlowingCaseProduces as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated;
 
   async fn continue_run(
     &self,
     previous_run_produced: Value,
     previous_run_yielded_at: PreviousRunYieldedAt,
     user_input: String,
-  ) -> RunResult {
+  ) -> IntermediateRunResult<Self::Produces> {
     let process_before_output = self
       .split_process_before
       .continue_run(previous_run_produced, previous_run_yielded_at, user_input)
@@ -126,21 +133,30 @@ where
         process_before_split_produced,
         passes_to_other_cases,
       } => match passes_to_other_cases {
-        Coproduct::Inl(this_case_consumes) => {
-          let this_case_consumes: ThisCase::ProcessBeforeProduces =
-            this_case_consumes.concat(process_before_split_produced).transform();
-          self.this_case.run(this_case_consumes).await
+        Coproduct::Inl(passes_to_this_case) => {
+          let this_case_consumes: <ThisCase as FlowingProcess>::ProcessBeforeProduces = passes_to_this_case
+            .concat(process_before_split_produced.clone())
+            .transform();
+          match self.this_case.run(this_case_consumes).await? {
+            IntermediateRunOutcome::Continue(produced) => {
+              let every_flowing_case_produces: EveryFlowingCaseProduces = produced.transform();
+              Ok(IntermediateRunOutcome::Continue(
+                every_flowing_case_produces.concat(process_before_split_produced),
+              ))
+            }
+            IntermediateRunOutcome::Yield(a, b, c) => Ok(IntermediateRunOutcome::Yield(a, b, c)),
+            IntermediateRunOutcome::Finish(a) => Ok(IntermediateRunOutcome::Finish(a)),
+          }
         }
         Coproduct::Inr(c_nil) => match c_nil {},
       },
-      IntermediateSplitOutcome::Yield(a, b, c) => Ok(RunOutcome::Yield(a, b, c)),
-      IntermediateSplitOutcome::Finish(a) => Ok(RunOutcome::Finish(a)),
+      IntermediateSplitOutcome::Yield(a, b, c) => Ok(IntermediateRunOutcome::Yield(a, b, c)),
+      IntermediateSplitOutcome::Finish(a) => Ok(IntermediateRunOutcome::Finish(a)),
     }
   }
 
-  async fn run(&self, _process_before_produces: Self::ProcessBeforeProduces) -> RunResult {
-    // most likely design flow, but I don't think it will happen :)
-    unsafe { unreachable_unchecked() }
+  async fn run(&self, process_before_produces: Self::ProcessBeforeProduces) -> IntermediateRunResult<Self::Produces> {
+    unsafe { unreachable_unchecked() } // fixme sadge
   }
 
   fn enumerate_steps(&mut self, last_used_index: usize) -> usize {
@@ -156,6 +172,7 @@ impl<
     EveryFlowingCaseProduces: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
     ThisCase: FinalizedProcess,
     SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
+    Ix,
   > FlowingSplitProcess<PassesToOtherCases>
   for FirstCaseOfFlowingSplitProcess<
     ThisTag,
@@ -165,6 +182,7 @@ impl<
     EveryFlowingCaseProduces,
     ThisCase,
     SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
+    Ix,
   >
 where
   <PassedForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated:
