@@ -47,6 +47,7 @@ impl<
     EveryFlowingCaseProduces: ParamList,
     ThisCase: FinalizedProcess,
     SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
+    Ix,
   >
   FirstCaseOfFlowingSplitProcess<
     ThisTag,
@@ -56,6 +57,7 @@ impl<
     EveryFlowingCaseProduces,
     ThisCase,
     SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
+    Ix,
   >
 where
   <PassedForThisCase as Concat<<ProcessBefore>::ProcessBeforeSplitProduces>>::Concatenated:
@@ -155,7 +157,7 @@ where
     }
   }
 
-  async fn run(&self, process_before_produces: Self::ProcessBeforeProduces) -> IntermediateRunResult<Self::Produces> {
+  async fn run(&self, _process_before_produces: Self::ProcessBeforeProduces) -> IntermediateRunResult<Self::Produces> {
     unsafe { unreachable_unchecked() } // fixme sadge
   }
 

@@ -16,6 +16,7 @@ use std::marker::PhantomData;
 pub trait FlowingProcess: Sized {
   type ProcessBeforeProduces: ParamList;
   type Produces: ParamList;
+  // add a dependent type for split process to pass values produced by the splitter step to this specific branch.
 
   fn continue_run(
     &self,

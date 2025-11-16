@@ -72,6 +72,7 @@ pub trait SplitProcess<SplitterProducesForOtherCases>: Sized {
     EveryFlowingCaseProduces: ParamList,
     ThisCase: FlowingProcess,
     SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
+    Ix,
   >(
     self,
     create_case: impl FnOnce(Subprocess<Self::ProcessBeforeSplitProduces>) -> ThisCase,
@@ -83,6 +84,7 @@ pub trait SplitProcess<SplitterProducesForOtherCases>: Sized {
     EveryFlowingCaseProduces,
     ThisCase,
     SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
+    Ix,
   >
   where
     (AssumedTag, PhantomData<Self::SplitterTagForFirstCase>): TypeEq,
