@@ -1,5 +1,5 @@
+pub mod finalized_case_of_flowing_split_process;
 pub mod first_case_of_flowing_split_process;
-pub mod next_case_of_flowing_split_process;
 
 use crate::builder::{IntermediateSplitResult, PreviousRunYieldedAt};
 use crate::hlist_concat::Concat;
