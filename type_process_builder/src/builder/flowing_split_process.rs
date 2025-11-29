@@ -9,7 +9,7 @@ use serde_value::Value;
 use std::future::Future;
 
 pub trait FlowingSplitProcess<SplitterProducesForOtherCases>: Sized {
-  type EveryFlowingCaseProduces: ParamList;
+  type EveryFlowingCaseProduces: ParamList + Concat<Self::ProcessBeforeSplitProduces>;
   type ProcessBeforeSplitProduces: ParamList;
   type SplitterProducesForThisCase: ParamList + Concat<Self::ProcessBeforeSplitProduces>;
   type SplitterTagForThisCase;
