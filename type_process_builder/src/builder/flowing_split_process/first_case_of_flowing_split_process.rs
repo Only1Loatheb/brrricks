@@ -38,7 +38,7 @@
 //     NextTag,
 //     PassesToOtherCases,
 //     ProcessBefore: SplitProcess<
-//       Coproduct<(PhantomData<NextTag>, PassesToNextCase), PassesToOtherCases>,
+//       Coproduct<(NextTag, PassesToNextCase), PassesToOtherCases>,
 //       SplitterProducesForFirstCase = PassedForThisCase,
 //       SplitterTagForFirstCase = ThisTag,
 //     >,
@@ -52,7 +52,7 @@
 //   FirstCaseOfFlowingSplitProcess<
 //     ThisTag,
 //     PassedForThisCase,
-//     Coproduct<(PhantomData<NextTag>, PassesToNextCase), PassesToOtherCases>,
+//     Coproduct<(NextTag, PassesToNextCase), PassesToOtherCases>,
 //     ProcessBefore,
 //     EveryFlowingCaseProduces,
 //     ThisCase,
@@ -80,7 +80,7 @@
 //     SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndicesA,
 //   >
 //   where
-//     (AssumedTag, PhantomData<NextTag>): TypeEq,
+//     (AssumedTag, NextTag): TypeEq,
 //     <PassesToNextCase as Concat<<ProcessBefore>::ProcessBeforeSplitProduces>>::Concatenated:
 //       TransformTo<NextCase::ProcessBeforeProduces, SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndicesA>,
 //   {

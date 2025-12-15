@@ -55,7 +55,7 @@ pub trait SplitProcess<SplitterProducesForOtherCases>: Sized {
     SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
   >
   where
-    (AssumedTag, PhantomData<Self::SplitterTagForFirstCase>): TypeEq,
+    (AssumedTag, Self::SplitterTagForFirstCase): TypeEq,
     Self::SplitterProducesForFirstCase: Concat<Self::ProcessBeforeSplitProduces>,
     <Self::SplitterProducesForFirstCase as Concat<Self::ProcessBeforeSplitProduces>>::Concatenated:
       TransformTo<ThisCase::ProcessBeforeProduces, SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices>,
@@ -87,7 +87,7 @@ pub trait SplitProcess<SplitterProducesForOtherCases>: Sized {
   //   Ix,
   // >
   // where
-  //   (AssumedTag, PhantomData<Self::SplitterTagForFirstCase>): TypeEq,
+  //   (AssumedTag, Self::SplitterTagForFirstCase): TypeEq,
   //   Self::SplitterProducesForFirstCase: Concat<Self::ProcessBeforeSplitProduces>,
   //   <Self::SplitterProducesForFirstCase as Concat<Self::ProcessBeforeSplitProduces>>::Concatenated:
   //     TransformTo<ThisCase::ProcessBeforeProduces, SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices>,
@@ -108,10 +108,7 @@ pub struct SplitProcessSplitter<
   SplitterStepConsumes: ParamList,
   SplitterProducesForFirstCase: ParamList,
   SplitterProducesForOtherCases,
-  SplitterStep: Splitter<
-    SplitterStepConsumes,
-    Coproduct<(PhantomData<Tag>, SplitterProducesForFirstCase), SplitterProducesForOtherCases>,
-  >,
+  SplitterStep: Splitter<SplitterStepConsumes, Coproduct<(Tag, SplitterProducesForFirstCase), SplitterProducesForOtherCases>>,
   ProcessBeforeProducesToSplitterStepConsumesIndices,
 > {
   pub process_before: ProcessBefore,
@@ -132,10 +129,7 @@ impl<
     SplitterStepConsumes: ParamList,
     SplitterProducesForFirstCase: ParamList,
     SplitterProducesForOtherCases,
-    SplitterStep: Splitter<
-      SplitterStepConsumes,
-      Coproduct<(PhantomData<Tag>, SplitterProducesForFirstCase), SplitterProducesForOtherCases>,
-    >,
+    SplitterStep: Splitter<SplitterStepConsumes, Coproduct<(Tag, SplitterProducesForFirstCase), SplitterProducesForOtherCases>>,
     ProcessBeforeProducesToSplitterStepConsumesIndices,
   > SplitProcess<SplitterProducesForOtherCases>
   for SplitProcessSplitter<

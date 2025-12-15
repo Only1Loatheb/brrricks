@@ -14,7 +14,7 @@ pub struct NextCaseOfFinalizedSplitProcess<
   ThisTag,
   PassedForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
   PassesToOtherCases,
-  ProcessBefore: FinalizedSplitProcess<Coproduct<(PhantomData<ThisTag>, PassedForThisCase), PassesToOtherCases>>,
+  ProcessBefore: FinalizedSplitProcess<Coproduct<(ThisTag, PassedForThisCase), PassesToOtherCases>>,
   ThisCase: FinalizedProcess,
   SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
 > {
@@ -33,10 +33,7 @@ impl<
     NextTag,
     PassesToOtherCases,
     ProcessBeforeProcessBefore: FinalizedSplitProcess<
-      Coproduct<
-        (PhantomData<ThisTag>, PassedForThisCase),
-        Coproduct<(PhantomData<NextTag>, PassesToNextCase), PassesToOtherCases>,
-      >,
+      Coproduct<(ThisTag, PassedForThisCase), Coproduct<(NextTag, PassesToNextCase), PassesToOtherCases>>,
     >,
     PassedForThisCase: ParamList + Concat<ProcessBeforeProcessBefore::ProcessBeforeSplitProduces>,
     PassesToNextCase: ParamList + Concat<ProcessBeforeProcessBefore::ProcessBeforeSplitProduces>,
@@ -46,7 +43,7 @@ impl<
   NextCaseOfFinalizedSplitProcess<
     ThisTag,
     PassedForThisCase,
-    Coproduct<(PhantomData<NextTag>, PassesToNextCase), PassesToOtherCases>,
+    Coproduct<(NextTag, PassesToNextCase), PassesToOtherCases>,
     ProcessBeforeProcessBefore,
     ThisCase,
     SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
@@ -71,7 +68,7 @@ where
     SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndicesA,
   >
   where
-    (AssumedTag, PhantomData<NextTag>): TypeEq,
+    (AssumedTag, NextTag): TypeEq,
     <PassesToNextCase as Concat<ProcessBeforeProcessBefore::ProcessBeforeSplitProduces>>::Concatenated:
       TransformTo<NextCase::ProcessBeforeProduces, SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndicesA>,
   {
@@ -87,7 +84,7 @@ where
 impl<
     ThisTag,
     PassedForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
-    ProcessBefore: FinalizedSplitProcess<Coproduct<(PhantomData<ThisTag>, PassedForThisCase), CNil>>,
+    ProcessBefore: FinalizedSplitProcess<Coproduct<(ThisTag, PassedForThisCase), CNil>>,
     ThisCase: FinalizedProcess,
     SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
   > FinalizedProcess
@@ -148,7 +145,7 @@ impl<
     ThisTag,
     PassedForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
     SplitterProducesForOtherCases,
-    ProcessBefore: FinalizedSplitProcess<Coproduct<(PhantomData<ThisTag>, PassedForThisCase), SplitterProducesForOtherCases>>,
+    ProcessBefore: FinalizedSplitProcess<Coproduct<(ThisTag, PassedForThisCase), SplitterProducesForOtherCases>>,
     ThisCase: FinalizedProcess,
     SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
   > FinalizedSplitProcess<SplitterProducesForOtherCases>
