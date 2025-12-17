@@ -4,7 +4,7 @@ build.target-dir = "./target"
 name = "bricks"
 version = "0.1.0"
 edition = "2021"
-rust-version = "1.91.0"
+rust-version = "1.92.0"
 
 [workspace]
 members = [
