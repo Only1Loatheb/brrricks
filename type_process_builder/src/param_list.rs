@@ -7,6 +7,7 @@ use std::collections::BTreeMap;
 use typenum::Unsigned;
 
 /// clone (required by run method) should be used in brick instead
+/// Use [typenum::op] to generate UID if the desired typenum const is missing.
 pub trait ParamValue: Clone + Serialize + DeserializeOwned {
   type UID: Unsigned;
 }
