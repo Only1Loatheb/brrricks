@@ -24,12 +24,13 @@ mod tests {
   use frunk_core::hlist::{HCons, HNil};
   use serde_value::Value;
   use std::collections::BTreeMap;
+  use typenum::U0;
 
   #[derive(Clone, serde::Deserialize, serde::Serialize)]
   struct Param1;
 
   impl ParamValue for Param1 {
-    const NAME: &'static str = "Param1";
+    type UID = U0;
   }
 
   struct EntryA;

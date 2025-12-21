@@ -4,10 +4,11 @@ use serde::Serialize;
 use serde_value::SerializerError::Custom;
 use serde_value::{to_value, DeserializerError, SerializerError, Value};
 use std::collections::BTreeMap;
+use typenum::Unsigned;
 
 /// clone (required by run method) should be used in brick instead
 pub trait ParamValue: Clone + Serialize + DeserializeOwned {
-  const NAME: &'static str;
+  type UID: Unsigned;
 }
 
 // use io:Read or Serializer and Deserializer wrappers instead of serde_value
@@ -44,18 +45,21 @@ impl ParamList for HNil {
 impl<Head: ParamValue, Tail: ParamList> ParamList for HCons<Head, Tail> {
   fn _serialize(&self, serialize_map: &mut BTreeMap<Value, Value>) -> Result<(), SerializerError> {
     self.tail._serialize(serialize_map)?;
-    let old_value = serialize_map.insert(Value::String(Head::NAME.into()), to_value(&self.head)?);
+    let old_value = serialize_map.insert(Value::U64(Head::UID::U64), to_value(&self.head)?);
     match old_value {
       None => Ok(()),
-      Some(_) => Err(Custom(format!("Two ParamValues have the same name: {}", Head::NAME))),
+      Some(_) => Err(Custom(format!(
+        "Two ParamValues have the same name: {}",
+        Head::UID::U64
+      ))),
     }
   }
 
   fn _deserialize(map: &mut BTreeMap<Value, Value>) -> Result<Self, DeserializerError> {
-    let key = Value::String(Head::NAME.into());
+    let key = Value::U64(Head::UID::U64);
     let value = map
       .remove(&key)
-      .ok_or_else(|| DeserializerError::Custom(format!("Missing key: {}", Head::NAME)))?;
+      .ok_or_else(|| DeserializerError::Custom(format!("Missing key: {}", Head::UID::U64)))?;
 
     let head: Head = Head::deserialize(value)?;
     let tail = Tail::_deserialize(map)?;
