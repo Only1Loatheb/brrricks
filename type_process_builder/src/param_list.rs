@@ -15,7 +15,7 @@ pub trait ParamValue: Clone + Serialize + DeserializeOwned {
 // use io:Read or Serializer and Deserializer wrappers instead of serde_value
 // could be BTreeMap<String, Value> or even BTreeMap<type_id, Value> but there is no need for unnecessary type conversions
 pub trait ParamList: HList + Clone {
-  /// maybe serialize as a list if the same list is always serialized and deserialized?
+  // https://serde.rs/impl-serialize.html#serializing-a-sequence-or-map
   fn serialize(&self) -> Result<Value, SerializerError> {
     let mut serialize_map = BTreeMap::new();
     self._serialize(&mut serialize_map)?;
@@ -23,6 +23,7 @@ pub trait ParamList: HList + Clone {
   }
   fn _serialize(&self, serialize_map: &mut BTreeMap<Value, Value>) -> Result<(), SerializerError>;
 
+  // https://serde.rs/deserialize-map.html
   fn deserialize(value: Value) -> Result<Self, DeserializerError> {
     let mut map = match value {
       Value::Map(m) => m,
