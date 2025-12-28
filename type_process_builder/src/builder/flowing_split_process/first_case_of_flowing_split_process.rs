@@ -1,38 +1,33 @@
-// use crate::builder::{
-//   subprocess, FinalizedProcess, FlowingProcess, FlowingSplitProcess, IntermediateRunOutcome, IntermediateRunResult,
-//   IntermediateSplitOutcome, IntermediateSplitResult, NextCaseOfFlowingSplitProcess, ParamList, PreviousRunYieldedAt,
-//   RunOutcome, SplitProcess, Subprocess,
-// };
-// use crate::hlist_concat::Concat;
-// use crate::hlist_transform_to::TransformTo;
-// use crate::type_eq::TypeEq;
-// use frunk_core::coproduct::{CNil, Coproduct};
-// use serde_value::Value;
-// use std::hint::unreachable_unchecked;
-// use std::marker::PhantomData;
-//
-// pub struct FirstCaseOfFlowingSplitProcess<
-//   ThisTag,
-//   PassedForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
-//   PassesToOtherCases,
-//   ProcessBefore: SplitProcess<PassesToOtherCases>,
-//   EveryFlowingCaseProduces: ParamList,
-//   ThisCase: FlowingProcess,
-//   SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
-//   Ix,
-// > {
-//   pub split_process_before: ProcessBefore,
-//   pub this_case: ThisCase,
-//   pub phantom_data: PhantomData<(
-//     ThisTag,
-//     PassedForThisCase,
-//     PassesToOtherCases,
-//     EveryFlowingCaseProduces,
-//     SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
-//     Ix,
-//   )>,
-// }
-//
+use crate::builder::{
+  FlowingProcess, FlowingSplitProcess
+  , ParamList
+  , SplitProcess,
+};
+use crate::hlist_concat::Concat;
+use std::marker::PhantomData;
+
+pub struct FirstCaseOfFlowingSplitProcess<
+  ThisTag,
+  PassedForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
+  PassesToOtherCases,
+  ProcessBefore: SplitProcess<PassesToOtherCases>,
+  EveryFlowingCaseProduces: ParamList,
+  ThisCase: FlowingProcess,
+  SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
+  Ix,
+> {
+  pub split_process_before: ProcessBefore,
+  pub this_case: ThisCase,
+  pub phantom_data: PhantomData<(
+    ThisTag,
+    PassedForThisCase,
+    PassesToOtherCases,
+    EveryFlowingCaseProduces,
+    SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
+    Ix,
+  )>,
+}
+
 // impl<
 //     ThisTag,
 //     NextTag,
@@ -91,7 +86,7 @@
 //     }
 //   }
 // }
-//
+
 // /// Removing this would forbid having just one case in a split
 // impl<
 //     ThisTag,
