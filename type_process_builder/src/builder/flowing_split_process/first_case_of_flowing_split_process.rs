@@ -1,9 +1,11 @@
 use crate::builder::{
-  FlowingProcess, FlowingSplitProcess
-  , ParamList
-  , SplitProcess,
+  subprocess, FinalizedProcess, FlowingProcess, FlowingSplitProcess, NextCaseOfFlowingSplitProcess, ParamList,
+  SplitProcess, Subprocess,
 };
 use crate::hlist_concat::Concat;
+use crate::hlist_transform_to::TransformTo;
+use crate::type_eq::TypeEq;
+use frunk_core::coproduct::Coproduct;
 use std::marker::PhantomData;
 
 pub struct FirstCaseOfFlowingSplitProcess<
@@ -28,64 +30,64 @@ pub struct FirstCaseOfFlowingSplitProcess<
   )>,
 }
 
-// impl<
-//     ThisTag,
-//     NextTag,
-//     PassesToOtherCases,
-//     ProcessBefore: SplitProcess<
-//       Coproduct<(NextTag, PassesToNextCase), PassesToOtherCases>,
-//       SplitterProducesForFirstCase = PassedForThisCase,
-//       SplitterTagForFirstCase = ThisTag,
-//     >,
-//     PassedForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
-//     PassesToNextCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
-//     EveryFlowingCaseProduces: ParamList,
-//     ThisCase: FinalizedProcess,
-//     SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
-//     Ix,
-//   >
-//   FirstCaseOfFlowingSplitProcess<
-//     ThisTag,
-//     PassedForThisCase,
-//     Coproduct<(NextTag, PassesToNextCase), PassesToOtherCases>,
-//     ProcessBefore,
-//     EveryFlowingCaseProduces,
-//     ThisCase,
-//     SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
-//     Ix,
-//   >
-// where
-//   <PassedForThisCase as Concat<<ProcessBefore>::ProcessBeforeSplitProduces>>::Concatenated:
-//     TransformTo<ThisCase::ProcessBeforeProduces, SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices>,
-// {
-//   pub fn case<
-//     AssumedTag,
-//     NextCase: FinalizedProcess,
-//     SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndicesA,
-//   >(
-//     self,
-//     create_case: impl FnOnce(Subprocess<ProcessBefore::ProcessBeforeSplitProduces>) -> NextCase,
-//   ) -> NextCaseOfFlowingSplitProcess<
-//     NextTag,
-//     PassesToNextCase,
-//     PassesToOtherCases,
-//     Self,
-//     EveryFlowingCaseProduces,
-//     NextCase,
-//     SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndicesA,
-//   >
-//   where
-//     (AssumedTag, NextTag): TypeEq,
-//     <PassesToNextCase as Concat<<ProcessBefore>::ProcessBeforeSplitProduces>>::Concatenated:
-//       TransformTo<NextCase::ProcessBeforeProduces, SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndicesA>,
-//   {
-//     NextCaseOfFlowingSplitProcess {
-//       split_process_before: self,
-//       this_case: create_case(subprocess::<ProcessBefore::ProcessBeforeSplitProduces>()),
-//       phantom_data: Default::default(),
-//     }
-//   }
-// }
+impl<
+    ThisTag,
+    NextTag,
+    PassesToOtherCases,
+    ProcessBefore: SplitProcess<
+      Coproduct<(NextTag, PassesToNextCase), PassesToOtherCases>,
+      SplitterProducesForFirstCase = PassedForThisCase,
+      SplitterTagForFirstCase = ThisTag,
+    >,
+    PassedForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
+    PassesToNextCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
+    EveryFlowingCaseProduces: ParamList,
+    ThisCase: FlowingProcess,
+    SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
+    Ix,
+  >
+  FirstCaseOfFlowingSplitProcess<
+    ThisTag,
+    PassedForThisCase,
+    Coproduct<(NextTag, PassesToNextCase), PassesToOtherCases>,
+    ProcessBefore,
+    EveryFlowingCaseProduces,
+    ThisCase,
+    SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
+    Ix,
+  >
+where
+  <PassedForThisCase as Concat<<ProcessBefore>::ProcessBeforeSplitProduces>>::Concatenated:
+    TransformTo<ThisCase::ProcessBeforeProduces, SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices>,
+{
+  pub fn case<
+    AssumedTag,
+    NextCase: FinalizedProcess,
+    SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndicesA,
+  >(
+    self,
+    create_case: impl FnOnce(Subprocess<ProcessBefore::ProcessBeforeSplitProduces>) -> NextCase,
+  ) -> NextCaseOfFlowingSplitProcess<
+    NextTag,
+    PassesToNextCase,
+    PassesToOtherCases,
+    Self,
+    EveryFlowingCaseProduces,
+    NextCase,
+    SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndicesA,
+  >
+  where
+    (AssumedTag, NextTag): TypeEq,
+    <PassesToNextCase as Concat<<ProcessBefore>::ProcessBeforeSplitProduces>>::Concatenated:
+      TransformTo<NextCase::ProcessBeforeProduces, SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndicesA>,
+  {
+    NextCaseOfFlowingSplitProcess {
+      split_process_before: self,
+      this_case: create_case(subprocess::<ProcessBefore::ProcessBeforeSplitProduces>()),
+      phantom_data: Default::default(),
+    }
+  }
+}
 
 // /// Removing this would forbid having just one case in a split
 // impl<
