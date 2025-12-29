@@ -1,11 +1,12 @@
 use crate::builder::{
-  subprocess, FinalizedProcess, FlowingProcess, FlowingSplitProcess, NextCaseOfFlowingSplitProcess, ParamList,
-  SplitProcess, Subprocess,
+  subprocess, FinalizedProcess, FlowingProcess, FlowingSplitProcess, IntermediateRunOutcome, IntermediateSplitOutcome,
+  IntermediateSplitResult, NextCaseOfFlowingSplitProcess, ParamList, PreviousRunYieldedAt, SplitProcess, Subprocess,
 };
 use crate::hlist_concat::Concat;
 use crate::hlist_transform_to::TransformTo;
 use crate::type_eq::TypeEq;
 use frunk_core::coproduct::Coproduct;
+use serde_value::Value;
 use std::marker::PhantomData;
 
 pub struct FirstCaseOfFlowingSplitProcess<
@@ -89,6 +90,89 @@ where
   }
 }
 
+impl<
+    ThisTag,
+    PassedForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
+    PassesToOtherCases,
+    ProcessBefore: SplitProcess<PassesToOtherCases, SplitterProducesForFirstCase = PassedForThisCase>,
+    EveryFlowingCaseProduces: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
+    ThisCase: FlowingProcess,
+    SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
+    Ix,
+  > FlowingSplitProcess<PassesToOtherCases>
+  for FirstCaseOfFlowingSplitProcess<
+    ThisTag,
+    PassedForThisCase,
+    PassesToOtherCases,
+    ProcessBefore,
+    EveryFlowingCaseProduces,
+    ThisCase,
+    SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
+    Ix,
+  >
+where
+  <PassedForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated:
+    TransformTo<ThisCase::ProcessBeforeProduces, SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices>,
+{
+  type EveryFlowingCaseProduces = EveryFlowingCaseProduces;
+  type ProcessBeforeSplitProduces = ProcessBefore::ProcessBeforeSplitProduces;
+  type SplitterProducesForThisCase = PassedForThisCase;
+  type SplitterTagForThisCase = ThisTag;
+
+  async fn continue_run(
+    &self,
+    previous_run_produced: Value,
+    previous_run_yielded_at: PreviousRunYieldedAt,
+    user_input: String,
+  ) -> IntermediateSplitResult<
+    <EveryFlowingCaseProduces as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
+    PassesToOtherCases,
+  > {
+    let process_before_output = self
+      .split_process_before
+      .continue_run(previous_run_produced, previous_run_yielded_at, user_input)
+      .await?;
+    match process_before_output {
+      IntermediateSplitOutcome::Continue {
+        process_before_split_produced,
+        passes_to_other_cases: this_case_produced,
+      } => self.run(process_before_split_produced, this_case_produced).await,
+      IntermediateSplitOutcome::Yield(a, b, c) => Ok(IntermediateSplitOutcome::Yield(a, b, c)),
+      IntermediateSplitOutcome::Finish(a) => Ok(IntermediateSplitOutcome::Finish(a)),
+    }
+  }
+
+  async fn run(
+    &self,
+    process_before_split_produced: Self::ProcessBeforeSplitProduces,
+    this_case_or_other_cases_consumes: Coproduct<Self::SplitterProducesForThisCase, PassesToOtherCases>,
+  ) -> IntermediateSplitResult<
+    <EveryFlowingCaseProduces as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
+    PassesToOtherCases,
+  > {
+    match this_case_or_other_cases_consumes {
+      Coproduct::Inl(this_case_consumes) => {
+        let next_case_consumes: ThisCase::ProcessBeforeProduces =
+          this_case_consumes.concat(process_before_split_produced).transform();
+        match self.this_case.run(next_case_consumes).await? {
+          IntermediateRunOutcome::Continue(process_before_produces) => self.run(process_before_produces).await,
+          IntermediateRunOutcome::Yield(a, b, c) => Ok(IntermediateRunOutcome::Yield(a, b, c)),
+          IntermediateRunOutcome::Finish(a) => Ok(IntermediateRunOutcome::Finish(a)),
+        }
+      }
+      Coproduct::Inr(other_cases_consumes) => Ok(IntermediateSplitOutcome::Continue {
+        process_before_split_produced: process_before_split_produced,
+        passes_to_other_cases: other_cases_consumes,
+      }),
+    }
+  }
+
+  fn enumerate_steps(&mut self, last_used_index: usize) -> usize {
+    self.split_process_before.enumerate_steps(last_used_index)
+  }
+}
+
+// /// last case
 // /// Removing this would forbid having just one case in a split
 // impl<
 //     ThisTag,
@@ -163,83 +247,3 @@ where
 //   }
 // }
 //
-// impl<
-//     ThisTag,
-//     PassedForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
-//     PassesToOtherCases,
-//     ProcessBefore: SplitProcess<PassesToOtherCases, SplitterProducesForFirstCase = PassedForThisCase>,
-//     EveryFlowingCaseProduces: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
-//     ThisCase: FinalizedProcess,
-//     SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
-//     Ix,
-//   > FlowingSplitProcess<PassesToOtherCases>
-//   for FirstCaseOfFlowingSplitProcess<
-//     ThisTag,
-//     PassedForThisCase,
-//     PassesToOtherCases,
-//     ProcessBefore,
-//     EveryFlowingCaseProduces,
-//     ThisCase,
-//     SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
-//     Ix,
-//   >
-// where
-//   <PassedForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated:
-//     TransformTo<ThisCase::ProcessBeforeProduces, SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices>,
-// {
-//   type EveryFlowingCaseProduces = EveryFlowingCaseProduces;
-//   type ProcessBeforeSplitProduces = ProcessBefore::ProcessBeforeSplitProduces;
-//   type SplitterProducesForThisCase = PassedForThisCase;
-//   type SplitterTagForThisCase = ThisTag;
-//
-//   async fn continue_run(
-//     &self,
-//     previous_run_produced: Value,
-//     previous_run_yielded_at: PreviousRunYieldedAt,
-//     user_input: String,
-//   ) -> IntermediateSplitResult<
-//     <EveryFlowingCaseProduces as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
-//     PassesToOtherCases,
-//   > {
-//     let process_before_output = self
-//       .split_process_before
-//       .continue_run(previous_run_produced, previous_run_yielded_at, user_input)
-//       .await?;
-//     match process_before_output {
-//       IntermediateSplitOutcome::Continue {
-//         process_before_split_produced,
-//         passes_to_other_cases: this_case_produced,
-//       } => self.run(process_before_split_produced, this_case_produced).await,
-//       IntermediateSplitOutcome::Yield(a, b, c) => Ok(IntermediateSplitOutcome::Yield(a, b, c)),
-//       IntermediateSplitOutcome::Finish(a) => Ok(IntermediateSplitOutcome::Finish(a)),
-//     }
-//   }
-//
-//   async fn run(
-//     &self,
-//     process_before_split_produced: Self::ProcessBeforeSplitProduces,
-//     this_case_or_other_cases_consumes: Coproduct<Self::SplitterProducesForThisCase, PassesToOtherCases>,
-//   ) -> IntermediateSplitResult<
-//     <EveryFlowingCaseProduces as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
-//     PassesToOtherCases,
-//   > {
-//     match this_case_or_other_cases_consumes {
-//       Coproduct::Inl(this_case_consumes) => {
-//         let next_case_consumes: ThisCase::ProcessBeforeProduces =
-//           this_case_consumes.concat(process_before_split_produced).transform();
-//         match self.this_case.run(next_case_consumes).await? {
-//           RunOutcome::Yield(a, b, c) => Ok(IntermediateSplitOutcome::Yield(a, b, c)),
-//           RunOutcome::Finish(a) => Ok(IntermediateSplitOutcome::Finish(a)),
-//         }
-//       }
-//       Coproduct::Inr(other_cases_consumes) => Ok(IntermediateSplitOutcome::Continue {
-//         process_before_split_produced: process_before_split_produced,
-//         passes_to_other_cases: other_cases_consumes,
-//       }),
-//     }
-//   }
-//
-//   fn enumerate_steps(&mut self, last_used_index: usize) -> usize {
-//     self.split_process_before.enumerate_steps(last_used_index)
-//   }
-// }
