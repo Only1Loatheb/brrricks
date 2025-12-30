@@ -23,7 +23,10 @@ pub trait FinalizedSplitProcess<SplitterProducesForOtherCases>: Sized {
   fn run(
     &self,
     process_before_split_produced: Self::ProcessBeforeSplitProduces,
-    this_case_or_other_cases_consumes: Coproduct<Self::SplitterProducesForThisCase, SplitterProducesForOtherCases>,
+    splitter_produces_for_this_case_or_other_cases_consumes: Coproduct<
+      Self::SplitterProducesForThisCase,
+      SplitterProducesForOtherCases,
+    >,
   ) -> impl Future<Output = IntermediateSplitResult<Self::ProcessBeforeSplitProduces, SplitterProducesForOtherCases>>;
 
   fn enumerate_steps(&mut self, last_used_index: usize) -> usize;

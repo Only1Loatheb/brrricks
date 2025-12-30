@@ -12,7 +12,7 @@ use std::marker::PhantomData;
 
 pub struct FirstCaseOfFinalizedSplitProcess<
   ThisTag,
-  PassedForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
+  SplitterProducesForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
   PassesToOtherCases,
   ProcessBefore: SplitProcess<PassesToOtherCases>,
   ThisCase: FinalizedProcess,
@@ -22,7 +22,7 @@ pub struct FirstCaseOfFinalizedSplitProcess<
   pub this_case: ThisCase,
   pub phantom_data: PhantomData<(
     ThisTag,
-    PassedForThisCase,
+    SplitterProducesForThisCase,
     PassesToOtherCases,
     SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
   )>,
@@ -34,24 +34,24 @@ impl<
     PassesToOtherCases,
     ProcessBefore: SplitProcess<
       Coproduct<(NextTag, PassesToNextCase), PassesToOtherCases>,
-      SplitterProducesForFirstCase = PassedForThisCase,
+      SplitterProducesForFirstCase = SplitterProducesForThisCase,
       SplitterTagForFirstCase = ThisTag,
     >,
-    PassedForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
+    SplitterProducesForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
     PassesToNextCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
     ThisCase: FinalizedProcess,
     SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
   >
   FirstCaseOfFinalizedSplitProcess<
     ThisTag,
-    PassedForThisCase,
+    SplitterProducesForThisCase,
     Coproduct<(NextTag, PassesToNextCase), PassesToOtherCases>,
     ProcessBefore,
     ThisCase,
     SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
   >
 where
-  <PassedForThisCase as Concat<<ProcessBefore>::ProcessBeforeSplitProduces>>::Concatenated:
+  <SplitterProducesForThisCase as Concat<<ProcessBefore>::ProcessBeforeSplitProduces>>::Concatenated:
     TransformTo<ThisCase::ProcessBeforeProduces, SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices>,
 {
   pub fn case<
@@ -143,26 +143,26 @@ where
 
 impl<
     ThisTag,
-    PassedForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
+    SplitterProducesForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
     PassesToOtherCases,
-    ProcessBefore: SplitProcess<PassesToOtherCases, SplitterProducesForFirstCase = PassedForThisCase>,
+    ProcessBefore: SplitProcess<PassesToOtherCases, SplitterProducesForFirstCase = SplitterProducesForThisCase>,
     ThisCase: FinalizedProcess,
     SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
   > FinalizedSplitProcess<PassesToOtherCases>
   for FirstCaseOfFinalizedSplitProcess<
     ThisTag,
-    PassedForThisCase,
+    SplitterProducesForThisCase,
     PassesToOtherCases,
     ProcessBefore,
     ThisCase,
     SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
   >
 where
-  <PassedForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated:
+  <SplitterProducesForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated:
     TransformTo<ThisCase::ProcessBeforeProduces, SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices>,
 {
   type ProcessBeforeSplitProduces = ProcessBefore::ProcessBeforeSplitProduces;
-  type SplitterProducesForThisCase = PassedForThisCase;
+  type SplitterProducesForThisCase = SplitterProducesForThisCase;
   type SplitterTagForThisCase = ThisTag;
 
   async fn continue_run(
@@ -188,9 +188,12 @@ where
   async fn run(
     &self,
     process_before_split_produced: Self::ProcessBeforeSplitProduces,
-    this_case_or_other_cases_consumes: Coproduct<Self::SplitterProducesForThisCase, PassesToOtherCases>,
+    splitter_produces_for_this_case_or_other_cases_consumes: Coproduct<
+      Self::SplitterProducesForThisCase,
+      PassesToOtherCases,
+    >,
   ) -> IntermediateSplitResult<Self::ProcessBeforeSplitProduces, PassesToOtherCases> {
-    match this_case_or_other_cases_consumes {
+    match splitter_produces_for_this_case_or_other_cases_consumes {
       Coproduct::Inl(this_case_consumes) => {
         let next_case_consumes: ThisCase::ProcessBeforeProduces =
           this_case_consumes.concat(process_before_split_produced).transform();

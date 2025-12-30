@@ -39,7 +39,7 @@ pub type IntermediateRunResult<T> = anyhow::Result<IntermediateRunOutcome<T>>;
 pub enum IntermediateSplitOutcome<ProcessBeforeSplitProduced: ParamList, ThisCaseProduced> {
   Continue {
     process_before_split_produced: ProcessBeforeSplitProduced,
-    passes_to_other_cases: ThisCaseProduced,
+    passes_to_other_cases: ThisCaseProduced, // why? add some Coproduct for flowing split or something
   },
   Yield(Message, Value, CurrentRunYieldedAt),
   Finish(Message),

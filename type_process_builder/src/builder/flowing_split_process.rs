@@ -4,10 +4,15 @@ pub mod first_case_of_flowing_split_process;
 use crate::builder::{IntermediateSplitResult, PreviousRunYieldedAt};
 use crate::hlist_concat::Concat;
 use crate::param_list::ParamList;
+use crate::step::step::Splitter;
 use frunk_core::coproduct::Coproduct;
 use serde_value::Value;
 use std::future::Future;
 
+///
+/// Should we force the user to produce common params before the [Splitter] step?
+/// If we allow that the user can produce common params in [Splitter] without defining additional step.
+/// The process builder API will be more ergonomic, but the implementation will be more involved.
 pub trait FlowingSplitProcess<SplitterProducesForOtherCases>: Sized {
   type EveryFlowingCaseProduces: ParamList + Concat<Self::ProcessBeforeSplitProduces>;
   type ProcessBeforeSplitProduces: ParamList;
@@ -29,7 +34,10 @@ pub trait FlowingSplitProcess<SplitterProducesForOtherCases>: Sized {
   fn run(
     &self,
     process_before_split_produced: Self::ProcessBeforeSplitProduces,
-    this_case_or_other_cases_consumes: Coproduct<Self::SplitterProducesForThisCase, SplitterProducesForOtherCases>,
+    splitter_produces_for_this_case_or_other_cases_consumes: Coproduct<
+      Self::SplitterProducesForThisCase,
+      SplitterProducesForOtherCases,
+    >,
   ) -> impl Future<
     Output = IntermediateSplitResult<
       <Self::EveryFlowingCaseProduces as Concat<Self::ProcessBeforeSplitProduces>>::Concatenated,
