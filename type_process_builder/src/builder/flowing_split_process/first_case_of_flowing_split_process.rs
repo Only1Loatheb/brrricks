@@ -31,22 +31,18 @@ pub struct FirstCaseOfFlowingSplitProcess<
   )>,
 }
 
-// fixme revert this with [SplitProcess]
 impl<
     ThisTag,
     NextTag,
     PassesToOtherCases,
-    ProcessBeforeSplitProduces: ParamList,
-    SplitterProducesForThisCase: ParamList + Concat<ProcessBeforeSplitProduces>,
-    SplitterProducesForNextCase: ParamList + Concat<ProcessBeforeSplitProduces>,
-    EveryFlowingCaseProduces: ParamList,
-    ProcessBefore: FlowingSplitProcess<
+    ProcessBefore: SplitProcess<
       Coproduct<(NextTag, SplitterProducesForNextCase), PassesToOtherCases>,
-      EveryFlowingCaseProduces = EveryFlowingCaseProduces,
-      ProcessBeforeSplitProduces = ProcessBeforeSplitProduces,
-      SplitterProducesForThisCase = SplitterProducesForThisCase,
-      SplitterTagForThisCase = ThisTag,
+      SplitterProducesForFirstCase = SplitterProducesForThisCase,
+      SplitterTagForFirstCase = ThisTag,
     >,
+    SplitterProducesForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
+    SplitterProducesForNextCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
+    EveryFlowingCaseProduces: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
     ThisCase: FlowingProcess,
     SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
     Ix,
