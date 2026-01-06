@@ -13,8 +13,8 @@ use std::marker::PhantomData;
 pub struct NextCaseOfFinalizedSplitProcess<
   ThisTag,
   SplitterProducesForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
-  PassesToOtherCases,
-  ProcessBefore: FinalizedSplitProcess<Coproduct<(ThisTag, SplitterProducesForThisCase), PassesToOtherCases>>,
+  SplitterPassesToOtherCases,
+  ProcessBefore: FinalizedSplitProcess<Coproduct<(ThisTag, SplitterProducesForThisCase), SplitterPassesToOtherCases>>,
   ThisCase: FinalizedProcess,
   SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
 > {
@@ -23,7 +23,7 @@ pub struct NextCaseOfFinalizedSplitProcess<
   pub phantom_data: PhantomData<(
     ThisTag,
     SplitterProducesForThisCase,
-    PassesToOtherCases,
+    SplitterPassesToOtherCases,
     SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
   )>,
 }
@@ -31,9 +31,12 @@ pub struct NextCaseOfFinalizedSplitProcess<
 impl<
     ThisTag,
     NextTag,
-    PassesToOtherCases,
+    SplitterPassesToOtherCases,
     ProcessBeforeProcessBefore: FinalizedSplitProcess<
-      Coproduct<(ThisTag, SplitterProducesForThisCase), Coproduct<(NextTag, PassesToNextCase), PassesToOtherCases>>,
+      Coproduct<
+        (ThisTag, SplitterProducesForThisCase),
+        Coproduct<(NextTag, PassesToNextCase), SplitterPassesToOtherCases>,
+      >,
     >,
     SplitterProducesForThisCase: ParamList + Concat<ProcessBeforeProcessBefore::ProcessBeforeSplitProduces>,
     PassesToNextCase: ParamList + Concat<ProcessBeforeProcessBefore::ProcessBeforeSplitProduces>,
@@ -43,7 +46,7 @@ impl<
   NextCaseOfFinalizedSplitProcess<
     ThisTag,
     SplitterProducesForThisCase,
-    Coproduct<(NextTag, PassesToNextCase), PassesToOtherCases>,
+    Coproduct<(NextTag, PassesToNextCase), SplitterPassesToOtherCases>,
     ProcessBeforeProcessBefore,
     ThisCase,
     SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
@@ -62,7 +65,7 @@ where
   ) -> NextCaseOfFinalizedSplitProcess<
     NextTag,
     PassesToNextCase,
-    PassesToOtherCases,
+    SplitterPassesToOtherCases,
     Self,
     NextCase,
     SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndicesA,
@@ -116,8 +119,8 @@ where
     match process_before_output {
       IntermediateSplitOutcome::Continue {
         process_before_split_produced,
-        passes_to_other_cases,
-      } => match passes_to_other_cases {
+        splitter_passes_to_other_cases,
+      } => match splitter_passes_to_other_cases {
         Coproduct::Inl((_pd, params_passed_to_other_cases)) => {
           let this_case_consumes: ThisCase::ProcessBeforeProduces = params_passed_to_other_cases
             .concat(process_before_split_produced)
@@ -178,7 +181,7 @@ where
     match process_before_output {
       IntermediateSplitOutcome::Continue {
         process_before_split_produced,
-        passes_to_other_cases: this_case_produced,
+        splitter_passes_to_other_cases: this_case_produced,
       } => {
         let produced = match this_case_produced {
           Coproduct::Inl((_pd, params)) => Coproduct::Inl(params),
@@ -210,7 +213,7 @@ where
       }
       Coproduct::Inr(other_cases_consumes) => Ok(IntermediateSplitOutcome::Continue {
         process_before_split_produced: process_before_split_produced,
-        passes_to_other_cases: other_cases_consumes,
+        splitter_passes_to_other_cases: other_cases_consumes,
       }),
     }
   }

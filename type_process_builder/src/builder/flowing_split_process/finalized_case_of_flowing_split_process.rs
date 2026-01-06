@@ -6,8 +6,8 @@ use std::marker::PhantomData;
 pub struct NextCaseOfFlowingSplitProcess<
   ThisTag,
   SplitterProducesForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
-  PassesToOtherCases,
-  ProcessBefore: FlowingSplitProcess<Coproduct<(ThisTag, SplitterProducesForThisCase), PassesToOtherCases>>,
+  SplitterPassesToOtherCases,
+  ProcessBefore: FlowingSplitProcess<Coproduct<(ThisTag, SplitterProducesForThisCase), SplitterPassesToOtherCases>>,
   EveryFlowingCaseProduces: ParamList,
   ThisCase: FinalizedProcess,
   SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
@@ -17,7 +17,7 @@ pub struct NextCaseOfFlowingSplitProcess<
   pub phantom_data: PhantomData<(
     ThisTag,
     SplitterProducesForThisCase,
-    PassesToOtherCases,
+    SplitterPassesToOtherCases,
     EveryFlowingCaseProduces,
     SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
   )>,
@@ -26,11 +26,11 @@ pub struct NextCaseOfFlowingSplitProcess<
 // impl<
 //     ThisTag,
 //     NextTag,
-//     PassesToOtherCases,
+//     SplitterPassesToOtherCases,
 //     ProcessBeforeProcessBefore: FlowingSplitProcess<
 //       Coproduct<
 //         (ThisTag, SplitterProducesForThisCase),
-//         Coproduct<(NextTag, PassesToNextCase), PassesToOtherCases>,
+//         Coproduct<(NextTag, PassesToNextCase), SplitterPassesToOtherCases>,
 //       >,
 //     >,
 //     SplitterProducesForThisCase: ParamList + Concat<ProcessBeforeProcessBefore::ProcessBeforeSplitProduces>,
@@ -41,7 +41,7 @@ pub struct NextCaseOfFlowingSplitProcess<
 //   NextCaseOfFlowingSplitProcess<
 //     ThisTag,
 //     SplitterProducesForThisCase,
-//     Coproduct<(NextTag, PassesToNextCase), PassesToOtherCases>,
+//     Coproduct<(NextTag, PassesToNextCase), SplitterPassesToOtherCases>,
 //     ProcessBeforeProcessBefore,
 //     ThisCase,
 //     SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
@@ -60,7 +60,7 @@ pub struct NextCaseOfFlowingSplitProcess<
 //   ) -> NextCaseOfFlowingSplitProcess<
 //     NextTag,
 //     PassesToNextCase,
-//     PassesToOtherCases,
+//     SplitterPassesToOtherCases,
 //     Self,
 //     NextCase,
 //     SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndicesA,
@@ -114,8 +114,8 @@ pub struct NextCaseOfFlowingSplitProcess<
 //     match process_before_output {
 //       IntermediateSplitOutcome::Continue {
 //         process_before_split_produced,
-//         passes_to_other_cases,
-//       } => match passes_to_other_cases {
+//         splitter_passes_to_other_cases,
+//       } => match splitter_passes_to_other_cases {
 //         Coproduct::Inl((_pd, params_passed_to_other_cases)) => {
 //           let this_case_consumes: ThisCase::ProcessBeforeProduces = params_passed_to_other_cases
 //             .concat(process_before_split_produced)
@@ -176,7 +176,7 @@ pub struct NextCaseOfFlowingSplitProcess<
 //     match process_before_output {
 //       IntermediateSplitOutcome::Continue {
 //         process_before_split_produced,
-//         passes_to_other_cases: this_case_produced,
+//         splitter_passes_to_other_cases: this_case_produced,
 //       } => {
 //         let produced = match this_case_produced {
 //           Coproduct::Inl((_pd, params)) => Coproduct::Inl(params),
@@ -205,7 +205,7 @@ pub struct NextCaseOfFlowingSplitProcess<
 //       }
 //       Coproduct::Inr(other_cases_consumes) => Ok(IntermediateSplitOutcome::Continue {
 //         process_before_split_produced: process_before_split_produced,
-//         passes_to_other_cases: other_cases_consumes,
+//         splitter_passes_to_other_cases: other_cases_consumes,
 //       }),
 //     }
 //   }

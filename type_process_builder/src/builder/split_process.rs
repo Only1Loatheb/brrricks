@@ -183,13 +183,13 @@ where
     Coproduct<Self::SplitterProducesForFirstCase, SplitterProducesForOtherCases>,
   > {
     let splitter_step_consumes: SplitterStepConsumes = process_before_split_produced.clone().transform();
-    let passes_to_other_cases = match self.splitter.handle(splitter_step_consumes).await? {
+    let splitter_passes_to_other_cases = match self.splitter.handle(splitter_step_consumes).await? {
       Coproduct::Inl(a) => Coproduct::Inl(a.1),
       Coproduct::Inr(b) => Coproduct::Inr(b),
     };
     Ok(IntermediateSplitOutcome::Continue {
       process_before_split_produced,
-      passes_to_other_cases,
+      splitter_passes_to_other_cases,
     })
   }
 
