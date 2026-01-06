@@ -36,7 +36,7 @@ pub enum IntermediateRunOutcome<Produced: ParamList> {
 
 pub type IntermediateRunResult<T> = anyhow::Result<IntermediateRunOutcome<T>>;
 
-pub enum IntermediateSplitOutcome<ProcessBeforeSplitProduced: ParamList, SplitterPassesToOtherCases> {
+pub enum IntermediateFinalizedSplitOutcome<ProcessBeforeSplitProduced: ParamList, SplitterPassesToOtherCases> {
   Continue {
     process_before_split_produced: ProcessBeforeSplitProduced,
     splitter_passes_to_other_cases: SplitterPassesToOtherCases,
@@ -46,7 +46,7 @@ pub enum IntermediateSplitOutcome<ProcessBeforeSplitProduced: ParamList, Splitte
 }
 
 pub type IntermediateSplitResult<ProcessBeforeSplitProduced, SplitterPassesToOtherCases> =
-  anyhow::Result<IntermediateSplitOutcome<ProcessBeforeSplitProduced, SplitterPassesToOtherCases>>;
+  anyhow::Result<IntermediateFinalizedSplitOutcome<ProcessBeforeSplitProduced, SplitterPassesToOtherCases>>;
 
 pub enum RunOutcome {
   Yield(Message, Value, CurrentRunYieldedAt),

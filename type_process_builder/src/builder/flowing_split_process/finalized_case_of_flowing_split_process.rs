@@ -112,7 +112,7 @@ pub struct NextCaseOfFlowingSplitProcess<
 //       .continue_run(previous_run_produced, previous_run_yielded_at, user_input)
 //       .await?;
 //     match process_before_output {
-//       IntermediateSplitOutcome::Continue {
+//       IntermediateFinalizedSplitOutcome::Continue {
 //         process_before_split_produced,
 //         splitter_passes_to_other_cases,
 //       } => match splitter_passes_to_other_cases {
@@ -124,8 +124,8 @@ pub struct NextCaseOfFlowingSplitProcess<
 //         }
 //         Coproduct::Inr(c_nil) => match c_nil {},
 //       },
-//       IntermediateSplitOutcome::Yield(a, b, c) => Ok(RunOutcome::Yield(a, b, c)),
-//       IntermediateSplitOutcome::Finish(a) => Ok(RunOutcome::Finish(a)),
+//       IntermediateFinalizedSplitOutcome::Yield(a, b, c) => Ok(RunOutcome::Yield(a, b, c)),
+//       IntermediateFinalizedSplitOutcome::Finish(a) => Ok(RunOutcome::Finish(a)),
 //     }
 //   }
 //
@@ -174,7 +174,7 @@ pub struct NextCaseOfFlowingSplitProcess<
 //       .continue_run(previous_run_produced, previous_run_yielded_at, user_input)
 //       .await?;
 //     match process_before_output {
-//       IntermediateSplitOutcome::Continue {
+//       IntermediateFinalizedSplitOutcome::Continue {
 //         process_before_split_produced,
 //         splitter_passes_to_other_cases: this_case_produced,
 //       } => {
@@ -184,8 +184,8 @@ pub struct NextCaseOfFlowingSplitProcess<
 //         };
 //         self.run(process_before_split_produced, produced).await
 //       }
-//       IntermediateSplitOutcome::Yield(a, b, c) => Ok(IntermediateSplitOutcome::Yield(a, b, c)),
-//       IntermediateSplitOutcome::Finish(a) => Ok(IntermediateSplitOutcome::Finish(a)),
+//       IntermediateFinalizedSplitOutcome::Yield(a, b, c) => Ok(IntermediateFinalizedSplitOutcome::Yield(a, b, c)),
+//       IntermediateFinalizedSplitOutcome::Finish(a) => Ok(IntermediateFinalizedSplitOutcome::Finish(a)),
 //     }
 //   }
 //
@@ -199,11 +199,11 @@ pub struct NextCaseOfFlowingSplitProcess<
 //         let next_case_consumes: ThisCase::ProcessBeforeProduces =
 //           this_case_consumes.concat(process_before_split_produced).transform();
 //         match self.this_case.run(next_case_consumes).await? {
-//           RunOutcome::Yield(a, b, c) => Ok(IntermediateSplitOutcome::Yield(a, b, c)),
-//           RunOutcome::Finish(a) => Ok(IntermediateSplitOutcome::Finish(a)),
+//           RunOutcome::Yield(a, b, c) => Ok(IntermediateFinalizedSplitOutcome::Yield(a, b, c)),
+//           RunOutcome::Finish(a) => Ok(IntermediateFinalizedSplitOutcome::Finish(a)),
 //         }
 //       }
-//       Coproduct::Inr(other_cases_consumes) => Ok(IntermediateSplitOutcome::Continue {
+//       Coproduct::Inr(other_cases_consumes) => Ok(IntermediateFinalizedSplitOutcome::Continue {
 //         process_before_split_produced: process_before_split_produced,
 //         splitter_passes_to_other_cases: other_cases_consumes,
 //       }),

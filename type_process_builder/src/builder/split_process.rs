@@ -1,7 +1,7 @@
 use crate::builder::first_case_of_flowing_split_process::FirstCaseOfFlowingSplitProcess;
 use crate::builder::{
-  subprocess, FinalizedProcess, FirstCaseOfFinalizedSplitProcess, FlowingProcess, IntermediateRunOutcome,
-  IntermediateSplitOutcome, IntermediateSplitResult, ParamList, PreviousRunYieldedAt, Subprocess,
+  subprocess, FinalizedProcess, FirstCaseOfFinalizedSplitProcess, FlowingProcess, IntermediateFinalizedSplitOutcome,
+  IntermediateRunOutcome, IntermediateSplitResult, ParamList, PreviousRunYieldedAt, Subprocess,
 };
 use crate::hlist_concat::Concat;
 use crate::hlist_transform_to::TransformTo;
@@ -166,8 +166,8 @@ where
         IntermediateRunOutcome::Continue(process_before_split_produced) => {
           self.run(process_before_split_produced).await
         }
-        IntermediateRunOutcome::Yield(a, b, c) => Ok(IntermediateSplitOutcome::Yield(a, b, c)),
-        IntermediateRunOutcome::Finish(a) => Ok(IntermediateSplitOutcome::Finish(a)),
+        IntermediateRunOutcome::Yield(a, b, c) => Ok(IntermediateFinalizedSplitOutcome::Yield(a, b, c)),
+        IntermediateRunOutcome::Finish(a) => Ok(IntermediateFinalizedSplitOutcome::Finish(a)),
       }
     } else {
       let process_before_split_produced = ProcessBefore::Produces::deserialize(previous_run_produced)?;
@@ -187,7 +187,7 @@ where
       Coproduct::Inl(a) => Coproduct::Inl(a.1),
       Coproduct::Inr(b) => Coproduct::Inr(b),
     };
-    Ok(IntermediateSplitOutcome::Continue {
+    Ok(IntermediateFinalizedSplitOutcome::Continue {
       process_before_split_produced,
       splitter_passes_to_other_cases,
     })
