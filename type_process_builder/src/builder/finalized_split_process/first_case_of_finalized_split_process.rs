@@ -1,6 +1,7 @@
 use crate::builder::{
-  subprocess, FinalizedProcess, FinalizedSplitProcess, IntermediateFinalizedSplitOutcome, IntermediateSplitResult,
-  NextCaseOfFinalizedSplitProcess, ParamList, PreviousRunYieldedAt, RunOutcome, RunResult, SplitProcess, Subprocess,
+  subprocess, FinalizedProcess, FinalizedSplitProcess, IntermediateFinalizedSplitOutcome,
+  IntermediateFinalizedSplitResult, NextCaseOfFinalizedSplitProcess, ParamList, PreviousRunYieldedAt, RunOutcome,
+  RunResult, SplitProcess, Subprocess,
 };
 use crate::hlist_concat::Concat;
 use crate::hlist_transform_to::TransformTo;
@@ -115,7 +116,7 @@ where
       .continue_run(previous_run_produced, previous_run_yielded_at, user_input)
       .await?;
     match process_before_output {
-      IntermediateFinalizedSplitOutcome::Continue {
+      IntermediateFinalizedSplitOutcome::GoToCase {
         process_before_split_produced,
         splitter_passes_to_other_cases,
       } => match splitter_passes_to_other_cases {
@@ -170,16 +171,20 @@ where
     previous_run_produced: Value,
     previous_run_yielded_at: PreviousRunYieldedAt,
     user_input: String,
-  ) -> IntermediateSplitResult<Self::ProcessBeforeSplitProduces, SplitterPassesToOtherCases> {
+  ) -> IntermediateFinalizedSplitResult<Self::ProcessBeforeSplitProduces, SplitterPassesToOtherCases> {
     let process_before_output = self
       .split_process_before
       .continue_run(previous_run_produced, previous_run_yielded_at, user_input)
       .await?;
     match process_before_output {
-      IntermediateFinalizedSplitOutcome::Continue {
+      IntermediateFinalizedSplitOutcome::GoToCase {
         process_before_split_produced,
-        splitter_passes_to_other_cases: this_case_produced,
-      } => self.run(process_before_split_produced, this_case_produced).await,
+        splitter_passes_to_other_cases,
+      } => {
+        self
+          .run(process_before_split_produced, splitter_passes_to_other_cases)
+          .await
+      }
       IntermediateFinalizedSplitOutcome::Yield(a, b, c) => Ok(IntermediateFinalizedSplitOutcome::Yield(a, b, c)),
       IntermediateFinalizedSplitOutcome::Finish(a) => Ok(IntermediateFinalizedSplitOutcome::Finish(a)),
     }
@@ -192,7 +197,7 @@ where
       Self::SplitterProducesForThisCase,
       SplitterPassesToOtherCases,
     >,
-  ) -> IntermediateSplitResult<Self::ProcessBeforeSplitProduces, SplitterPassesToOtherCases> {
+  ) -> IntermediateFinalizedSplitResult<Self::ProcessBeforeSplitProduces, SplitterPassesToOtherCases> {
     match splitter_produces_for_this_case_or_other_cases_consumes {
       Coproduct::Inl(this_case_consumes) => {
         let next_case_consumes: ThisCase::ProcessBeforeProduces =
@@ -202,9 +207,9 @@ where
           RunOutcome::Finish(a) => Ok(IntermediateFinalizedSplitOutcome::Finish(a)),
         }
       }
-      Coproduct::Inr(other_cases_consumes) => Ok(IntermediateFinalizedSplitOutcome::Continue {
-        process_before_split_produced: process_before_split_produced,
-        splitter_passes_to_other_cases: other_cases_consumes,
+      Coproduct::Inr(splitter_passes_to_other_cases) => Ok(IntermediateFinalizedSplitOutcome::GoToCase {
+        process_before_split_produced,
+        splitter_passes_to_other_cases,
       }),
     }
   }

@@ -1,7 +1,7 @@
 use crate::builder::first_case_of_flowing_split_process::FirstCaseOfFlowingSplitProcess;
 use crate::builder::{
   subprocess, FinalizedProcess, FirstCaseOfFinalizedSplitProcess, FlowingProcess, IntermediateFinalizedSplitOutcome,
-  IntermediateRunOutcome, IntermediateSplitResult, ParamList, PreviousRunYieldedAt, Subprocess,
+  IntermediateFinalizedSplitResult, IntermediateRunOutcome, ParamList, PreviousRunYieldedAt, Subprocess,
 };
 use crate::hlist_concat::Concat;
 use crate::hlist_transform_to::TransformTo;
@@ -27,7 +27,7 @@ pub trait SplitProcess<SplitterProducesForOtherCases>: Sized {
     previous_run_yielded_at: PreviousRunYieldedAt,
     user_input: String,
   ) -> impl Future<
-    Output = IntermediateSplitResult<
+    Output = IntermediateFinalizedSplitResult<
       Self::ProcessBeforeSplitProduces,
       Coproduct<Self::SplitterProducesForFirstCase, SplitterProducesForOtherCases>,
     >,
@@ -37,7 +37,7 @@ pub trait SplitProcess<SplitterProducesForOtherCases>: Sized {
     &self,
     process_before_split_produced: Self::ProcessBeforeSplitProduces,
   ) -> impl Future<
-    Output = IntermediateSplitResult<
+    Output = IntermediateFinalizedSplitResult<
       Self::ProcessBeforeSplitProduces,
       Coproduct<Self::SplitterProducesForFirstCase, SplitterProducesForOtherCases>,
     >,
@@ -153,7 +153,7 @@ where
     previous_run_produced: Value,
     previous_run_yielded_at: PreviousRunYieldedAt,
     user_input: String,
-  ) -> IntermediateSplitResult<
+  ) -> IntermediateFinalizedSplitResult<
     Self::ProcessBeforeSplitProduces,
     Coproduct<Self::SplitterProducesForFirstCase, SplitterProducesForOtherCases>,
   > {
@@ -178,7 +178,7 @@ where
   async fn run(
     &self,
     process_before_split_produced: Self::ProcessBeforeSplitProduces,
-  ) -> IntermediateSplitResult<
+  ) -> IntermediateFinalizedSplitResult<
     Self::ProcessBeforeSplitProduces,
     Coproduct<Self::SplitterProducesForFirstCase, SplitterProducesForOtherCases>,
   > {
@@ -187,7 +187,7 @@ where
       Coproduct::Inl(a) => Coproduct::Inl(a.1),
       Coproduct::Inr(b) => Coproduct::Inr(b),
     };
-    Ok(IntermediateFinalizedSplitOutcome::Continue {
+    Ok(IntermediateFinalizedSplitOutcome::GoToCase {
       process_before_split_produced,
       splitter_passes_to_other_cases,
     })

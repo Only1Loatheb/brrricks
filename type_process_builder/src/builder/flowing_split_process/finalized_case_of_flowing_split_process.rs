@@ -168,7 +168,7 @@ pub struct NextCaseOfFlowingSplitProcess<
 //     previous_run_produced: Value,
 //     previous_run_yielded_at: PreviousRunYieldedAt,
 //     user_input: String,
-//   ) -> IntermediateSplitResult<Self::ProcessBeforeSplitProduces, SplitterProducesForOtherCases> {
+//   ) -> IntermediateFinalizedSplitResult<Self::ProcessBeforeSplitProduces, SplitterProducesForOtherCases> {
 //     let process_before_output = self
 //       .split_process_before
 //       .continue_run(previous_run_produced, previous_run_yielded_at, user_input)
@@ -193,7 +193,7 @@ pub struct NextCaseOfFlowingSplitProcess<
 //     &self,
 //     process_before_split_produced: Self::ProcessBeforeSplitProduces,
 //     splitter_produces_for_this_case_or_other_cases_consumes: Coproduct<Self::SplitterProducesForThisCase, SplitterProducesForOtherCases>,
-//   ) -> IntermediateSplitResult<Self::ProcessBeforeSplitProduces, SplitterProducesForOtherCases> {
+//   ) -> IntermediateFinalizedSplitResult<Self::ProcessBeforeSplitProduces, SplitterProducesForOtherCases> {
 //     match splitter_produces_for_this_case_or_other_cases_consumes {
 //       Coproduct::Inl(this_case_consumes) => {
 //         let next_case_consumes: ThisCase::ProcessBeforeProduces =

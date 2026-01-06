@@ -1,7 +1,7 @@
 use crate::builder::{
   subprocess, FinalizedProcess, FlowingProcess, FlowingSplitProcess, IntermediateFinalizedSplitOutcome,
-  IntermediateRunOutcome, IntermediateSplitResult, NextCaseOfFlowingSplitProcess, ParamList, PreviousRunYieldedAt,
-  SplitProcess, Subprocess,
+  IntermediateFinalizedSplitResult, IntermediateRunOutcome, NextCaseOfFlowingSplitProcess, ParamList,
+  PreviousRunYieldedAt, SplitProcess, Subprocess,
 };
 use crate::hlist_concat::Concat;
 use crate::hlist_transform_to::TransformTo;
@@ -125,7 +125,7 @@ where
     previous_run_produced: Value,
     previous_run_yielded_at: PreviousRunYieldedAt,
     user_input: String,
-  ) -> IntermediateSplitResult<
+  ) -> IntermediateFinalizedSplitResult<
     <EveryFlowingCaseProduces as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
     SplitterPassesToOtherCases,
   > {
@@ -134,7 +134,7 @@ where
       .continue_run(previous_run_produced, previous_run_yielded_at, user_input)
       .await?;
     match process_before_output {
-      IntermediateFinalizedSplitOutcome::Continue {
+      IntermediateFinalizedSplitOutcome::GoToCase {
         process_before_split_produced,
         splitter_passes_to_other_cases: this_case_produced,
       } => self.run(process_before_split_produced, this_case_produced).await,
@@ -150,7 +150,7 @@ where
       Self::SplitterProducesForThisCase,
       SplitterPassesToOtherCases,
     >,
-  ) -> IntermediateSplitResult<
+  ) -> IntermediateFinalizedSplitResult<
     <EveryFlowingCaseProduces as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
     SplitterPassesToOtherCases,
   > {
@@ -160,15 +160,14 @@ where
           .concat(process_before_split_produced)
           .transform();
         match self.this_case.run(next_case_consumes).await? {
-          IntermediateRunOutcome::Continue(this_case_produces) => Ok(IntermediateFinalizedSplitOutcome::Continue(
-            process_before_split_produced,
-            this_case_produces,
-          )),
+          IntermediateRunOutcome::Continue(splitter_passes_to_other_cases) => Ok(
+            IntermediateFinalizedSplitOutcome::GoToCase(process_before_split_produced, splitter_passes_to_other_cases),
+          ),
           IntermediateRunOutcome::Yield(a, b, c) => Ok(IntermediateFinalizedSplitOutcome::Yield(a, b, c)),
           IntermediateRunOutcome::Finish(a) => Ok(IntermediateFinalizedSplitOutcome::Finish(a)),
         }
       }
-      Coproduct::Inr(other_cases_consumes) => Ok(IntermediateFinalizedSplitOutcome::Continue {
+      Coproduct::Inr(other_cases_consumes) => Ok(IntermediateFinalizedSplitOutcome::GoToCase {
         process_before_split_produced: process_before_split_produced,
         splitter_passes_to_other_cases: other_cases_consumes,
       }),

@@ -1,7 +1,7 @@
 pub mod finalized_case_of_flowing_split_process;
 pub mod first_case_of_flowing_split_process;
 
-use crate::builder::{IntermediateSplitResult, PreviousRunYieldedAt};
+use crate::builder::{IntermediateFinalizedSplitResult, PreviousRunYieldedAt};
 use crate::hlist_concat::Concat;
 use crate::param_list::ParamList;
 use crate::step::step::Splitter;
@@ -25,7 +25,7 @@ pub trait FlowingSplitProcess<SplitterProducesForOtherCases>: Sized {
     previous_run_yielded_at: PreviousRunYieldedAt,
     user_input: String,
   ) -> impl Future<
-    Output = IntermediateSplitResult<
+    Output = IntermediateFinalizedSplitResult<
       <Self::EveryFlowingCaseProduces as Concat<Self::ProcessBeforeSplitProduces>>::Concatenated,
       SplitterProducesForOtherCases,
     >,
@@ -39,7 +39,7 @@ pub trait FlowingSplitProcess<SplitterProducesForOtherCases>: Sized {
       SplitterProducesForOtherCases,
     >,
   ) -> impl Future<
-    Output = IntermediateSplitResult<
+    Output = IntermediateFinalizedSplitResult<
       <Self::EveryFlowingCaseProduces as Concat<Self::ProcessBeforeSplitProduces>>::Concatenated,
       SplitterProducesForOtherCases,
     >,
