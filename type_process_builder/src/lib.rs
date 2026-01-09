@@ -97,9 +97,9 @@ mod tests {
       .then(LinearA)
       .then(LinearB)
       .split(SplitA)
-      .case::<Case1, _, _>(|x| x.end(FinalA))
-      .case::<Case2, _, _>(|x| x.end(FinalA))
-      .case::<Case3, _, _>(|x| x.end(FinalA))
+      .case::<Case1, _>(|x| x.end(FinalA))
+      .case::<Case2, _>(|x| x.end(FinalA))
+      .case::<Case3, _>(|x| x.end(FinalA))
       .build();
     let run_result = process
       .continue_run(

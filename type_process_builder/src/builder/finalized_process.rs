@@ -62,7 +62,7 @@ impl<
   }
 
   async fn run(&self, process_before_produces: Self::ProcessBeforeProduces) -> RunResult {
-    let final_consumes = process_before_produces.transform();
+    let final_consumes: FinalConsumes = process_before_produces.transform();
     Ok(RunOutcome::Finish(self.final_step.handle(final_consumes).await?))
   }
 

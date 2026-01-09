@@ -10,7 +10,7 @@ pub struct NextCaseOfFlowingSplitProcess<
   ProcessBefore: FlowingSplitProcess<Coproduct<(ThisTag, SplitterProducesForThisCase), SplitterPassesToOtherCases>>,
   EveryFlowingCaseProduces: ParamList,
   ThisCase: FinalizedProcess,
-  SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
+  SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices, // fixme remove
 > {
   pub split_process_before: ProcessBefore,
   pub this_case: ThisCase,
@@ -19,7 +19,7 @@ pub struct NextCaseOfFlowingSplitProcess<
     SplitterProducesForThisCase,
     SplitterPassesToOtherCases,
     EveryFlowingCaseProduces,
-    SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
+    SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices, // fixme remove
   )>,
 }
 
