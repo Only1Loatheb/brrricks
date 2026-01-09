@@ -57,7 +57,6 @@ pub trait FlowingProcess: Sized {
   }
 
   fn split<
-    // fixme remove PhantomData from Tag, just required users to pass zero sized types
     Tag,
     SplitterStepConsumes: ParamList,
     SplitterProducesForFirstCase: ParamList,

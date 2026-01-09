@@ -203,10 +203,11 @@ where
     >,
   ) -> IntermediateFinalizedSplitResult<Self::ProcessBeforeSplitProduces, SplitterProducesForOtherCases> {
     match splitter_produces_for_this_case_or_other_cases_consumes {
-      Coproduct::Inl(this_case_consumes) => {
-        let next_case_consumes: ThisCase::ProcessBeforeProduces =
-          this_case_consumes.concat(process_before_split_produced).transform();
-        match self.this_case.run(next_case_consumes).await? {
+      Coproduct::Inl(splitter_produces_for_first_case) => {
+        let this_case_consumes: ThisCase::ProcessBeforeProduces = splitter_produces_for_first_case
+          .concat(process_before_split_produced)
+          .transform();
+        match self.this_case.run(this_case_consumes).await? {
           RunOutcome::Yield(a, b, c) => Ok(IntermediateFinalizedSplitOutcome::Yield(a, b, c)),
           RunOutcome::Finish(a) => Ok(IntermediateFinalizedSplitOutcome::Finish(a)),
         }

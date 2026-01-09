@@ -167,10 +167,10 @@ where
   > {
     match splitter_produces_for_this_case_or_other_cases_consumes {
       Coproduct::Inl(splitter_produces_for_this_case) => {
-        let next_case_consumes: ThisCase::ProcessBeforeProduces = splitter_produces_for_this_case
+        let this_case_consumes: ThisCase::ProcessBeforeProduces = splitter_produces_for_this_case
           .concat(process_before_split_produced.clone())
           .transform();
-        match self.this_case.run(next_case_consumes).await? {
+        match self.this_case.run(this_case_consumes).await? {
           IntermediateRunOutcome::Continue(produces) => Ok(IntermediateFlowingSplitOutcome::Continue {
             process_before_split_produced,
             flowing_case_produced: produces.transform(),
