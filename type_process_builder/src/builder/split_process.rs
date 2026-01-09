@@ -43,6 +43,8 @@ pub trait SplitProcess<SplitterProducesForOtherCases>: Sized {
     >,
   >;
 
+  // fixme create_case should accept
+  // fixme Subprocess<<Self::SplitterProducesForFirstCase as Concat<Self::ProcessBeforeSplitProduces>>::Concatenated>
   fn case<AssumedTag, ThisCase: FinalizedProcess, SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices>(
     self,
     create_case: impl FnOnce(Subprocess<Self::ProcessBeforeSplitProduces>) -> ThisCase,
@@ -67,6 +69,8 @@ pub trait SplitProcess<SplitterProducesForOtherCases>: Sized {
     }
   }
 
+  // fixme create_case should accept
+  // fixme Subprocess<<Self::SplitterProducesForFirstCase as Concat<Self::ProcessBeforeSplitProduces>>::Concatenated>
   fn case_flowing<
     AssumedTag,
     EveryFlowingCaseProduces: ParamList,
