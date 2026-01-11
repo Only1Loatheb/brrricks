@@ -55,7 +55,7 @@ impl<
     NextCaseOfFinalizedSplitProcess {
       split_process_before: self,
       this_case: create_case(subprocess::<
-        <PassesToNextCase as Concat<<ProcessBefore>::ProcessBeforeSplitProduces>>::Concatenated,
+        <PassesToNextCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
       >()),
       phantom_data: Default::default(),
     }

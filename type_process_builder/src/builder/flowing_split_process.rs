@@ -4,7 +4,6 @@ pub mod first_case_of_flowing_split_process;
 use crate::builder::{IntermediateFlowingSplitResult, PreviousRunYieldedAt};
 use crate::hlist_concat::Concat;
 use crate::param_list::ParamList;
-use crate::step::step::Splitter;
 use frunk_core::coproduct::Coproduct;
 use serde_value::Value;
 use std::future::Future;
