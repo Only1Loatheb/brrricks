@@ -14,7 +14,7 @@ pub struct NextCaseOfFinalizedSplitProcess<
   SplitterProducesForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
   SplitterPassesToOtherCases,
   ProcessBefore: FinalizedSplitProcess<Coproduct<(ThisTag, SplitterProducesForThisCase), SplitterPassesToOtherCases>>,
-  ThisCase: FinalizedProcess,
+  ThisCase: FinalizedProcess<ProcessBeforeProduces = <SplitterProducesForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated>,
 > {
   pub split_process_before: ProcessBefore,
   pub this_case: ThisCase,
@@ -25,29 +25,31 @@ impl<
     ThisTag,
     NextTag,
     SplitterPassesToOtherCases,
-    ProcessBeforeProcessBefore: FinalizedSplitProcess<
+    ProcessBefore: FinalizedSplitProcess<
       Coproduct<
         (ThisTag, SplitterProducesForThisCase),
         Coproduct<(NextTag, PassesToNextCase), SplitterPassesToOtherCases>,
       >,
     >,
-    SplitterProducesForThisCase: ParamList + Concat<ProcessBeforeProcessBefore::ProcessBeforeSplitProduces>,
-    PassesToNextCase: ParamList + Concat<ProcessBeforeProcessBefore::ProcessBeforeSplitProduces>,
-    ThisCase: FinalizedProcess,
+    SplitterProducesForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
+    PassesToNextCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
+    ThisCase: FinalizedProcess<ProcessBeforeProduces = <SplitterProducesForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated>,
   >
   NextCaseOfFinalizedSplitProcess<
     ThisTag,
     SplitterProducesForThisCase,
     Coproduct<(NextTag, PassesToNextCase), SplitterPassesToOtherCases>,
-    ProcessBeforeProcessBefore,
+    ProcessBefore,
     ThisCase,
   >
 {
-  pub fn case<AssumedTag, NextCase: FinalizedProcess>(
+  pub fn case<AssumedTag, NextCase: FinalizedProcess<
+      ProcessBeforeProduces = <PassesToNextCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
+    >>(
     self,
     create_case: impl FnOnce(
       Subprocess<
-        <SplitterProducesForThisCase as Concat<ProcessBeforeProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
+        <PassesToNextCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
       >,
     ) -> NextCase,
   ) -> NextCaseOfFinalizedSplitProcess<NextTag, PassesToNextCase, SplitterPassesToOtherCases, Self, NextCase>
@@ -57,7 +59,7 @@ impl<
     NextCaseOfFinalizedSplitProcess {
       split_process_before: self,
       this_case: create_case(subprocess::<
-        <SplitterProducesForThisCase as Concat<ProcessBeforeProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
+        <PassesToNextCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
       >()),
       phantom_data: Default::default(),
     }

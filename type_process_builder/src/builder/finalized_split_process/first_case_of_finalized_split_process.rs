@@ -33,7 +33,7 @@ impl<
     >,
     SplitterProducesForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
     PassesToNextCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
-    ThisCase: FinalizedProcess,
+    ThisCase: FinalizedProcess<ProcessBeforeProduces = <SplitterProducesForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated>,
   >
   FirstCaseOfFinalizedSplitProcess<
     ThisTag,
@@ -43,7 +43,12 @@ impl<
     ThisCase,
   >
 {
-  pub fn case<AssumedTag, NextCase: FinalizedProcess>(
+  pub fn case<
+    AssumedTag,
+    NextCase: FinalizedProcess<
+      ProcessBeforeProduces = <PassesToNextCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
+    >,
+  >(
     self,
     create_case: impl FnOnce(
       Subprocess<<PassesToNextCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated>,
