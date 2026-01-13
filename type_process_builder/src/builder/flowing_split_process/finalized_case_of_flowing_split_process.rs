@@ -3,7 +3,7 @@ use crate::hlist_concat::Concat;
 use frunk_core::coproduct::Coproduct;
 use std::marker::PhantomData;
 
-pub struct NextCaseOfFlowingSplitProcess<
+pub struct FinalizedCaseOfFlowingSplitProcess<
   ThisTag,
   SplitterProducesForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
   SplitterPassesToOtherCases,
@@ -36,7 +36,7 @@ pub struct NextCaseOfFlowingSplitProcess<
 //     ThisCase: FinalizedProcess,
 //     SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
 //   >
-//   NextCaseOfFlowingSplitProcess<
+//   FinalizedCaseOfFlowingSplitProcess<
 //     ThisTag,
 //     SplitterProducesForThisCase,
 //     Coproduct<(NextTag, PassesToNextCase), SplitterPassesToOtherCases>,
@@ -57,7 +57,7 @@ pub struct NextCaseOfFlowingSplitProcess<
 //   >(
 //     self,
 //     create_case: impl FnOnce(Subprocess<ProcessBeforeProcessBefore::ProcessBeforeSplitProduces>) -> NextCase,
-//   ) -> NextCaseOfFlowingSplitProcess<
+//   ) -> FinalizedCaseOfFlowingSplitProcess<
 //     NextTag,
 //     PassesToNextCase,
 //     SplitterPassesToOtherCases,
@@ -70,7 +70,7 @@ pub struct NextCaseOfFlowingSplitProcess<
 //     <PassesToNextCase as Concat<ProcessBeforeProcessBefore::ProcessBeforeSplitProduces>>::Concatenated:
 //       TransformTo<NextCase::ProcessBeforeProduces, SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndicesA>,
 //   {
-//     NextCaseOfFlowingSplitProcess {
+//     FinalizedCaseOfFlowingSplitProcess {
 //       split_process_before: self,
 //       this_case: create_case(subprocess::<ProcessBeforeProcessBefore::ProcessBeforeSplitProduces>()),
 //       phantom_data: Default::default(),
@@ -86,7 +86,7 @@ pub struct NextCaseOfFlowingSplitProcess<
 //     ThisCase: FinalizedProcess,
 //     SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
 //   > FinalizedProcess
-//   for NextCaseOfFlowingSplitProcess<
+//   for FinalizedCaseOfFlowingSplitProcess<
 //     ThisTag,
 //     SplitterProducesForThisCase,
 //     CNil,
@@ -147,7 +147,7 @@ pub struct NextCaseOfFlowingSplitProcess<
 //     ThisCase: FinalizedProcess,
 //     SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
 //   > FlowingSplitProcess<SplitterProducesForOtherCases>
-//   for NextCaseOfFlowingSplitProcess<
+//   for FinalizedCaseOfFlowingSplitProcess<
 //     ThisTag,
 //     SplitterProducesForThisCase,
 //     SplitterProducesForOtherCases,

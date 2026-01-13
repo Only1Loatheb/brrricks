@@ -1,7 +1,7 @@
 use crate::builder::{
-  subprocess, FinalizedProcess, FlowingProcess, FlowingSplitProcess, IntermediateFinalizedSplitOutcome,
-  IntermediateFlowingSplitOutcome, IntermediateFlowingSplitResult, IntermediateRunOutcome,
-  NextCaseOfFlowingSplitProcess, ParamList, PreviousRunYieldedAt, SplitProcess, Subprocess,
+  subprocess, FinalizedCaseOfFlowingSplitProcess, FinalizedProcess, FlowingProcess, FlowingSplitProcess,
+  IntermediateFinalizedSplitOutcome, IntermediateFlowingSplitOutcome, IntermediateFlowingSplitResult,
+  IntermediateRunOutcome, ParamList, PreviousRunYieldedAt, SplitProcess, Subprocess,
 };
 use crate::hlist_concat::Concat;
 use crate::hlist_transform_to::TransformTo;
@@ -67,15 +67,13 @@ where
     TransformTo<ThisCase::ProcessBeforeProduces, SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices>,
   ThisCase::Produces: TransformTo<EveryFlowingCaseProduces, ThisCaseProducesTransformToEveryFlowingCaseProducesIndices>,
 {
-  // fixme create_case should accept
-  // fixme Subprocess<<Self::SplitterProducesForFirstCase as Concat<Self::ProcessBeforeSplitProduces>>::Concatenated>
   pub fn case<
     AssumedTag,
     NextCase: FinalizedProcess<ProcessBeforeProduces=<SplitterProducesForNextCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated>,
   >(
     self,
     create_case: impl FnOnce(Subprocess<<SplitterProducesForNextCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated>) -> NextCase,
-  ) -> NextCaseOfFlowingSplitProcess<
+  ) -> FinalizedCaseOfFlowingSplitProcess<
     NextTag,
     SplitterProducesForNextCase,
     SplitterPassesToOtherCases,
@@ -85,7 +83,7 @@ where
   >
   where (AssumedTag, NextTag): TypeEq,
   {
-    NextCaseOfFlowingSplitProcess {
+    FinalizedCaseOfFlowingSplitProcess {
       split_process_before: self,
       this_case: create_case(subprocess::<
         <SplitterProducesForNextCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
