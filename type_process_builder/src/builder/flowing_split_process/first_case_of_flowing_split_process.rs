@@ -17,7 +17,6 @@ pub struct FirstCaseOfFlowingSplitProcess<
   ProcessBefore: SplitProcess<SplitterPassesToOtherCases>,
   EveryFlowingCaseProduces: ParamList,
   ThisCase: FlowingProcess<ProcessBeforeProduces=<SplitterProducesForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated>,
-  Ix,
   ThisCaseProducesTransformToEveryFlowingCaseProducesIndices,
 > {
   pub split_process_before: ProcessBefore,
@@ -27,7 +26,6 @@ pub struct FirstCaseOfFlowingSplitProcess<
     SplitterProducesForThisCase,
     SplitterPassesToOtherCases,
     EveryFlowingCaseProduces,
-    Ix,
     ThisCaseProducesTransformToEveryFlowingCaseProducesIndices,
   )>,
 }
@@ -45,7 +43,6 @@ impl<
     SplitterProducesForNextCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
     EveryFlowingCaseProduces: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
     ThisCase: FlowingProcess<ProcessBeforeProduces=<SplitterProducesForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated>,
-    Ix,
     ThisCaseProducesTransformToEveryFlowingCaseProducesIndices,
   >
   FirstCaseOfFlowingSplitProcess<
@@ -55,7 +52,6 @@ impl<
     ProcessBefore,
     EveryFlowingCaseProduces,
     ThisCase,
-    Ix,
     ThisCaseProducesTransformToEveryFlowingCaseProducesIndices,
   >
 where
@@ -94,7 +90,6 @@ impl<
     ProcessBefore: SplitProcess<SplitterPassesToOtherCases, SplitterProducesForFirstCase = SplitterProducesForThisCase>,
     EveryFlowingCaseProduces: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
     ThisCase: FlowingProcess<ProcessBeforeProduces=<SplitterProducesForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated>,
-    Ix,
     ThisCaseProducesTransformToEveryFlowingCaseProducesIndices,
   > FlowingSplitProcess<SplitterPassesToOtherCases>
   for FirstCaseOfFlowingSplitProcess<
@@ -104,7 +99,6 @@ impl<
     ProcessBefore,
     EveryFlowingCaseProduces,
     ThisCase,
-    Ix,
     ThisCaseProducesTransformToEveryFlowingCaseProducesIndices,
   >
 where
@@ -183,7 +177,6 @@ where
 //     EveryFlowingCaseProduces: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
 //     ThisCase: FlowingProcess,
 //     SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
-//     Ix,
 //   > FlowingProcess
 //   for FirstCaseOfFlowingSplitProcess<
 //     ThisTag,
@@ -193,7 +186,6 @@ where
 //     EveryFlowingCaseProduces,
 //     ThisCase,
 //     SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
-//     Ix,
 //   >
 // where
 //   ProcessBefore::SplitterProducesForFirstCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,

@@ -73,7 +73,6 @@ pub trait SplitProcess<SplitterProducesForOtherCases>: Sized {
     EveryFlowingCaseProduces: ParamList,
     ThisCase: FlowingProcess<ProcessBeforeProduces=<Self::SplitterProducesForFirstCase as
     Concat<Self::ProcessBeforeSplitProduces>>::Concatenated>,
-  Ix, // fixme remove??
     ThisCaseProducesTransformToEveryFlowingCaseProducesIndices,
   >(
     self,
@@ -87,7 +86,6 @@ pub trait SplitProcess<SplitterProducesForOtherCases>: Sized {
     Self,
     EveryFlowingCaseProduces,
     ThisCase,
-    Ix,
     ThisCaseProducesTransformToEveryFlowingCaseProducesIndices,
   >
   where
