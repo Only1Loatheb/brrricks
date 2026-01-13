@@ -16,8 +16,7 @@ pub struct FirstCaseOfFlowingSplitProcess<
   SplitterPassesToOtherCases,
   ProcessBefore: SplitProcess<SplitterPassesToOtherCases>,
   EveryFlowingCaseProduces: ParamList,
-  ThisCase: FlowingProcess,
-  SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
+  ThisCase: FlowingProcess<ProcessBeforeProduces=<SplitterProducesForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated>,
   Ix,
   ThisCaseProducesTransformToEveryFlowingCaseProducesIndices,
 > {
@@ -28,7 +27,6 @@ pub struct FirstCaseOfFlowingSplitProcess<
     SplitterProducesForThisCase,
     SplitterPassesToOtherCases,
     EveryFlowingCaseProduces,
-    SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
     Ix,
     ThisCaseProducesTransformToEveryFlowingCaseProducesIndices,
   )>,
@@ -46,8 +44,7 @@ impl<
     SplitterProducesForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
     SplitterProducesForNextCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
     EveryFlowingCaseProduces: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
-    ThisCase: FlowingProcess,
-    SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
+    ThisCase: FlowingProcess<ProcessBeforeProduces=<SplitterProducesForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated>,
     Ix,
     ThisCaseProducesTransformToEveryFlowingCaseProducesIndices,
   >
@@ -58,13 +55,10 @@ impl<
     ProcessBefore,
     EveryFlowingCaseProduces,
     ThisCase,
-    SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
     Ix,
     ThisCaseProducesTransformToEveryFlowingCaseProducesIndices,
   >
 where
-  <SplitterProducesForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated:
-    TransformTo<ThisCase::ProcessBeforeProduces, SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices>,
   ThisCase::Produces: TransformTo<EveryFlowingCaseProduces, ThisCaseProducesTransformToEveryFlowingCaseProducesIndices>,
 {
   pub fn case<
@@ -99,8 +93,7 @@ impl<
     SplitterPassesToOtherCases,
     ProcessBefore: SplitProcess<SplitterPassesToOtherCases, SplitterProducesForFirstCase = SplitterProducesForThisCase>,
     EveryFlowingCaseProduces: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
-    ThisCase: FlowingProcess,
-    SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
+    ThisCase: FlowingProcess<ProcessBeforeProduces=<SplitterProducesForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated>,
     Ix,
     ThisCaseProducesTransformToEveryFlowingCaseProducesIndices,
   > FlowingSplitProcess<SplitterPassesToOtherCases>
@@ -111,13 +104,10 @@ impl<
     ProcessBefore,
     EveryFlowingCaseProduces,
     ThisCase,
-    SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
     Ix,
     ThisCaseProducesTransformToEveryFlowingCaseProducesIndices,
   >
 where
-  <SplitterProducesForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated:
-    TransformTo<ThisCase::ProcessBeforeProduces, SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices>,
   ThisCase::Produces: TransformTo<EveryFlowingCaseProduces, ThisCaseProducesTransformToEveryFlowingCaseProducesIndices>,
 {
   type EveryFlowingCaseProduces = EveryFlowingCaseProduces;
@@ -163,9 +153,7 @@ where
   > {
     match splitter_produces_for_this_case_or_other_cases_consumes {
       Coproduct::Inl(splitter_produces_for_this_case) => {
-        let this_case_consumes: ThisCase::ProcessBeforeProduces = splitter_produces_for_this_case
-          .concat(process_before_split_produced.clone())
-          .transform();
+        let this_case_consumes = splitter_produces_for_this_case.concat(process_before_split_produced.clone());
         match self.this_case.run(this_case_consumes).await? {
           IntermediateRunOutcome::Continue(produces) => Ok(IntermediateFlowingSplitOutcome::Continue {
             process_before_split_produced,

@@ -68,18 +68,18 @@ pub trait SplitProcess<SplitterProducesForOtherCases>: Sized {
     }
   }
 
-  // fixme create_case should accept
-  // fixme Subprocess<<Self::SplitterProducesForFirstCase as Concat<Self::ProcessBeforeSplitProduces>>::Concatenated>
   fn case_flowing<
     AssumedTag,
     EveryFlowingCaseProduces: ParamList,
-    ThisCase: FlowingProcess,
-    SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
-    Ix,
+    ThisCase: FlowingProcess<ProcessBeforeProduces=<Self::SplitterProducesForFirstCase as
+    Concat<Self::ProcessBeforeSplitProduces>>::Concatenated>,
+  Ix, // fixme remove??
     ThisCaseProducesTransformToEveryFlowingCaseProducesIndices,
   >(
     self,
-    create_case: impl FnOnce(Subprocess<Self::ProcessBeforeSplitProduces>) -> ThisCase,
+    create_case: impl FnOnce(
+      Subprocess<<Self::SplitterProducesForFirstCase as Concat<Self::ProcessBeforeSplitProduces>>::Concatenated>,
+    ) -> ThisCase,
   ) -> FirstCaseOfFlowingSplitProcess<
     Self::SplitterTagForFirstCase,
     Self::SplitterProducesForFirstCase,
@@ -87,19 +87,18 @@ pub trait SplitProcess<SplitterProducesForOtherCases>: Sized {
     Self,
     EveryFlowingCaseProduces,
     ThisCase,
-    SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
     Ix,
     ThisCaseProducesTransformToEveryFlowingCaseProducesIndices,
   >
   where
     (AssumedTag, Self::SplitterTagForFirstCase): TypeEq,
     Self::SplitterProducesForFirstCase: Concat<Self::ProcessBeforeSplitProduces>,
-    <Self::SplitterProducesForFirstCase as Concat<Self::ProcessBeforeSplitProduces>>::Concatenated:
-      TransformTo<ThisCase::ProcessBeforeProduces, SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices>,
   {
     FirstCaseOfFlowingSplitProcess {
       split_process_before: self,
-      this_case: create_case(subprocess::<Self::ProcessBeforeSplitProduces>()),
+      this_case: create_case(subprocess::<
+        <Self::SplitterProducesForFirstCase as Concat<Self::ProcessBeforeSplitProduces>>::Concatenated,
+      >()),
       phantom_data: Default::default(),
     }
   }
