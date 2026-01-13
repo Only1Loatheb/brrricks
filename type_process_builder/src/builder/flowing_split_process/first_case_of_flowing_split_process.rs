@@ -63,18 +63,18 @@ impl<
     ThisCaseProducesTransformToEveryFlowingCaseProducesIndices,
   >
 where
-  <SplitterProducesForThisCase as Concat<<ProcessBefore>::ProcessBeforeSplitProduces>>::Concatenated:
+  <SplitterProducesForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated:
     TransformTo<ThisCase::ProcessBeforeProduces, SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices>,
+  ThisCase::Produces: TransformTo<EveryFlowingCaseProduces, ThisCaseProducesTransformToEveryFlowingCaseProducesIndices>,
 {
   // fixme create_case should accept
   // fixme Subprocess<<Self::SplitterProducesForFirstCase as Concat<Self::ProcessBeforeSplitProduces>>::Concatenated>
   pub fn case<
     AssumedTag,
-    NextCase: FinalizedProcess,
-    SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndicesA,
+    NextCase: FinalizedProcess<ProcessBeforeProduces=<SplitterProducesForNextCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated>,
   >(
     self,
-    create_case: impl FnOnce(Subprocess<ProcessBefore::ProcessBeforeSplitProduces>) -> NextCase,
+    create_case: impl FnOnce(Subprocess<<SplitterProducesForNextCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated>) -> NextCase,
   ) -> NextCaseOfFlowingSplitProcess<
     NextTag,
     SplitterProducesForNextCase,
@@ -82,18 +82,14 @@ where
     Self,
     EveryFlowingCaseProduces,
     NextCase,
-    SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndicesA,
   >
-  where
-    (AssumedTag, NextTag): TypeEq,
-    <SplitterProducesForNextCase as Concat<<ProcessBefore>::ProcessBeforeSplitProduces>>::Concatenated:
-      TransformTo<NextCase::ProcessBeforeProduces, SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndicesA>,
-    ThisCase::Produces:
-      TransformTo<EveryFlowingCaseProduces, ThisCaseProducesTransformToEveryFlowingCaseProducesIndices>,
+  where (AssumedTag, NextTag): TypeEq,
   {
     NextCaseOfFlowingSplitProcess {
       split_process_before: self,
-      this_case: create_case(subprocess::<ProcessBefore::ProcessBeforeSplitProduces>()),
+      this_case: create_case(subprocess::<
+        <SplitterProducesForNextCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
+      >()),
       phantom_data: Default::default(),
     }
   }
