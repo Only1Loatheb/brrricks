@@ -1,5 +1,6 @@
 pub mod builder;
 mod hlist_concat;
+mod hlist_intersect;
 mod hlist_transform_to;
 mod param_list;
 pub mod step;
