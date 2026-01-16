@@ -41,18 +41,29 @@ where
   type Output = <<(Needle, Head) as UIDEquals>::Output as BitOr<<Tail as Contains<Needle>>::Output>>::Output;
 }
 
-////////// PrependIf //////////
+////////// KeepIf //////////
 
-trait PrependIf {
+trait KeepIf<Head, Tail> {
   type Output;
+  fn kept(head: Head, tail: Tail) -> Self::Output;
 }
 
-impl<Head, Tail> PrependIf for (B1, Head, Tail) {
+impl<Head, Tail> KeepIf<Head, Tail> for B1 {
   type Output = HCons<Head, Tail>;
+
+  #[inline(always)]
+  fn kept(head: Head, tail: Tail) -> Self::Output {
+    HCons { head, tail }
+  }
 }
 
-impl<Head, Tail> PrependIf for (B0, Head, Tail) {
+impl<Head, Tail> KeepIf<Head, Tail> for B0 {
   type Output = Tail;
+
+  #[inline(always)]
+  fn kept(_head: Head, tail: Tail) -> Self::Output {
+    tail
+  }
 }
 
 ////////// Intersection //////////
@@ -72,17 +83,13 @@ impl<RHS> Intersection<RHS> for HNil {
   }
 }
 
-impl<Head: ParamValue, Tail, RHS, TailFilterOutput> Intersection<RHS> for HCons<Head, Tail>
+impl<Head: ParamValue, Tail, RHS> Intersection<RHS> for HCons<Head, Tail>
 where
-  Tail: Intersection<RHS, Output = TailFilterOutput>,
+  Tail: Intersection<RHS>,
   RHS: Contains<Head>,
-  (<RHS as Contains<Head>>::Output, Head, TailFilterOutput): PrependIf,
+  <RHS as Contains<Head>>::Output: KeepIf<Head, <Tail as Intersection<RHS>>::Output>,
 {
-  type Output = <(
-    <RHS as Contains<Head>>::Output,
-    Head,
-    <Tail as Intersection<RHS>>::Output,
-  ) as PrependIf>::Output;
+  type Output = <<RHS as Contains<Head>>::Output as KeepIf<Head, <Tail as Intersection<RHS>>::Output>>::Output;
 
   #[inline(always)]
   fn intersect(self, rhs: RHS) -> Self::Output {
