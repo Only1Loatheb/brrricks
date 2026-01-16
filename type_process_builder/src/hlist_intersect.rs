@@ -57,23 +57,35 @@ impl<Head, Tail> PrependIf for (B0, Head, Tail) {
 
 ////////// Intersection //////////
 
-trait Intersection<Rhs> {
+trait Intersection<RHS> {
   type Output;
+
+  fn intersect(self, RHS: RHS) -> Self::Output;
 }
 
-impl<Rhs> Intersection<Rhs> for HNil {
+impl<RHS> Intersection<RHS> for HNil {
   type Output = HNil;
+
+  #[inline(always)]
+  fn intersect(self, rhs: RHS) -> Self::Output {
+    HNil
+  }
 }
 
-impl<Head: ParamValue, Tail, Rhs, TailFilterOutput> Intersection<Rhs> for HCons<Head, Tail>
+impl<Head: ParamValue, Tail, RHS, TailFilterOutput> Intersection<RHS> for HCons<Head, Tail>
 where
-  Tail: Intersection<Rhs, Output = TailFilterOutput>,
-  Rhs: Contains<Head>,
-  (<Rhs as Contains<Head>>::Output, Head, TailFilterOutput): PrependIf,
+  Tail: Intersection<RHS, Output = TailFilterOutput>,
+  RHS: Contains<Head>,
+  (<RHS as Contains<Head>>::Output, Head, TailFilterOutput): PrependIf,
 {
   type Output = <(
-    <Rhs as Contains<Head>>::Output,
+    <RHS as Contains<Head>>::Output,
     Head,
-    <Tail as Intersection<Rhs>>::Output,
+    <Tail as Intersection<RHS>>::Output,
   ) as PrependIf>::Output;
+
+  #[inline(always)]
+  fn intersect(self, rhs: RHS) -> Self::Output {
+    todo!()
+  }
 }
