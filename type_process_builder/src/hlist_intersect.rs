@@ -1,98 +1,83 @@
 use crate::param_list::ParamValue;
 use frunk_core::hlist::{HCons, HNil};
 use std::ops::BitOr;
-use typenum::private::IsEqualPrivate;
-use typenum::{Bit, Cmp, IsEqual, B0, B1};
-
-////////// UIDEquals //////////
-
-trait UIDEquals {
-  type Output: Bit;
-}
-
-impl<Left: ParamValue, Right: ParamValue> UIDEquals for (Left, Right)
-where
-  Left::UID: Cmp<Right::UID>,
-  Left::UID: IsEqualPrivate<Right::UID, <Left::UID as Cmp<Right::UID>>::Output>,
-{
-  type Output = <Left::UID as IsEqual<Right::UID>>::Output;
-}
+use typenum::{Bit, IsEqual, B0, B1};
 
 ////////// Contains //////////
 
 trait Contains<Needle: ParamValue> {
-  type Output: Bit;
+  type IsContained: Bit;
 }
 
 impl<Needle: ParamValue> Contains<Needle> for HNil {
-  type Output = B0;
+  type IsContained = B0;
 }
 
 impl<Needle: ParamValue, Head: ParamValue, Tail: Contains<Needle>> Contains<Needle> for HCons<Head, Tail>
 where
-  Needle::UID: Cmp<Head::UID>,
-  Needle::UID: IsEqualPrivate<Head::UID, <Needle::UID as Cmp<Head::UID>>::Output>,
-  <Needle::UID as IsEqualPrivate<Head::UID, <Needle::UID as Cmp<Head::UID>>::Output>>::Output:
-    BitOr<<Tail as Contains<Needle>>::Output>,
-  <<Needle::UID as IsEqualPrivate<Head::UID, <Needle::UID as Cmp<Head::UID>>::Output>>::Output as BitOr<
-    <Tail as Contains<Needle>>::Output,
-  >>::Output: Bit,
+  Needle::UID: IsEqual<Head::UID>,
+  <Needle::UID as IsEqual<Head::UID>>::Output: BitOr<<Tail as Contains<Needle>>::IsContained>,
+  <<Needle::UID as IsEqual<Head::UID>>::Output as BitOr<<Tail as Contains<Needle>>::IsContained>>::Output: Bit,
 {
-  type Output = <<(Needle, Head) as UIDEquals>::Output as BitOr<<Tail as Contains<Needle>>::Output>>::Output;
+  type IsContained =
+    <<Needle::UID as IsEqual<Head::UID>>::Output as BitOr<<Tail as Contains<Needle>>::IsContained>>::Output;
 }
 
-////////// KeepIf //////////
+////////// Filter //////////
 
-trait KeepIf<Head, Tail> {
-  type Output;
-  fn kept(head: Head, tail: Tail) -> Self::Output;
+trait Filter<Head, Tail> {
+  type Filtered;
+  fn filter(head: Head, tail: Tail) -> Self::Filtered;
 }
 
-impl<Head, Tail> KeepIf<Head, Tail> for B1 {
-  type Output = HCons<Head, Tail>;
+impl<Head, Tail> Filter<Head, Tail> for B1 {
+  type Filtered = HCons<Head, Tail>;
 
   #[inline(always)]
-  fn kept(head: Head, tail: Tail) -> Self::Output {
+  fn filter(head: Head, tail: Tail) -> Self::Filtered {
     HCons { head, tail }
   }
 }
 
-impl<Head, Tail> KeepIf<Head, Tail> for B0 {
-  type Output = Tail;
+impl<Head, Tail> Filter<Head, Tail> for B0 {
+  type Filtered = Tail;
 
   #[inline(always)]
-  fn kept(_head: Head, tail: Tail) -> Self::Output {
+  fn filter(_head: Head, tail: Tail) -> Self::Filtered {
     tail
   }
 }
 
 ////////// Intersection //////////
 
-trait Intersection<RHS> {
-  type Output;
+trait Intersect<RHS> {
+  type Intersection;
 
-  fn intersect(self, RHS: RHS) -> Self::Output;
+  fn intersect(self, rhs: RHS) -> Self::Intersection;
 }
 
-impl<RHS> Intersection<RHS> for HNil {
-  type Output = HNil;
+impl<RHS> Intersect<RHS> for HNil {
+  type Intersection = HNil;
 
   #[inline(always)]
-  fn intersect(self, rhs: RHS) -> Self::Output {
+  fn intersect(self, rhs: RHS) -> Self::Intersection {
     HNil
   }
 }
 
-impl<Head: ParamValue, Tail, RHS> Intersection<RHS> for HCons<Head, Tail>
+impl<Head: ParamValue, Tail: Intersect<RHS>, RHS: Contains<Head>> Intersect<RHS> for HCons<Head, Tail>
 where
-  Tail: Intersection<RHS>,
-  RHS: Contains<Head>,
-  <RHS as Contains<Head>>::Output: KeepIf<Head, <Tail as Intersection<RHS>>::Output>,
+  <RHS as Contains<Head>>::IsContained: Filter<Head, <Tail as Intersect<RHS>>::Intersection>,
 {
-  type Output = <<RHS as Contains<Head>>::Output as KeepIf<Head, <Tail as Intersection<RHS>>::Output>>::Output;
+  type Intersection =
+    <<RHS as Contains<Head>>::IsContained as Filter<Head, <Tail as Intersect<RHS>>::Intersection>>::Filtered;
 
   #[inline(always)]
-  fn intersect(self, rhs: RHS) -> Self::Output {
-    todo!()
+  fn intersect(self, rhs: RHS) -> Self::Intersection {
+    let intersected_tail = self.tail.intersect(rhs);
+    <<RHS as Contains<Head>>::IsContained as Filter<Head, <Tail as Intersect<RHS>>::Intersection>>::filter(
+      self.head,
+      intersected_tail,
+    )
   }
 }
