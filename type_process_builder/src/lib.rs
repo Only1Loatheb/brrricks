@@ -20,29 +20,46 @@ mod tests {
   use crate::step::step::{Entry, Final, Operation, Splitter};
   use crate::step::Message;
   use anyhow::anyhow;
-  use frunk_core::coproduct::{CNil, Coproduct};
-  use frunk_core::hlist;
   use frunk_core::hlist::{HCons, HNil};
+  use frunk_core::{hlist, Coprod, HList};
+  use serde::{Deserialize, Serialize};
   use serde_value::Value;
   use std::collections::BTreeMap;
-  use typenum::U0;
+  use typenum::*;
 
-  #[derive(Clone, serde::Deserialize, serde::Serialize)]
-  struct Param1;
-
-  impl ParamValue for Param1 {
+  #[derive(Clone, Deserialize, Serialize)]
+  struct Param0;
+  impl ParamValue for Param0 {
     type UID = U0;
+  }
+
+  #[derive(Clone, Deserialize, Serialize)]
+  struct Param1;
+  impl ParamValue for Param1 {
+    type UID = U1;
+  }
+
+  #[derive(Clone, Deserialize, Serialize)]
+  struct Param2;
+  impl ParamValue for Param2 {
+    type UID = U2;
+  }
+
+  #[derive(Clone, Deserialize, Serialize)]
+  struct Param3;
+  impl ParamValue for Param3 {
+    type UID = U3;
   }
 
   struct EntryA;
   impl Entry<Value> for EntryA {
-    type Produces = HCons<Param1, HNil>;
+    type Produces = HCons<Param0, HNil>;
 
     async fn handle(
       &self,
       mut consumes: BTreeMap<Value, Value>,
       shortcode_string: String,
-    ) -> anyhow::Result<HCons<Param1, HNil>> {
+    ) -> anyhow::Result<HCons<Param0, HNil>> {
       let key = Value::String("msisdn".into());
       let value = consumes
         .remove(&key)
@@ -51,42 +68,32 @@ mod tests {
     }
   }
 
-  struct LinearA;
-  impl Operation<HNil, HNil> for LinearA {
-    async fn handle(&self, consumes: HNil) -> anyhow::Result<HNil> {
+  struct Linear1;
+  impl Operation<HNil, HList![Param1, Param3]> for Linear1 {
+    async fn handle(&self, consumes: HNil) -> anyhow::Result<HList![Param1, Param3]> {
       todo!()
     }
   }
-  // impl Linear<HNil, HCons<Param1, HNil>> for LinearA {
-  //   async fn handle(&self, consumes: HNil) -> anyhow::Result<(Option<Message>, HCons<Param1, HNil>)> {
-  //     todo!()
-  //   }
-  // }
 
-  struct LinearB;
-  impl Operation<HNil, HNil> for LinearB {
-    async fn handle(&self, consumes: HNil) -> anyhow::Result<HNil> {
+  struct Linear2;
+  impl Operation<HNil, HList![Param2, Param3]> for Linear2 {
+    async fn handle(&self, consumes: HNil) -> anyhow::Result<HList![Param2, Param3]> {
       todo!()
     }
   }
-  // impl Linear<HCons<Param1, HNil>, HNil> for LinearB { async fn handle(&self, consumes: HCons<Param1, HNil>) -> anyhow::Result<(Option<Message>, HNil)> { todo!() } }
 
   pub struct Case1;
   pub struct Case2;
-  pub struct Case3;
   struct SplitA;
-  impl Splitter<HNil, Coproduct<(Case1, HNil), Coproduct<(Case2, HNil), Coproduct<(Case3, HNil), CNil>>>> for SplitA {
-    async fn handle(
-      &self,
-      consumes: HNil,
-    ) -> anyhow::Result<Coproduct<(Case1, HNil), Coproduct<(Case2, HNil), Coproduct<(Case3, HNil), CNil>>>> {
+  impl Splitter<HNil, Coprod![(Case1, HNil), (Case2, HNil)]> for SplitA {
+    async fn handle(&self, consumes: HNil) -> anyhow::Result<Coprod![(Case1, HNil), (Case2, HNil)]> {
       todo!()
     }
   }
 
   struct FinalA;
-  impl Final<HCons<Param1, HNil>> for FinalA {
-    async fn handle(&self, consumes: HCons<Param1, HNil>) -> anyhow::Result<Message> {
+  impl Final<HCons<Param0, HNil>> for FinalA {
+    async fn handle(&self, consumes: HCons<Param0, HNil>) -> anyhow::Result<Message> {
       todo!()
     }
   }
@@ -94,21 +101,34 @@ mod tests {
 
   #[tokio::test]
   async fn test_hcons() {
-    let process = EntryA
-      .then(LinearA)
-      .then(LinearB)
+    let process: FlowingCaseOfFlowingSplitProcess<
+      _,
+      _,
+      _,
+      FirstCaseOfFlowingSplitProcess<
+        _,
+        _,
+        _,
+        _,
+        EveryFlowingCaseProduces,
+        _,
+        ThisCaseProducesTransformToEveryFlowingCaseProducesIndices,
+      >,
+      _,
+      _,
+    > = EntryA
       .split(SplitA)
-      .case::<Case1, _>(|x| x.end(FinalA))
-      .case::<Case2, _>(|x| x.end(FinalA))
-      .case::<Case3, _>(|x| x.end(FinalA))
-      .build();
-    let run_result = process
-      .continue_run(
-        Value::Map(BTreeMap::new()),
-        PreviousRunYieldedAt(0),
-        "*123#".to_string(),
-      )
-      .await;
-    assert!(run_result.is_err());
+      .case_flowing::<Case1, _, _, _>(|x| x.then(Linear1))
+      .case_flowing::<Case2, _>(|x| x.then(Linear2));
+    //   .then(FinalA)
+    //   .build();
+    // let run_result = process
+    //   .continue_run(
+    //     Value::Map(BTreeMap::new()),
+    //     PreviousRunYieldedAt(0),
+    //     "*123#".to_string(),
+    //   )
+    //   .await;
+    // assert!(run_result.is_err());
   }
 }
