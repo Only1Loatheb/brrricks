@@ -101,24 +101,9 @@ mod tests {
 
   #[tokio::test]
   async fn test_hcons() {
-    let process: FlowingCaseOfFlowingSplitProcess<
-      _,
-      _,
-      _,
-      FirstCaseOfFlowingSplitProcess<
-        _,
-        _,
-        _,
-        _,
-        EveryFlowingCaseProduces,
-        _,
-        ThisCaseProducesTransformToEveryFlowingCaseProducesIndices,
-      >,
-      _,
-      _,
-    > = EntryA
+    let process = EntryA
       .split(SplitA)
-      .case_flowing::<Case1, _, _, _>(|x| x.then(Linear1))
+      .case_flowing::<Case1, _>(|x| x.then(Linear1))
       .case_flowing::<Case2, _>(|x| x.then(Linear2));
     //   .then(FinalA)
     //   .build();

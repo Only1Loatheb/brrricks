@@ -70,9 +70,7 @@ pub trait SplitProcess<SplitterProducesForOtherCases>: Sized {
 
   fn case_flowing<
     AssumedTag,
-    EveryFlowingCaseProduces: ParamList,
     ThisCase: FlowingProcess<ProcessBeforeProduces=<Self::SplitterProducesForFirstCase as Concat<Self::ProcessBeforeSplitProduces>>::Concatenated>,
-    ThisCaseProducesTransformToEveryFlowingCaseProducesIndices,
   >(
     self,
     create_case: impl FnOnce(
@@ -83,9 +81,7 @@ pub trait SplitProcess<SplitterProducesForOtherCases>: Sized {
     Self::SplitterProducesForFirstCase,
     SplitterProducesForOtherCases,
     Self,
-    EveryFlowingCaseProduces,
     ThisCase,
-    ThisCaseProducesTransformToEveryFlowingCaseProducesIndices,
   >
   where
     (AssumedTag, Self::SplitterTagForFirstCase): TypeEq,

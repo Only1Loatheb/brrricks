@@ -60,7 +60,7 @@ impl<RHS> Intersect<RHS> for HNil {
   type Intersection = HNil;
 
   #[inline(always)]
-  fn intersect(self, rhs: RHS) -> Self::Intersection {
+  fn intersect(self, _: RHS) -> Self::Intersection {
     HNil
   }
 }

@@ -9,7 +9,6 @@ pub struct FlowingCaseOfFlowingSplitProcess<
   SplitterProducesForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
   SplitterPassesToOtherCases,
   ProcessBefore: FlowingSplitProcess<Coproduct<(ThisTag, SplitterProducesForThisCase), SplitterPassesToOtherCases>>,
-  EveryFlowingCaseProduces: ParamList,
   ThisCase: FlowingProcess<ProcessBeforeProduces=
     <SplitterProducesForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated
   >,
@@ -24,6 +23,5 @@ pub struct FlowingCaseOfFlowingSplitProcess<
     ThisTag,
     SplitterProducesForThisCase,
     SplitterPassesToOtherCases,
-    EveryFlowingCaseProduces,
   )>,
 }
