@@ -1,9 +1,10 @@
 use crate::builder::{
-  subprocess, FinalizedCaseOfFlowingSplitProcess, FinalizedProcess, FlowingProcess, FlowingSplitProcess,
-  IntermediateFinalizedSplitOutcome, IntermediateFlowingSplitOutcome, IntermediateFlowingSplitResult,
-  IntermediateRunOutcome, ParamList, PreviousRunYieldedAt, SplitProcess, Subprocess,
+  subprocess, FinalizedCaseOfFlowingSplitProcess, FinalizedProcess, FlowingCaseOfFlowingSplitProcess, FlowingProcess,
+  FlowingSplitProcess, IntermediateFinalizedSplitOutcome, IntermediateFlowingSplitOutcome,
+  IntermediateFlowingSplitResult, IntermediateRunOutcome, ParamList, PreviousRunYieldedAt, SplitProcess, Subprocess,
 };
 use crate::hlist_concat::Concat;
+use crate::hlist_intersect::Intersect;
 use crate::hlist_transform_to::TransformTo;
 use crate::type_eq::TypeEq;
 use frunk_core::coproduct::Coproduct;
@@ -31,29 +32,29 @@ pub struct FirstCaseOfFlowingSplitProcess<
 }
 
 impl<
-    ThisTag,
-    NextTag,
-    SplitterPassesToOtherCases,
-    ProcessBefore: SplitProcess<
-      Coproduct<(NextTag, SplitterProducesForNextCase), SplitterPassesToOtherCases>,
-      SplitterProducesForFirstCase = SplitterProducesForThisCase,
-      SplitterTagForFirstCase = ThisTag,
-    >,
-    SplitterProducesForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
-    SplitterProducesForNextCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
-    EveryFlowingCaseProduces: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
-    ThisCase: FlowingProcess<ProcessBeforeProduces=<SplitterProducesForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated>,
-    ThisCaseProducesTransformToEveryFlowingCaseProducesIndices,
-  >
-  FirstCaseOfFlowingSplitProcess<
-    ThisTag,
-    SplitterProducesForThisCase,
+  ThisTag,
+  NextTag,
+  SplitterPassesToOtherCases,
+  ProcessBefore: SplitProcess<
     Coproduct<(NextTag, SplitterProducesForNextCase), SplitterPassesToOtherCases>,
-    ProcessBefore,
-    EveryFlowingCaseProduces,
-    ThisCase,
-    ThisCaseProducesTransformToEveryFlowingCaseProducesIndices,
-  >
+    SplitterProducesForFirstCase=SplitterProducesForThisCase,
+    SplitterTagForFirstCase=ThisTag,
+  >,
+  SplitterProducesForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
+  SplitterProducesForNextCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
+  EveryFlowingCaseProduces: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
+  ThisCase: FlowingProcess<ProcessBeforeProduces=<SplitterProducesForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated>,
+  ThisCaseProducesTransformToEveryFlowingCaseProducesIndices,
+>
+FirstCaseOfFlowingSplitProcess<
+  ThisTag,
+  SplitterProducesForThisCase,
+  Coproduct<(NextTag, SplitterProducesForNextCase), SplitterPassesToOtherCases>,
+  ProcessBefore,
+  EveryFlowingCaseProduces,
+  ThisCase,
+  ThisCaseProducesTransformToEveryFlowingCaseProducesIndices,
+>
 where
   ThisCase::Produces: TransformTo<EveryFlowingCaseProduces, ThisCaseProducesTransformToEveryFlowingCaseProducesIndices>,
 {
@@ -81,26 +82,54 @@ where
       phantom_data: Default::default(),
     }
   }
+
+  pub fn case_flowing<
+    AssumedTag,
+    NextCase: FlowingProcess<ProcessBeforeProduces=<SplitterProducesForNextCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated>,
+  >(
+    self,
+    create_case: impl FnOnce(Subprocess<<SplitterProducesForNextCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated>) -> NextCase,
+  ) -> FlowingCaseOfFlowingSplitProcess<
+    NextTag,
+    SplitterProducesForNextCase,
+    SplitterPassesToOtherCases,
+    Self,
+    <NextCase::Produces as Intersect<EveryFlowingCaseProduces>>::Intersection,
+    NextCase,
+  >
+  where
+    (AssumedTag, NextTag): TypeEq,
+    NextCase::Produces: Intersect<EveryFlowingCaseProduces>,
+    <NextCase::Produces as Intersect<EveryFlowingCaseProduces>>::Intersection: ParamList,
+  {
+    FlowingCaseOfFlowingSplitProcess {
+      split_process_before: self,
+      this_case: create_case(subprocess::<
+        <SplitterProducesForNextCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
+      >()),
+      phantom_data: Default::default(),
+    }
+  }
 }
 
 impl<
-    ThisTag,
-    SplitterProducesForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
-    SplitterPassesToOtherCases,
-    ProcessBefore: SplitProcess<SplitterPassesToOtherCases, SplitterProducesForFirstCase = SplitterProducesForThisCase>,
-    EveryFlowingCaseProduces: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
-    ThisCase: FlowingProcess<ProcessBeforeProduces=<SplitterProducesForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated>,
-    ThisCaseProducesTransformToEveryFlowingCaseProducesIndices,
-  > FlowingSplitProcess<SplitterPassesToOtherCases>
-  for FirstCaseOfFlowingSplitProcess<
-    ThisTag,
-    SplitterProducesForThisCase,
-    SplitterPassesToOtherCases,
-    ProcessBefore,
-    EveryFlowingCaseProduces,
-    ThisCase,
-    ThisCaseProducesTransformToEveryFlowingCaseProducesIndices,
-  >
+  ThisTag,
+  SplitterProducesForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
+  SplitterPassesToOtherCases,
+  ProcessBefore: SplitProcess<SplitterPassesToOtherCases, SplitterProducesForFirstCase=SplitterProducesForThisCase>,
+  EveryFlowingCaseProduces: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
+  ThisCase: FlowingProcess<ProcessBeforeProduces=<SplitterProducesForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated>,
+  ThisCaseProducesTransformToEveryFlowingCaseProducesIndices,
+> FlowingSplitProcess<SplitterPassesToOtherCases>
+for FirstCaseOfFlowingSplitProcess<
+  ThisTag,
+  SplitterProducesForThisCase,
+  SplitterPassesToOtherCases,
+  ProcessBefore,
+  EveryFlowingCaseProduces,
+  ThisCase,
+  ThisCaseProducesTransformToEveryFlowingCaseProducesIndices,
+>
 where
   ThisCase::Produces: TransformTo<EveryFlowingCaseProduces, ThisCaseProducesTransformToEveryFlowingCaseProducesIndices>,
 {

@@ -1,5 +1,6 @@
 pub mod finalized_case_of_flowing_split_process;
 pub mod first_case_of_flowing_split_process;
+pub mod flowing_case_of_flowing_split_process;
 
 use crate::builder::{IntermediateFlowingSplitResult, PreviousRunYieldedAt};
 use crate::hlist_concat::Concat;
@@ -15,7 +16,7 @@ pub trait FlowingSplitProcess<SplitterProducesForOtherCases>: Sized {
   type EveryFlowingCaseProduces: ParamList + Concat<Self::ProcessBeforeSplitProduces>;
   type ProcessBeforeSplitProduces: ParamList;
   type SplitterProducesForThisCase: ParamList + Concat<Self::ProcessBeforeSplitProduces>;
-  type SplitterTagForThisCase;
+  type SplitterTagForThisCase; // fixme remove?
 
   fn continue_run(
     &self,

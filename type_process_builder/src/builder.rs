@@ -15,6 +15,7 @@ pub use finalized_split_process::*;
 pub use flowing_process::*;
 pub use flowing_split_process::finalized_case_of_flowing_split_process::*;
 pub use flowing_split_process::first_case_of_flowing_split_process::*;
+pub use flowing_split_process::flowing_case_of_flowing_split_process::*;
 pub use flowing_split_process::*;
 pub use runnable_process::*;
 use serde_value::Value;

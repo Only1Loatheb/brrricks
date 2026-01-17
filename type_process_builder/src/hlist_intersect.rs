@@ -5,7 +5,7 @@ use typenum::{Bit, IsEqual, B0, B1};
 
 ////////// Contains //////////
 
-trait Contains<Needle: ParamValue> {
+pub trait Contains<Needle: ParamValue> {
   type IsContained: Bit;
 }
 
@@ -25,7 +25,7 @@ where
 
 ////////// Filter //////////
 
-trait Filter<Head, Tail> {
+pub trait Filter<Head, Tail> {
   type Filtered;
   fn filter(head: Head, tail: Tail) -> Self::Filtered;
 }
@@ -50,7 +50,7 @@ impl<Head, Tail> Filter<Head, Tail> for B0 {
 
 ////////// Intersection //////////
 
-trait Intersect<RHS> {
+pub trait Intersect<RHS> {
   type Intersection;
 
   fn intersect(self, rhs: RHS) -> Self::Intersection;
