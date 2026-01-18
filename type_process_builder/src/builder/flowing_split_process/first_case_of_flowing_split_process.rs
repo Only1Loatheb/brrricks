@@ -4,7 +4,6 @@ use crate::builder::{
   IntermediateFlowingSplitResult, IntermediateRunOutcome, ParamList, PreviousRunYieldedAt, SplitProcess, Subprocess,
 };
 use crate::hlist_concat::Concat;
-use crate::hlist_intersect::Intersect;
 use crate::type_eq::TypeEq;
 use frunk_core::coproduct::Coproduct;
 use serde_value::Value;
@@ -90,8 +89,8 @@ FirstCaseOfFlowingSplitProcess<
   >
   where
     (AssumedTag, NextTag): TypeEq,
-    NextCase::Produces: Intersect<ThisCaseProduces>,
-    <NextCase::Produces as Intersect<ThisCaseProduces>>::Intersection: ParamList
+    // NextCase::Produces: Intersect<ThisCaseProduces>,
+    // <NextCase::Produces as Intersect<ThisCaseProduces>>::Intersection: ParamList
   {
     FlowingCaseOfFlowingSplitProcess {
       split_process_before: self,
