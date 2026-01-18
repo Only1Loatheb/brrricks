@@ -53,14 +53,14 @@ impl<Head, Tail> Filter<Head, Tail> for B0 {
 pub trait Intersect<RHS> {
   type Intersection;
 
-  fn intersect(self, rhs: RHS) -> Self::Intersection;
+  fn intersect(self) -> Self::Intersection;
 }
 
 impl<RHS> Intersect<RHS> for HNil {
   type Intersection = HNil;
 
   #[inline(always)]
-  fn intersect(self, _: RHS) -> Self::Intersection {
+  fn intersect(self) -> Self::Intersection {
     HNil
   }
 }
@@ -73,8 +73,8 @@ where
     <<RHS as Contains<Head>>::IsContained as Filter<Head, <Tail as Intersect<RHS>>::Intersection>>::Filtered;
 
   #[inline(always)]
-  fn intersect(self, rhs: RHS) -> Self::Intersection {
-    let intersected_tail = self.tail.intersect(rhs);
+  fn intersect(self) -> Self::Intersection {
+    let intersected_tail = self.tail.intersect();
     <<RHS as Contains<Head>>::IsContained as Filter<Head, <Tail as Intersect<RHS>>::Intersection>>::filter(
       self.head,
       intersected_tail,

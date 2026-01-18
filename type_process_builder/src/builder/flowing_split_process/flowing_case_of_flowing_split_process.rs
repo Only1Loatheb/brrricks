@@ -1,7 +1,11 @@
-use crate::builder::{FlowingProcess, FlowingSplitProcess, ParamList};
+use crate::builder::{
+  FlowingProcess, FlowingSplitProcess, IntermediateFlowingSplitOutcome, IntermediateRunOutcome, IntermediateRunResult,
+  ParamList, PreviousRunYieldedAt,
+};
 use crate::hlist_concat::Concat;
 use crate::hlist_intersect::Intersect;
 use frunk_core::coproduct::{CNil, Coproduct};
+use serde_value::Value;
 use std::marker::PhantomData;
 
 pub struct FlowingCaseOfFlowingSplitProcess<
@@ -46,6 +50,7 @@ for FlowingCaseOfFlowingSplitProcess<
 where
   ThisCase::Produces: Intersect<ProcessBefore::EveryFlowingCaseProduces>,
   <ThisCase::Produces as Intersect<ProcessBefore::EveryFlowingCaseProduces>>::Intersection: ParamList,
+  <ThisCase::Produces as Intersect<ProcessBefore::EveryFlowingCaseProduces>>::Intersection: Concat<ProcessBefore::ProcessBeforeSplitProduces>
 {
   type ProcessBeforeProduces = ProcessBefore::ProcessBeforeSplitProduces;
   type Produces = <<ThisCase::Produces as Intersect<ProcessBefore::EveryFlowingCaseProduces>>::Intersection as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated;
@@ -61,19 +66,16 @@ where
       .continue_run(previous_run_produced, previous_run_yielded_at, user_input)
       .await?;
     match process_before_output {
-      IntermediateFinalizedSplitOutcome::Continue {
+      IntermediateFlowingSplitOutcome::GoToCase {
         process_before_split_produced,
         splitter_passes_to_other_cases,
       } => match splitter_passes_to_other_cases {
         Coproduct::Inl(passes_to_this_case) => {
-          let this_case_consumes: <ThisCase as FlowingProcess>::ProcessBeforeProduces = passes_to_this_case
-            .concat(process_before_split_produced.clone())
-            .transform();
+          let this_case_consumes = passes_to_this_case.1.concat(process_before_split_produced.clone());
           match self.this_case.run(this_case_consumes).await? {
-            IntermediateRunOutcome::Continue(produced) => {
-              let every_flowing_case_produces: EveryFlowingCaseProduces = produced.transform();
+            IntermediateRunOutcome::Continue(this_case_produced) => {
               Ok(IntermediateRunOutcome::Continue(
-                every_flowing_case_produces.concat(process_before_split_produced),
+                this_case_produced.intersect().concat(process_before_split_produced),
               ))
             }
             IntermediateRunOutcome::Yield(a, b, c) => Ok(IntermediateRunOutcome::Yield(a, b, c)),
@@ -82,13 +84,13 @@ where
         }
         Coproduct::Inr(c_nil) => match c_nil {},
       },
-      IntermediateFinalizedSplitOutcome::Yield(a, b, c) => Ok(IntermediateRunOutcome::Yield(a, b, c)),
-      IntermediateFinalizedSplitOutcome::Finish(a) => Ok(IntermediateRunOutcome::Finish(a)),
+      IntermediateFlowingSplitOutcome::Yield(a, b, c) => Ok(IntermediateRunOutcome::Yield(a, b, c)),
+      IntermediateFlowingSplitOutcome::Finish(a) => Ok(IntermediateRunOutcome::Finish(a)),
     }
   }
 
   async fn run(&self, _process_before_produces: Self::ProcessBeforeProduces) -> IntermediateRunResult<Self::Produces> {
-    unsafe { unreachable_unchecked() } // fixme sadge
+    todo!()
   }
 
   fn enumerate_steps(&mut self, last_used_index: usize) -> usize {
