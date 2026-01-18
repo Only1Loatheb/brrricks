@@ -165,10 +165,9 @@ for FirstCaseOfFlowingSplitProcess<
   > {
     match splitter_produces_for_this_case_or_other_cases_consumes {
       Coproduct::Inl(splitter_produces_for_this_case) => {
-        let this_case_consumes = splitter_produces_for_this_case.concat(process_before_split_produced.clone());
+        let this_case_consumes = splitter_produces_for_this_case.concat(process_before_split_produced);
         match self.this_case.run(this_case_consumes).await? {
           IntermediateRunOutcome::Continue(flowing_case_produced) => Ok(IntermediateFlowingSplitOutcome::Continue {
-            process_before_split_produced,
             flowing_case_produced,
           }),
           IntermediateRunOutcome::Yield(a, b, c) => Ok(IntermediateFlowingSplitOutcome::Yield(a, b, c)),

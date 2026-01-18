@@ -55,11 +55,10 @@ for FlowingCaseOfFlowingSplitProcess<
 where
   ProcessBefore::EveryFlowingCaseProduces: Intersect<ThisCase::Produces>,
   <ProcessBefore::EveryFlowingCaseProduces as Intersect<ThisCase::Produces>>::Intersection: ParamList,
-  <ProcessBefore::EveryFlowingCaseProduces as Intersect<ThisCase::Produces>>::Intersection: Concat<ProcessBefore::ProcessBeforeSplitProduces>,
   ThisCase::Produces: TransformTo<<ProcessBefore::EveryFlowingCaseProduces as Intersect<ThisCase::Produces>>::Intersection, Indices>
 {
   type ProcessBeforeProduces = ProcessBefore::ProcessBeforeSplitProduces;
-  type Produces = <<ProcessBefore::EveryFlowingCaseProduces as Intersect<ThisCase::Produces>>::Intersection as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated;
+  type Produces = <ProcessBefore::EveryFlowingCaseProduces as Intersect<ThisCase::Produces>>::Intersection;
 
   async fn continue_run(
     &self,
@@ -81,7 +80,7 @@ where
           match self.this_case.run(this_case_consumes).await? {
             IntermediateRunOutcome::Continue(this_case_produced) => {
               Ok(IntermediateRunOutcome::Continue(
-                this_case_produced.transform().concat(process_before_split_produced),
+                this_case_produced.transform(),
               ))
             }
             IntermediateRunOutcome::Yield(a, b, c) => Ok(IntermediateRunOutcome::Yield(a, b, c)),
@@ -92,8 +91,8 @@ where
       },
       IntermediateFlowingSplitOutcome::Yield(a, b, c) => Ok(IntermediateRunOutcome::Yield(a, b, c)),
       IntermediateFlowingSplitOutcome::Finish(a) => Ok(IntermediateRunOutcome::Finish(a)),
-      IntermediateFlowingSplitOutcome::Continue { process_before_split_produced, flowing_case_produced } =>
-        Ok(IntermediateRunOutcome::Continue(flowing_case_produced.intersect().concat(process_before_split_produced))),
+      IntermediateFlowingSplitOutcome::Continue { flowing_case_produced } =>
+        Ok(IntermediateRunOutcome::Continue(flowing_case_produced.intersect())),
     }
   }
 

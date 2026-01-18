@@ -20,7 +20,7 @@ mod tests {
   use crate::step::step::{Entry, Final, Operation, Splitter};
   use crate::step::Message;
   use anyhow::anyhow;
-  use frunk_core::hlist::{HCons, HNil};
+  use frunk_core::hlist::HNil;
   use frunk_core::{hlist, Coprod, HList};
   use serde::{Deserialize, Serialize};
   use serde_value::Value;
@@ -28,38 +28,56 @@ mod tests {
   use typenum::*;
 
   #[derive(Clone, Deserialize, Serialize)]
-  struct Param0;
-  impl ParamValue for Param0 {
+  struct EntryParam;
+  impl ParamValue for EntryParam {
     type UID = U0;
   }
 
   #[derive(Clone, Deserialize, Serialize)]
-  struct Param1;
-  impl ParamValue for Param1 {
+  struct Split1Param;
+  impl ParamValue for Split1Param {
     type UID = U1;
   }
 
   #[derive(Clone, Deserialize, Serialize)]
-  struct Param2;
-  impl ParamValue for Param2 {
+  struct Split2Param;
+  impl ParamValue for Split2Param {
     type UID = U2;
   }
 
   #[derive(Clone, Deserialize, Serialize)]
-  struct Param3;
-  impl ParamValue for Param3 {
+  struct CommonSplitParam;
+  impl ParamValue for CommonSplitParam {
     type UID = U3;
+  }
+
+  #[derive(Clone, Deserialize, Serialize)]
+  struct Case1Param;
+  impl ParamValue for Case1Param {
+    type UID = U4;
+  }
+
+  #[derive(Clone, Deserialize, Serialize)]
+  struct Case2Param;
+  impl ParamValue for Case2Param {
+    type UID = U5;
+  }
+
+  #[derive(Clone, Deserialize, Serialize)]
+  struct CommonCaseParam;
+  impl ParamValue for CommonCaseParam {
+    type UID = U6;
   }
 
   struct EntryA;
   impl Entry<Value> for EntryA {
-    type Produces = HCons<Param0, HNil>;
+    type Produces = HList![EntryParam];
 
     async fn handle(
       &self,
       mut consumes: BTreeMap<Value, Value>,
       shortcode_string: String,
-    ) -> anyhow::Result<HCons<Param0, HNil>> {
+    ) -> anyhow::Result<HList![EntryParam]> {
       let key = Value::String("msisdn".into());
       let value = consumes
         .remove(&key)
@@ -69,15 +87,15 @@ mod tests {
   }
 
   struct Linear1;
-  impl Operation<HNil, HList![Param1, Param3]> for Linear1 {
-    async fn handle(&self, consumes: HNil) -> anyhow::Result<HList![Param1, Param3]> {
+  impl Operation<HNil, HList![Case1Param, CommonCaseParam]> for Linear1 {
+    async fn handle(&self, consumes: HNil) -> anyhow::Result<HList![Case1Param, CommonCaseParam]> {
       todo!()
     }
   }
 
   struct Linear2;
-  impl Operation<HNil, HList![Param2, Param3]> for Linear2 {
-    async fn handle(&self, consumes: HNil) -> anyhow::Result<HList![Param2, Param3]> {
+  impl Operation<HNil, HList![Case2Param, CommonCaseParam]> for Linear2 {
+    async fn handle(&self, consumes: HNil) -> anyhow::Result<HList![Case2Param, CommonCaseParam]> {
       todo!()
     }
   }
@@ -85,19 +103,34 @@ mod tests {
   pub struct Case1;
   pub struct Case2;
   struct SplitA;
-  impl Splitter<HNil, Coprod![(Case1, HNil), (Case2, HNil)]> for SplitA {
-    async fn handle(&self, consumes: HNil) -> anyhow::Result<Coprod![(Case1, HNil), (Case2, HNil)]> {
+  impl
+    Splitter<
+      HNil,
+      Coprod![
+        (Case1, HList![Split1Param, CommonSplitParam]),
+        (Case2, HList![Split2Param, CommonSplitParam])
+      ],
+    > for SplitA
+  {
+    async fn handle(
+      &self,
+      consumes: HNil,
+    ) -> anyhow::Result<
+      Coprod![
+        (Case1, HList![Split1Param, CommonSplitParam]),
+        (Case2, HList![Split2Param, CommonSplitParam])
+      ],
+    > {
       todo!()
     }
   }
 
   struct FinalA;
-  impl Final<HCons<Param0, HNil>> for FinalA {
-    async fn handle(&self, consumes: HCons<Param0, HNil>) -> anyhow::Result<Message> {
+  impl Final<HList![EntryParam, CommonSplitParam, CommonCaseParam]> for FinalA {
+    async fn handle(&self, consumes: HList![EntryParam, CommonSplitParam, CommonCaseParam]) -> anyhow::Result<Message> {
       todo!()
     }
   }
-  // impl Linear<HCons<Param1, HNil>, HNil> for LinearB { async fn handle(&self, consumes: HCons<Param1, HNil>) -> anyhow::Result<(Option<Message>, HNil)> { todo!() } }
 
   #[tokio::test]
   async fn test_hcons() {
