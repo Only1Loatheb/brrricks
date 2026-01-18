@@ -104,7 +104,8 @@ mod tests {
     let process = EntryA
       .split(SplitA)
       .case_flowing::<Case1, _>(|x| x.then(Linear1))
-      .case_flowing::<Case2, _>(|x| x.then(Linear2));
+      .case_flowing::<Case2, _, _>(|x| x.then(Linear2))
+      .end(FinalA);
     //   .then(FinalA)
     //   .build();
     // let run_result = process

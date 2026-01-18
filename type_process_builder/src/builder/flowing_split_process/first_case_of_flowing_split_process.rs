@@ -39,7 +39,7 @@ impl<
   ThisCaseProduces: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
   ThisCase: FlowingProcess<
     ProcessBeforeProduces=<SplitterProducesForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
-    Produces= ThisCaseProduces,
+    Produces=ThisCaseProduces,
   >,
 >
 FirstCaseOfFlowingSplitProcess<
@@ -76,7 +76,9 @@ FirstCaseOfFlowingSplitProcess<
 
   pub fn case_flowing<
     AssumedTag,
-    NextCase: FlowingProcess<ProcessBeforeProduces=<SplitterProducesForNextCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated>,
+    NextCase: FlowingProcess<ProcessBeforeProduces=<SplitterProducesForNextCase as
+    Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated>,
+    Indices,
   >(
     self,
     create_case: impl FnOnce(Subprocess<<SplitterProducesForNextCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated>) -> NextCase,
@@ -86,11 +88,10 @@ FirstCaseOfFlowingSplitProcess<
     SplitterPassesToOtherCases,
     Self,
     NextCase,
+    Indices,
   >
   where
     (AssumedTag, NextTag): TypeEq,
-    // NextCase::Produces: Intersect<ThisCaseProduces>,
-    // <NextCase::Produces as Intersect<ThisCaseProduces>>::Intersection: ParamList
   {
     FlowingCaseOfFlowingSplitProcess {
       split_process_before: self,

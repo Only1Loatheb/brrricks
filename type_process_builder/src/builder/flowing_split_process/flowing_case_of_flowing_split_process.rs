@@ -4,6 +4,7 @@ use crate::builder::{
 };
 use crate::hlist_concat::Concat;
 use crate::hlist_intersect::Intersect;
+use crate::hlist_transform_to::TransformTo;
 use frunk_core::coproduct::{CNil, Coproduct};
 use serde_value::Value;
 use std::marker::PhantomData;
@@ -16,6 +17,7 @@ pub struct FlowingCaseOfFlowingSplitProcess<
   ThisCase: FlowingProcess<ProcessBeforeProduces=
   <SplitterProducesForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated
   >,
+  Indices,
 >
 // where
 //     ThisCase::Produces: Intersect<ProcessBefore::EveryFlowingCaseProduces>,
@@ -27,6 +29,7 @@ pub struct FlowingCaseOfFlowingSplitProcess<
     ThisTag,
     SplitterProducesForThisCase,
     SplitterPassesToOtherCases,
+    Indices,
   )>,
 }
 // todo
@@ -37,8 +40,9 @@ impl<
   SplitterProducesForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
   ProcessBefore: FlowingSplitProcess<Coproduct<(ThisTag, SplitterProducesForThisCase), CNil>>,
   ThisCase: FlowingProcess<ProcessBeforeProduces=
-  <SplitterProducesForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated
+  <SplitterProducesForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
   >,
+  Indices,
 > FlowingProcess
 for FlowingCaseOfFlowingSplitProcess<
   ThisTag,
@@ -46,14 +50,16 @@ for FlowingCaseOfFlowingSplitProcess<
   CNil,
   ProcessBefore,
   ThisCase,
+  Indices,
 >
 where
-  ThisCase::Produces: Intersect<ProcessBefore::EveryFlowingCaseProduces>,
-  <ThisCase::Produces as Intersect<ProcessBefore::EveryFlowingCaseProduces>>::Intersection: ParamList,
-  <ThisCase::Produces as Intersect<ProcessBefore::EveryFlowingCaseProduces>>::Intersection: Concat<ProcessBefore::ProcessBeforeSplitProduces>
+  ProcessBefore::EveryFlowingCaseProduces: Intersect<ThisCase::Produces>,
+  <ProcessBefore::EveryFlowingCaseProduces as Intersect<ThisCase::Produces>>::Intersection: ParamList,
+  <ProcessBefore::EveryFlowingCaseProduces as Intersect<ThisCase::Produces>>::Intersection: Concat<ProcessBefore::ProcessBeforeSplitProduces>,
+  ThisCase::Produces: TransformTo<<ProcessBefore::EveryFlowingCaseProduces as Intersect<ThisCase::Produces>>::Intersection, Indices>
 {
   type ProcessBeforeProduces = ProcessBefore::ProcessBeforeSplitProduces;
-  type Produces = <<ThisCase::Produces as Intersect<ProcessBefore::EveryFlowingCaseProduces>>::Intersection as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated;
+  type Produces = <<ProcessBefore::EveryFlowingCaseProduces as Intersect<ThisCase::Produces>>::Intersection as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated;
 
   async fn continue_run(
     &self,
@@ -75,7 +81,7 @@ where
           match self.this_case.run(this_case_consumes).await? {
             IntermediateRunOutcome::Continue(this_case_produced) => {
               Ok(IntermediateRunOutcome::Continue(
-                this_case_produced.intersect().concat(process_before_split_produced),
+                this_case_produced.transform().concat(process_before_split_produced),
               ))
             }
             IntermediateRunOutcome::Yield(a, b, c) => Ok(IntermediateRunOutcome::Yield(a, b, c)),
@@ -86,6 +92,8 @@ where
       },
       IntermediateFlowingSplitOutcome::Yield(a, b, c) => Ok(IntermediateRunOutcome::Yield(a, b, c)),
       IntermediateFlowingSplitOutcome::Finish(a) => Ok(IntermediateRunOutcome::Finish(a)),
+      IntermediateFlowingSplitOutcome::Continue { process_before_split_produced, flowing_case_produced } =>
+        Ok(IntermediateRunOutcome::Continue(flowing_case_produced.intersect().concat(process_before_split_produced))),
     }
   }
 
