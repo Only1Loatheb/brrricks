@@ -16,7 +16,6 @@ pub trait FlowingSplitProcess<SplitterProducesForOtherCases>: Sized {
   type EveryFlowingCaseProduces: ParamList; // fixme remove constraint, it already includes ProcessBeforeSplitProduces;
   type ProcessBeforeSplitProduces: ParamList;
   type SplitterProducesForThisCase: ParamList + Concat<Self::ProcessBeforeSplitProduces>;
-  type SplitterTagForThisCase; // fixme remove?
 
   fn continue_run(
     &self,

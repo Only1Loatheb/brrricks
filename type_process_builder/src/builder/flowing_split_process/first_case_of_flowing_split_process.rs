@@ -125,7 +125,6 @@ for FirstCaseOfFlowingSplitProcess<
   type EveryFlowingCaseProduces = ThisCase::Produces;
   type ProcessBeforeSplitProduces = ProcessBefore::ProcessBeforeSplitProduces;
   type SplitterProducesForThisCase = SplitterProducesForThisCase;
-  type SplitterTagForThisCase = ThisTag;
 
   async fn continue_run(
     &self,
