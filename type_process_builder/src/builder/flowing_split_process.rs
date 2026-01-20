@@ -13,7 +13,7 @@ use std::future::Future;
 /// If we allow that the user can produce common params in [Splitter] without defining additional step.
 /// The process builder API will be more ergonomic, but the implementation will be more involved.
 pub trait FlowingSplitProcess<SplitterProducesForOtherCases>: Sized {
-  type EveryFlowingCaseProduces: ParamList; // fixme remove constraint, it already includes ProcessBeforeSplitProduces;
+  type EveryFlowingCaseProduces: ParamList; // fixme removed constraint, it already includes ProcessBeforeSplitProduces;
   type ProcessBeforeSplitProduces: ParamList;
   type SplitterProducesForThisCase: ParamList + Concat<Self::ProcessBeforeSplitProduces>;
 

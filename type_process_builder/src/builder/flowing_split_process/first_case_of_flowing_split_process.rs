@@ -108,7 +108,7 @@ impl<
   SplitterProducesForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
   SplitterPassesToOtherCases,
   ProcessBefore: SplitProcess<SplitterPassesToOtherCases, SplitterProducesForFirstCase=SplitterProducesForThisCase>,
-  ThisCaseProduces: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
+  ThisCaseProduces: ParamList,
   ThisCase: FlowingProcess<
     ProcessBeforeProduces=<SplitterProducesForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
     Produces=ThisCaseProduces,
