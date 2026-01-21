@@ -72,8 +72,8 @@ where
         process_before_split_produced,
         splitter_passes_to_other_cases,
       } => match splitter_passes_to_other_cases {
-        Coproduct::Inl(passes_to_this_case) => {
-          let this_case_consumes = passes_to_this_case.1.concat(process_before_split_produced.clone());
+        Coproduct::Inl((_pd, passes_to_this_case)) => {
+          let this_case_consumes = passes_to_this_case.concat(process_before_split_produced.clone());
           match self.this_case.run(this_case_consumes).await? {
             IntermediateRunOutcome::Continue(this_case_produced) => {
               Ok(IntermediateRunOutcome::Continue(
