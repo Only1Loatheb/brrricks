@@ -59,7 +59,7 @@ pub trait FlowingProcess: Sized {
   fn split<
     Tag,
     SplitterStepConsumes: ParamList,
-    SplitterProducesForFirstCase: ParamList,
+    SplitterProducesForFirstCase: ParamList + Concat<Self::Produces>,
     SplitterProducesForOtherCases,
     SplitterStep: Splitter<SplitterStepConsumes, Coproduct<(Tag, SplitterProducesForFirstCase), SplitterProducesForOtherCases>>,
     ProcessBeforeProducesToSplitterStepConsumesIndices,

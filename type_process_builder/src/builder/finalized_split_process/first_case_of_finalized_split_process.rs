@@ -67,6 +67,7 @@ impl<
   }
 }
 
+/// last case
 /// Removing this would forbid having just one case in a split
 impl<
     ThisTag,

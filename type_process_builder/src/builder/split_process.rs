@@ -18,7 +18,7 @@ use std::marker::PhantomData;
 /// We at least remove an illegal state of unfinalized finalized split process.
 pub trait SplitProcess<SplitterProducesForOtherCases>: Sized {
   type ProcessBeforeSplitProduces: ParamList;
-  type SplitterProducesForFirstCase: ParamList;
+  type SplitterProducesForFirstCase: ParamList + Concat<Self::ProcessBeforeSplitProduces>;
   type SplitterTagForFirstCase;
 
   fn continue_run(
@@ -124,7 +124,7 @@ impl<
     Tag,
     ProcessBefore: FlowingProcess,
     SplitterStepConsumes: ParamList,
-    SplitterProducesForFirstCase: ParamList,
+    SplitterProducesForFirstCase: ParamList + Concat<ProcessBefore::Produces>,
     SplitterProducesForOtherCases,
     SplitterStep: Splitter<SplitterStepConsumes, Coproduct<(Tag, SplitterProducesForFirstCase), SplitterProducesForOtherCases>>,
     ProcessBeforeProducesToSplitterStepConsumesIndices,
