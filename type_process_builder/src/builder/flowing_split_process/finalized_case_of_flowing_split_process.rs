@@ -77,6 +77,7 @@ pub struct FinalizedCaseOfFlowingSplitProcess<
 // }
 
 // /// the last case
+// /// Removing this would forbid having just one case in a split
 // impl<
 //     ThisTag,
 //     SplitterProducesForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,

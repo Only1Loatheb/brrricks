@@ -19,9 +19,6 @@ pub struct FlowingCaseOfFlowingSplitProcess<
   >,
   Indices,
 >
-// where
-//     ThisCase::Produces: Intersect<ProcessBefore::EveryFlowingCaseProduces>,
-//     <ThisCase::Produces as Intersect<ProcessBefore::EveryFlowingCaseProduces>>::Intersection: ParamList,
 {
   pub split_process_before: ProcessBefore,
   pub this_case: ThisCase,
@@ -32,7 +29,7 @@ pub struct FlowingCaseOfFlowingSplitProcess<
     Indices,
   )>,
 }
-// todo
+
 /// last case
 /// Removing this would forbid having just one case in a split
 impl<
