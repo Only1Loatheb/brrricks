@@ -52,7 +52,7 @@ for FlowingCaseOfFlowingSplitProcess<
 where
   ProcessBefore::EveryFlowingCaseProduces: Intersect<ThisCase::Produces>,
   <ProcessBefore::EveryFlowingCaseProduces as Intersect<ThisCase::Produces>>::Intersection: ParamList,
-  ThisCase::Produces: TransformTo<<ProcessBefore::EveryFlowingCaseProduces as Intersect<ThisCase::Produces>>::Intersection, Indices>
+  ThisCase::Produces: TransformTo<<ProcessBefore::EveryFlowingCaseProduces as Intersect<ThisCase::Produces>>::Intersection, Indices>,
 {
   type ProcessBeforeProduces = ProcessBefore::ProcessBeforeSplitProduces;
   type Produces = <ProcessBefore::EveryFlowingCaseProduces as Intersect<ThisCase::Produces>>::Intersection;
@@ -75,11 +75,8 @@ where
         Coproduct::Inl((_pd, passes_to_this_case)) => {
           let this_case_consumes = passes_to_this_case.concat(process_before_split_produced.clone());
           match self.this_case.run(this_case_consumes).await? {
-            IntermediateRunOutcome::Continue(this_case_produced) => {
-              Ok(IntermediateRunOutcome::Continue(
-                this_case_produced.transform(),
-              ))
-            }
+            IntermediateRunOutcome::Continue(this_case_produced) =>
+              Ok(IntermediateRunOutcome::Continue(this_case_produced.transform())),
             IntermediateRunOutcome::Yield(a, b, c) => Ok(IntermediateRunOutcome::Yield(a, b, c)),
             IntermediateRunOutcome::Finish(a) => Ok(IntermediateRunOutcome::Finish(a)),
           }
