@@ -1,13 +1,12 @@
 use crate::builder::{
   subprocess, FinalizedProcess, FinalizedSplitProcess, IntermediateFinalizedSplitOutcome,
   IntermediateFinalizedSplitResult, NextCaseOfFinalizedSplitProcess, ParamList, PreviousRunYieldedAt, RunOutcome,
-  RunResult, SplitProcess, Subprocess,
+  SplitProcess, Subprocess,
 };
 use crate::hlist_concat::Concat;
 use crate::type_eq::TypeEq;
-use frunk_core::coproduct::{CNil, Coproduct};
+use frunk_core::coproduct::Coproduct;
 use serde_value::Value;
-use std::hint::unreachable_unchecked;
 use std::marker::PhantomData;
 
 pub struct FirstCaseOfFinalizedSplitProcess<
@@ -64,65 +63,6 @@ impl<
       >()),
       phantom_data: Default::default(),
     }
-  }
-}
-
-/// last case
-/// Removing this would forbid having just one case in a split
-impl<
-    ThisTag,
-    ProcessBefore: SplitProcess<CNil>,
-    ThisCase: FinalizedProcess<
-      ProcessBeforeProduces = <ProcessBefore::SplitterProducesForFirstCase as Concat<
-        <ProcessBefore>::ProcessBeforeSplitProduces,
-      >>::Concatenated,
-    >,
-  > FinalizedProcess
-  for FirstCaseOfFinalizedSplitProcess<
-    ThisTag,
-    ProcessBefore::SplitterProducesForFirstCase,
-    CNil,
-    ProcessBefore,
-    ThisCase,
-  >
-where
-  ProcessBefore::SplitterProducesForFirstCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
-{
-  type ProcessBeforeProduces = ProcessBefore::ProcessBeforeSplitProduces;
-
-  async fn continue_run(
-    &self,
-    previous_run_produced: Value,
-    previous_run_yielded_at: PreviousRunYieldedAt,
-    user_input: String,
-  ) -> RunResult {
-    let process_before_output = self
-      .split_process_before
-      .continue_run(previous_run_produced, previous_run_yielded_at, user_input)
-      .await?;
-    match process_before_output {
-      IntermediateFinalizedSplitOutcome::GoToCase {
-        process_before_split_produced,
-        splitter_passes_to_other_cases,
-      } => match splitter_passes_to_other_cases {
-        Coproduct::Inl(splitter_produces_for_first_case) => {
-          let this_case_consumes = splitter_produces_for_first_case.concat(process_before_split_produced);
-          self.this_case.run(this_case_consumes).await
-        }
-        Coproduct::Inr(c_nil) => match c_nil {},
-      },
-      IntermediateFinalizedSplitOutcome::Yield(a, b, c) => Ok(RunOutcome::Yield(a, b, c)),
-      IntermediateFinalizedSplitOutcome::Finish(a) => Ok(RunOutcome::Finish(a)),
-    }
-  }
-
-  async fn run(&self, _process_before_produces: Self::ProcessBeforeProduces) -> RunResult {
-    // most likely design flow, but I don't think it will happen :)
-    unsafe { unreachable_unchecked() }
-  }
-
-  fn enumerate_steps(&mut self, last_used_index: usize) -> usize {
-    self.split_process_before.enumerate_steps(last_used_index)
   }
 }
 

@@ -1,17 +1,12 @@
 #[derive(serde::Deserialize, serde::Serialize, PartialEq, Debug, Eq, Clone, PartialOrd, Ord, Hash)]
 pub struct Message(pub String);
 
-// We want to allow defining split with one case for Confirmation forms
 pub mod splitter_output_repr {
   use crate::param_list::ParamList;
   use frunk_core::coproduct::Coproduct;
 
-  pub trait SplitterOutput {
-    type NonEmptyCoproduct;
-  }
-  impl<Tag, ThisCase: ParamList, OtherCase> SplitterOutput for Coproduct<(Tag, ThisCase), OtherCase> {
-    type NonEmptyCoproduct = Coproduct<ThisCase, OtherCase>;
-  }
+  pub trait SplitterOutput {}
+  impl<Tag, ThisCase: ParamList, OtherCase> SplitterOutput for Coproduct<(Tag, ThisCase), OtherCase> {}
 }
 
 // Should only pass params required in further part of the process, but I don't know what they are.
@@ -42,6 +37,8 @@ pub mod step {
     fn handle_input(&self, consumes: Consumes, user_input: String) -> impl Future<Output = anyhow::Result<Produces>>;
   }
 
+  /// Works with at lease two cases.
+  /// just produce link form with a single link using Form step
   pub trait Splitter<Consumes: ParamList, Produces: SplitterOutput> {
     fn handle(&self, consumes: Consumes) -> impl Future<Output = anyhow::Result<Produces>>;
   }
