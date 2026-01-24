@@ -3,7 +3,7 @@ pub mod finalized_split_process;
 pub mod flowing_process;
 pub mod flowing_split_process;
 pub mod runnable_process;
-mod split_process;
+pub mod split_process;
 
 pub use crate::param_list::*;
 pub use crate::step::splitter_output_repr::*;
@@ -38,21 +38,21 @@ pub enum IntermediateRunOutcome<Produced: ParamList> {
 
 pub type IntermediateRunResult<T> = anyhow::Result<IntermediateRunOutcome<T>>;
 
-pub enum IntermediateFinalizedSplitOutcome<ProcessBeforeSplitProduced: ParamList, SplitterPassesToOtherCases> {
+pub enum IntermediateFinalizedSplitOutcome<ProcessBeforeSplitProduced: ParamList, SplitterProducesForOtherCases> {
   GoToCase {
     process_before_split_produced: ProcessBeforeSplitProduced,
-    splitter_passes_to_other_cases: SplitterPassesToOtherCases,
+    splitter_produces_to_other_cases: SplitterProducesForOtherCases,
   },
   Yield(Message, Value, CurrentRunYieldedAt),
   Finish(Message),
 }
 
-pub type IntermediateFinalizedSplitResult<ProcessBeforeSplitProduced, SplitterPassesToOtherCases> =
-  anyhow::Result<IntermediateFinalizedSplitOutcome<ProcessBeforeSplitProduced, SplitterPassesToOtherCases>>;
+pub type IntermediateFinalizedSplitResult<ProcessBeforeSplitProduced, SplitterProducesForOtherCases> =
+  anyhow::Result<IntermediateFinalizedSplitOutcome<ProcessBeforeSplitProduced, SplitterProducesForOtherCases>>;
 
 pub enum IntermediateFlowingSplitOutcome<
   ProcessBeforeSplitProduced: ParamList,
-  SplitterPassesToOtherCases,
+  SplitterProducesForOtherCases,
   FlowingCaseProduced: ParamList,
 > {
   Continue {
@@ -61,16 +61,19 @@ pub enum IntermediateFlowingSplitOutcome<
   },
   GoToCase {
     process_before_split_produced: ProcessBeforeSplitProduced,
-    splitter_passes_to_other_cases: SplitterPassesToOtherCases,
+    splitter_produces_to_other_cases: SplitterProducesForOtherCases,
   },
   Yield(Message, Value, CurrentRunYieldedAt),
   Finish(Message),
 }
 
-pub type IntermediateFlowingSplitResult<ProcessBeforeSplitProduced, SplitterPassesToOtherCases, FlowingCaseProduced> =
-  anyhow::Result<
-    IntermediateFlowingSplitOutcome<ProcessBeforeSplitProduced, SplitterPassesToOtherCases, FlowingCaseProduced>,
-  >;
+pub type IntermediateFlowingSplitResult<
+  ProcessBeforeSplitProduced,
+  SplitterProducesForOtherCases,
+  FlowingCaseProduced,
+> = anyhow::Result<
+  IntermediateFlowingSplitOutcome<ProcessBeforeSplitProduced, SplitterProducesForOtherCases, FlowingCaseProduced>,
+>;
 
 pub enum RunOutcome {
   Yield(Message, Value, CurrentRunYieldedAt),

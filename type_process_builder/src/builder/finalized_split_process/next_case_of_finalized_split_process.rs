@@ -11,23 +11,23 @@ use std::marker::PhantomData;
 pub struct NextCaseOfFinalizedSplitProcess<
   ThisTag,
   SplitterProducesForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
-  SplitterPassesToOtherCases,
-  ProcessBefore: FinalizedSplitProcess<Coproduct<(ThisTag, SplitterProducesForThisCase), SplitterPassesToOtherCases>>,
+  SplitterProducesForOtherCases,
+  ProcessBefore: FinalizedSplitProcess<Coproduct<(ThisTag, SplitterProducesForThisCase), SplitterProducesForOtherCases>>,
   ThisCase: FinalizedProcess<ProcessBeforeProduces=<SplitterProducesForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated>,
 > {
   pub split_process_before: ProcessBefore,
   pub this_case: ThisCase,
-  pub phantom_data: PhantomData<(ThisTag, SplitterProducesForThisCase, SplitterPassesToOtherCases)>,
+  pub phantom_data: PhantomData<(ThisTag, SplitterProducesForThisCase, SplitterProducesForOtherCases)>,
 }
 
 impl<
   ThisTag,
   NextTag,
-  SplitterPassesToOtherCases,
+  SplitterProducesForOtherCases,
   ProcessBefore: FinalizedSplitProcess<
     Coproduct<
       (ThisTag, SplitterProducesForThisCase),
-      Coproduct<(NextTag, SplitterProducesForNextCase), SplitterPassesToOtherCases>,
+      Coproduct<(NextTag, SplitterProducesForNextCase), SplitterProducesForOtherCases>,
     >,
   >,
   SplitterProducesForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
@@ -37,7 +37,7 @@ impl<
 NextCaseOfFinalizedSplitProcess<
   ThisTag,
   SplitterProducesForThisCase,
-  Coproduct<(NextTag, SplitterProducesForNextCase), SplitterPassesToOtherCases>,
+  Coproduct<(NextTag, SplitterProducesForNextCase), SplitterProducesForOtherCases>,
   ProcessBefore,
   ThisCase,
 >
@@ -52,7 +52,7 @@ NextCaseOfFinalizedSplitProcess<
         <SplitterProducesForNextCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
       >,
     ) -> NextCase,
-  ) -> NextCaseOfFinalizedSplitProcess<NextTag, SplitterProducesForNextCase, SplitterPassesToOtherCases, Self, NextCase>
+  ) -> NextCaseOfFinalizedSplitProcess<NextTag, SplitterProducesForNextCase, SplitterProducesForOtherCases, Self, NextCase>
   {
     NextCaseOfFinalizedSplitProcess {
       split_process_before: self,
@@ -74,7 +74,7 @@ NextCaseOfFinalizedSplitProcess<
   ) -> FlowingCaseOfFinalizedSplitProcess<
     NextTag,
     SplitterProducesForNextCase,
-    SplitterPassesToOtherCases,
+    SplitterProducesForOtherCases,
     Self,
     NextCase,
   >
@@ -121,9 +121,9 @@ for NextCaseOfFinalizedSplitProcess<
     match process_before_output {
       IntermediateFinalizedSplitOutcome::GoToCase {
         process_before_split_produced,
-        splitter_passes_to_other_cases,
+        splitter_produces_to_other_cases,
       } => {
-        let produced = match splitter_passes_to_other_cases {
+        let produced = match splitter_produces_to_other_cases {
           Coproduct::Inl((_pd, params)) => Coproduct::Inl(params),
           Coproduct::Inr(inr_value) => Coproduct::Inr(inr_value),
         };
@@ -150,9 +150,9 @@ for NextCaseOfFinalizedSplitProcess<
           RunOutcome::Finish(a) => Ok(IntermediateFinalizedSplitOutcome::Finish(a)),
         }
       }
-      Coproduct::Inr(splitter_passes_to_other_cases) => Ok(IntermediateFinalizedSplitOutcome::GoToCase {
+      Coproduct::Inr(splitter_produces_to_other_cases) => Ok(IntermediateFinalizedSplitOutcome::GoToCase {
         process_before_split_produced,
-        splitter_passes_to_other_cases,
+        splitter_produces_to_other_cases,
       }),
     }
   }
@@ -190,8 +190,8 @@ where
     match process_before_output {
       IntermediateFinalizedSplitOutcome::GoToCase {
         process_before_split_produced,
-        splitter_passes_to_other_cases,
-      } => match splitter_passes_to_other_cases {
+        splitter_produces_to_other_cases,
+      } => match splitter_produces_to_other_cases {
         Coproduct::Inl((_pd, splitter_produces_for_this_case)) => {
           let this_case_consumes = splitter_produces_for_this_case.concat(process_before_split_produced);
           self.this_case.continue_run(this_case_consumes).await

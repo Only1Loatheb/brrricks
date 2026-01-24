@@ -1,6 +1,6 @@
 use crate::builder::{
-  FinalizedSplitProcess, FlowingProcess, FlowingSplitProcess, IntermediateFinalizedSplitOutcome,
-  IntermediateRunOutcome, IntermediateRunResult, ParamList, PreviousRunYieldedAt,
+  FinalizedSplitProcess, FlowingProcess, IntermediateFinalizedSplitOutcome, IntermediateRunOutcome,
+  IntermediateRunResult, ParamList, PreviousRunYieldedAt,
 };
 use crate::hlist_concat::Concat;
 use frunk_core::coproduct::{CNil, Coproduct};
@@ -10,8 +10,8 @@ use std::marker::PhantomData;
 pub struct FlowingCaseOfFinalizedSplitProcess<
   ThisTag,
   SplitterProducesForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
-  SplitterPassesToOtherCases,
-  ProcessBefore: FinalizedSplitProcess<Coproduct<(ThisTag, SplitterProducesForThisCase), SplitterPassesToOtherCases>>,
+  SplitterProducesForOtherCases,
+  ProcessBefore: FinalizedSplitProcess<Coproduct<(ThisTag, SplitterProducesForThisCase), SplitterProducesForOtherCases>>,
   ThisCase: FlowingProcess<ProcessBeforeProduces=
   <SplitterProducesForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated
   >,
@@ -22,7 +22,7 @@ pub struct FlowingCaseOfFinalizedSplitProcess<
   pub phantom_data: PhantomData<(
     ThisTag,
     SplitterProducesForThisCase,
-    SplitterPassesToOtherCases,
+    SplitterProducesForOtherCases,
   )>,
 }
 
@@ -59,10 +59,10 @@ for FlowingCaseOfFinalizedSplitProcess<
     match process_before_output {
       IntermediateFinalizedSplitOutcome::GoToCase {
         process_before_split_produced,
-        splitter_passes_to_other_cases,
-      } => match splitter_passes_to_other_cases {
-        Coproduct::Inl((_pd, passes_to_this_case)) => {
-          let this_case_consumes = passes_to_this_case.concat(process_before_split_produced.clone());
+        splitter_produces_to_other_cases,
+      } => match splitter_produces_to_other_cases {
+        Coproduct::Inl((_pd, produces_to_this_case)) => {
+          let this_case_consumes = produces_to_this_case.concat(process_before_split_produced.clone());
           match self.this_case.continue_run(this_case_consumes).await? {
             IntermediateRunOutcome::Continue(this_case_produced) => Ok(IntermediateRunOutcome::Continue(this_case_produced)),
             IntermediateRunOutcome::Yield(a, b, c) => Ok(IntermediateRunOutcome::Yield(a, b, c)),

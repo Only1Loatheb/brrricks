@@ -11,21 +11,21 @@ use std::marker::PhantomData;
 pub struct FirstCaseOfFinalizedSplitProcess<
   ThisTag,
   SplitterProducesForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
-  SplitterPassesToOtherCases,
-  ProcessBefore: SplitProcess<SplitterPassesToOtherCases>,
+  SplitterProducesForOtherCases,
+  ProcessBefore: SplitProcess<SplitterProducesForOtherCases>,
   ThisCase: FinalizedProcess,
 > {
   pub split_process_before: ProcessBefore,
   pub this_case: ThisCase,
-  pub phantom_data: PhantomData<(ThisTag, SplitterProducesForThisCase, SplitterPassesToOtherCases)>,
+  pub phantom_data: PhantomData<(ThisTag, SplitterProducesForThisCase, SplitterProducesForOtherCases)>,
 }
 
 impl<
   ThisTag,
   NextTag,
-  SplitterPassesToOtherCases,
+  SplitterProducesForOtherCases,
   ProcessBefore: SplitProcess<
-    Coproduct<(NextTag, SplitterProducesForNextCase), SplitterPassesToOtherCases>,
+    Coproduct<(NextTag, SplitterProducesForNextCase), SplitterProducesForOtherCases>,
     SplitterProducesForFirstCase=SplitterProducesForThisCase,
     SplitterTagForFirstCase=ThisTag,
   >,
@@ -36,7 +36,7 @@ impl<
 FirstCaseOfFinalizedSplitProcess<
   ThisTag,
   SplitterProducesForThisCase,
-  Coproduct<(NextTag, SplitterProducesForNextCase), SplitterPassesToOtherCases>,
+  Coproduct<(NextTag, SplitterProducesForNextCase), SplitterProducesForOtherCases>,
   ProcessBefore,
   ThisCase,
 >
@@ -51,7 +51,7 @@ FirstCaseOfFinalizedSplitProcess<
     create_case: impl FnOnce(
       Subprocess<<SplitterProducesForNextCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated>,
     ) -> NextCase,
-  ) -> NextCaseOfFinalizedSplitProcess<NextTag, SplitterProducesForNextCase, SplitterPassesToOtherCases, Self, NextCase>
+  ) -> NextCaseOfFinalizedSplitProcess<NextTag, SplitterProducesForNextCase, SplitterProducesForOtherCases, Self, NextCase>
   {
     NextCaseOfFinalizedSplitProcess {
       split_process_before: self,
@@ -73,7 +73,7 @@ FirstCaseOfFinalizedSplitProcess<
   ) -> FlowingCaseOfFinalizedSplitProcess<
     NextTag,
     SplitterProducesForNextCase,
-    SplitterPassesToOtherCases,
+    SplitterProducesForOtherCases,
     Self,
     NextCase,
   >
@@ -91,14 +91,14 @@ FirstCaseOfFinalizedSplitProcess<
 impl<
   ThisTag,
   SplitterProducesForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
-  SplitterPassesToOtherCases,
-  ProcessBefore: SplitProcess<SplitterPassesToOtherCases, SplitterProducesForFirstCase=SplitterProducesForThisCase>,
+  SplitterProducesForOtherCases,
+  ProcessBefore: SplitProcess<SplitterProducesForOtherCases, SplitterProducesForFirstCase=SplitterProducesForThisCase>,
   ThisCase: FinalizedProcess<ProcessBeforeProduces=<SplitterProducesForThisCase as Concat<<ProcessBefore>::ProcessBeforeSplitProduces>>::Concatenated>,
-> FinalizedSplitProcess<SplitterPassesToOtherCases>
+> FinalizedSplitProcess<SplitterProducesForOtherCases>
 for FirstCaseOfFinalizedSplitProcess<
   ThisTag,
   SplitterProducesForThisCase,
-  SplitterPassesToOtherCases,
+  SplitterProducesForOtherCases,
   ProcessBefore,
   ThisCase,
 >
@@ -112,7 +112,7 @@ for FirstCaseOfFinalizedSplitProcess<
     previous_run_produced: Value,
     previous_run_yielded_at: PreviousRunYieldedAt,
     user_input: String,
-  ) -> IntermediateFinalizedSplitResult<Self::ProcessBeforeSplitProduces, SplitterPassesToOtherCases> {
+  ) -> IntermediateFinalizedSplitResult<Self::ProcessBeforeSplitProduces, SplitterProducesForOtherCases> {
     let process_before_output = self
       .split_process_before
       .resume_run(previous_run_produced, previous_run_yielded_at, user_input)
@@ -120,10 +120,10 @@ for FirstCaseOfFinalizedSplitProcess<
     match process_before_output {
       IntermediateFinalizedSplitOutcome::GoToCase {
         process_before_split_produced,
-        splitter_passes_to_other_cases,
+        splitter_produces_to_other_cases,
       } => {
         self
-          .continue_run(process_before_split_produced, splitter_passes_to_other_cases)
+          .continue_run(process_before_split_produced, splitter_produces_to_other_cases)
           .await
       }
       IntermediateFinalizedSplitOutcome::Yield(a, b, c) => Ok(IntermediateFinalizedSplitOutcome::Yield(a, b, c)),
@@ -136,9 +136,9 @@ for FirstCaseOfFinalizedSplitProcess<
     process_before_split_produced: Self::ProcessBeforeSplitProduces,
     splitter_produces_for_this_case_or_other_cases_consumes: Coproduct<
       Self::SplitterProducesForThisCase,
-      SplitterPassesToOtherCases,
+      SplitterProducesForOtherCases,
     >,
-  ) -> IntermediateFinalizedSplitResult<Self::ProcessBeforeSplitProduces, SplitterPassesToOtherCases> {
+  ) -> IntermediateFinalizedSplitResult<Self::ProcessBeforeSplitProduces, SplitterProducesForOtherCases> {
     match splitter_produces_for_this_case_or_other_cases_consumes {
       Coproduct::Inl(splitter_produces_for_first_case) => {
         let this_case_consumes = splitter_produces_for_first_case.concat(process_before_split_produced);
@@ -147,9 +147,9 @@ for FirstCaseOfFinalizedSplitProcess<
           RunOutcome::Finish(a) => Ok(IntermediateFinalizedSplitOutcome::Finish(a)),
         }
       }
-      Coproduct::Inr(splitter_passes_to_other_cases) => Ok(IntermediateFinalizedSplitOutcome::GoToCase {
+      Coproduct::Inr(splitter_produces_to_other_cases) => Ok(IntermediateFinalizedSplitOutcome::GoToCase {
         process_before_split_produced,
-        splitter_passes_to_other_cases,
+        splitter_produces_to_other_cases,
       }),
     }
   }
