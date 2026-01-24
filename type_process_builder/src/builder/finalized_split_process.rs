@@ -13,14 +13,14 @@ pub trait FinalizedSplitProcess<SplitterProducesForOtherCases>: Sized {
   type SplitterProducesForThisCase: ParamList + Concat<Self::ProcessBeforeSplitProduces>;
   type SplitterTagForThisCase;
 
-  fn continue_run(
+  fn resume_run(
     &self,
     previous_run_produced: Value,
     previous_run_yielded_at: PreviousRunYieldedAt,
     user_input: String,
   ) -> impl Future<Output = IntermediateFinalizedSplitResult<Self::ProcessBeforeSplitProduces, SplitterProducesForOtherCases>>;
 
-  fn run(
+  fn continue_run(
     &self,
     process_before_split_produced: Self::ProcessBeforeSplitProduces,
     splitter_produces_for_this_case_or_other_cases_consumes: Coproduct<

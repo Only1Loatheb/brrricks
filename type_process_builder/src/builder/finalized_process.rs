@@ -11,14 +11,14 @@ use std::marker::PhantomData;
 pub trait FinalizedProcess: Sized {
   type ProcessBeforeProduces: ParamList;
 
-  fn continue_run(
+  fn resume_run(
     &self,
     previous_run_produced: Value,
     previous_run_yielded_at: PreviousRunYieldedAt,
     user_input: String,
   ) -> impl Future<Output = RunResult>;
 
-  fn run(&self, process_before_produces: Self::ProcessBeforeProduces) -> impl Future<Output = RunResult>;
+  fn continue_run(&self, process_before_produces: Self::ProcessBeforeProduces) -> impl Future<Output = RunResult>;
 
   fn build(self) -> RunnableProcess<Self> {
     RunnableProcess::new(self)
@@ -51,17 +51,17 @@ impl<
 {
   type ProcessBeforeProduces = ProcessBeforeProduces;
 
-  async fn continue_run(
+  async fn resume_run(
     &self,
     previous_run_produced: Value,
     _previous_run_yielded_at: PreviousRunYieldedAt,
     _user_input: String,
   ) -> RunResult {
     let process_before_produces = ProcessBeforeProduces::deserialize(previous_run_produced)?;
-    self.run(process_before_produces).await
+    self.continue_run(process_before_produces).await
   }
 
-  async fn run(&self, process_before_produces: Self::ProcessBeforeProduces) -> RunResult {
+  async fn continue_run(&self, process_before_produces: Self::ProcessBeforeProduces) -> RunResult {
     let final_consumes: FinalConsumes = process_before_produces.transform();
     Ok(RunOutcome::Finish(self.final_step.handle(final_consumes).await?))
   }
@@ -86,7 +86,7 @@ impl<ProcessBefore: FlowingProcess, FinalConsumes: ParamList, FinalStep: Final<F
 {
   type ProcessBeforeProduces = ProcessBefore::Produces;
 
-  async fn continue_run(
+  async fn resume_run(
     &self,
     _previous_run_produced: Value,
     _previous_run_yielded_at: PreviousRunYieldedAt,
@@ -95,7 +95,7 @@ impl<ProcessBefore: FlowingProcess, FinalConsumes: ParamList, FinalStep: Final<F
     todo!()
   }
 
-  async fn run(&self, _process_before_produces: Self::ProcessBeforeProduces) -> RunResult {
+  async fn continue_run(&self, _process_before_produces: Self::ProcessBeforeProduces) -> RunResult {
     todo!()
   }
 

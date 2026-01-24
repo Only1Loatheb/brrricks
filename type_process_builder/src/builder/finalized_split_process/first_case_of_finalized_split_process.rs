@@ -85,7 +85,7 @@ impl<
   type SplitterProducesForThisCase = SplitterProducesForThisCase;
   type SplitterTagForThisCase = ThisTag;
 
-  async fn continue_run(
+  async fn resume_run(
     &self,
     previous_run_produced: Value,
     previous_run_yielded_at: PreviousRunYieldedAt,
@@ -93,7 +93,7 @@ impl<
   ) -> IntermediateFinalizedSplitResult<Self::ProcessBeforeSplitProduces, SplitterPassesToOtherCases> {
     let process_before_output = self
       .split_process_before
-      .continue_run(previous_run_produced, previous_run_yielded_at, user_input)
+      .resume_run(previous_run_produced, previous_run_yielded_at, user_input)
       .await?;
     match process_before_output {
       IntermediateFinalizedSplitOutcome::GoToCase {
@@ -101,7 +101,7 @@ impl<
         splitter_passes_to_other_cases,
       } => {
         self
-          .run(process_before_split_produced, splitter_passes_to_other_cases)
+          .continue_run(process_before_split_produced, splitter_passes_to_other_cases)
           .await
       }
       IntermediateFinalizedSplitOutcome::Yield(a, b, c) => Ok(IntermediateFinalizedSplitOutcome::Yield(a, b, c)),
@@ -109,7 +109,7 @@ impl<
     }
   }
 
-  async fn run(
+  async fn continue_run(
     &self,
     process_before_split_produced: Self::ProcessBeforeSplitProduces,
     splitter_produces_for_this_case_or_other_cases_consumes: Coproduct<
@@ -120,7 +120,7 @@ impl<
     match splitter_produces_for_this_case_or_other_cases_consumes {
       Coproduct::Inl(splitter_produces_for_first_case) => {
         let this_case_consumes = splitter_produces_for_first_case.concat(process_before_split_produced);
-        match self.this_case.run(this_case_consumes).await? {
+        match self.this_case.continue_run(this_case_consumes).await? {
           RunOutcome::Yield(a, b, c) => Ok(IntermediateFinalizedSplitOutcome::Yield(a, b, c)),
           RunOutcome::Finish(a) => Ok(IntermediateFinalizedSplitOutcome::Finish(a)),
         }

@@ -81,7 +81,7 @@ where
 {
   type ProcessBeforeProduces = ProcessBefore::ProcessBeforeSplitProduces;
 
-  async fn continue_run(
+  async fn resume_run(
     &self,
     previous_run_produced: Value,
     previous_run_yielded_at: PreviousRunYieldedAt,
@@ -89,7 +89,7 @@ where
   ) -> RunResult {
     let process_before_output = self
       .split_process_before
-      .continue_run(previous_run_produced, previous_run_yielded_at, user_input)
+      .resume_run(previous_run_produced, previous_run_yielded_at, user_input)
       .await?;
     match process_before_output {
       IntermediateFinalizedSplitOutcome::GoToCase {
@@ -98,7 +98,7 @@ where
       } => match splitter_passes_to_other_cases {
         Coproduct::Inl((_pd, params_passed_to_other_cases)) => {
           let this_case_consumes = params_passed_to_other_cases.concat(process_before_split_produced);
-          self.this_case.run(this_case_consumes).await
+          self.this_case.continue_run(this_case_consumes).await
         }
         Coproduct::Inr(c_nil) => match c_nil {},
       },
@@ -107,7 +107,7 @@ where
     }
   }
 
-  async fn run(&self, _process_before_produces: Self::ProcessBeforeProduces) -> RunResult {
+  async fn continue_run(&self, _process_before_produces: Self::ProcessBeforeProduces) -> RunResult {
     // most likely design flow, but I don't think it will happen :)
     unsafe { unreachable_unchecked() }
   }
@@ -136,7 +136,7 @@ impl<
   type SplitterProducesForThisCase = SplitterProducesForThisCase;
   type SplitterTagForThisCase = ThisTag;
 
-  async fn continue_run(
+  async fn resume_run(
     &self,
     previous_run_produced: Value,
     previous_run_yielded_at: PreviousRunYieldedAt,
@@ -144,7 +144,7 @@ impl<
   ) -> IntermediateFinalizedSplitResult<Self::ProcessBeforeSplitProduces, SplitterProducesForOtherCases> {
     let process_before_output = self
       .split_process_before
-      .continue_run(previous_run_produced, previous_run_yielded_at, user_input)
+      .resume_run(previous_run_produced, previous_run_yielded_at, user_input)
       .await?;
     match process_before_output {
       IntermediateFinalizedSplitOutcome::GoToCase {
@@ -155,14 +155,14 @@ impl<
           Coproduct::Inl((_pd, params)) => Coproduct::Inl(params),
           Coproduct::Inr(inr_value) => Coproduct::Inr(inr_value),
         };
-        self.run(process_before_split_produced, produced).await
+        self.continue_run(process_before_split_produced, produced).await
       }
       IntermediateFinalizedSplitOutcome::Yield(a, b, c) => Ok(IntermediateFinalizedSplitOutcome::Yield(a, b, c)),
       IntermediateFinalizedSplitOutcome::Finish(a) => Ok(IntermediateFinalizedSplitOutcome::Finish(a)),
     }
   }
 
-  async fn run(
+  async fn continue_run(
     &self,
     process_before_split_produced: Self::ProcessBeforeSplitProduces,
     splitter_produces_for_this_case_or_other_cases_consumes: Coproduct<
@@ -173,7 +173,7 @@ impl<
     match splitter_produces_for_this_case_or_other_cases_consumes {
       Coproduct::Inl(splitter_produces_for_first_case) => {
         let this_case_consumes = splitter_produces_for_first_case.concat(process_before_split_produced);
-        match self.this_case.run(this_case_consumes).await? {
+        match self.this_case.continue_run(this_case_consumes).await? {
           RunOutcome::Yield(a, b, c) => Ok(IntermediateFinalizedSplitOutcome::Yield(a, b, c)),
           RunOutcome::Finish(a) => Ok(IntermediateFinalizedSplitOutcome::Finish(a)),
         }

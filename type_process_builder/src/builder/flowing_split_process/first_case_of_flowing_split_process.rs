@@ -126,7 +126,7 @@ for FirstCaseOfFlowingSplitProcess<
   type ProcessBeforeSplitProduces = ProcessBefore::ProcessBeforeSplitProduces;
   type SplitterProducesForThisCase = SplitterProducesForThisCase;
 
-  async fn continue_run(
+  async fn resume_run(
     &self,
     previous_run_produced: Value,
     previous_run_yielded_at: PreviousRunYieldedAt,
@@ -138,19 +138,19 @@ for FirstCaseOfFlowingSplitProcess<
   > {
     let process_before_output = self
       .split_process_before
-      .continue_run(previous_run_produced, previous_run_yielded_at, user_input)
+      .resume_run(previous_run_produced, previous_run_yielded_at, user_input)
       .await?;
     match process_before_output {
       IntermediateFinalizedSplitOutcome::GoToCase {
         process_before_split_produced,
         splitter_passes_to_other_cases: this_case_produced,
-      } => self.run(process_before_split_produced, this_case_produced).await,
+      } => self.continue_run(process_before_split_produced, this_case_produced).await,
       IntermediateFinalizedSplitOutcome::Yield(a, b, c) => Ok(IntermediateFlowingSplitOutcome::Yield(a, b, c)),
       IntermediateFinalizedSplitOutcome::Finish(a) => Ok(IntermediateFlowingSplitOutcome::Finish(a)),
     }
   }
 
-  async fn run(
+  async fn continue_run(
     &self,
     process_before_split_produced: Self::ProcessBeforeSplitProduces,
     splitter_produces_for_this_case_or_other_cases_consumes: Coproduct<
@@ -165,7 +165,7 @@ for FirstCaseOfFlowingSplitProcess<
     match splitter_produces_for_this_case_or_other_cases_consumes {
       Coproduct::Inl(splitter_produces_for_this_case) => {
         let this_case_consumes = splitter_produces_for_this_case.concat(process_before_split_produced);
-        match self.this_case.run(this_case_consumes).await? {
+        match self.this_case.continue_run(this_case_consumes).await? {
           IntermediateRunOutcome::Continue(flowing_case_produced) => Ok(IntermediateFlowingSplitOutcome::Continue {
             flowing_case_produced,
           }),

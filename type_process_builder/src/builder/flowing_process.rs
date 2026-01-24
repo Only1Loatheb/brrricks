@@ -18,14 +18,14 @@ pub trait FlowingProcess: Sized {
   type Produces: ParamList;
   // add a dependent type for split process to pass values produced by the splitter step to this specific branch.
 
-  fn continue_run(
+  fn resume_run(
     &self,
     previous_run_produced: Value,
     previous_run_yielded_at: PreviousRunYieldedAt,
     user_input: String,
   ) -> impl Future<Output = IntermediateRunResult<Self::Produces>>;
 
-  fn run(
+  fn continue_run(
     &self,
     process_before_produces: Self::ProcessBeforeProduces,
   ) -> impl Future<Output = IntermediateRunResult<Self::Produces>>;
@@ -112,7 +112,7 @@ impl<Produces: ParamList, EntryStep: Entry<Value, Produces = Produces>> FlowingP
   type ProcessBeforeProduces = HNil;
   type Produces = EntryStep::Produces;
 
-  async fn continue_run(
+  async fn resume_run(
     &self,
     previous_run_produced: Value,
     _: PreviousRunYieldedAt,
@@ -126,7 +126,7 @@ impl<Produces: ParamList, EntryStep: Entry<Value, Produces = Produces>> FlowingP
     Ok(IntermediateRunOutcome::Continue(result))
   }
 
-  async fn run(&self, _: Self::ProcessBeforeProduces) -> IntermediateRunResult<Self::Produces> {
+  async fn continue_run(&self, _: Self::ProcessBeforeProduces) -> IntermediateRunResult<Self::Produces> {
     unsafe { unreachable_unchecked() }
   }
 
@@ -143,17 +143,20 @@ impl<ProcessBeforeProduces: ParamList> FlowingProcess for Subprocess<ProcessBefo
   type ProcessBeforeProduces = ProcessBeforeProduces;
   type Produces = ProcessBeforeProduces;
 
-  async fn continue_run(
+  async fn resume_run(
     &self,
     previous_run_produced: Value,
     _previous_run_yielded_at: PreviousRunYieldedAt,
     _user_input: String,
   ) -> IntermediateRunResult<Self::Produces> {
     let process_before_produces = ProcessBeforeProduces::deserialize(previous_run_produced)?;
-    self.run(process_before_produces).await
+    self.continue_run(process_before_produces).await
   }
 
-  async fn run(&self, process_before_produces: Self::ProcessBeforeProduces) -> IntermediateRunResult<Self::Produces> {
+  async fn continue_run(
+    &self,
+    process_before_produces: Self::ProcessBeforeProduces,
+  ) -> IntermediateRunResult<Self::Produces> {
     Ok(IntermediateRunOutcome::Continue(process_before_produces))
   }
 
@@ -205,7 +208,7 @@ where
   type ProcessBeforeProduces = ProcessBefore::Produces;
   type Produces = <LastStepProduces as Concat<ProcessBefore::Produces>>::Concatenated;
 
-  async fn continue_run(
+  async fn resume_run(
     &self,
     previous_run_produced: Value,
     previous_run_yielded_at: PreviousRunYieldedAt,
@@ -214,20 +217,23 @@ where
     if previous_run_yielded_at.0 < self.step_index {
       let process_before_output = self
         .process_before
-        .continue_run(previous_run_produced, previous_run_yielded_at, user_input)
+        .resume_run(previous_run_produced, previous_run_yielded_at, user_input)
         .await?;
       match process_before_output {
-        IntermediateRunOutcome::Continue(process_before_produces) => self.run(process_before_produces).await,
+        IntermediateRunOutcome::Continue(process_before_produces) => self.continue_run(process_before_produces).await,
         IntermediateRunOutcome::Yield(a, b, c) => Ok(IntermediateRunOutcome::Yield(a, b, c)),
         IntermediateRunOutcome::Finish(a) => Ok(IntermediateRunOutcome::Finish(a)),
       }
     } else {
       let process_before_produces = ProcessBefore::Produces::deserialize(previous_run_produced)?;
-      self.run(process_before_produces).await
+      self.continue_run(process_before_produces).await
     }
   }
 
-  async fn run(&self, process_before_produces: Self::ProcessBeforeProduces) -> IntermediateRunResult<Self::Produces> {
+  async fn continue_run(
+    &self,
+    process_before_produces: Self::ProcessBeforeProduces,
+  ) -> IntermediateRunResult<Self::Produces> {
     let last_step_consumes: LastStepConsumes = process_before_produces.clone().transform();
     let last_step_output = self.last_step.handle(last_step_consumes).await?;
     Ok(IntermediateRunOutcome::Continue(
@@ -280,7 +286,7 @@ where
   type ProcessBeforeProduces = ProcessBefore::Produces;
   type Produces = <LastStepProduces as Concat<ProcessBefore::Produces>>::Concatenated;
 
-  async fn continue_run(
+  async fn resume_run(
     &self,
     previous_run_produced: Value,
     previous_run_yielded_at: PreviousRunYieldedAt,
@@ -289,10 +295,10 @@ where
     if previous_run_yielded_at.0 < self.step_index {
       let process_before_output = self
         .process_before
-        .continue_run(previous_run_produced, previous_run_yielded_at, user_input)
+        .resume_run(previous_run_produced, previous_run_yielded_at, user_input)
         .await?;
       match process_before_output {
-        IntermediateRunOutcome::Continue(process_before_produces) => self.run(process_before_produces).await,
+        IntermediateRunOutcome::Continue(process_before_produces) => self.continue_run(process_before_produces).await,
         IntermediateRunOutcome::Yield(a, b, c) => Ok(IntermediateRunOutcome::Yield(a, b, c)),
         IntermediateRunOutcome::Finish(a) => Ok(IntermediateRunOutcome::Finish(a)),
       }
@@ -310,7 +316,10 @@ where
     }
   }
 
-  async fn run(&self, process_before_produces: Self::ProcessBeforeProduces) -> IntermediateRunResult<Self::Produces> {
+  async fn continue_run(
+    &self,
+    process_before_produces: Self::ProcessBeforeProduces,
+  ) -> IntermediateRunResult<Self::Produces> {
     let last_step_consumes: LastStepConsumes = process_before_produces.clone().transform();
     Ok(IntermediateRunOutcome::Yield(
       self.last_step.proompt(last_step_consumes).await?,

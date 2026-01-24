@@ -142,7 +142,7 @@ mod tests {
     //   .then(FinalA)
     //   .build();
     // let run_result = process
-    //   .continue_run(
+    //   .resume_run(
     //     Value::Map(BTreeMap::new()),
     //     PreviousRunYieldedAt(0),
     //     "*123#".to_string(),

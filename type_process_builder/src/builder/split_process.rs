@@ -21,7 +21,7 @@ pub trait SplitProcess<SplitterProducesForOtherCases>: Sized {
   type SplitterProducesForFirstCase: ParamList + Concat<Self::ProcessBeforeSplitProduces>;
   type SplitterTagForFirstCase;
 
-  fn continue_run(
+  fn resume_run(
     &self,
     previous_run_produced: Value,
     previous_run_yielded_at: PreviousRunYieldedAt,
@@ -33,7 +33,7 @@ pub trait SplitProcess<SplitterProducesForOtherCases>: Sized {
     >,
   >;
 
-  fn run(
+  fn continue_run(
     &self,
     process_before_split_produced: Self::ProcessBeforeSplitProduces,
   ) -> impl Future<
@@ -145,7 +145,7 @@ where
   type SplitterProducesForFirstCase = SplitterProducesForFirstCase;
   type SplitterTagForFirstCase = Tag;
 
-  async fn continue_run(
+  async fn resume_run(
     &self,
     previous_run_produced: Value,
     previous_run_yielded_at: PreviousRunYieldedAt,
@@ -157,22 +157,22 @@ where
     if previous_run_yielded_at.0 < self.split_step_index {
       let process_before_output = self
         .process_before
-        .continue_run(previous_run_produced, previous_run_yielded_at, user_input)
+        .resume_run(previous_run_produced, previous_run_yielded_at, user_input)
         .await?;
       match process_before_output {
         IntermediateRunOutcome::Continue(process_before_split_produced) => {
-          self.run(process_before_split_produced).await
+          self.continue_run(process_before_split_produced).await
         }
         IntermediateRunOutcome::Yield(a, b, c) => Ok(IntermediateFinalizedSplitOutcome::Yield(a, b, c)),
         IntermediateRunOutcome::Finish(a) => Ok(IntermediateFinalizedSplitOutcome::Finish(a)),
       }
     } else {
       let process_before_split_produced = ProcessBefore::Produces::deserialize(previous_run_produced)?;
-      self.run(process_before_split_produced).await
+      self.continue_run(process_before_split_produced).await
     }
   }
 
-  async fn run(
+  async fn continue_run(
     &self,
     process_before_split_produced: Self::ProcessBeforeSplitProduces,
   ) -> IntermediateFinalizedSplitResult<

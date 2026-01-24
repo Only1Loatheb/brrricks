@@ -17,7 +17,7 @@ pub trait FlowingSplitProcess<SplitterProducesForOtherCases>: Sized {
   type ProcessBeforeSplitProduces: ParamList;
   type SplitterProducesForThisCase: ParamList + Concat<Self::ProcessBeforeSplitProduces>;
 
-  fn continue_run(
+  fn resume_run(
     &self,
     previous_run_produced: Value,
     previous_run_yielded_at: PreviousRunYieldedAt,
@@ -35,7 +35,7 @@ pub trait FlowingSplitProcess<SplitterProducesForOtherCases>: Sized {
   /// The [crate::builder::flowing_process::FlowingProcess::then] concatenates params produced in the step with all
   /// the consumes.
   /// We can extract what process before split produced from case outcome
-  fn run(
+  fn continue_run(
     &self,
     process_before_split_produced: Self::ProcessBeforeSplitProduces,
     splitter_produces_for_this_case_or_other_cases_consumes: Coproduct<

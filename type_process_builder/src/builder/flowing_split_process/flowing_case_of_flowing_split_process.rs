@@ -56,7 +56,7 @@ where
   type ProcessBeforeProduces = ProcessBefore::ProcessBeforeSplitProduces;
   type Produces = <ProcessBefore::EveryFlowingCaseProduces as Intersect<ThisCase::Produces>>::Intersection;
 
-  async fn continue_run(
+  async fn resume_run(
     &self,
     previous_run_produced: Value,
     previous_run_yielded_at: PreviousRunYieldedAt,
@@ -64,7 +64,7 @@ where
   ) -> IntermediateRunResult<Self::Produces> {
     let process_before_output = self
       .split_process_before
-      .continue_run(previous_run_produced, previous_run_yielded_at, user_input)
+      .resume_run(previous_run_produced, previous_run_yielded_at, user_input)
       .await?;
     match process_before_output {
       IntermediateFlowingSplitOutcome::GoToCase {
@@ -73,7 +73,7 @@ where
       } => match splitter_passes_to_other_cases {
         Coproduct::Inl((_pd, passes_to_this_case)) => {
           let this_case_consumes = passes_to_this_case.concat(process_before_split_produced.clone());
-          match self.this_case.run(this_case_consumes).await? {
+          match self.this_case.continue_run(this_case_consumes).await? {
             IntermediateRunOutcome::Continue(this_case_produced) =>
               Ok(IntermediateRunOutcome::Continue(this_case_produced.transform())),
             IntermediateRunOutcome::Yield(a, b, c) => Ok(IntermediateRunOutcome::Yield(a, b, c)),
@@ -89,7 +89,7 @@ where
     }
   }
 
-  async fn run(&self, _process_before_produces: Self::ProcessBeforeProduces) -> IntermediateRunResult<Self::Produces> {
+  async fn continue_run(&self, _process_before_produces: Self::ProcessBeforeProduces) -> IntermediateRunResult<Self::Produces> {
     todo!()
   }
 
