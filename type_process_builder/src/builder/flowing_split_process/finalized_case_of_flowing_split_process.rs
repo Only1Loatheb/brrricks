@@ -25,12 +25,12 @@ pub struct FinalizedCaseOfFlowingSplitProcess<
 
 /// the last case
 impl<
-    ThisTag,
-    SplitterProducesForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
-    ProcessBefore: FlowingSplitProcess<Coproduct<(ThisTag, SplitterProducesForThisCase), CNil>>,
-    ThisCase: FinalizedProcess<ProcessBeforeProduces=<SplitterProducesForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated>,
-  > FlowingProcess
-  for FinalizedCaseOfFlowingSplitProcess<ThisTag, SplitterProducesForThisCase, CNil, ProcessBefore, ThisCase>
+  ThisTag,
+  SplitterProducesForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
+  ProcessBefore: FlowingSplitProcess<Coproduct<(ThisTag, SplitterProducesForThisCase), CNil>>,
+  ThisCase: FinalizedProcess<ProcessBeforeProduces=<SplitterProducesForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated>,
+> FlowingProcess
+for FinalizedCaseOfFlowingSplitProcess<ThisTag, SplitterProducesForThisCase, CNil, ProcessBefore, ThisCase>
 where
 // ProcessBefore::SplitterProducesForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
 // <SplitterProducesForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
@@ -71,8 +71,8 @@ where
 
   async fn continue_run(&self, this_case_consumes: Self::ProcessBeforeProduces) -> IntermediateRunResult<Self::Produces> {
     match self.this_case.continue_run(this_case_consumes).await? {
-      RunOutcome::Yield(a, b, c) =>  Ok(IntermediateRunOutcome::Yield(a, b, c)),
-      RunOutcome::Finish(a) =>     Ok(IntermediateRunOutcome::Finish(a)),
+      RunOutcome::Yield(a, b, c) => Ok(IntermediateRunOutcome::Yield(a, b, c)),
+      RunOutcome::Finish(a) => Ok(IntermediateRunOutcome::Finish(a)),
     }
   }
 
@@ -111,11 +111,11 @@ where
 //   // fixme create_case should accept
 //   // fixme Subprocess<<Self::SplitterProducesForFirstCase as Concat<Self::ProcessBeforeSplitProduces>>::Concatenated>
 //   pub fn case<
-//     AssumedTag,
 //     NextCase: FinalizedProcess,
 //     SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndicesA,
 //   >(
 //     self,
+//     _assumed_tag: NextTag,
 //     create_case: impl FnOnce(Subprocess<ProcessBeforeProcessBefore::ProcessBeforeSplitProduces>) -> NextCase,
 //   ) -> FinalizedCaseOfFlowingSplitProcess<
 //     NextTag,
@@ -125,8 +125,6 @@ where
 //     NextCase,
 //     SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndicesA,
 //   >
-//   where
-//     (AssumedTag, NextTag): TypeEq,
 //     <SplitterProducesForNextCase as Concat<ProcessBeforeProcessBefore::ProcessBeforeSplitProduces>>::Concatenated:
 //       TransformTo<NextCase::ProcessBeforeProduces, SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndicesA>,
 //   {

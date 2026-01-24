@@ -6,7 +6,6 @@ use crate::builder::{
 use crate::hlist_concat::Concat;
 use crate::hlist_transform_to::TransformTo;
 use crate::step::step::Splitter;
-use crate::type_eq::TypeEq;
 use frunk_core::coproduct::Coproduct;
 use serde_value::Value;
 use std::future::Future;
@@ -43,8 +42,9 @@ pub trait SplitProcess<SplitterProducesForOtherCases>: Sized {
     >,
   >;
 
-  fn case<AssumedTag, ThisCase: FinalizedProcess>(
+  fn case<ThisCase: FinalizedProcess>(
     self,
+    _assumed_tag: Self::SplitterTagForFirstCase,
     create_case: impl FnOnce(
       Subprocess<<Self::SplitterProducesForFirstCase as Concat<Self::ProcessBeforeSplitProduces>>::Concatenated>,
     ) -> ThisCase,
@@ -56,7 +56,6 @@ pub trait SplitProcess<SplitterProducesForOtherCases>: Sized {
     ThisCase,
   >
   where
-    (AssumedTag, Self::SplitterTagForFirstCase): TypeEq,
     Self::SplitterProducesForFirstCase: Concat<Self::ProcessBeforeSplitProduces>,
   {
     FirstCaseOfFinalizedSplitProcess {
@@ -69,10 +68,10 @@ pub trait SplitProcess<SplitterProducesForOtherCases>: Sized {
   }
 
   fn case_flowing<
-    AssumedTag,
     ThisCase: FlowingProcess<ProcessBeforeProduces=<Self::SplitterProducesForFirstCase as Concat<Self::ProcessBeforeSplitProduces>>::Concatenated>,
   >(
     self,
+    _assumed_tag: Self::SplitterTagForFirstCase,
     create_case: impl FnOnce(
       Subprocess<<Self::SplitterProducesForFirstCase as Concat<Self::ProcessBeforeSplitProduces>>::Concatenated>,
     ) -> ThisCase,
@@ -84,7 +83,6 @@ pub trait SplitProcess<SplitterProducesForOtherCases>: Sized {
     ThisCase,
   >
   where
-    (AssumedTag, Self::SplitterTagForFirstCase): TypeEq,
     Self::SplitterProducesForFirstCase: Concat<Self::ProcessBeforeSplitProduces>,
   {
     FirstCaseOfFlowingSplitProcess {

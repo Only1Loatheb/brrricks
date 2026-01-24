@@ -4,7 +4,6 @@ mod hlist_intersect;
 mod hlist_transform_to;
 mod param_list;
 pub mod step;
-mod type_eq;
 
 // cargo doc --no-deps --package type_process_builder --features docs
 /// A sequence diagram
@@ -136,8 +135,8 @@ mod tests {
   async fn test_hcons() {
     let process = EntryA
       .split(SplitA)
-      .case_flowing::<Case1, _>(|x| x.then(Linear1))
-      .case_flowing::<Case2, _, _>(|x| x.then(Linear2))
+      .case_flowing(Case1, |x| x.then(Linear1))
+      .case_flowing(Case2, |x| x.then(Linear2))
       .end(FinalA);
     //   .then(FinalA)
     //   .build();
