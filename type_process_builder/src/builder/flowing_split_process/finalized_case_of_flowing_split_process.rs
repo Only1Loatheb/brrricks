@@ -110,7 +110,7 @@ where
 // {
 //   // fixme create_case should accept
 //   // fixme Subprocess<<Self::SplitterProducesForFirstCase as Concat<Self::ProcessBeforeSplitProduces>>::Concatenated>
-//   pub fn case<
+//   pub fn case_end<
 //     NextCase: FinalizedProcess,
 //     SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndicesA,
 //   >(

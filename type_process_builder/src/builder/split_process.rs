@@ -67,7 +67,7 @@ pub trait SplitProcess<SplitterProducesForOtherCases>: Sized {
     }
   }
 
-  fn case_flowing<
+  fn case_via<
     ThisCase: FlowingProcess<ProcessBeforeProduces=<Self::SplitterProducesForFirstCase as Concat<Self::ProcessBeforeSplitProduces>>::Concatenated>,
   >(
     self,

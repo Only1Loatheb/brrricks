@@ -42,7 +42,7 @@ NextCaseOfFinalizedSplitProcess<
   ThisCase,
 >
 {
-  pub fn case<NextCase: FinalizedProcess<
+  pub fn case_end<NextCase: FinalizedProcess<
     ProcessBeforeProduces=<SplitterProducesForNextCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
   >>(
     self,
@@ -63,7 +63,7 @@ NextCaseOfFinalizedSplitProcess<
     }
   }
 
-  pub fn case_flowing<
+  pub fn case_via<
     NextCase: FlowingProcess<
       ProcessBeforeProduces=<SplitterProducesForNextCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated
     >,

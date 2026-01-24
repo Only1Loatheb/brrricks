@@ -135,8 +135,8 @@ mod tests {
   async fn test_hcons() {
     let process = EntryA
       .split(SplitA)
-      .case_flowing(Case1, |x| x.then(Linear1))
-      .case_flowing(Case2, |x| x.then(Linear2))
+      .case_via(Case1, |x| x.then(Linear1))
+      .case_via(Case2, |x| x.then(Linear2))
       .end(FinalA);
     //   .then(FinalA)
     //   .build();
