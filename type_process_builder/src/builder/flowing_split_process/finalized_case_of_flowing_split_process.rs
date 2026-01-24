@@ -35,7 +35,7 @@ where
 // ProcessBefore::SplitterProducesForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
 // <SplitterProducesForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
 {
-  type ProcessBeforeProduces = ProcessBefore::ProcessBeforeSplitProduces;
+  type ProcessBeforeProduces = <SplitterProducesForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated;
   type Produces = ProcessBefore::EveryFlowingCaseProduces;
 
   async fn resume_run(
@@ -69,8 +69,11 @@ where
     }
   }
 
-  async fn continue_run(&self, _process_before_produces: Self::ProcessBeforeProduces) -> IntermediateRunResult<Self::Produces> {
-    todo!()
+  async fn continue_run(&self, this_case_consumes: Self::ProcessBeforeProduces) -> IntermediateRunResult<Self::Produces> {
+    match self.this_case.continue_run(this_case_consumes).await? {
+      RunOutcome::Yield(a, b, c) =>  Ok(IntermediateRunOutcome::Yield(a, b, c)),
+      RunOutcome::Finish(a) =>     Ok(IntermediateRunOutcome::Finish(a)),
+    }
   }
 
   fn enumerate_steps(&mut self, last_used_index: usize) -> usize {

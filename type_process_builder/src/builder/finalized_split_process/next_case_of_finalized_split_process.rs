@@ -1,12 +1,12 @@
 use crate::builder::{
-  subprocess, FinalizedProcess, FinalizedSplitProcess, IntermediateFinalizedSplitOutcome,
-  IntermediateFinalizedSplitResult, ParamList, PreviousRunYieldedAt, RunOutcome, RunResult, Subprocess,
+  subprocess, FinalizedProcess, FinalizedSplitProcess, FlowingCaseOfFinalizedSplitProcess, FlowingProcess,
+  IntermediateFinalizedSplitOutcome, IntermediateFinalizedSplitResult, ParamList, PreviousRunYieldedAt, RunOutcome,
+  RunResult, Subprocess,
 };
 use crate::hlist_concat::Concat;
 use crate::type_eq::TypeEq;
 use frunk_core::coproduct::{CNil, Coproduct};
 use serde_value::Value;
-use std::hint::unreachable_unchecked;
 use std::marker::PhantomData;
 
 pub struct NextCaseOfFinalizedSplitProcess<
@@ -14,7 +14,7 @@ pub struct NextCaseOfFinalizedSplitProcess<
   SplitterProducesForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
   SplitterPassesToOtherCases,
   ProcessBefore: FinalizedSplitProcess<Coproduct<(ThisTag, SplitterProducesForThisCase), SplitterPassesToOtherCases>>,
-  ThisCase: FinalizedProcess<ProcessBeforeProduces = <SplitterProducesForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated>,
+  ThisCase: FinalizedProcess<ProcessBeforeProduces=<SplitterProducesForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated>,
 > {
   pub split_process_before: ProcessBefore,
   pub this_case: ThisCase,
@@ -22,30 +22,30 @@ pub struct NextCaseOfFinalizedSplitProcess<
 }
 
 impl<
-    ThisTag,
-    NextTag,
-    SplitterPassesToOtherCases,
-    ProcessBefore: FinalizedSplitProcess<
-      Coproduct<
-        (ThisTag, SplitterProducesForThisCase),
-        Coproduct<(NextTag, SplitterProducesForNextCase), SplitterPassesToOtherCases>,
-      >,
+  ThisTag,
+  NextTag,
+  SplitterPassesToOtherCases,
+  ProcessBefore: FinalizedSplitProcess<
+    Coproduct<
+      (ThisTag, SplitterProducesForThisCase),
+      Coproduct<(NextTag, SplitterProducesForNextCase), SplitterPassesToOtherCases>,
     >,
-    SplitterProducesForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
-    SplitterProducesForNextCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
-    ThisCase: FinalizedProcess<ProcessBeforeProduces = <SplitterProducesForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated>,
-  >
-  NextCaseOfFinalizedSplitProcess<
-    ThisTag,
-    SplitterProducesForThisCase,
-    Coproduct<(NextTag, SplitterProducesForNextCase), SplitterPassesToOtherCases>,
-    ProcessBefore,
-    ThisCase,
-  >
+  >,
+  SplitterProducesForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
+  SplitterProducesForNextCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
+  ThisCase: FinalizedProcess<ProcessBeforeProduces=<SplitterProducesForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated>,
+>
+NextCaseOfFinalizedSplitProcess<
+  ThisTag,
+  SplitterProducesForThisCase,
+  Coproduct<(NextTag, SplitterProducesForNextCase), SplitterPassesToOtherCases>,
+  ProcessBefore,
+  ThisCase,
+>
 {
   pub fn case<AssumedTag, NextCase: FinalizedProcess<
-      ProcessBeforeProduces = <SplitterProducesForNextCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
-    >>(
+    ProcessBeforeProduces=<SplitterProducesForNextCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
+  >>(
     self,
     create_case: impl FnOnce(
       Subprocess<
@@ -64,73 +64,49 @@ impl<
       phantom_data: Default::default(),
     }
   }
-}
 
-/// the last case
-impl<
-    ThisTag,
-    SplitterProducesForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
-    ProcessBefore: FinalizedSplitProcess<Coproduct<(ThisTag, SplitterProducesForThisCase), CNil>>,
-    ThisCase: FinalizedProcess<
-      ProcessBeforeProduces = <SplitterProducesForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
+  pub fn case_flowing<
+    AssumedTag,
+    NextCase: FlowingProcess<
+      ProcessBeforeProduces=<SplitterProducesForNextCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated
     >,
-  > FinalizedProcess
-  for NextCaseOfFinalizedSplitProcess<ThisTag, SplitterProducesForThisCase, CNil, ProcessBefore, ThisCase>
-where
-  ProcessBefore::SplitterProducesForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
-{
-  type ProcessBeforeProduces = ProcessBefore::ProcessBeforeSplitProduces;
-
-  async fn resume_run(
-    &self,
-    previous_run_produced: Value,
-    previous_run_yielded_at: PreviousRunYieldedAt,
-    user_input: String,
-  ) -> RunResult {
-    let process_before_output = self
-      .split_process_before
-      .resume_run(previous_run_produced, previous_run_yielded_at, user_input)
-      .await?;
-    match process_before_output {
-      IntermediateFinalizedSplitOutcome::GoToCase {
-        process_before_split_produced,
-        splitter_passes_to_other_cases,
-      } => match splitter_passes_to_other_cases {
-        Coproduct::Inl((_pd, params_passed_to_other_cases)) => {
-          let this_case_consumes = params_passed_to_other_cases.concat(process_before_split_produced);
-          self.this_case.continue_run(this_case_consumes).await
-        }
-        Coproduct::Inr(c_nil) => match c_nil {},
-      },
-      IntermediateFinalizedSplitOutcome::Yield(a, b, c) => Ok(RunOutcome::Yield(a, b, c)),
-      IntermediateFinalizedSplitOutcome::Finish(a) => Ok(RunOutcome::Finish(a)),
+  >(
+    self,
+    create_case: impl FnOnce(Subprocess<<SplitterProducesForNextCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated>) -> NextCase,
+  ) -> FlowingCaseOfFinalizedSplitProcess<
+    NextTag,
+    SplitterProducesForNextCase,
+    SplitterPassesToOtherCases,
+    Self,
+    NextCase,
+  >
+  where
+    (AssumedTag, NextTag): TypeEq,
+  {
+    FlowingCaseOfFinalizedSplitProcess {
+      split_process_before: self,
+      this_case: create_case(subprocess::<
+        <SplitterProducesForNextCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
+      >()),
+      phantom_data: Default::default(),
     }
   }
-
-  async fn continue_run(&self, _process_before_produces: Self::ProcessBeforeProduces) -> RunResult {
-    // most likely design flow, but I don't think it will happen :)
-    unsafe { unreachable_unchecked() }
-  }
-
-  fn enumerate_steps(&mut self, last_used_index: usize) -> usize {
-    self.split_process_before.enumerate_steps(last_used_index)
-  }
 }
 
 impl<
-    ThisTag,
-    SplitterProducesForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
-    SplitterProducesForOtherCases,
-    ProcessBefore: FinalizedSplitProcess<Coproduct<(ThisTag, SplitterProducesForThisCase), SplitterProducesForOtherCases>>,
-    ThisCase: FinalizedProcess<ProcessBeforeProduces = <SplitterProducesForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated>,
-  > FinalizedSplitProcess<SplitterProducesForOtherCases>
-  for NextCaseOfFinalizedSplitProcess<
-    ThisTag,
-    SplitterProducesForThisCase,
-    SplitterProducesForOtherCases,
-    ProcessBefore,
-    ThisCase,
-  >
+  ThisTag,
+  SplitterProducesForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
+  SplitterProducesForOtherCases,
+  ProcessBefore: FinalizedSplitProcess<Coproduct<(ThisTag, SplitterProducesForThisCase), SplitterProducesForOtherCases>>,
+  ThisCase: FinalizedProcess<ProcessBeforeProduces=<SplitterProducesForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated>,
+> FinalizedSplitProcess<SplitterProducesForOtherCases>
+for NextCaseOfFinalizedSplitProcess<
+  ThisTag,
+  SplitterProducesForThisCase,
+  SplitterProducesForOtherCases,
+  ProcessBefore,
+  ThisCase,
+>
 {
   type ProcessBeforeSplitProduces = ProcessBefore::ProcessBeforeSplitProduces;
   type SplitterProducesForThisCase = SplitterProducesForThisCase;
@@ -183,6 +159,56 @@ impl<
         splitter_passes_to_other_cases,
       }),
     }
+  }
+
+  fn enumerate_steps(&mut self, last_used_index: usize) -> usize {
+    self.split_process_before.enumerate_steps(last_used_index)
+  }
+}
+
+/// the last case
+impl<
+  ThisTag,
+  SplitterProducesForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
+  ProcessBefore: FinalizedSplitProcess<Coproduct<(ThisTag, SplitterProducesForThisCase), CNil>>,
+  ThisCase: FinalizedProcess<
+    ProcessBeforeProduces=<SplitterProducesForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
+  >,
+> FinalizedProcess
+for NextCaseOfFinalizedSplitProcess<ThisTag, SplitterProducesForThisCase, CNil, ProcessBefore, ThisCase>
+where
+  ProcessBefore::SplitterProducesForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
+{
+  type ProcessBeforeProduces = <SplitterProducesForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated;
+
+  async fn resume_run(
+    &self,
+    previous_run_produced: Value,
+    previous_run_yielded_at: PreviousRunYieldedAt,
+    user_input: String,
+  ) -> RunResult {
+    let process_before_output = self
+      .split_process_before
+      .resume_run(previous_run_produced, previous_run_yielded_at, user_input)
+      .await?;
+    match process_before_output {
+      IntermediateFinalizedSplitOutcome::GoToCase {
+        process_before_split_produced,
+        splitter_passes_to_other_cases,
+      } => match splitter_passes_to_other_cases {
+        Coproduct::Inl((_pd, splitter_produces_for_this_case)) => {
+          let this_case_consumes = splitter_produces_for_this_case.concat(process_before_split_produced);
+          self.this_case.continue_run(this_case_consumes).await
+        }
+        Coproduct::Inr(c_nil) => match c_nil {},
+      },
+      IntermediateFinalizedSplitOutcome::Yield(a, b, c) => Ok(RunOutcome::Yield(a, b, c)),
+      IntermediateFinalizedSplitOutcome::Finish(a) => Ok(RunOutcome::Finish(a)),
+    }
+  }
+
+  async fn continue_run(&self, this_case_consumes: Self::ProcessBeforeProduces) -> RunResult {
+    self.this_case.continue_run(this_case_consumes).await
   }
 
   fn enumerate_steps(&mut self, last_used_index: usize) -> usize {
