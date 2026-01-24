@@ -28,38 +28,38 @@ impl<
     ProcessBefore: FinalizedSplitProcess<
       Coproduct<
         (ThisTag, SplitterProducesForThisCase),
-        Coproduct<(NextTag, PassesToNextCase), SplitterPassesToOtherCases>,
+        Coproduct<(NextTag, SplitterProducesForNextCase), SplitterPassesToOtherCases>,
       >,
     >,
     SplitterProducesForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
-    PassesToNextCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
+    SplitterProducesForNextCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
     ThisCase: FinalizedProcess<ProcessBeforeProduces = <SplitterProducesForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated>,
   >
   NextCaseOfFinalizedSplitProcess<
     ThisTag,
     SplitterProducesForThisCase,
-    Coproduct<(NextTag, PassesToNextCase), SplitterPassesToOtherCases>,
+    Coproduct<(NextTag, SplitterProducesForNextCase), SplitterPassesToOtherCases>,
     ProcessBefore,
     ThisCase,
   >
 {
   pub fn case<AssumedTag, NextCase: FinalizedProcess<
-      ProcessBeforeProduces = <PassesToNextCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
+      ProcessBeforeProduces = <SplitterProducesForNextCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
     >>(
     self,
     create_case: impl FnOnce(
       Subprocess<
-        <PassesToNextCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
+        <SplitterProducesForNextCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
       >,
     ) -> NextCase,
-  ) -> NextCaseOfFinalizedSplitProcess<NextTag, PassesToNextCase, SplitterPassesToOtherCases, Self, NextCase>
+  ) -> NextCaseOfFinalizedSplitProcess<NextTag, SplitterProducesForNextCase, SplitterPassesToOtherCases, Self, NextCase>
   where
     (AssumedTag, NextTag): TypeEq,
   {
     NextCaseOfFinalizedSplitProcess {
       split_process_before: self,
       this_case: create_case(subprocess::<
-        <PassesToNextCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
+        <SplitterProducesForNextCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
       >()),
       phantom_data: Default::default(),
     }

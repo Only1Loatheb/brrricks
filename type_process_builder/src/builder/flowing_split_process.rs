@@ -1,5 +1,6 @@
 pub mod finalized_case_of_flowing_split_process;
 pub mod first_case_of_flowing_split_process;
+pub mod flowing_case_of_finalized_split_process;
 pub mod flowing_case_of_flowing_split_process;
 
 use crate::builder::{IntermediateFlowingSplitResult, PreviousRunYieldedAt};

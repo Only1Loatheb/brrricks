@@ -85,18 +85,18 @@ where
 //     ProcessBeforeProcessBefore: FlowingSplitProcess<
 //       Coproduct<
 //         (ThisTag, SplitterProducesForThisCase),
-//         Coproduct<(NextTag, PassesToNextCase), SplitterPassesToOtherCases>,
+//         Coproduct<(NextTag, SplitterProducesForNextCase), SplitterPassesToOtherCases>,
 //       >,
 //     >,
 //     SplitterProducesForThisCase: ParamList + Concat<ProcessBeforeProcessBefore::ProcessBeforeSplitProduces>,
-//     PassesToNextCase: ParamList + Concat<ProcessBeforeProcessBefore::ProcessBeforeSplitProduces>,
+//     SplitterProducesForNextCase: ParamList + Concat<ProcessBeforeProcessBefore::ProcessBeforeSplitProduces>,
 //     ThisCase: FinalizedProcess,
 //     SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
 //   >
 //   FinalizedCaseOfFlowingSplitProcess<
 //     ThisTag,
 //     SplitterProducesForThisCase,
-//     Coproduct<(NextTag, PassesToNextCase), SplitterPassesToOtherCases>,
+//     Coproduct<(NextTag, SplitterProducesForNextCase), SplitterPassesToOtherCases>,
 //     ProcessBeforeProcessBefore,
 //     ThisCase,
 //     SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndices,
@@ -116,7 +116,7 @@ where
 //     create_case: impl FnOnce(Subprocess<ProcessBeforeProcessBefore::ProcessBeforeSplitProduces>) -> NextCase,
 //   ) -> FinalizedCaseOfFlowingSplitProcess<
 //     NextTag,
-//     PassesToNextCase,
+//     SplitterProducesForNextCase,
 //     SplitterPassesToOtherCases,
 //     Self,
 //     NextCase,
@@ -124,7 +124,7 @@ where
 //   >
 //   where
 //     (AssumedTag, NextTag): TypeEq,
-//     <PassesToNextCase as Concat<ProcessBeforeProcessBefore::ProcessBeforeSplitProduces>>::Concatenated:
+//     <SplitterProducesForNextCase as Concat<ProcessBeforeProcessBefore::ProcessBeforeSplitProduces>>::Concatenated:
 //       TransformTo<NextCase::ProcessBeforeProduces, SplitterStepProducesWithProcessBeforeProducesToCaseConsumesIndicesA>,
 //   {
 //     FinalizedCaseOfFlowingSplitProcess {
