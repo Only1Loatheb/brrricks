@@ -36,7 +36,7 @@ pub trait FlowingProcess: Sized {
   fn then<
     LinearConsumes: ParamList,
     LinearProduces: ParamList + Concat<Self::Produces>,
-    LinearStep: Operation<LinearConsumes, LinearProduces>,
+    LinearStep: Operation<Consumes = LinearConsumes, Produces = LinearProduces>,
     ProcessBeforeProducesToLastStepConsumesIndices,
   >(
     self,
@@ -173,35 +173,23 @@ pub fn subprocess<ProcessBeforeProduces: ParamList>() -> Subprocess<ProcessBefor
 
 pub struct LinearFlowingProcess<
   ProcessBefore: FlowingProcess,
-  LinearConsumes: ParamList,
-  LinearProduces: ParamList,
-  OperationStep: Operation<LinearConsumes, LinearProduces>,
+  OperationStep: Operation,
   ProcessBeforeProducesToLastStepConsumesIndices,
 > {
   pub process_before: ProcessBefore,
   pub last_step: OperationStep,
   pub step_index: usize,
-  pub phantom_data: PhantomData<(
-    LinearConsumes,
-    LinearProduces,
-    ProcessBeforeProducesToLastStepConsumesIndices,
-  )>,
+  pub phantom_data: PhantomData<ProcessBeforeProducesToLastStepConsumesIndices>,
 }
 
 impl<
     ProcessBefore: FlowingProcess,
     LastStepConsumes: ParamList,
     LastStepProduces: ParamList + Concat<ProcessBefore::Produces>,
-    OperationStep: Operation<LastStepConsumes, LastStepProduces>,
+    OperationStep: Operation<Consumes = LastStepConsumes, Produces = LastStepProduces>,
     ProcessBeforeProducesToLastStepConsumesIndices,
   > FlowingProcess
-  for LinearFlowingProcess<
-    ProcessBefore,
-    LastStepConsumes,
-    LastStepProduces,
-    OperationStep,
-    ProcessBeforeProducesToLastStepConsumesIndices,
-  >
+  for LinearFlowingProcess<ProcessBefore, OperationStep, ProcessBeforeProducesToLastStepConsumesIndices>
 where
   ProcessBefore::Produces: TransformTo<LastStepConsumes, ProcessBeforeProducesToLastStepConsumesIndices>,
 {
@@ -250,35 +238,22 @@ where
 
 pub struct FormFlowingProcess<
   ProcessBefore: FlowingProcess,
-  LinearConsumes: ParamList,
-  LinearProduces: ParamList,
-  LinearStep: Form<LinearConsumes, LinearProduces>,
+  LinearStep: Form,
   ProcessBeforeProducesToLastStepConsumesIndices,
 > {
   pub process_before: ProcessBefore,
   pub last_step: LinearStep,
   pub step_index: usize,
-  pub phantom_data: PhantomData<(
-    LinearConsumes,
-    LinearProduces,
-    ProcessBeforeProducesToLastStepConsumesIndices,
-  )>,
+  pub phantom_data: PhantomData<ProcessBeforeProducesToLastStepConsumesIndices>,
 }
 
 impl<
     ProcessBefore: FlowingProcess,
     LastStepConsumes: ParamList,
     LastStepProduces: ParamList + Concat<ProcessBefore::Produces>,
-    FormStep: Form<LastStepConsumes, LastStepProduces>,
+    FormStep: Form<Consumes = LastStepConsumes, Produces = LastStepProduces>,
     ProcessBeforeProducesToLastStepConsumesIndices,
-  > FlowingProcess
-  for FormFlowingProcess<
-    ProcessBefore,
-    LastStepConsumes,
-    LastStepProduces,
-    FormStep,
-    ProcessBeforeProducesToLastStepConsumesIndices,
-  >
+  > FlowingProcess for FormFlowingProcess<ProcessBefore, FormStep, ProcessBeforeProducesToLastStepConsumesIndices>
 where
   <ProcessBefore as FlowingProcess>::Produces:
     TransformTo<LastStepConsumes, ProcessBeforeProducesToLastStepConsumesIndices>,
@@ -322,7 +297,7 @@ where
   ) -> IntermediateRunResult<Self::Produces> {
     let last_step_consumes: LastStepConsumes = process_before_produces.clone().transform();
     Ok(IntermediateRunOutcome::Yield(
-      self.last_step.proompt(last_step_consumes).await?,
+      self.last_step.show_form(last_step_consumes).await?,
       process_before_produces.serialize()?,
       CurrentRunYieldedAt(self.step_index),
     ))

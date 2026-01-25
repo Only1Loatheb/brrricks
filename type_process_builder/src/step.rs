@@ -28,13 +28,21 @@ pub mod step {
     ) -> impl Future<Output = anyhow::Result<Self::Produces>>;
   }
 
-  pub trait Operation<Consumes: ParamList, Produces: ParamList> {
-    fn handle(&self, consumes: Consumes) -> impl Future<Output = anyhow::Result<Produces>>;
+  pub trait Operation {
+    type Consumes: ParamList;
+    type Produces: ParamList;
+    fn handle(&self, consumes: Self::Consumes) -> impl Future<Output = anyhow::Result<Self::Produces>>;
   }
 
-  pub trait Form<Consumes: ParamList, Produces: ParamList> {
-    fn proompt(&self, consumes: Consumes) -> impl Future<Output = anyhow::Result<Message>>;
-    fn handle_input(&self, consumes: Consumes, user_input: String) -> impl Future<Output = anyhow::Result<Produces>>;
+  pub trait Form {
+    type Consumes: ParamList;
+    type Produces: ParamList;
+    fn show_form(&self, consumes: Self::Consumes) -> impl Future<Output = anyhow::Result<Message>>;
+    fn handle_input(
+      &self,
+      consumes: Self::Consumes,
+      user_input: String,
+    ) -> impl Future<Output = anyhow::Result<Self::Produces>>;
   }
 
   /// Works with at lease two cases.

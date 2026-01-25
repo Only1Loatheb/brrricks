@@ -24,6 +24,7 @@ mod tests {
   use serde::{Deserialize, Serialize};
   use serde_value::Value;
   use std::collections::BTreeMap;
+  use std::future::Future;
   use typenum::*;
 
   #[derive(Clone, Deserialize, Serialize)]
@@ -86,15 +87,21 @@ mod tests {
   }
 
   struct Linear1;
-  impl Operation<HNil, HList![Case1Param, CommonCaseParam]> for Linear1 {
-    async fn handle(&self, consumes: HNil) -> anyhow::Result<HList![Case1Param, CommonCaseParam]> {
+  impl Operation for Linear1 {
+    type Consumes = HNil;
+    type Produces = HList![Case1Param, CommonCaseParam];
+
+    async fn handle(&self, consumes: Self::Consumes) -> anyhow::Result<Self::Produces> {
       todo!()
     }
   }
 
   struct Linear2;
-  impl Operation<HNil, HList![Case2Param, CommonCaseParam]> for Linear2 {
-    async fn handle(&self, consumes: HNil) -> anyhow::Result<HList![Case2Param, CommonCaseParam]> {
+  impl Operation for Linear2 {
+    type Consumes = HNil;
+    type Produces = HList![Case2Param, CommonCaseParam];
+
+    async fn handle(&self, consumes: Self::Consumes) -> anyhow::Result<Self::Produces> {
       todo!()
     }
   }
