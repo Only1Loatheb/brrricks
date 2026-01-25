@@ -24,7 +24,6 @@ mod tests {
   use serde::{Deserialize, Serialize};
   use serde_value::Value;
   use std::collections::BTreeMap;
-  use std::future::Future;
   use typenum::*;
 
   #[derive(Clone, Deserialize, Serialize)]
@@ -109,31 +108,23 @@ mod tests {
   pub struct Case1;
   pub struct Case2;
   struct SplitA;
-  impl
-    Splitter<
-      HNil,
-      Coprod![
-        (Case1, HList![Split1Param, CommonSplitParam]),
-        (Case2, HList![Split2Param, CommonSplitParam])
-      ],
-    > for SplitA
-  {
-    async fn handle(
-      &self,
-      consumes: HNil,
-    ) -> anyhow::Result<
-      Coprod![
-        (Case1, HList![Split1Param, CommonSplitParam]),
-        (Case2, HList![Split2Param, CommonSplitParam])
-      ],
-    > {
+  impl Splitter for SplitA {
+    type Consumes = HNil;
+    type Produces = Coprod![
+      (Case1, HList![Split1Param, CommonSplitParam]),
+      (Case2, HList![Split2Param, CommonSplitParam])
+    ];
+
+    async fn handle(&self, consumes: Self::Consumes) -> anyhow::Result<Self::Produces> {
       todo!()
     }
   }
 
   struct FinalA;
-  impl Final<HList![EntryParam, CommonSplitParam, CommonCaseParam]> for FinalA {
-    async fn handle(&self, consumes: HList![EntryParam, CommonSplitParam, CommonCaseParam]) -> anyhow::Result<Message> {
+  impl Final for FinalA {
+    type Consumes = HList![EntryParam, CommonSplitParam, CommonCaseParam];
+
+    async fn handle(&self, consumes: Self::Consumes) -> anyhow::Result<Message> {
       todo!()
     }
   }

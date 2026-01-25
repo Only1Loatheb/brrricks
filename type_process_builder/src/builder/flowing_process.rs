@@ -61,7 +61,10 @@ pub trait FlowingProcess: Sized {
     SplitterStepConsumes: ParamList,
     SplitterProducesForFirstCase: ParamList + Concat<Self::Produces>,
     SplitterProducesForOtherCases,
-    SplitterStep: Splitter<SplitterStepConsumes, Coproduct<(Tag, SplitterProducesForFirstCase), SplitterProducesForOtherCases>>,
+    SplitterStep: Splitter<
+      Consumes = SplitterStepConsumes,
+      Produces = Coproduct<(Tag, SplitterProducesForFirstCase), SplitterProducesForOtherCases>,
+    >,
     ProcessBeforeProducesToSplitterStepConsumesIndices,
   >(
     self,
@@ -91,7 +94,11 @@ pub trait FlowingProcess: Sized {
     }
   }
 
-  fn end<FinalConsumes: ParamList, FinalStep: Final<FinalConsumes>, ProcessBeforeProducesToLastStepConsumesIndices>(
+  fn end<
+    FinalConsumes: ParamList,
+    FinalStep: Final<Consumes = FinalConsumes>,
+    ProcessBeforeProducesToLastStepConsumesIndices,
+  >(
     self,
     step: FinalStep,
   ) -> impl FinalizedProcess<ProcessBeforeProduces = Self::Produces>
@@ -101,7 +108,6 @@ pub trait FlowingProcess: Sized {
     FlowingFinalizedProcess {
       process_before: self,
       final_step: step,
-      phantom_data: Default::default(),
     }
   }
 

@@ -47,11 +47,14 @@ pub mod step {
 
   /// Works with at lease two cases.
   /// just produce link form with a single link using Form step
-  pub trait Splitter<Consumes: ParamList, Produces: SplitterOutput> {
-    fn handle(&self, consumes: Consumes) -> impl Future<Output = anyhow::Result<Produces>>;
+  pub trait Splitter {
+    type Consumes: ParamList;
+    type Produces: SplitterOutput;
+    fn handle(&self, consumes: Self::Consumes) -> impl Future<Output = anyhow::Result<Self::Produces>>;
   }
 
-  pub trait Final<Consumes: ParamList> {
-    fn handle(&self, consumes: Consumes) -> impl Future<Output = anyhow::Result<Message>>;
+  pub trait Final {
+    type Consumes: ParamList;
+    fn handle(&self, consumes: Self::Consumes) -> impl Future<Output = anyhow::Result<Message>>;
   }
 }

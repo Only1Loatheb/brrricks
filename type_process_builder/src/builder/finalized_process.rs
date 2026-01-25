@@ -30,21 +30,17 @@ pub trait FinalizedProcess: Sized {
 pub struct FinalStepProcess<
   ProcessBeforeProduces: ParamList + TransformTo<FinalConsumes, ProcessBeforeProducesToFinalConsumesIndices>,
   FinalConsumes: ParamList,
-  FinalStep: Final<FinalConsumes>,
+  FinalStep: Final<Consumes = FinalConsumes>,
   ProcessBeforeProducesToFinalConsumesIndices,
 > {
   pub final_step: FinalStep,
-  pub phantom_data: PhantomData<(
-    ProcessBeforeProduces,
-    FinalConsumes,
-    ProcessBeforeProducesToFinalConsumesIndices,
-  )>,
+  pub phantom_data: PhantomData<(ProcessBeforeProduces, ProcessBeforeProducesToFinalConsumesIndices)>,
 }
 
 impl<
     ProcessBeforeProduces: ParamList + TransformTo<FinalConsumes, ProcessBeforeProducesToFinalConsumesIndices>,
     FinalConsumes: ParamList,
-    FinalStep: Final<FinalConsumes>,
+    FinalStep: Final<Consumes = FinalConsumes>,
     ProcessBeforeProducesToFinalConsumesIndices,
   > FinalizedProcess
   for FinalStepProcess<ProcessBeforeProduces, FinalConsumes, FinalStep, ProcessBeforeProducesToFinalConsumesIndices>
@@ -74,15 +70,14 @@ impl<
 pub struct FlowingFinalizedProcess<
   ProcessBefore: FlowingProcess,
   FinalConsumes: ParamList,
-  FinalStep: Final<FinalConsumes>,
+  FinalStep: Final<Consumes = FinalConsumes>,
 > {
   pub process_before: ProcessBefore,
   pub final_step: FinalStep,
-  pub phantom_data: PhantomData<FinalConsumes>,
 }
 
-impl<ProcessBefore: FlowingProcess, FinalConsumes: ParamList, FinalStep: Final<FinalConsumes>> FinalizedProcess
-  for FlowingFinalizedProcess<ProcessBefore, FinalConsumes, FinalStep>
+impl<ProcessBefore: FlowingProcess, FinalConsumes: ParamList, FinalStep: Final<Consumes = FinalConsumes>>
+  FinalizedProcess for FlowingFinalizedProcess<ProcessBefore, FinalConsumes, FinalStep>
 {
   type ProcessBeforeProduces = ProcessBefore::Produces;
 

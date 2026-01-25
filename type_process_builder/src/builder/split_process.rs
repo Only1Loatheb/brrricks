@@ -103,19 +103,16 @@ pub struct SplitProcessSplitter<
   SplitterStepConsumes: ParamList,
   SplitterProducesForFirstCase: ParamList,
   SplitterProducesForOtherCases,
-  SplitterStep: Splitter<SplitterStepConsumes, Coproduct<(Tag, SplitterProducesForFirstCase), SplitterProducesForOtherCases>>,
+  SplitterStep: Splitter<
+    Consumes = SplitterStepConsumes,
+    Produces = Coproduct<(Tag, SplitterProducesForFirstCase), SplitterProducesForOtherCases>,
+  >,
   ProcessBeforeProducesToSplitterStepConsumesIndices,
 > {
   pub process_before: ProcessBefore,
   pub splitter: SplitterStep,
   pub split_step_index: usize,
-  pub phantom_data: PhantomData<(
-    Tag,
-    SplitterStepConsumes,
-    SplitterProducesForFirstCase,
-    SplitterProducesForOtherCases,
-    ProcessBeforeProducesToSplitterStepConsumesIndices,
-  )>,
+  pub phantom_data: PhantomData<ProcessBeforeProducesToSplitterStepConsumesIndices>,
 }
 
 impl<
@@ -124,7 +121,10 @@ impl<
     SplitterStepConsumes: ParamList,
     SplitterProducesForFirstCase: ParamList + Concat<ProcessBefore::Produces>,
     SplitterProducesForOtherCases,
-    SplitterStep: Splitter<SplitterStepConsumes, Coproduct<(Tag, SplitterProducesForFirstCase), SplitterProducesForOtherCases>>,
+    SplitterStep: Splitter<
+      Consumes = SplitterStepConsumes,
+      Produces = Coproduct<(Tag, SplitterProducesForFirstCase), SplitterProducesForOtherCases>,
+    >,
     ProcessBeforeProducesToSplitterStepConsumesIndices,
   > SplitProcess<SplitterProducesForOtherCases>
   for SplitProcessSplitter<
