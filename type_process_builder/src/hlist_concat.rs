@@ -9,7 +9,6 @@ pub trait Concat<RHS: ParamList>: ParamList {
   fn concat(self, rhs: RHS) -> Self::Concatenated;
 }
 
-// Base case: Concatenating HNil with another HList results in the other HList
 impl<RHS: ParamList> Concat<RHS> for HNil {
   type Concatenated = RHS;
 
@@ -19,7 +18,6 @@ impl<RHS: ParamList> Concat<RHS> for HNil {
   }
 }
 
-// Recursive case: Concatenate HCons
 impl<Head: ParamValue, Tail: Concat<RHS> + ParamList, RHS: ParamList> Concat<RHS> for HCons<Head, Tail> {
   type Concatenated = HCons<Head, <Tail as Concat<RHS>>::Concatenated>;
 

@@ -2,7 +2,7 @@ use crate::builder::finalized_process::{FinalizedProcess, FlowingFinalizedProces
 use crate::builder::split_process::SplitProcessSplitter;
 use crate::builder::*;
 use crate::hlist_concat::Concat;
-use crate::hlist_transform_to::TransformTo;
+use crate::hlist_transform::{CloneJust, TransformTo};
 use crate::param_list::ParamList;
 use crate::step::step::{Entry, Final, Form, Operation, Splitter};
 use anyhow::anyhow;
@@ -46,7 +46,7 @@ pub trait FlowingProcess: Sized {
     Produces = <LinearProduces as Concat<Self::Produces>>::Concatenated,
   >
   where
-    Self::Produces: TransformTo<LinearConsumes, ProcessBeforeProducesToLastStepConsumesIndices>,
+    for<'a> &'a Self::Produces: CloneJust<LinearConsumes, ProcessBeforeProducesToLastStepConsumesIndices>,
   {
     LinearFlowingProcess {
       process_before: self,
@@ -76,7 +76,7 @@ pub trait FlowingProcess: Sized {
     SplitterTagForFirstCase = Tag,
   >
   where
-    Self::Produces: TransformTo<SplitterStepConsumes, ProcessBeforeProducesToSplitterStepConsumesIndices>,
+    for<'a> &'a Self::Produces: CloneJust<SplitterStepConsumes, ProcessBeforeProducesToSplitterStepConsumesIndices>,
   {
     SplitProcessSplitter::<
       Tag,
@@ -197,7 +197,7 @@ impl<
   > FlowingProcess
   for LinearFlowingProcess<ProcessBefore, OperationStep, ProcessBeforeProducesToLastStepConsumesIndices>
 where
-  ProcessBefore::Produces: TransformTo<LastStepConsumes, ProcessBeforeProducesToLastStepConsumesIndices>,
+  for<'a> &'a ProcessBefore::Produces: CloneJust<LastStepConsumes, ProcessBeforeProducesToLastStepConsumesIndices>,
 {
   type ProcessBeforeProduces = ProcessBefore::Produces;
   type Produces = <LastStepProduces as Concat<ProcessBefore::Produces>>::Concatenated;
@@ -228,7 +228,7 @@ where
     &self,
     process_before_produces: Self::ProcessBeforeProduces,
   ) -> IntermediateRunResult<Self::Produces> {
-    let last_step_consumes: LastStepConsumes = process_before_produces.clone().transform();
+    let last_step_consumes: LastStepConsumes = process_before_produces.clone_just();
     let last_step_output = self.last_step.handle(last_step_consumes).await?;
     Ok(IntermediateRunOutcome::Continue(
       last_step_output.concat(process_before_produces),
@@ -261,8 +261,8 @@ impl<
     ProcessBeforeProducesToLastStepConsumesIndices,
   > FlowingProcess for FormFlowingProcess<ProcessBefore, FormStep, ProcessBeforeProducesToLastStepConsumesIndices>
 where
-  <ProcessBefore as FlowingProcess>::Produces:
-    TransformTo<LastStepConsumes, ProcessBeforeProducesToLastStepConsumesIndices>,
+  for<'a> &'a <ProcessBefore as FlowingProcess>::Produces:
+    CloneJust<LastStepConsumes, ProcessBeforeProducesToLastStepConsumesIndices>,
 {
   type ProcessBeforeProduces = ProcessBefore::Produces;
   type Produces = <LastStepProduces as Concat<ProcessBefore::Produces>>::Concatenated;
@@ -286,7 +286,7 @@ where
     } else {
       // fixme deserialize only values required only up to the next interaction
       let process_before_produces = ProcessBefore::Produces::deserialize(previous_run_produced)?;
-      let last_step_consumes: LastStepConsumes = process_before_produces.clone().transform();
+      let last_step_consumes: LastStepConsumes = process_before_produces.clone_just();
       Ok(IntermediateRunOutcome::Continue(
         self
           .last_step
@@ -301,7 +301,7 @@ where
     &self,
     process_before_produces: Self::ProcessBeforeProduces,
   ) -> IntermediateRunResult<Self::Produces> {
-    let last_step_consumes: LastStepConsumes = process_before_produces.clone().transform();
+    let last_step_consumes: LastStepConsumes = process_before_produces.clone_just();
     Ok(IntermediateRunOutcome::Yield(
       self.last_step.show_form(last_step_consumes).await?,
       process_before_produces.serialize()?,

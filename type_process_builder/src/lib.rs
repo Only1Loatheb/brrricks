@@ -1,9 +1,9 @@
 pub mod builder;
-mod hlist_concat;
-mod hlist_intersect;
-mod hlist_transform_to;
-mod param_list;
+pub mod hlist_concat;
+pub mod hlist_intersect;
+pub mod hlist_transform;
 pub mod step;
+pub mod param_list;
 
 // cargo doc --no-deps --package type_process_builder --features docs
 /// A sequence diagram

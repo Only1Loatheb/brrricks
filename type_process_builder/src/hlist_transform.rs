@@ -38,30 +38,30 @@ where
   }
 }
 
-pub trait CloneTo<Target, Indices> {
-  fn clone_to(self) -> Target;
+pub trait CloneJust<Target, Indices> {
+  fn clone_just(self) -> Target;
 }
 
-impl<'a, Source> CloneTo<HNil, HNil> for &'a Source {
+impl<'a, Source> CloneJust<HNil, HNil> for &'a Source {
   #[inline(always)]
-  fn clone_to(self) -> HNil {
+  fn clone_just(self) -> HNil {
     HNil
   }
 }
 
 impl<'a, TargetHead: Clone + 'a, TargetTail, SourceHead: 'a, SourceTail: 'a, IndexHead, IndexTail>
-  CloneTo<HCons<TargetHead, TargetTail>, HCons<IndexHead, IndexTail>> for &'a HCons<SourceHead, SourceTail>
+  CloneJust<HCons<TargetHead, TargetTail>, HCons<IndexHead, IndexTail>> for &'a HCons<SourceHead, SourceTail>
 where
   &'a HCons<SourceHead, SourceTail>: Plucker<&'a TargetHead, IndexHead>,
-  <&'a HCons<SourceHead, SourceTail> as Plucker<&'a TargetHead, IndexHead>>::Remainder: CloneTo<TargetTail, IndexTail>,
+  <&'a HCons<SourceHead, SourceTail> as Plucker<&'a TargetHead, IndexHead>>::Remainder: CloneJust<TargetTail, IndexTail>,
 {
   #[inline(always)]
-  fn clone_to(self) -> HCons<TargetHead, TargetTail> {
+  fn clone_just(self) -> HCons<TargetHead, TargetTail> {
     let (head, remainder): (
       &'a TargetHead,
       <&'a HCons<SourceHead, SourceTail> as Plucker<&'a TargetHead, IndexHead>>::Remainder,
     ) = self.pluck();
-    let tail = remainder.clone_to();
+    let tail = remainder.clone_just();
     HCons {
       head: head.clone(),
       tail,

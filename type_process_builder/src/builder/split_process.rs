@@ -4,7 +4,7 @@ use crate::builder::{
   IntermediateFinalizedSplitResult, IntermediateRunOutcome, ParamList, PreviousRunYieldedAt, Subprocess,
 };
 use crate::hlist_concat::Concat;
-use crate::hlist_transform_to::TransformTo;
+use crate::hlist_transform::{CloneJust, TransformTo};
 use crate::step::step::Splitter;
 use frunk_core::coproduct::Coproduct;
 use serde_value::Value;
@@ -137,7 +137,7 @@ impl<
     ProcessBeforeProducesToSplitterStepConsumesIndices,
   >
 where
-  ProcessBefore::Produces: TransformTo<SplitterStepConsumes, ProcessBeforeProducesToSplitterStepConsumesIndices>,
+  for<'a> &'a ProcessBefore::Produces: CloneJust<SplitterStepConsumes, ProcessBeforeProducesToSplitterStepConsumesIndices>,
 {
   type ProcessBeforeSplitProduces = ProcessBefore::Produces;
   type SplitterProducesForFirstCase = SplitterProducesForFirstCase;
@@ -177,7 +177,7 @@ where
     Self::ProcessBeforeSplitProduces,
     Coproduct<Self::SplitterProducesForFirstCase, SplitterProducesForOtherCases>,
   > {
-    let splitter_step_consumes: SplitterStepConsumes = process_before_split_produced.clone().transform();
+    let splitter_step_consumes: SplitterStepConsumes = process_before_split_produced.clone_just();
     let splitter_produces_to_other_cases = match self.splitter.handle(splitter_step_consumes).await? {
       Coproduct::Inl(a) => Coproduct::Inl(a.1),
       Coproduct::Inr(b) => Coproduct::Inr(b),

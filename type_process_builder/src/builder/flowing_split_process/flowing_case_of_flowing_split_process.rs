@@ -5,7 +5,7 @@ use crate::builder::{
 };
 use crate::hlist_concat::Concat;
 use crate::hlist_intersect::Intersect;
-use crate::hlist_transform_to::TransformTo;
+use crate::hlist_transform::TransformTo;
 use frunk_core::coproduct::{CNil, Coproduct};
 use serde_value::Value;
 use std::marker::PhantomData;
@@ -227,7 +227,7 @@ where
         splitter_produces_to_other_cases,
       } => match splitter_produces_to_other_cases {
         Coproduct::Inl((_pd, produces_to_this_case)) => {
-          let this_case_consumes = produces_to_this_case.concat(process_before_split_produced.clone());
+          let this_case_consumes = produces_to_this_case.concat(process_before_split_produced);
           match self.this_case.continue_run(this_case_consumes).await? {
             IntermediateRunOutcome::Continue(this_case_produced) =>
               Ok(IntermediateRunOutcome::Continue(this_case_produced.transform())),
