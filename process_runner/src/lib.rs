@@ -1,8 +1,6 @@
 // use process::brick_domain;
 
-mod runnable_process;
-
-pub mod process_runner {}
+mod qrios_ussd_api_swagger;
 
 #[cfg(test)]
 mod tests {
