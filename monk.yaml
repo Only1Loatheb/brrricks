@@ -1,0 +1,21 @@
+pre-push:
+  commands:
+    - |
+      if [ -z "$(git status --porcelain)" ]; then
+        echo "All changes in files known to git are committed"
+      else
+        echo "Committing local changes"
+        git add . && git commit -m "Local changes"
+      fi
+    - cargo check --workspace --all-targets
+    - cargo fmt --all
+    - cargo fix --workspace --all-targets --all-features --allow-dirty
+    - |
+      if [ -z "$(git status --porcelain)" ]; then
+        echo "All changes in files known to git are committed"
+      else
+        echo "Committing automated fixes"
+        git add . && git commit -m "Automated fixes"
+      fi
+    - cargo clippy --all-targets --all-features -- -D warnings -W clippy::all
+    - cargo test --workspace --doc

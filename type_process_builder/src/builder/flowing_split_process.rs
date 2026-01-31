@@ -10,8 +10,8 @@ use frunk_core::coproduct::Coproduct;
 use serde_value::Value;
 use std::future::Future;
 
-/// Should we force the user to produce common params before the [crate::step::step::Splitter]?
-/// If we allow that the user can produce common params in [crate::step::step::Splitter] without defining additional step.
+/// Should we force the user to produce common params before the [crate::step::Splitter]?
+/// If we allow that the user can produce common params in [crate::step::Splitter] without defining additional step.
 /// The process builder API will be more ergonomic, but the implementation will be more involved.
 pub trait FlowingSplitProcess<SplitterProducesForOtherCases>: Sized {
   type ProcessBeforeSplitProduces: ParamList;

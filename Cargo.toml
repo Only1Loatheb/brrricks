@@ -5,6 +5,7 @@ name = "bricks"
 version = "0.1.0"
 edition = "2021"
 rust-version = "1.92.0"
+build = "build.rs"
 
 [workspace]
 members = [
@@ -15,6 +16,9 @@ members = [
 [dependencies]
 type_process_builder = { path = "type_process_builder" }
 process_runner = { path = "process_runner" }
+
+[build-dependencies]
+monk = "0.3.4"
 
 #todo https://doc.rust-lang.org/cargo/reference/workspaces.html
 

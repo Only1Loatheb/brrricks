@@ -4,8 +4,8 @@ use crate::builder::{
   IntermediateFinalizedSplitResult, IntermediateRunOutcome, ParamList, PreviousRunYieldedAt, Subprocess,
 };
 use crate::hlist_concat::Concat;
-use crate::hlist_transform::{CloneJust, TransformTo};
-use crate::step::step::Splitter;
+use crate::hlist_transform::CloneJust;
+use crate::step::Splitter;
 use frunk_core::coproduct::Coproduct;
 use serde_value::Value;
 use std::future::Future;
@@ -137,7 +137,8 @@ impl<
     ProcessBeforeProducesToSplitterStepConsumesIndices,
   >
 where
-  for<'a> &'a ProcessBefore::Produces: CloneJust<SplitterStepConsumes, ProcessBeforeProducesToSplitterStepConsumesIndices>,
+  for<'a> &'a ProcessBefore::Produces:
+    CloneJust<SplitterStepConsumes, ProcessBeforeProducesToSplitterStepConsumesIndices>,
 {
   type ProcessBeforeSplitProduces = ProcessBefore::Produces;
   type SplitterProducesForFirstCase = SplitterProducesForFirstCase;

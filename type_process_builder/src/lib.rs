@@ -2,8 +2,8 @@ pub mod builder;
 pub mod hlist_concat;
 pub mod hlist_intersect;
 pub mod hlist_transform;
-pub mod step;
 pub mod param_list;
+pub mod step;
 
 // cargo doc --no-deps --package type_process_builder --features docs
 /// A sequence diagram
@@ -16,8 +16,8 @@ pub mod a {}
 mod tests {
   use crate::builder::*;
   use crate::param_list::ParamValue;
-  use crate::step::step::{Entry, Final, Operation, Splitter};
   use crate::step::Message;
+  use crate::step::{Entry, Final, Operation, Splitter};
   use anyhow::anyhow;
   use frunk_core::hlist::HNil;
   use frunk_core::{hlist, Coprod, HList};
@@ -75,7 +75,7 @@ mod tests {
     async fn handle(
       &self,
       mut consumes: BTreeMap<Value, Value>,
-      shortcode_string: String,
+      _shortcode_string: String,
     ) -> anyhow::Result<HList![EntryParam]> {
       let key = Value::String("msisdn".into());
       let value = consumes
@@ -90,7 +90,7 @@ mod tests {
     type Consumes = HNil;
     type Produces = HList![Case1Param, CommonCaseParam];
 
-    async fn handle(&self, consumes: Self::Consumes) -> anyhow::Result<Self::Produces> {
+    async fn handle(&self, _consumes: Self::Consumes) -> anyhow::Result<Self::Produces> {
       todo!()
     }
   }
@@ -100,7 +100,7 @@ mod tests {
     type Consumes = HNil;
     type Produces = HList![Case2Param, CommonCaseParam];
 
-    async fn handle(&self, consumes: Self::Consumes) -> anyhow::Result<Self::Produces> {
+    async fn handle(&self, _consumes: Self::Consumes) -> anyhow::Result<Self::Produces> {
       todo!()
     }
   }
@@ -115,7 +115,7 @@ mod tests {
       (Case2, HList![Split2Param, CommonSplitParam])
     ];
 
-    async fn handle(&self, consumes: Self::Consumes) -> anyhow::Result<Self::Produces> {
+    async fn handle(&self, _consumes: Self::Consumes) -> anyhow::Result<Self::Produces> {
       todo!()
     }
   }
@@ -124,14 +124,14 @@ mod tests {
   impl Final for FinalA {
     type Consumes = HList![EntryParam, CommonSplitParam, CommonCaseParam];
 
-    async fn handle(&self, consumes: Self::Consumes) -> anyhow::Result<Message> {
+    async fn handle(&self, _consumes: Self::Consumes) -> anyhow::Result<Message> {
       todo!()
     }
   }
 
   #[tokio::test]
   async fn test_hcons() {
-    let process = EntryA
+    let _process = EntryA
       .split(SplitA)
       .case_via(Case1, |x| x.then(Linear1))
       .case_via(Case2, |x| x.then(Linear2))

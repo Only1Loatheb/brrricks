@@ -42,7 +42,7 @@ pub trait CloneJust<Target, Indices> {
   fn clone_just(self) -> Target;
 }
 
-impl<'a, Source> CloneJust<HNil, HNil> for &'a Source {
+impl<Source> CloneJust<HNil, HNil> for &Source {
   #[inline(always)]
   fn clone_just(self) -> HNil {
     HNil
@@ -53,7 +53,8 @@ impl<'a, TargetHead: Clone + 'a, TargetTail, SourceHead: 'a, SourceTail: 'a, Ind
   CloneJust<HCons<TargetHead, TargetTail>, HCons<IndexHead, IndexTail>> for &'a HCons<SourceHead, SourceTail>
 where
   &'a HCons<SourceHead, SourceTail>: Plucker<&'a TargetHead, IndexHead>,
-  <&'a HCons<SourceHead, SourceTail> as Plucker<&'a TargetHead, IndexHead>>::Remainder: CloneJust<TargetTail, IndexTail>,
+  <&'a HCons<SourceHead, SourceTail> as Plucker<&'a TargetHead, IndexHead>>::Remainder:
+    CloneJust<TargetTail, IndexTail>,
 {
   #[inline(always)]
   fn clone_just(self) -> HCons<TargetHead, TargetTail> {
