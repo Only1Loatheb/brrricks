@@ -21,13 +21,35 @@ mod tests {
   use anyhow::anyhow;
   use frunk_core::hlist::HNil;
   use frunk_core::{hlist, Coprod, HList};
+  use log::debug;
   use serde::{Deserialize, Serialize};
   use serde_value::Value;
   use std::collections::BTreeMap;
+  use std::ops::Not;
   use typenum::*;
 
+  #[derive(Clone, Debug, Deserialize, Serialize)]
+  struct Msisdn(u64);
+
+  impl Msisdn {
+    fn from(string: String) -> Option<Msisdn> {
+      let prefix_len = string.len().checked_sub(10)?;
+      // deny optional '+' https://doc.rust-lang.org/std/primitive.u64.html#method.from_str
+      let _: () = string.starts_with('+').not().then_some(())?;
+      string
+        .split_at_checked(prefix_len)
+        .and_then(|(_prefix, suffix)| suffix.parse::<u64>().ok())
+        .map(|x| Msisdn(x))
+    }
+  }
+
   #[derive(Clone, Deserialize, Serialize)]
-  struct EntryParam;
+  enum Operator {
+    MTN,
+  }
+
+  #[derive(Clone, Deserialize, Serialize)]
+  struct EntryParam(Msisdn, Operator);
   impl ParamValue for EntryParam {
     type UID = U0;
   }
@@ -78,10 +100,18 @@ mod tests {
       _shortcode_string: String,
     ) -> anyhow::Result<HList![EntryParam]> {
       let key = Value::String("msisdn".into());
-      let value = consumes
+      let msisdn_value = consumes
         .remove(&key)
         .ok_or_else(|| anyhow!("Admin error or error on frontend."))?;
-      Ok(hlist!(value.deserialize_into()?))
+      let msisdn = match msisdn_value {
+        Value::String(string) => Msisdn::from(string).ok_or_else(|| anyhow!("Admin error on frontend.")),
+        _ => Err(anyhow!("Admin error on frontend.")),
+      }?;
+      let operator = consumes
+        .remove(&key)
+        .ok_or_else(|| anyhow!("Admin error or error on frontend."))?;
+      debug!("Operator: {:?}, {:?}", operator, msisdn);
+      Ok(hlist!(EntryParam(msisdn, Operator::deserialize(operator)?)))
     }
   }
 
@@ -131,20 +161,23 @@ mod tests {
 
   #[tokio::test]
   async fn test_hcons() {
-    let _process = EntryA
+    let process = EntryA
       .split(SplitA)
       .case_via(Case1, |x| x.then(Linear1))
       .case_via(Case2, |x| x.then(Linear2))
-      .end(FinalA);
-    //   .then(FinalA)
-    //   .build();
-    // let run_result = process
-    //   .resume_run(
-    //     Value::Map(BTreeMap::new()),
-    //     PreviousRunYieldedAt(0),
-    //     "*123#".to_string(),
-    //   )
-    //   .await;
-    // assert!(run_result.is_err());
+      .end(FinalA)
+      .build();
+
+    let run_result = process
+      .resume_run(
+        Value::Map(BTreeMap::from([
+          (Value::String("msisdn".into()), Value::String("2340000000000".into())),
+          (Value::String("operator".into()), Value::String("MTN".into())),
+        ])),
+        PreviousRunYieldedAt(0),
+        "*123#".to_string(),
+      )
+      .await;
+    assert!(run_result.is_err());
   }
 }
