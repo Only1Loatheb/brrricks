@@ -49,7 +49,10 @@ mod tests {
   }
 
   #[derive(Clone, Deserialize, Serialize)]
-  struct EntryParam(Msisdn, Operator);
+  struct ShortcodeString(String);
+
+  #[derive(Clone, Deserialize, Serialize)]
+  struct EntryParam(Msisdn, Operator, ShortcodeString);
   impl ParamValue for EntryParam {
     type UID = U0;
   }
@@ -97,7 +100,7 @@ mod tests {
     async fn handle(
       &self,
       mut consumes: BTreeMap<Value, Value>,
-      _shortcode_string: String,
+      shortcode_string: String,
     ) -> anyhow::Result<HList![EntryParam]> {
       let key = Value::String("msisdn".into());
       let msisdn_value = consumes
@@ -111,7 +114,11 @@ mod tests {
         .remove(&key)
         .ok_or_else(|| anyhow!("Admin error or error on frontend."))?;
       debug!("Operator: {:?}, {:?}", operator, msisdn);
-      Ok(hlist!(EntryParam(msisdn, Operator::deserialize(operator)?)))
+      Ok(hlist!(EntryParam(
+        msisdn,
+        Operator::deserialize(operator)?,
+        ShortcodeString(shortcode_string)
+      )))
     }
   }
 
@@ -121,7 +128,7 @@ mod tests {
     type Produces = HList![Case1Param, CommonCaseParam];
 
     async fn handle(&self, _consumes: Self::Consumes) -> anyhow::Result<Self::Produces> {
-      todo!()
+      Ok(hlist!(Case1Param, CommonCaseParam))
     }
   }
 
@@ -131,7 +138,7 @@ mod tests {
     type Produces = HList![Case2Param, CommonCaseParam];
 
     async fn handle(&self, _consumes: Self::Consumes) -> anyhow::Result<Self::Produces> {
-      todo!()
+      Ok(hlist!(Case2Param, CommonCaseParam))
     }
   }
 
@@ -146,7 +153,7 @@ mod tests {
     ];
 
     async fn handle(&self, _consumes: Self::Consumes) -> anyhow::Result<Self::Produces> {
-      todo!()
+      Ok(Self::Produces::inject((Case1, hlist!(Split1Param, CommonSplitParam))))
     }
   }
 
@@ -155,12 +162,38 @@ mod tests {
     type Consumes = HList![EntryParam, CommonSplitParam, CommonCaseParam];
 
     async fn handle(&self, _consumes: Self::Consumes) -> anyhow::Result<Message> {
-      todo!()
+      Ok(Message("Good bye".into()))
     }
   }
 
+  struct FinalNoConsumes;
+  impl Final for FinalNoConsumes {
+    type Consumes = HList![];
+
+    async fn handle(&self, _consumes: Self::Consumes) -> anyhow::Result<Message> {
+      Ok(Message("Empty good bye".into()))
+    }
+  }
+
+  fn session_init_value() -> Value {
+    Value::Map(BTreeMap::from([
+      (Value::String("msisdn".into()), Value::String("2340000000000".into())),
+      (Value::String("operator".into()), Value::String("MTN".into())),
+    ]))
+  }
+
   #[tokio::test]
-  async fn test_hcons() {
+  async fn test_end() {
+    let process = EntryA.end(FinalNoConsumes).build();
+
+    let run_result = process
+      .resume_run(session_init_value(), PreviousRunYieldedAt(0), "*123#".to_string())
+      .await;
+    assert!(run_result.is_err());
+  }
+
+  #[tokio::test]
+  async fn test_split() {
     let process = EntryA
       .split(SplitA)
       .case_via(Case1, |x| x.then(Linear1))
@@ -169,14 +202,7 @@ mod tests {
       .build();
 
     let run_result = process
-      .resume_run(
-        Value::Map(BTreeMap::from([
-          (Value::String("msisdn".into()), Value::String("2340000000000".into())),
-          (Value::String("operator".into()), Value::String("MTN".into())),
-        ])),
-        PreviousRunYieldedAt(0),
-        "*123#".to_string(),
-      )
+      .resume_run(session_init_value(), PreviousRunYieldedAt(0), "*123#".to_string())
       .await;
     assert!(run_result.is_err());
   }
