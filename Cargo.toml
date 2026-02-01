@@ -19,9 +19,3 @@ process_runner = { path = "process_runner" }
 
 [build-dependencies]
 monk = "0.3.4"
-
-#todo https://doc.rust-lang.org/cargo/reference/workspaces.html
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-#https://github.com/slog-rs/example-lib/blob/master/Cargo.toml
-#https://github.com/rust-lang/cargo/blob/master/Cargo.toml
