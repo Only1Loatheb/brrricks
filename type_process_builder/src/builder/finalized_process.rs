@@ -1,6 +1,6 @@
 use crate::builder::flowing_process::FlowingProcess;
 use crate::builder::runnable_process::RunnableProcess;
-use crate::builder::{PreviousRunYieldedAt, RunOutcome, RunResult};
+use crate::builder::{IntermediateRunOutcome, PreviousRunYieldedAt, RunOutcome, RunResult};
 use crate::hlist_transform::TransformTo;
 use crate::param_list::ParamList;
 use crate::step::Final;
@@ -27,71 +27,55 @@ pub trait FinalizedProcess: Sized {
   fn enumerate_steps(&mut self, last_used_index: usize) -> usize;
 }
 
-pub struct FinalStepProcess<
-  ProcessBeforeProduces: ParamList + TransformTo<FinalConsumes, ProcessBeforeProducesToFinalConsumesIndices>,
-  FinalConsumes: ParamList,
-  FinalStep: Final<Consumes = FinalConsumes>,
-  ProcessBeforeProducesToFinalConsumesIndices,
-> {
-  pub final_step: FinalStep,
-  pub phantom_data: PhantomData<(ProcessBeforeProduces, ProcessBeforeProducesToFinalConsumesIndices)>,
-}
-
-impl<
-    ProcessBeforeProduces: ParamList + TransformTo<FinalConsumes, ProcessBeforeProducesToFinalConsumesIndices>,
-    FinalConsumes: ParamList,
-    FinalStep: Final<Consumes = FinalConsumes>,
-    ProcessBeforeProducesToFinalConsumesIndices,
-  > FinalizedProcess
-  for FinalStepProcess<ProcessBeforeProduces, FinalConsumes, FinalStep, ProcessBeforeProducesToFinalConsumesIndices>
-{
-  type ProcessBeforeProduces = ProcessBeforeProduces;
-
-  async fn resume_run(
-    &self,
-    previous_run_produced: Value,
-    _previous_run_yielded_at: PreviousRunYieldedAt,
-    _user_input: String,
-  ) -> RunResult {
-    let process_before_produces = ProcessBeforeProduces::deserialize(previous_run_produced)?;
-    self.continue_run(process_before_produces).await
-  }
-
-  async fn continue_run(&self, process_before_produces: Self::ProcessBeforeProduces) -> RunResult {
-    let final_consumes: FinalConsumes = process_before_produces.transform();
-    Ok(RunOutcome::Finish(self.final_step.handle(final_consumes).await?))
-  }
-
-  fn enumerate_steps(&mut self, last_used_index: usize) -> usize {
-    last_used_index
-  }
-}
-
 pub struct FlowingFinalizedProcess<
   ProcessBefore: FlowingProcess,
   FinalConsumes: ParamList,
   FinalStep: Final<Consumes = FinalConsumes>,
+  ProcessBeforeProducesTransformToFinalConsumesIndices,
 > {
   pub process_before: ProcessBefore,
   pub final_step: FinalStep,
+  pub phantom_data: PhantomData<ProcessBeforeProducesTransformToFinalConsumesIndices>,
 }
 
-impl<ProcessBefore: FlowingProcess, FinalConsumes: ParamList, FinalStep: Final<Consumes = FinalConsumes>>
-  FinalizedProcess for FlowingFinalizedProcess<ProcessBefore, FinalConsumes, FinalStep>
+impl<
+    ProcessBefore: FlowingProcess,
+    FinalConsumes: ParamList,
+    FinalStep: Final<Consumes = FinalConsumes>,
+    ProcessBeforeProducesTransformToFinalConsumesIndices,
+  > FinalizedProcess
+  for FlowingFinalizedProcess<
+    ProcessBefore,
+    FinalConsumes,
+    FinalStep,
+    ProcessBeforeProducesTransformToFinalConsumesIndices,
+  >
+where
+  ProcessBefore::Produces: TransformTo<FinalConsumes, ProcessBeforeProducesTransformToFinalConsumesIndices>,
 {
   type ProcessBeforeProduces = ProcessBefore::Produces;
 
   async fn resume_run(
     &self,
-    _previous_run_produced: Value,
-    _previous_run_yielded_at: PreviousRunYieldedAt,
-    _user_input: String,
+    previous_run_produced: Value,
+    previous_run_yielded_at: PreviousRunYieldedAt,
+    user_input: String,
   ) -> RunResult {
-    todo!()
+    let outcome = self
+      .process_before
+      .resume_run(previous_run_produced, previous_run_yielded_at, user_input)
+      .await?;
+    match outcome {
+      IntermediateRunOutcome::Continue(val) => self.continue_run(val).await,
+      IntermediateRunOutcome::Yield(a, b, c) => Ok(RunOutcome::Yield(a, b, c)),
+      IntermediateRunOutcome::Finish(a) => Ok(RunOutcome::Finish(a)),
+    }
   }
 
-  async fn continue_run(&self, _process_before_produces: Self::ProcessBeforeProduces) -> RunResult {
-    todo!()
+  async fn continue_run(&self, process_before_produces: Self::ProcessBeforeProduces) -> RunResult {
+    Ok(RunOutcome::Finish(
+      self.final_step.handle(process_before_produces.transform()).await?,
+    ))
   }
 
   fn enumerate_steps(&mut self, last_used_index: usize) -> usize {

@@ -29,6 +29,7 @@ pub struct CurrentRunYieldedAt(usize);
 
 pub(crate) const WILL_BE_RENUMBERED: usize = 0;
 
+#[derive(Debug, PartialEq, Eq)]
 pub enum IntermediateRunOutcome<Produced: ParamList> {
   Continue(Produced),
   Yield(Message, Value, CurrentRunYieldedAt),
@@ -37,6 +38,7 @@ pub enum IntermediateRunOutcome<Produced: ParamList> {
 
 pub type IntermediateRunResult<T> = anyhow::Result<IntermediateRunOutcome<T>>;
 
+#[derive(Debug, PartialEq, Eq)]
 pub enum IntermediateFinalizedSplitOutcome<ProcessBeforeSplitProduced: ParamList, SplitterProducesForOtherCases> {
   GoToCase {
     process_before_split_produced: ProcessBeforeSplitProduced,
@@ -49,6 +51,7 @@ pub enum IntermediateFinalizedSplitOutcome<ProcessBeforeSplitProduced: ParamList
 pub type IntermediateFinalizedSplitResult<ProcessBeforeSplitProduced, SplitterProducesForOtherCases> =
   anyhow::Result<IntermediateFinalizedSplitOutcome<ProcessBeforeSplitProduced, SplitterProducesForOtherCases>>;
 
+#[derive(Debug, PartialEq, Eq)]
 pub enum IntermediateFlowingSplitOutcome<
   ProcessBeforeSplitProduced: ParamList,
   SplitterProducesForOtherCases,
@@ -74,6 +77,7 @@ pub type IntermediateFlowingSplitResult<
   IntermediateFlowingSplitOutcome<ProcessBeforeSplitProduced, SplitterProducesForOtherCases, FlowingCaseProduced>,
 >;
 
+#[derive(Debug, PartialEq, Eq)]
 pub enum RunOutcome {
   Yield(Message, Value, CurrentRunYieldedAt),
   Finish(Message),

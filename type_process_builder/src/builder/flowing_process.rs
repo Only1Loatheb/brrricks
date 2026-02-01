@@ -108,6 +108,7 @@ pub trait FlowingProcess: Sized {
     FlowingFinalizedProcess {
       process_before: self,
       final_step: step,
+      phantom_data: Default::default(),
     }
   }
 

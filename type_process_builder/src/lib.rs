@@ -102,16 +102,15 @@ mod tests {
       mut consumes: BTreeMap<Value, Value>,
       shortcode_string: String,
     ) -> anyhow::Result<HList![EntryParam]> {
-      let key = Value::String("msisdn".into());
       let msisdn_value = consumes
-        .remove(&key)
+        .remove(&Value::String("msisdn".into()))
         .ok_or_else(|| anyhow!("Admin error or error on frontend."))?;
       let msisdn = match msisdn_value {
         Value::String(string) => Msisdn::from(string).ok_or_else(|| anyhow!("Admin error on frontend.")),
         _ => Err(anyhow!("Admin error on frontend.")),
       }?;
       let operator = consumes
-        .remove(&key)
+        .remove(&Value::String("operator".into()))
         .ok_or_else(|| anyhow!("Admin error or error on frontend."))?;
       debug!("Operator: {:?}, {:?}", operator, msisdn);
       Ok(hlist!(EntryParam(
@@ -189,7 +188,10 @@ mod tests {
     let run_result = process
       .resume_run(session_init_value(), PreviousRunYieldedAt(0), "*123#".to_string())
       .await;
-    assert!(run_result.is_err());
+    assert_eq!(
+      run_result.unwrap(),
+      RunOutcome::Finish(Message("Empty good bye".into()))
+    );
   }
 
   #[tokio::test]
@@ -204,6 +206,6 @@ mod tests {
     let run_result = process
       .resume_run(session_init_value(), PreviousRunYieldedAt(0), "*123#".to_string())
       .await;
-    assert!(run_result.is_err());
+    assert_eq!(run_result.unwrap(), RunOutcome::Finish(Message("Good bye".into())));
   }
 }
