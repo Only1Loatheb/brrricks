@@ -20,7 +20,7 @@ mod tests {
   use crate::step::{Entry, Final, Operation, Splitter};
   use anyhow::anyhow;
   use frunk_core::hlist::HNil;
-  use frunk_core::{hlist, Coprod, HList};
+  use frunk_core::{Coprod, HList, hlist};
   use log::debug;
   use serde::{Deserialize, Serialize};
   use serde_value::Value;

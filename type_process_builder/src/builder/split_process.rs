@@ -1,7 +1,7 @@
 use crate::builder::first_case_of_flowing_split_process::FirstCaseOfFlowingSplitProcess;
 use crate::builder::{
-  subprocess, FinalizedProcess, FirstCaseOfFinalizedSplitProcess, FlowingProcess, IntermediateFinalizedSplitOutcome,
-  IntermediateFinalizedSplitResult, IntermediateRunOutcome, ParamList, PreviousRunYieldedAt, Subprocess,
+  FinalizedProcess, FirstCaseOfFinalizedSplitProcess, FlowingProcess, IntermediateFinalizedSplitOutcome,
+  IntermediateFinalizedSplitResult, IntermediateRunOutcome, ParamList, PreviousRunYieldedAt, Subprocess, subprocess,
 };
 use crate::hlist_concat::Concat;
 use crate::hlist_transform::CloneJust;
@@ -104,9 +104,9 @@ pub struct SplitProcessSplitter<
   SplitterProducesForFirstCase: ParamList,
   SplitterProducesForOtherCases,
   SplitterStep: Splitter<
-    Consumes = SplitterStepConsumes,
-    Produces = Coproduct<(Tag, SplitterProducesForFirstCase), SplitterProducesForOtherCases>,
-  >,
+      Consumes = SplitterStepConsumes,
+      Produces = Coproduct<(Tag, SplitterProducesForFirstCase), SplitterProducesForOtherCases>,
+    >,
   ProcessBeforeProducesToSplitterStepConsumesIndices,
 > {
   pub process_before: ProcessBefore,
@@ -116,17 +116,17 @@ pub struct SplitProcessSplitter<
 }
 
 impl<
-    Tag,
-    ProcessBefore: FlowingProcess,
-    SplitterStepConsumes: ParamList,
-    SplitterProducesForFirstCase: ParamList + Concat<ProcessBefore::Produces>,
-    SplitterProducesForOtherCases,
-    SplitterStep: Splitter<
+  Tag,
+  ProcessBefore: FlowingProcess,
+  SplitterStepConsumes: ParamList,
+  SplitterProducesForFirstCase: ParamList + Concat<ProcessBefore::Produces>,
+  SplitterProducesForOtherCases,
+  SplitterStep: Splitter<
       Consumes = SplitterStepConsumes,
       Produces = Coproduct<(Tag, SplitterProducesForFirstCase), SplitterProducesForOtherCases>,
     >,
-    ProcessBeforeProducesToSplitterStepConsumesIndices,
-  > SplitProcess<SplitterProducesForOtherCases>
+  ProcessBeforeProducesToSplitterStepConsumesIndices,
+> SplitProcess<SplitterProducesForOtherCases>
   for SplitProcessSplitter<
     Tag,
     ProcessBefore,

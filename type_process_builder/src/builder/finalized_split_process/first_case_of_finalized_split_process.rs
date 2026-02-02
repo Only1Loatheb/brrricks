@@ -1,7 +1,7 @@
 use crate::builder::{
-  subprocess, FinalizedProcess, FinalizedSplitProcess, FlowingCaseOfFinalizedSplitProcess, FlowingProcess,
+  FinalizedProcess, FinalizedSplitProcess, FlowingCaseOfFinalizedSplitProcess, FlowingProcess,
   IntermediateFinalizedSplitOutcome, IntermediateFinalizedSplitResult, NextCaseOfFinalizedSplitProcess, ParamList,
-  PreviousRunYieldedAt, RunOutcome, SplitProcess, Subprocess,
+  PreviousRunYieldedAt, RunOutcome, SplitProcess, Subprocess, subprocess,
 };
 use crate::hlist_concat::Concat;
 use frunk_core::coproduct::Coproduct;

@@ -39,11 +39,11 @@ pub struct FlowingFinalizedProcess<
 }
 
 impl<
-    ProcessBefore: FlowingProcess,
-    FinalConsumes: ParamList,
-    FinalStep: Final<Consumes = FinalConsumes>,
-    ProcessBeforeProducesTransformToFinalConsumesIndices,
-  > FinalizedProcess
+  ProcessBefore: FlowingProcess,
+  FinalConsumes: ParamList,
+  FinalStep: Final<Consumes = FinalConsumes>,
+  ProcessBeforeProducesTransformToFinalConsumesIndices,
+> FinalizedProcess
   for FlowingFinalizedProcess<
     ProcessBefore,
     FinalConsumes,

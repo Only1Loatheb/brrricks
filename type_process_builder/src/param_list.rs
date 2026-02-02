@@ -1,8 +1,8 @@
 use frunk_core::hlist::{HCons, HList, HNil};
-use serde::de::DeserializeOwned;
 use serde::Serialize;
+use serde::de::DeserializeOwned;
 use serde_value::SerializerError::Custom;
-use serde_value::{to_value, DeserializerError, SerializerError, Value};
+use serde_value::{DeserializerError, SerializerError, Value, to_value};
 use std::collections::BTreeMap;
 use typenum::Unsigned;
 

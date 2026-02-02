@@ -62,9 +62,9 @@ pub trait FlowingProcess: Sized {
     SplitterProducesForFirstCase: ParamList + Concat<Self::Produces>,
     SplitterProducesForOtherCases,
     SplitterStep: Splitter<
-      Consumes = SplitterStepConsumes,
-      Produces = Coproduct<(Tag, SplitterProducesForFirstCase), SplitterProducesForOtherCases>,
-    >,
+        Consumes = SplitterStepConsumes,
+        Produces = Coproduct<(Tag, SplitterProducesForFirstCase), SplitterProducesForOtherCases>,
+      >,
     ProcessBeforeProducesToSplitterStepConsumesIndices,
   >(
     self,
@@ -190,13 +190,12 @@ pub struct LinearFlowingProcess<
 }
 
 impl<
-    ProcessBefore: FlowingProcess,
-    LastStepConsumes: ParamList,
-    LastStepProduces: ParamList + Concat<ProcessBefore::Produces>,
-    OperationStep: Operation<Consumes = LastStepConsumes, Produces = LastStepProduces>,
-    ProcessBeforeProducesToLastStepConsumesIndices,
-  > FlowingProcess
-  for LinearFlowingProcess<ProcessBefore, OperationStep, ProcessBeforeProducesToLastStepConsumesIndices>
+  ProcessBefore: FlowingProcess,
+  LastStepConsumes: ParamList,
+  LastStepProduces: ParamList + Concat<ProcessBefore::Produces>,
+  OperationStep: Operation<Consumes = LastStepConsumes, Produces = LastStepProduces>,
+  ProcessBeforeProducesToLastStepConsumesIndices,
+> FlowingProcess for LinearFlowingProcess<ProcessBefore, OperationStep, ProcessBeforeProducesToLastStepConsumesIndices>
 where
   for<'a> &'a ProcessBefore::Produces: CloneJust<LastStepConsumes, ProcessBeforeProducesToLastStepConsumesIndices>,
 {
@@ -255,12 +254,12 @@ pub struct FormFlowingProcess<
 }
 
 impl<
-    ProcessBefore: FlowingProcess,
-    LastStepConsumes: ParamList,
-    LastStepProduces: ParamList + Concat<ProcessBefore::Produces>,
-    FormStep: Form<Consumes = LastStepConsumes, Produces = LastStepProduces>,
-    ProcessBeforeProducesToLastStepConsumesIndices,
-  > FlowingProcess for FormFlowingProcess<ProcessBefore, FormStep, ProcessBeforeProducesToLastStepConsumesIndices>
+  ProcessBefore: FlowingProcess,
+  LastStepConsumes: ParamList,
+  LastStepProduces: ParamList + Concat<ProcessBefore::Produces>,
+  FormStep: Form<Consumes = LastStepConsumes, Produces = LastStepProduces>,
+  ProcessBeforeProducesToLastStepConsumesIndices,
+> FlowingProcess for FormFlowingProcess<ProcessBefore, FormStep, ProcessBeforeProducesToLastStepConsumesIndices>
 where
   for<'a> &'a <ProcessBefore as FlowingProcess>::Produces:
     CloneJust<LastStepConsumes, ProcessBeforeProducesToLastStepConsumesIndices>,
