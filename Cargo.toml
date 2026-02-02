@@ -19,4 +19,4 @@ process_runner = { path = "process_runner" }
 
 [build-dependencies]
 monk = "0.3.4"
-mermaid-rs-renderer = { git = "https://github.com/1jehuang/mermaid-rs-renderer" }
+mermaid-rs-renderer = { git = "https://github.com/1jehuang/mermaid-rs-renderer", features = ["png"] }

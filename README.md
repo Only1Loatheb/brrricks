@@ -30,6 +30,8 @@ sequenceDiagram
 
 [Process builder state diagram](type_process_builder/src/process_builder_diagram.mmd)
 
+![process_builder_diagram.html](process_builder_diagram.html)
+
 ## Plausible use cases
 
 [Africa's Talking API Reference](https://developers.africastalking.com/docs/ussd/handle_sessions)
