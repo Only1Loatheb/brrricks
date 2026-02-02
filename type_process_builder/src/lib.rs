@@ -8,7 +8,7 @@ pub mod step;
 // cargo doc --no-deps --package type_process_builder --features docs
 /// A sequence diagram
 #[cfg(feature = "docs")]
-#[doc = simple_mermaid::mermaid!("process_builder_diagram.mermaid")]
+#[doc = simple_mermaid::mermaid!("process_builder_diagram.mmd")]
 #[cfg_attr(not(feature = "docs"), doc = "")]
 pub mod a {}
 

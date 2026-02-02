@@ -1,8 +1,8 @@
 %%{ init: { 'flowchart': {'defaultRenderer': 'tidy-tree' } } }%%
 flowchart TD
     classDef hidden display: none;
-    style Entry fill-opacity:0, stroke-opacity:0;
-    Entry[" "]
+    style Start fill-opacity:0, stroke-opacity:0;
+    Start[" "]
     FinalizedSplitProcessSubgraph:::hidden
     subgraph FinalizedSplitProcessSubgraph[" "]
         FinalizedSplitProcess[FinalizedSplitProcess]
@@ -13,13 +13,12 @@ flowchart TD
         FlowingSplitProcess[FlowingSplitProcess]
         flowing_split_cases{{exhaustive?}}
     end
-    Entry -- "FinalBrick" --> FinalizedProcess
     FinalizedProcess -- "build" --> RunnableProcess
-    Entry -- "LinearBrick" --> FlowingProcess
-    FlowingProcess -- "LinearBrick or FlowingProcess" --> FlowingProcess
-    FlowingProcess -- "FinalBrick or FinalizedProcess" --> FinalizedProcess
-    Entry -- "SplitBrick" --> FinalizedSplitProcess
-    FlowingProcess -- "SplitBrick" --> FinalizedSplitProcess
+    Start -- "Entry Step" --> FlowingProcess
+    FlowingProcess -- "Linear Step or FlowingProcess" --> FlowingProcess
+    FlowingProcess -- "Final Step or FinalizedProcess" --> FinalizedProcess
+    
+    FlowingProcess -- "Split Step" --> FinalizedSplitProcess
     FinalizedSplitProcess -- "FinalizedProcess" --> finalized_split_cases_final
     finalized_split_cases_final -- "cases left" --> FinalizedSplitProcess
     finalized_split_cases_final -- "all cases covered" --> FinalizedProcess
@@ -27,7 +26,7 @@ flowchart TD
     FlowingSplitProcess -- "FinalizedProcess or FlowingProcess" --> flowing_split_cases
     flowing_split_cases -- "cases left" --> FlowingSplitProcess
     flowing_split_cases -- "all cases covered" --> FlowingProcess
-    Entry ~~~ FlowingSplitProcess
+    Start ~~~ FlowingSplitProcess
     click FlowingSplitProcess "https://github.com/Only1Loatheb/brrricks/blob/master/type_process_builder/src/builder/flowing_split_process.rs"
     click FlowingProcess "https://github.com/Only1Loatheb/brrricks/blob/master/type_process_builder/src/builder/flowing_process.rs"
     click FinalizedSplitProcess "https://github.com/Only1Loatheb/brrricks/blob/master/type_process_builder/src/builder/finalized_split_process.rs"

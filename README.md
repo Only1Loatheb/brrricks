@@ -30,7 +30,7 @@ sequenceDiagram
 
 ## Process modelling
 
-[Process builder state diagram](type_process_builder/src/process_builder_diagram.mermaid)
+[Process builder state diagram](type_process_builder/src/process_builder_diagram.mmd)
 
 ## Plausible use cases
 
