@@ -57,10 +57,7 @@ pub enum IntermediateFlowingSplitOutcome<
   SplitterProducesForOtherCases,
   FlowingCaseProduced: ParamList,
 > {
-  Continue {
-    // process_before_split_produced: ProcessBeforeSplitProduced, most likely not worth extracting from FlowingCaseProduced
-    flowing_case_produced: FlowingCaseProduced,
-  },
+  Continue(FlowingCaseProduced), // includes ProcessBeforeSplitProduced
   GoToCase {
     process_before_split_produced: ProcessBeforeSplitProduced,
     splitter_produces_to_other_cases: SplitterProducesForOtherCases,

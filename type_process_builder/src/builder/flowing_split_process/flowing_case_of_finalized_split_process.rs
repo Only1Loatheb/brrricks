@@ -1,7 +1,8 @@
 use crate::builder::{
   FinalizedCaseOfFlowingSplitProcess, FinalizedProcess, FinalizedSplitProcess, FlowingCaseOfFlowingSplitProcess,
-  FlowingProcess, FlowingSplitProcess, IntermediateFinalizedSplitOutcome, IntermediateFlowingSplitResult,
-  IntermediateRunOutcome, IntermediateRunResult, ParamList, PreviousRunYieldedAt, Subprocess, subprocess,
+  FlowingProcess, FlowingSplitProcess, IntermediateFinalizedSplitOutcome, IntermediateFlowingSplitOutcome,
+  IntermediateFlowingSplitResult, IntermediateRunOutcome, IntermediateRunResult, ParamList, PreviousRunYieldedAt,
+  Subprocess, subprocess,
 };
 use crate::hlist_concat::Concat;
 use frunk_core::coproduct::{CNil, Coproduct};
@@ -119,54 +120,52 @@ ThisCase,
 
   async fn resume_run(
     &self,
-    _previous_run_produced: Value,
-    _previous_run_yielded_at: PreviousRunYieldedAt,
-    _user_input: String,
+    previous_run_produced: Value,
+    previous_run_yielded_at: PreviousRunYieldedAt,
+    user_input: String,
   ) -> IntermediateFlowingSplitResult<Self::ProcessBeforeSplitProduces, SplitterProducesForOtherCases, Self::EveryFlowingCaseProduces> {
-    todo!()
-    // let process_before_output = self
-    //   .split_process_before
-    //   .resume_run(previous_run_produced, previous_run_yielded_at, user_input)
-    //   .await?;
-    // match process_before_output {
-    //   IntermediateFlowingSplitOutcome::Continue {
-    //     process_before_split_produced,
-    //     splitter_produces_to_other_cases: this_case_produced,
-    //   } => {
-    //     let produced = match this_case_produced {
-    //       Coproduct::Inl((_pd, params)) => Coproduct::Inl(params),
-    //       Coproduct::Inr(inr_value) => Coproduct::Inr(inr_value),
-    //     };
-    //     self.continue_run(process_before_split_produced, produced).await
-    //   }
-    //   IntermediateFlowingSplitOutcome::Yield(a, b, c) => Ok(IntermediateFlowingSplitOutcome::Yield(a, b, c)),
-    //   IntermediateFlowingSplitOutcome::Finish(a) => Ok(IntermediateFlowingSplitOutcome::Finish(a)),
-    // }
+    let process_before_output = self
+      .split_process_before
+      .resume_run(previous_run_produced, previous_run_yielded_at, user_input)
+      .await?;
+    match process_before_output {
+      IntermediateFinalizedSplitOutcome::GoToCase {
+        process_before_split_produced,
+        splitter_produces_to_other_cases,
+      } => {
+        let produced = match splitter_produces_to_other_cases {
+          Coproduct::Inl((_pd, params)) => Coproduct::Inl(params),
+          Coproduct::Inr(inr_value) => Coproduct::Inr(inr_value),
+        };
+        self.continue_run(process_before_split_produced, produced).await
+      }
+      IntermediateFinalizedSplitOutcome::Yield(a, b, c) => Ok(IntermediateFlowingSplitOutcome::Yield(a, b, c)),
+      IntermediateFinalizedSplitOutcome::Finish(a) => Ok(IntermediateFlowingSplitOutcome::Finish(a)),
+    }
   }
 
   async fn continue_run(
     &self,
-    _process_before_split_produced: Self::ProcessBeforeSplitProduces,
-    _splitter_produces_for_this_case_or_other_cases_consumes: Coproduct<
+    process_before_split_produced: Self::ProcessBeforeSplitProduces,
+    splitter_produces_for_this_case_or_other_cases_consumes: Coproduct<
       Self::SplitterProducesForThisCase,
       SplitterProducesForOtherCases,
     >,
   ) -> IntermediateFlowingSplitResult<Self::ProcessBeforeSplitProduces, SplitterProducesForOtherCases, Self::EveryFlowingCaseProduces> {
-    todo!()
-    // match splitter_produces_for_this_case_or_other_cases_consumes {
-    //   Coproduct::Inl(this_case_consumes) => {
-    //     let next_case_consumes: ThisCase::ProcessBeforeProduces =
-    //       this_case_consumes.concat(process_before_split_produced).transform();
-    //     match self.this_case.continue_run(next_case_consumes).await? {
-    //       RunOutcome::Yield(a, b, c) => Ok(IntermediateFlowingSplitOutcome::Yield(a, b, c)),
-    //       RunOutcome::Finish(a) => Ok(IntermediateFlowingSplitOutcome::Finish(a)),
-    //     }
-    //   }
-    //   Coproduct::Inr(other_cases_consumes) => Ok(IntermediateFlowingSplitOutcome::Continue {
-    //     process_before_split_produced: process_before_split_produced,
-    //     splitter_produces_to_other_cases: other_cases_consumes,
-    //   }),
-    // }
+    match splitter_produces_for_this_case_or_other_cases_consumes {
+      Coproduct::Inl(splitter_produces_for_this_case) => {
+        let this_case_consumes = splitter_produces_for_this_case.concat(process_before_split_produced);
+        match self.this_case.continue_run(this_case_consumes).await? {
+          IntermediateRunOutcome::Continue(a) => Ok(IntermediateFlowingSplitOutcome::Continue(a)),
+          IntermediateRunOutcome::Yield(a, b, c) => Ok(IntermediateFlowingSplitOutcome::Yield(a, b, c)),
+          IntermediateRunOutcome::Finish(a) => Ok(IntermediateFlowingSplitOutcome::Finish(a)),
+        }
+      }
+      Coproduct::Inr(splitter_produces_to_other_cases) => Ok(IntermediateFlowingSplitOutcome::GoToCase {
+        process_before_split_produced,
+        splitter_produces_to_other_cases,
+      }),
+    }
   }
 
   fn enumerate_steps(&mut self, last_used_index: usize) -> usize {

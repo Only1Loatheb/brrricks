@@ -143,8 +143,8 @@ for NextCaseOfFinalizedSplitProcess<
     >,
   ) -> IntermediateFinalizedSplitResult<Self::ProcessBeforeSplitProduces, SplitterProducesForOtherCases> {
     match splitter_produces_for_this_case_or_other_cases_consumes {
-      Coproduct::Inl(splitter_produces_for_first_case) => {
-        let this_case_consumes = splitter_produces_for_first_case.concat(process_before_split_produced);
+      Coproduct::Inl(splitter_produces_for_this_case) => {
+        let this_case_consumes = splitter_produces_for_this_case.concat(process_before_split_produced);
         match self.this_case.continue_run(this_case_consumes).await? {
           RunOutcome::Yield(a, b, c) => Ok(IntermediateFinalizedSplitOutcome::Yield(a, b, c)),
           RunOutcome::Finish(a) => Ok(IntermediateFinalizedSplitOutcome::Finish(a)),

@@ -140,8 +140,8 @@ for FirstCaseOfFlowingSplitProcess<
     match process_before_output {
       IntermediateFinalizedSplitOutcome::GoToCase {
         process_before_split_produced,
-        splitter_produces_to_other_cases: this_case_produced,
-      } => self.continue_run(process_before_split_produced, this_case_produced).await,
+        splitter_produces_to_other_cases,
+      } => self.continue_run(process_before_split_produced, splitter_produces_to_other_cases).await,
       IntermediateFinalizedSplitOutcome::Yield(a, b, c) => Ok(IntermediateFlowingSplitOutcome::Yield(a, b, c)),
       IntermediateFinalizedSplitOutcome::Finish(a) => Ok(IntermediateFlowingSplitOutcome::Finish(a)),
     }
@@ -163,9 +163,7 @@ for FirstCaseOfFlowingSplitProcess<
       Coproduct::Inl(splitter_produces_for_this_case) => {
         let this_case_consumes = splitter_produces_for_this_case.concat(process_before_split_produced);
         match self.this_case.continue_run(this_case_consumes).await? {
-          IntermediateRunOutcome::Continue(flowing_case_produced) => Ok(IntermediateFlowingSplitOutcome::Continue {
-            flowing_case_produced,
-          }),
+          IntermediateRunOutcome::Continue(a) => Ok(IntermediateFlowingSplitOutcome::Continue(a)),
           IntermediateRunOutcome::Yield(a, b, c) => Ok(IntermediateFlowingSplitOutcome::Yield(a, b, c)),
           IntermediateRunOutcome::Finish(a) => Ok(IntermediateFlowingSplitOutcome::Finish(a)),
         }
