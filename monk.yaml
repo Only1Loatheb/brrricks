@@ -1,11 +1,19 @@
 pre-push:
   commands:
     - |
+      if git merge-base --is-ancestor HEAD @{u}; then
+        echo "Already pushed"
+        exit 1
+      else
+        echo "We have new commit to work with"
+      fi
+    - |
       if [ -z "$(git status --porcelain)" ]; then
         echo "All changes in files known to git are committed"
       else
         echo "Committing local changes"
-        git add . && git commit -m "Local changes"
+        git add -A && git commit --amend --no-edit
+        exit 1
       fi
     - cargo check --workspace --all-targets
     - cargo fmt --all
@@ -15,7 +23,8 @@ pre-push:
         echo "All changes in files known to git are committed"
       else
         echo "Committing automated fixes"
-        git add . && git commit -m "Automated fixes"
+        git add -A && git commit --amend --no-edit
+        exit 1
       fi
     - cargo clippy --all-targets --all-features -- -D warnings -W clippy::all
     - cargo test --workspace --doc

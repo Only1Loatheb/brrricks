@@ -235,6 +235,6 @@ mod tests {
     let run_result = process
       .resume_run(session_init_value(), PreviousRunYieldedAt(0), "*123#".to_string())
       .await;
-    assert!(matches!(run_result.unwrap(), RunOutcome::Yield(message, _, _) if message.0 == "Enter a number"));
+    assert!(matches!(run_result.unwrap(), RunOutcome::Yield(message, ..) if message.0 == "Enter a number"));
   }
 }
