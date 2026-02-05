@@ -22,7 +22,14 @@ sequenceDiagram
     App ->> App: Process input
     App ->> SessionStore: Update session
     SessionStore -->> App: Session updated
-    App -->> Platform: Second USSD screen
+    App -->> Platform: Input USSD screen
+    Platform -->> User: Display USSD screen
+    User ->> Platform: Input value
+    Platform ->> App: /session/continue
+    App ->> SessionStore: Fetch session data
+    SessionStore -->> App: Session data
+    App ->> App: Process input
+    App -->> Platform: Final USSD screen
     Platform -->> User: Display USSD screen
 ```
 

@@ -16,10 +16,10 @@ pub mod a {}
 mod tests {
   use crate::builder::*;
   use crate::param_list::ParamValue;
-  use crate::step::Message;
   use crate::step::{Entry, Final, Operation, Splitter};
+  use crate::step::{Form, Message};
   use anyhow::anyhow;
-  use frunk_core::hlist::HNil;
+  use frunk_core::hlist::{HList, HNil};
   use frunk_core::{Coprod, HList, hlist};
   use log::debug;
   use serde::{Deserialize, Serialize};
@@ -165,6 +165,20 @@ mod tests {
     }
   }
 
+  struct FormA;
+  impl Form for FormA {
+    type Consumes = HNil;
+    type Produces = HList![CommonCaseParam];
+
+    async fn show_form(&self, consumes: Self::Consumes) -> anyhow::Result<Message> {
+      Ok(Message("Enter a number".into()))
+    }
+
+    async fn handle_input(&self, consumes: Self::Consumes, user_input: String) -> anyhow::Result<Self::Produces> {
+      Ok(hlist![CommonCaseParam])
+    }
+  }
+
   struct FinalNoConsumes;
   impl Final for FinalNoConsumes {
     type Consumes = HList![];
@@ -207,5 +221,20 @@ mod tests {
       .resume_run(session_init_value(), PreviousRunYieldedAt(0), "*123#".to_string())
       .await;
     assert_eq!(run_result.unwrap(), RunOutcome::Finish(Message("Good bye".into())));
+  }
+
+  #[tokio::test]
+  async fn test_yield() {
+    let process = EntryA
+      .split(SplitA)
+      .case_via(Case1, |x| x.show(FormA))
+      .case_via(Case2, |x| x.then(Linear2))
+      .end(FinalA)
+      .build();
+
+    let run_result = process
+      .resume_run(session_init_value(), PreviousRunYieldedAt(0), "*123#".to_string())
+      .await;
+    assert!(matches!(run_result.unwrap(), RunOutcome::Yield(message, _, _) if message.0 == "Enter a number"));
   }
 }

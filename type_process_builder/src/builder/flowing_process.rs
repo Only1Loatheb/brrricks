@@ -13,6 +13,10 @@ use std::future::Future;
 use std::hint::unreachable_unchecked;
 use std::marker::PhantomData;
 
+/// Param value overlap is prevented by making reading them cumbersome https://github.com/lloydmeta/frunk/issues/187
+/// Well you can work around this `limitation` by providing the indices explicitly
+/// or replaceing [Concat] with [crate::hlist_intersect::Intersect] in the implementation.
+/// Don't do that. The params should be immutable to avoid the need to overwrite them with every session context save.
 pub trait FlowingProcess: Sized {
   type ProcessBeforeProduces: ParamList;
   type Produces: ParamList;
@@ -30,9 +34,6 @@ pub trait FlowingProcess: Sized {
     process_before_produces: Self::ProcessBeforeProduces,
   ) -> impl Future<Output = IntermediateRunResult<Self::Produces>>;
 
-  // Param value overlap is prevented by making reading them cumbersome https://github.com/lloydmeta/frunk/issues/187
-  // Well you can work around this `limitation` by providing the indices explicitly.
-  // Don't do that.
   fn then<
     LinearConsumes: ParamList,
     LinearProduces: ParamList + Concat<Self::Produces>,
@@ -49,6 +50,29 @@ pub trait FlowingProcess: Sized {
     for<'a> &'a Self::Produces: CloneJust<LinearConsumes, ProcessBeforeProducesToLastStepConsumesIndices>,
   {
     LinearFlowingProcess {
+      process_before: self,
+      last_step: step,
+      step_index: WILL_BE_RENUMBERED,
+      phantom_data: Default::default(),
+    }
+  }
+
+  fn show<
+    FormConsumes: ParamList,
+    FormProduces: ParamList + Concat<Self::Produces>,
+    FormStep: Form<Consumes=FormConsumes, Produces=FormProduces>,
+    ProcessBeforeProducesToLastStepConsumesIndices,
+  >(
+    self,
+    step: FormStep,
+  ) -> impl FlowingProcess<
+    ProcessBeforeProduces = Self::Produces,
+    Produces = <FormProduces as Concat<Self::Produces>>::Concatenated,
+  >
+  where
+    for<'a> &'a Self::Produces: CloneJust<FormConsumes, ProcessBeforeProducesToLastStepConsumesIndices>,
+  {
+    FormFlowingProcess {
       process_before: self,
       last_step: step,
       step_index: WILL_BE_RENUMBERED,
