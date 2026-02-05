@@ -58,10 +58,16 @@ pub trait FlowingProcess: Sized {
   }
 
   fn show<
-    FormConsumes: ParamList,
+    CreateFormConsumes: ParamList,
+    ValidateInputConsumes: ParamList,
     FormProduces: ParamList + Concat<Self::Produces>,
-    FormStep: Form<Consumes = FormConsumes, Produces = FormProduces>,
-    ProcessBeforeProducesToLastStepConsumesIndices,
+    FormStep: Form<
+        CreateFormConsumes = CreateFormConsumes,
+        ValidateInputConsumes = ValidateInputConsumes,
+        Produces = FormProduces,
+      >,
+    ProcessBeforeProducesToCreateFormConsumesIndices,
+    ProcessBeforeProducesToValidateInputConsumesIndices,
   >(
     self,
     step: FormStep,
@@ -70,7 +76,8 @@ pub trait FlowingProcess: Sized {
     Produces = <FormProduces as Concat<Self::Produces>>::Concatenated,
   >
   where
-    for<'a> &'a Self::Produces: CloneJust<FormConsumes, ProcessBeforeProducesToLastStepConsumesIndices>,
+    for<'a> &'a Self::Produces: CloneJust<CreateFormConsumes, ProcessBeforeProducesToCreateFormConsumesIndices>,
+    for<'a> &'a Self::Produces: CloneJust<ValidateInputConsumes, ProcessBeforeProducesToValidateInputConsumesIndices>,
   {
     FormFlowingProcess {
       process_before: self,
@@ -252,7 +259,7 @@ where
     &self,
     process_before_produces: Self::ProcessBeforeProduces,
   ) -> IntermediateRunResult<Self::Produces> {
-    let last_step_consumes: LastStepConsumes = process_before_produces.clone_just();
+    let last_step_consumes = process_before_produces.clone_just();
     let last_step_output = self.last_step.handle(last_step_consumes).await?;
     Ok(IntermediateRunOutcome::Continue(
       last_step_output.concat(process_before_produces),
@@ -269,24 +276,42 @@ where
 pub struct FormFlowingProcess<
   ProcessBefore: FlowingProcess,
   LinearStep: Form,
-  ProcessBeforeProducesToLastStepConsumesIndices,
+  ProcessBeforeProducesToCreateFormConsumesIndices,
+  ProcessBeforeProducesToValidateInputConsumesIndices,
 > {
   pub process_before: ProcessBefore,
   pub last_step: LinearStep,
   pub step_index: usize,
-  pub phantom_data: PhantomData<ProcessBeforeProducesToLastStepConsumesIndices>,
+  pub phantom_data: PhantomData<(
+    ProcessBeforeProducesToCreateFormConsumesIndices,
+    ProcessBeforeProducesToValidateInputConsumesIndices,
+  )>,
 }
 
 impl<
   ProcessBefore: FlowingProcess,
-  LastStepConsumes: ParamList,
+  CreateFormConsumes: ParamList,
+  ValidateInputConsumes: ParamList,
   LastStepProduces: ParamList + Concat<ProcessBefore::Produces>,
-  FormStep: Form<Consumes = LastStepConsumes, Produces = LastStepProduces>,
-  ProcessBeforeProducesToLastStepConsumesIndices,
-> FlowingProcess for FormFlowingProcess<ProcessBefore, FormStep, ProcessBeforeProducesToLastStepConsumesIndices>
+  FormStep: Form<
+      CreateFormConsumes = CreateFormConsumes,
+      ValidateInputConsumes = ValidateInputConsumes,
+      Produces = LastStepProduces,
+    >,
+  ProcessBeforeProducesToCreateFormConsumesIndices,
+  ProcessBeforeProducesToValidateInputConsumesIndices,
+> FlowingProcess
+  for FormFlowingProcess<
+    ProcessBefore,
+    FormStep,
+    ProcessBeforeProducesToCreateFormConsumesIndices,
+    ProcessBeforeProducesToValidateInputConsumesIndices,
+  >
 where
   for<'a> &'a <ProcessBefore as FlowingProcess>::Produces:
-    CloneJust<LastStepConsumes, ProcessBeforeProducesToLastStepConsumesIndices>,
+    CloneJust<CreateFormConsumes, ProcessBeforeProducesToCreateFormConsumesIndices>,
+  for<'a> &'a <ProcessBefore as FlowingProcess>::Produces:
+    CloneJust<ValidateInputConsumes, ProcessBeforeProducesToValidateInputConsumesIndices>,
 {
   type ProcessBeforeProduces = ProcessBefore::Produces;
   type Produces = <LastStepProduces as Concat<ProcessBefore::Produces>>::Concatenated;
@@ -310,7 +335,7 @@ where
     } else {
       // fixme deserialize only values required only up to the next interaction
       let process_before_produces = ProcessBefore::Produces::deserialize(previous_run_produced)?;
-      let last_step_consumes: LastStepConsumes = process_before_produces.clone_just();
+      let last_step_consumes = process_before_produces.clone_just();
       Ok(IntermediateRunOutcome::Continue(
         self
           .last_step
@@ -325,9 +350,9 @@ where
     &self,
     process_before_produces: Self::ProcessBeforeProduces,
   ) -> IntermediateRunResult<Self::Produces> {
-    let last_step_consumes: LastStepConsumes = process_before_produces.clone_just();
+    let last_step_consumes = process_before_produces.clone_just();
     Ok(IntermediateRunOutcome::Yield(
-      self.last_step.show_form(last_step_consumes).await?,
+      self.last_step.create_form(last_step_consumes).await?,
       process_before_produces.serialize()?,
       CurrentRunYieldedAt(self.step_index),
     ))

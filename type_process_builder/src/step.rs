@@ -25,12 +25,13 @@ pub trait Operation {
 }
 
 pub trait Form {
-  type Consumes: ParamList;
+  type CreateFormConsumes: ParamList;
+  type ValidateInputConsumes: ParamList;
   type Produces: ParamList;
-  fn show_form(&self, consumes: Self::Consumes) -> impl Future<Output = anyhow::Result<Message>>;
+  fn create_form(&self, consumes: Self::CreateFormConsumes) -> impl Future<Output = anyhow::Result<Message>>;
   fn handle_input(
     &self,
-    consumes: Self::Consumes,
+    consumes: Self::ValidateInputConsumes,
     user_input: String,
   ) -> impl Future<Output = anyhow::Result<Self::Produces>>;
 }

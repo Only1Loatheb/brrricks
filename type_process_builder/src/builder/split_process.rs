@@ -178,7 +178,7 @@ where
     Self::ProcessBeforeSplitProduces,
     Coproduct<Self::SplitterProducesForFirstCase, SplitterProducesForOtherCases>,
   > {
-    let splitter_step_consumes: SplitterStepConsumes = process_before_split_produced.clone_just();
+    let splitter_step_consumes = process_before_split_produced.clone_just();
     let splitter_produces_to_other_cases = match self.splitter.handle(splitter_step_consumes).await? {
       Coproduct::Inl(a) => Coproduct::Inl(a.1),
       Coproduct::Inr(b) => Coproduct::Inr(b),

@@ -167,14 +167,19 @@ mod tests {
 
   struct FormA;
   impl Form for FormA {
-    type Consumes = HNil;
+    type CreateFormConsumes = HNil;
+    type ValidateInputConsumes = HNil;
     type Produces = HList![CommonCaseParam];
 
-    async fn show_form(&self, _consumes: Self::Consumes) -> anyhow::Result<Message> {
+    async fn create_form(&self, _consumes: Self::CreateFormConsumes) -> anyhow::Result<Message> {
       Ok(Message("Enter a number".into()))
     }
 
-    async fn handle_input(&self, _consumes: Self::Consumes, _user_input: String) -> anyhow::Result<Self::Produces> {
+    async fn handle_input(
+      &self,
+      _consumes: Self::ValidateInputConsumes,
+      _user_input: String,
+    ) -> anyhow::Result<Self::Produces> {
       Ok(hlist![CommonCaseParam])
     }
   }
