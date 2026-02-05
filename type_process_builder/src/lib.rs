@@ -16,7 +16,7 @@ pub mod a {}
 mod tests {
   use crate::builder::*;
   use crate::param_list::ParamValue;
-  use crate::step::{Entry, Final, Operation, Splitter};
+  use crate::step::{Entry, Final, InputValidation, Operation, Splitter};
   use crate::step::{Form, Message};
   use anyhow::anyhow;
   use frunk_core::hlist::{HList, HNil};
@@ -179,8 +179,8 @@ mod tests {
       &self,
       _consumes: Self::ValidateInputConsumes,
       _user_input: String,
-    ) -> anyhow::Result<Self::Produces> {
-      Ok(hlist![CommonCaseParam])
+    ) -> anyhow::Result<InputValidation<Self::Produces>> {
+      Ok(InputValidation::Successful(hlist![CommonCaseParam]))
     }
   }
 

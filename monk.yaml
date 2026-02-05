@@ -18,6 +18,7 @@ pre-push:
     - cargo check --workspace --all-targets
     - cargo fmt --all
     - cargo fix --workspace --all-targets --all-features --allow-dirty
+    - cargo clippy --fix --allow-dirty --all-targets --all-features
     - |
       if [ -z "$(git status --porcelain)" ]; then
         echo "All changes in files known to git are committed"

@@ -4,7 +4,7 @@ use crate::builder::*;
 use crate::hlist_concat::Concat;
 use crate::hlist_transform::{CloneJust, TransformTo};
 use crate::param_list::ParamList;
-use crate::step::{Entry, Final, Form, Operation, Splitter};
+use crate::step::{Entry, Final, Form, InputValidation, Operation, Splitter};
 use anyhow::anyhow;
 use frunk_core::coproduct::Coproduct;
 use frunk_core::hlist::HNil;
@@ -336,13 +336,15 @@ where
       // fixme deserialize only values required only up to the next interaction
       let process_before_produces = ProcessBefore::Produces::deserialize(previous_run_produced)?;
       let last_step_consumes = process_before_produces.clone_just();
-      Ok(IntermediateRunOutcome::Continue(
-        self
-          .last_step
-          .handle_input(last_step_consumes, user_input)
-          .await?
-          .concat(process_before_produces),
-      ))
+      match self.last_step.handle_input(last_step_consumes, user_input).await? {
+        InputValidation::Successful(a) => Ok(IntermediateRunOutcome::Continue(a.concat(process_before_produces))),
+        InputValidation::Retry(a) => Ok(IntermediateRunOutcome::Yield(
+          a,
+          process_before_produces.serialize()?,
+          CurrentRunYieldedAt(self.step_index),
+        )),
+        InputValidation::Finish(a) => Ok(IntermediateRunOutcome::Finish(a)),
+      }
     }
   }
 

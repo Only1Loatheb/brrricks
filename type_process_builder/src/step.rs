@@ -24,6 +24,13 @@ pub trait Operation {
   fn handle(&self, consumes: Self::Consumes) -> impl Future<Output = anyhow::Result<Self::Produces>>;
 }
 
+#[derive(Debug, PartialEq, Eq)]
+pub enum InputValidation<Produced: ParamList> {
+  Successful(Produced),
+  Retry(Message),
+  Finish(Message),
+}
+
 pub trait Form {
   type CreateFormConsumes: ParamList;
   type ValidateInputConsumes: ParamList;
@@ -33,7 +40,7 @@ pub trait Form {
     &self,
     consumes: Self::ValidateInputConsumes,
     user_input: String,
-  ) -> impl Future<Output = anyhow::Result<Self::Produces>>;
+  ) -> impl Future<Output = anyhow::Result<InputValidation<Self::Produces>>>;
 }
 
 pub trait SplitterOutput {}
