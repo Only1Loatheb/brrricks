@@ -60,7 +60,7 @@ pub trait FlowingProcess: Sized {
   fn show<
     FormConsumes: ParamList,
     FormProduces: ParamList + Concat<Self::Produces>,
-    FormStep: Form<Consumes=FormConsumes, Produces=FormProduces>,
+    FormStep: Form<Consumes = FormConsumes, Produces = FormProduces>,
     ProcessBeforeProducesToLastStepConsumesIndices,
   >(
     self,
