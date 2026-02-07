@@ -34,6 +34,7 @@ pub enum IntermediateRunOutcome<Produced: ParamList> {
   Continue(Produced),
   Yield(Message, Value, CurrentRunYieldedAt),
   Finish(Message),
+  RetryUserInput(Message),
 }
 
 pub type IntermediateRunResult<T> = anyhow::Result<IntermediateRunOutcome<T>>;
@@ -46,6 +47,7 @@ pub enum IntermediateFinalizedSplitOutcome<ProcessBeforeSplitProduced: ParamList
   },
   Yield(Message, Value, CurrentRunYieldedAt),
   Finish(Message),
+  RetryUserInput(Message),
 }
 
 pub type IntermediateFinalizedSplitResult<ProcessBeforeSplitProduced, SplitterProducesForOtherCases> =
@@ -64,6 +66,7 @@ pub enum IntermediateFlowingSplitOutcome<
   },
   Yield(Message, Value, CurrentRunYieldedAt),
   Finish(Message),
+  RetryUserInput(Message),
 }
 
 pub type IntermediateFlowingSplitResult<
@@ -78,6 +81,7 @@ pub type IntermediateFlowingSplitResult<
 pub enum RunOutcome {
   Yield(Message, Value, CurrentRunYieldedAt),
   Finish(Message),
+  RetryUserInput(Message),
 }
 
 pub type RunResult = anyhow::Result<RunOutcome>;

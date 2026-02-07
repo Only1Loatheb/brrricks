@@ -88,6 +88,7 @@ where
         }
         IntermediateRunOutcome::Yield(a, b, c) => Ok(IntermediateFinalizedSplitOutcome::Yield(a, b, c)),
         IntermediateRunOutcome::Finish(a) => Ok(IntermediateFinalizedSplitOutcome::Finish(a)),
+        IntermediateRunOutcome::RetryUserInput(a) => Ok(IntermediateFinalizedSplitOutcome::RetryUserInput(a)),
       }
     } else {
       let process_before_split_produced = ProcessBefore::Produces::deserialize(previous_run_produced)?;
@@ -103,11 +104,7 @@ where
             splitter_produces_to_other_cases,
           })
         }
-        InputValidation::Retry(a) => Ok(IntermediateFinalizedSplitOutcome::Yield(
-          a,
-          process_before_split_produced.serialize()?,
-          CurrentRunYieldedAt(self.step_index),
-        )),
+        InputValidation::Retry(a) => Ok(IntermediateFinalizedSplitOutcome::RetryUserInput(a)),
         InputValidation::Finish(a) => Ok(IntermediateFinalizedSplitOutcome::Finish(a)),
       }
     }

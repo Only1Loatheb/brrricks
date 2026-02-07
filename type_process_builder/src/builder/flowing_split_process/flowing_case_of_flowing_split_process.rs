@@ -140,6 +140,7 @@ where
       .resume_run(previous_run_produced, previous_run_yielded_at, user_input)
       .await?;
     match process_before_output {
+      IntermediateFlowingSplitOutcome::Continue(a) => Ok(IntermediateFlowingSplitOutcome::Continue(a.intersect())),
       IntermediateFlowingSplitOutcome::GoToCase {
         process_before_split_produced,
         splitter_produces_to_other_cases,
@@ -152,7 +153,7 @@ where
       }
       IntermediateFlowingSplitOutcome::Yield(a, b, c) => Ok(IntermediateFlowingSplitOutcome::Yield(a, b, c)),
       IntermediateFlowingSplitOutcome::Finish(a) => Ok(IntermediateFlowingSplitOutcome::Finish(a)),
-      IntermediateFlowingSplitOutcome::Continue(a) => Ok(IntermediateFlowingSplitOutcome::Continue(a.intersect())),
+      IntermediateFlowingSplitOutcome::RetryUserInput(a) => Ok(IntermediateFlowingSplitOutcome::RetryUserInput(a)),
     }
   }
 
@@ -171,6 +172,7 @@ where
           IntermediateRunOutcome::Continue(a) => Ok(IntermediateFlowingSplitOutcome::Continue(a.transform())),
           IntermediateRunOutcome::Yield(a, b, c) => Ok(IntermediateFlowingSplitOutcome::Yield(a, b, c)),
           IntermediateRunOutcome::Finish(a) => Ok(IntermediateFlowingSplitOutcome::Finish(a)),
+          IntermediateRunOutcome::RetryUserInput(a) => Ok(IntermediateFlowingSplitOutcome::RetryUserInput(a)),
         }
       }
       Coproduct::Inr(splitter_produces_to_other_cases) => Ok(IntermediateFlowingSplitOutcome::GoToCase {
@@ -222,6 +224,7 @@ where
       .resume_run(previous_run_produced, previous_run_yielded_at, user_input)
       .await?;
     match process_before_output {
+      IntermediateFlowingSplitOutcome::Continue(a) => Ok(IntermediateRunOutcome::Continue(a.intersect())),
       IntermediateFlowingSplitOutcome::GoToCase {
         process_before_split_produced,
         splitter_produces_to_other_cases,
@@ -233,13 +236,14 @@ where
               Ok(IntermediateRunOutcome::Continue(this_case_produced.transform())),
             IntermediateRunOutcome::Yield(a, b, c) => Ok(IntermediateRunOutcome::Yield(a, b, c)),
             IntermediateRunOutcome::Finish(a) => Ok(IntermediateRunOutcome::Finish(a)),
+            IntermediateRunOutcome::RetryUserInput(a) => Ok(IntermediateRunOutcome::RetryUserInput(a)),
           }
         }
         Coproduct::Inr(c_nil) => match c_nil {},
       },
       IntermediateFlowingSplitOutcome::Yield(a, b, c) => Ok(IntermediateRunOutcome::Yield(a, b, c)),
       IntermediateFlowingSplitOutcome::Finish(a) => Ok(IntermediateRunOutcome::Finish(a)),
-      IntermediateFlowingSplitOutcome::Continue(a) => Ok(IntermediateRunOutcome::Continue(a.intersect())),
+      IntermediateFlowingSplitOutcome::RetryUserInput(a) => Ok(IntermediateRunOutcome::RetryUserInput(a)),
     }
   }
 

@@ -45,6 +45,7 @@ where
         IntermediateRunOutcome::Continue(process_before_produces) => self.continue_run(process_before_produces).await,
         IntermediateRunOutcome::Yield(a, b, c) => Ok(IntermediateRunOutcome::Yield(a, b, c)),
         IntermediateRunOutcome::Finish(a) => Ok(IntermediateRunOutcome::Finish(a)),
+        IntermediateRunOutcome::RetryUserInput(a) => Ok(IntermediateRunOutcome::RetryUserInput(a)),
       }
     } else {
       let process_before_produces = ProcessBefore::Produces::deserialize(previous_run_produced)?;

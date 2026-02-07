@@ -132,6 +132,7 @@ for NextCaseOfFinalizedSplitProcess<
       }
       IntermediateFinalizedSplitOutcome::Yield(a, b, c) => Ok(IntermediateFinalizedSplitOutcome::Yield(a, b, c)),
       IntermediateFinalizedSplitOutcome::Finish(a) => Ok(IntermediateFinalizedSplitOutcome::Finish(a)),
+      IntermediateFinalizedSplitOutcome::RetryUserInput(a) => Ok(IntermediateFinalizedSplitOutcome::RetryUserInput(a)),
     }
   }
 
@@ -149,6 +150,7 @@ for NextCaseOfFinalizedSplitProcess<
         match self.this_case.continue_run(this_case_consumes).await? {
           RunOutcome::Yield(a, b, c) => Ok(IntermediateFinalizedSplitOutcome::Yield(a, b, c)),
           RunOutcome::Finish(a) => Ok(IntermediateFinalizedSplitOutcome::Finish(a)),
+          RunOutcome::RetryUserInput(a) => Ok(IntermediateFinalizedSplitOutcome::RetryUserInput(a)),
         }
       }
       Coproduct::Inr(splitter_produces_to_other_cases) => Ok(IntermediateFinalizedSplitOutcome::GoToCase {
@@ -201,6 +203,7 @@ where
       },
       IntermediateFinalizedSplitOutcome::Yield(a, b, c) => Ok(RunOutcome::Yield(a, b, c)),
       IntermediateFinalizedSplitOutcome::Finish(a) => Ok(RunOutcome::Finish(a)),
+      IntermediateFinalizedSplitOutcome::RetryUserInput(a) => Ok(RunOutcome::RetryUserInput(a)),
     }
   }
 

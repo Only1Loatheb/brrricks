@@ -69,6 +69,7 @@ where
       IntermediateRunOutcome::Continue(val) => self.continue_run(val).await,
       IntermediateRunOutcome::Yield(a, b, c) => Ok(RunOutcome::Yield(a, b, c)),
       IntermediateRunOutcome::Finish(a) => Ok(RunOutcome::Finish(a)),
+      IntermediateRunOutcome::RetryUserInput(a) => Ok(RunOutcome::RetryUserInput(a)),
     }
   }
 
