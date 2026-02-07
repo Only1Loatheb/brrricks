@@ -13,7 +13,7 @@ pub mod a {}
 mod tests {
   use crate::builder::*;
   use crate::param_list::ParamValue;
-  use crate::step::{Entry, Final, InputValidation, Operation, Splitter};
+  use crate::step::{Entry, FailedInputValidationAttempts, Final, InputValidation, Operation, Splitter};
   use crate::step::{Form, Message};
   use anyhow::anyhow;
   use frunk_core::hlist::HNil;
@@ -176,6 +176,7 @@ mod tests {
       &self,
       _consumes: Self::ValidateInputConsumes,
       _user_input: String,
+      _failed_input_validation_attempts: FailedInputValidationAttempts,
     ) -> anyhow::Result<InputValidation<Self::Produces>> {
       Ok(InputValidation::Successful(hlist![CommonCaseParam]))
     }
@@ -202,7 +203,12 @@ mod tests {
     let process = EntryA.end(FinalNoConsumes).build();
 
     let run_result = process
-      .resume_run(session_init_value(), PreviousRunYieldedAt(0), "*123#".to_string())
+      .resume_run(
+        session_init_value(),
+        PreviousRunYieldedAt(0),
+        "*123#".to_string(),
+        FailedInputValidationAttempts(0),
+      )
       .await;
     assert_eq!(
       run_result.unwrap(),
@@ -220,7 +226,12 @@ mod tests {
       .build();
 
     let run_result = process
-      .resume_run(session_init_value(), PreviousRunYieldedAt(0), "*123#".to_string())
+      .resume_run(
+        session_init_value(),
+        PreviousRunYieldedAt(0),
+        "*123#".to_string(),
+        FailedInputValidationAttempts(0),
+      )
       .await;
     assert_eq!(run_result.unwrap(), RunOutcome::Finish(Message("Good bye".into())));
   }
@@ -235,7 +246,12 @@ mod tests {
       .build();
 
     let run_result = process
-      .resume_run(session_init_value(), PreviousRunYieldedAt(0), "*123#".to_string())
+      .resume_run(
+        session_init_value(),
+        PreviousRunYieldedAt(0),
+        "*123#".to_string(),
+        FailedInputValidationAttempts(0),
+      )
       .await;
     assert!(matches!(run_result.unwrap(), RunOutcome::Yield(message, ..) if message.0 == "Enter a number"));
   }

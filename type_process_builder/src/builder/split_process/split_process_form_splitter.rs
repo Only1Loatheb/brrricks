@@ -4,7 +4,7 @@ use crate::builder::{
 };
 use crate::param_list::clone_just::CloneJust;
 use crate::param_list::concat::Concat;
-use crate::step::{FromSplitter, InputValidation};
+use crate::step::{FailedInputValidationAttempts, FromSplitter, InputValidation};
 use frunk_core::coproduct::Coproduct;
 use serde_value::Value;
 use std::marker::PhantomData;
@@ -73,6 +73,7 @@ where
     previous_run_produced: Value,
     previous_run_yielded_at: PreviousRunYieldedAt,
     user_input: String,
+    failed_input_validation_attempts: FailedInputValidationAttempts,
   ) -> IntermediateFinalizedSplitResult<
     Self::ProcessBeforeSplitProduces,
     Coproduct<Self::SplitterProducesForFirstCase, SplitterProducesForOtherCases>,
@@ -80,7 +81,12 @@ where
     if previous_run_yielded_at.0 < self.step_index {
       let process_before_output = self
         .process_before
-        .resume_run(previous_run_produced, previous_run_yielded_at, user_input)
+        .resume_run(
+          previous_run_produced,
+          previous_run_yielded_at,
+          user_input,
+          failed_input_validation_attempts,
+        )
         .await?;
       match process_before_output {
         IntermediateRunOutcome::Continue(process_before_split_produced) => {
@@ -93,7 +99,11 @@ where
     } else {
       let process_before_split_produced = ProcessBefore::Produces::deserialize(previous_run_produced)?;
       let last_step_consumes = process_before_split_produced.clone_just();
-      match self.splitter.handle_input(last_step_consumes, user_input).await? {
+      match self
+        .splitter
+        .handle_input(last_step_consumes, user_input, failed_input_validation_attempts)
+        .await?
+      {
         InputValidation::Successful(splitter_produces) => {
           let splitter_produces_to_other_cases = match splitter_produces {
             Coproduct::Inl(a) => Coproduct::Inl(a.1),

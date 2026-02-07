@@ -1,6 +1,6 @@
 use crate::builder::*;
 use crate::param_list::ParamList;
-use crate::step::Entry;
+use crate::step::{Entry, FailedInputValidationAttempts};
 use anyhow::anyhow;
 use frunk_core::hlist::HNil;
 use serde_value::Value;
@@ -15,6 +15,7 @@ impl<Produces: ParamList, EntryStep: Entry<Value, Produces = Produces>> FlowingP
     previous_run_produced: Value,
     _: PreviousRunYieldedAt,
     user_input: String,
+    _failed_input_validation_attempts: FailedInputValidationAttempts,
   ) -> IntermediateRunResult<Self::Produces> {
     let map = match previous_run_produced {
       Value::Map(m) => m,

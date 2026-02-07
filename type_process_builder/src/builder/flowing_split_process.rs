@@ -6,6 +6,7 @@ pub mod flowing_case_of_flowing_split_process;
 use crate::builder::{IntermediateFlowingSplitResult, PreviousRunYieldedAt};
 use crate::param_list::ParamList;
 use crate::param_list::concat::Concat;
+use crate::step::FailedInputValidationAttempts;
 use frunk_core::coproduct::Coproduct;
 use serde_value::Value;
 use std::future::Future;
@@ -23,6 +24,7 @@ pub trait FlowingSplitProcess<SplitterProducesForOtherCases>: Sized {
     previous_run_produced: Value,
     previous_run_yielded_at: PreviousRunYieldedAt,
     user_input: String,
+    failed_input_validation_attempts: FailedInputValidationAttempts,
   ) -> impl Future<
     Output = IntermediateFlowingSplitResult<
       Self::ProcessBeforeSplitProduces,

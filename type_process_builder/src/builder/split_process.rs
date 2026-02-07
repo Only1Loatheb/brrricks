@@ -8,6 +8,7 @@ use crate::builder::{
   PreviousRunYieldedAt,
 };
 use crate::param_list::concat::Concat;
+use crate::step::FailedInputValidationAttempts;
 use frunk_core::coproduct::Coproduct;
 use serde_value::Value;
 use std::future::Future;
@@ -26,6 +27,7 @@ pub trait SplitProcess<SplitterProducesForOtherCases>: Sized {
     previous_run_produced: Value,
     previous_run_yielded_at: PreviousRunYieldedAt,
     user_input: String,
+    failed_input_validation_attempts: FailedInputValidationAttempts,
   ) -> impl Future<
     Output = IntermediateFinalizedSplitResult<
       Self::ProcessBeforeSplitProduces,

@@ -1,4 +1,5 @@
 use crate::builder::{FlowingProcess, IntermediateRunOutcome, IntermediateRunResult, ParamList, PreviousRunYieldedAt};
+use crate::step::FailedInputValidationAttempts;
 use serde_value::Value;
 use std::marker::PhantomData;
 
@@ -15,6 +16,7 @@ impl<ProcessBeforeProduces: ParamList> FlowingProcess for Subprocess<ProcessBefo
     previous_run_produced: Value,
     _previous_run_yielded_at: PreviousRunYieldedAt,
     _user_input: String,
+    _failed_input_validation_attempts: FailedInputValidationAttempts,
   ) -> IntermediateRunResult<Self::Produces> {
     let process_before_produces = ProcessBeforeProduces::deserialize(previous_run_produced)?;
     self.continue_run(process_before_produces).await

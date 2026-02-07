@@ -5,6 +5,7 @@ use crate::builder::{
   PreviousRunYieldedAt, RunOutcome, SplitProcess,
 };
 use crate::param_list::concat::Concat;
+use crate::step::FailedInputValidationAttempts;
 use frunk_core::coproduct::Coproduct;
 use serde_value::Value;
 use std::marker::PhantomData;
@@ -113,10 +114,11 @@ for FirstCaseOfFinalizedSplitProcess<
     previous_run_produced: Value,
     previous_run_yielded_at: PreviousRunYieldedAt,
     user_input: String,
+    failed_input_validation_attempts: FailedInputValidationAttempts,
   ) -> IntermediateFinalizedSplitResult<Self::ProcessBeforeSplitProduces, SplitterProducesForOtherCases> {
     let process_before_output = self
       .split_process_before
-      .resume_run(previous_run_produced, previous_run_yielded_at, user_input)
+      .resume_run(previous_run_produced, previous_run_yielded_at, user_input, failed_input_validation_attempts)
       .await?;
     match process_before_output {
       IntermediateFinalizedSplitOutcome::GoToCase {

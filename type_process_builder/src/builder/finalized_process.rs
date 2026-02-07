@@ -3,7 +3,7 @@ use crate::builder::runnable_process::RunnableProcess;
 use crate::builder::{IntermediateRunOutcome, PreviousRunYieldedAt, RunOutcome, RunResult};
 use crate::param_list::ParamList;
 use crate::param_list::transform::TransformTo;
-use crate::step::Final;
+use crate::step::{FailedInputValidationAttempts, Final};
 use serde_value::Value;
 use std::future::Future;
 use std::marker::PhantomData;
@@ -16,6 +16,7 @@ pub trait FinalizedProcess: Sized {
     previous_run_produced: Value,
     previous_run_yielded_at: PreviousRunYieldedAt,
     user_input: String,
+    failed_input_validation_attempts: FailedInputValidationAttempts,
   ) -> impl Future<Output = RunResult>;
 
   fn continue_run(&self, process_before_produces: Self::ProcessBeforeProduces) -> impl Future<Output = RunResult>;
@@ -60,10 +61,16 @@ where
     previous_run_produced: Value,
     previous_run_yielded_at: PreviousRunYieldedAt,
     user_input: String,
+    failed_input_validation_attempts: FailedInputValidationAttempts,
   ) -> RunResult {
     let outcome = self
       .process_before
-      .resume_run(previous_run_produced, previous_run_yielded_at, user_input)
+      .resume_run(
+        previous_run_produced,
+        previous_run_yielded_at,
+        user_input,
+        failed_input_validation_attempts,
+      )
       .await?;
     match outcome {
       IntermediateRunOutcome::Continue(val) => self.continue_run(val).await,

@@ -3,7 +3,7 @@ use crate::builder::{
 };
 use crate::param_list::clone_just::CloneJust;
 use crate::param_list::concat::Concat;
-use crate::step::{Form, InputValidation};
+use crate::step::{FailedInputValidationAttempts, Form, InputValidation};
 use serde_value::Value;
 use std::marker::PhantomData;
 
@@ -55,11 +55,17 @@ where
     previous_run_produced: Value,
     previous_run_yielded_at: PreviousRunYieldedAt,
     user_input: String,
+    failed_input_validation_attempts: FailedInputValidationAttempts,
   ) -> IntermediateRunResult<Self::Produces> {
     if previous_run_yielded_at.0 < self.step_index {
       let process_before_output = self
         .process_before
-        .resume_run(previous_run_produced, previous_run_yielded_at, user_input)
+        .resume_run(
+          previous_run_produced,
+          previous_run_yielded_at,
+          user_input,
+          failed_input_validation_attempts,
+        )
         .await?;
       match process_before_output {
         IntermediateRunOutcome::Continue(process_before_produces) => self.continue_run(process_before_produces).await,
@@ -71,7 +77,11 @@ where
       // fixme deserialize only values required only up to the next interaction
       let process_before_produces = ProcessBefore::Produces::deserialize(previous_run_produced)?;
       let last_step_consumes = process_before_produces.clone_just();
-      match self.form_step.handle_input(last_step_consumes, user_input).await? {
+      match self
+        .form_step
+        .handle_input(last_step_consumes, user_input, failed_input_validation_attempts)
+        .await?
+      {
         InputValidation::Successful(a) => Ok(IntermediateRunOutcome::Continue(a.concat(process_before_produces))),
         InputValidation::Retry(a) => Ok(IntermediateRunOutcome::RetryUserInput(a)),
         InputValidation::Finish(a) => Ok(IntermediateRunOutcome::Finish(a)),

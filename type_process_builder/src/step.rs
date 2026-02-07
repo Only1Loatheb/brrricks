@@ -24,6 +24,9 @@ pub trait Operation {
   fn handle(&self, consumes: Self::Consumes) -> impl Future<Output = anyhow::Result<Self::Produces>>;
 }
 
+#[derive(PartialEq, Debug, Eq, Clone, PartialOrd, Ord, Hash)]
+pub struct FailedInputValidationAttempts(pub u32);
+
 #[derive(Debug, PartialEq, Eq)]
 pub enum InputValidation<Produced> {
   Successful(Produced),
@@ -40,6 +43,7 @@ pub trait Form {
     &self,
     consumes: Self::ValidateInputConsumes,
     user_input: String,
+    failed_input_validation_attempts: FailedInputValidationAttempts,
   ) -> impl Future<Output = anyhow::Result<InputValidation<Self::Produces>>>;
 }
 
@@ -65,6 +69,7 @@ pub trait FromSplitter {
     &self,
     consumes: Self::ValidateInputConsumes,
     user_input: String,
+    failed_input_validation_attempts: FailedInputValidationAttempts,
   ) -> impl Future<Output = anyhow::Result<InputValidation<Self::Produces>>>;
 }
 

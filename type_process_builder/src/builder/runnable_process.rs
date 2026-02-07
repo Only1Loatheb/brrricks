@@ -1,5 +1,6 @@
 use crate::builder::finalized_process::FinalizedProcess;
 use crate::builder::{PreviousRunYieldedAt, RunResult};
+use crate::step::FailedInputValidationAttempts;
 use serde_value::Value;
 
 pub struct RunnableProcess<UnderlyingProcess: FinalizedProcess> {
@@ -17,10 +18,16 @@ impl<UnderlyingProcess: FinalizedProcess> RunnableProcess<UnderlyingProcess> {
     previous_run_produced: Value,
     previous_run_yielded_at: PreviousRunYieldedAt,
     user_input: String,
+    failed_input_validation_attempts: FailedInputValidationAttempts,
   ) -> RunResult {
     self
       .finalized_process
-      .resume_run(previous_run_produced, previous_run_yielded_at, user_input)
+      .resume_run(
+        previous_run_produced,
+        previous_run_yielded_at,
+        user_input,
+        failed_input_validation_attempts,
+      )
       .await
   }
 }

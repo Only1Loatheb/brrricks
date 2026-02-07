@@ -4,7 +4,7 @@ use crate::builder::{
 };
 use crate::param_list::clone_just::CloneJust;
 use crate::param_list::concat::Concat;
-use crate::step::Splitter;
+use crate::step::{FailedInputValidationAttempts, Splitter};
 use frunk_core::coproduct::Coproduct;
 use serde_value::Value;
 use std::marker::PhantomData;
@@ -61,6 +61,7 @@ where
     previous_run_produced: Value,
     previous_run_yielded_at: PreviousRunYieldedAt,
     user_input: String,
+    failed_input_validation_attempts: FailedInputValidationAttempts,
   ) -> IntermediateFinalizedSplitResult<
     Self::ProcessBeforeSplitProduces,
     Coproduct<Self::SplitterProducesForFirstCase, SplitterProducesForOtherCases>,
@@ -68,7 +69,12 @@ where
     if previous_run_yielded_at.0 < self.step_index {
       let process_before_output = self
         .process_before
-        .resume_run(previous_run_produced, previous_run_yielded_at, user_input)
+        .resume_run(
+          previous_run_produced,
+          previous_run_yielded_at,
+          user_input,
+          failed_input_validation_attempts,
+        )
         .await?;
       match process_before_output {
         IntermediateRunOutcome::Continue(process_before_split_produced) => {

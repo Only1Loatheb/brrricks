@@ -7,6 +7,7 @@ use crate::builder::{
 use crate::param_list::concat::Concat;
 use crate::param_list::intersect::Intersect;
 use crate::param_list::transform::TransformTo;
+use crate::step::FailedInputValidationAttempts;
 use frunk_core::coproduct::{CNil, Coproduct};
 use serde_value::Value;
 use std::marker::PhantomData;
@@ -134,10 +135,11 @@ where
     previous_run_produced: Value,
     previous_run_yielded_at: PreviousRunYieldedAt,
     user_input: String,
+    failed_input_validation_attempts: FailedInputValidationAttempts,
   ) -> IntermediateFlowingSplitResult<Self::ProcessBeforeSplitProduces, SplitterProducesForOtherCases, Self::EveryFlowingCaseProduces> {
     let process_before_output = self
       .split_process_before
-      .resume_run(previous_run_produced, previous_run_yielded_at, user_input)
+      .resume_run(previous_run_produced, previous_run_yielded_at, user_input, failed_input_validation_attempts)
       .await?;
     match process_before_output {
       IntermediateFlowingSplitOutcome::Continue(a) => Ok(IntermediateFlowingSplitOutcome::Continue(a.intersect())),
@@ -218,10 +220,11 @@ where
     previous_run_produced: Value,
     previous_run_yielded_at: PreviousRunYieldedAt,
     user_input: String,
+    failed_input_validation_attempts: FailedInputValidationAttempts,
   ) -> IntermediateRunResult<Self::Produces> {
     let process_before_output = self
       .split_process_before
-      .resume_run(previous_run_produced, previous_run_yielded_at, user_input)
+      .resume_run(previous_run_produced, previous_run_yielded_at, user_input, failed_input_validation_attempts)
       .await?;
     match process_before_output {
       IntermediateFlowingSplitOutcome::Continue(a) => Ok(IntermediateRunOutcome::Continue(a.intersect())),
