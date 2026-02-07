@@ -1,7 +1,8 @@
+use crate::builder::subprocess::{Subprocess, subprocess};
 use crate::builder::{
   FinalizedCaseOfFlowingSplitProcess, FinalizedProcess, FlowingProcess, FlowingSplitProcess,
   IntermediateFlowingSplitOutcome, IntermediateFlowingSplitResult, IntermediateRunOutcome, IntermediateRunResult,
-  ParamList, PreviousRunYieldedAt, Subprocess, subprocess,
+  ParamList, PreviousRunYieldedAt,
 };
 use crate::hlist_concat::Concat;
 use crate::hlist_intersect::Intersect;

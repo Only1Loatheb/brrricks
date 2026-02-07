@@ -1,7 +1,8 @@
 use crate::builder::first_case_of_flowing_split_process::FirstCaseOfFlowingSplitProcess;
+use crate::builder::subprocess::{Subprocess, subprocess};
 use crate::builder::{
   FinalizedProcess, FirstCaseOfFinalizedSplitProcess, FlowingProcess, IntermediateFinalizedSplitOutcome,
-  IntermediateFinalizedSplitResult, IntermediateRunOutcome, ParamList, PreviousRunYieldedAt, Subprocess, subprocess,
+  IntermediateFinalizedSplitResult, IntermediateRunOutcome, ParamList, PreviousRunYieldedAt,
 };
 use crate::hlist_concat::Concat;
 use crate::hlist_transform::CloneJust;
