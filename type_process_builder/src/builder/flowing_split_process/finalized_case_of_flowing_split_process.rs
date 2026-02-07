@@ -4,7 +4,7 @@ use crate::builder::{
   IntermediateFlowingSplitOutcome, IntermediateFlowingSplitResult, IntermediateRunOutcome, IntermediateRunResult,
   ParamList, PreviousRunYieldedAt, RunOutcome,
 };
-use crate::hlist_concat::Concat;
+use crate::param_list::concat::Concat;
 use frunk_core::coproduct::{CNil, Coproduct};
 use serde_value::Value;
 use std::marker::PhantomData;

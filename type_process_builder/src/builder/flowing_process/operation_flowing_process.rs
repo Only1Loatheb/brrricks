@@ -1,6 +1,6 @@
 use crate::builder::{FlowingProcess, IntermediateRunOutcome, IntermediateRunResult, ParamList, PreviousRunYieldedAt};
-use crate::hlist_concat::Concat;
-use crate::hlist_transform::CloneJust;
+use crate::param_list::clone_just::CloneJust;
+use crate::param_list::concat::Concat;
 use crate::step::Operation;
 use serde_value::Value;
 use std::marker::PhantomData;

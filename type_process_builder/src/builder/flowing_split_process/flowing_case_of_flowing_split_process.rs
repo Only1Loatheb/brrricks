@@ -4,9 +4,9 @@ use crate::builder::{
   IntermediateFlowingSplitOutcome, IntermediateFlowingSplitResult, IntermediateRunOutcome, IntermediateRunResult,
   ParamList, PreviousRunYieldedAt,
 };
-use crate::hlist_concat::Concat;
-use crate::hlist_intersect::Intersect;
-use crate::hlist_transform::TransformTo;
+use crate::param_list::concat::Concat;
+use crate::param_list::intersect::Intersect;
+use crate::param_list::transform::TransformTo;
 use frunk_core::coproduct::{CNil, Coproduct};
 use serde_value::Value;
 use std::marker::PhantomData;

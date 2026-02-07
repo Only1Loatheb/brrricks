@@ -45,8 +45,9 @@ pub trait Form {
 
 pub trait SplitterOutput {}
 impl<Tag, ThisCase: ParamList, OtherCase> SplitterOutput for Coproduct<(Tag, ThisCase), OtherCase> {}
-/// Works with at lease two cases.
-/// just produce link form with a single link using Form step
+
+/// Works with at least two cases.
+/// Just produce link form with a single link using Form step
 pub trait Splitter {
   type Consumes: ParamList;
   type Produces: SplitterOutput;

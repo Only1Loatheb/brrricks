@@ -6,11 +6,12 @@ pub mod subprocess;
 use crate::builder::finalized_process::{FinalizedProcess, FlowingFinalizedProcess};
 use crate::builder::form_flowing_process::FormFlowingProcess;
 use crate::builder::operation_flowing_process::OperationFlowingProcess;
-use crate::builder::split_process::SplitProcessSplitter;
+use crate::builder::split_process_splitter::SplitProcessSplitter;
 use crate::builder::*;
-use crate::hlist_concat::Concat;
-use crate::hlist_transform::{CloneJust, TransformTo};
 use crate::param_list::ParamList;
+use crate::param_list::clone_just::CloneJust;
+use crate::param_list::concat::Concat;
+use crate::param_list::transform::TransformTo;
 use crate::step::{Final, Form, Operation, Splitter};
 use frunk_core::coproduct::Coproduct;
 use serde_value::Value;
@@ -18,7 +19,7 @@ use std::future::Future;
 
 /// Param value overlap is prevented by making reading them cumbersome https://github.com/lloydmeta/frunk/issues/187
 /// Well you can work around this `limitation` by providing the indices explicitly
-/// or replaceing [Concat] with [crate::hlist_intersect::Intersect] in the implementation.
+/// or replaceing [Concat] with [crate::param_list::intersect::Intersect] in the implementation.
 /// Don't do that. The params should be immutable to avoid the need to overwrite them with every session context save.
 pub trait FlowingProcess: Sized {
   type ProcessBeforeProduces: ParamList;

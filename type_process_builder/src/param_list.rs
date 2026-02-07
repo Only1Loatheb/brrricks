@@ -6,6 +6,11 @@ use serde_value::{DeserializerError, SerializerError, Value, to_value};
 use std::collections::BTreeMap;
 use typenum::Unsigned;
 
+pub mod clone_just;
+pub mod concat;
+pub mod intersect;
+pub mod transform;
+
 /// clone (required by run method) should be used in brick instead
 /// Use [typenum::op] to generate UID if the desired typenum const is missing.
 pub trait ParamValue: Clone + Serialize + DeserializeOwned {
