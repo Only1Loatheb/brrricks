@@ -9,12 +9,12 @@ use std::marker::PhantomData;
 
 pub struct FormFlowingProcess<
   ProcessBefore: FlowingProcess,
-  LinearStep: Form,
+  FormStep: Form,
   ProcessBeforeProducesToCreateFormConsumesIndices,
   ProcessBeforeProducesToValidateInputConsumesIndices,
 > {
   pub process_before: ProcessBefore,
-  pub last_step: LinearStep,
+  pub form_step: FormStep,
   pub step_index: usize,
   pub phantom_data: PhantomData<(
     ProcessBeforeProducesToCreateFormConsumesIndices,
@@ -70,7 +70,7 @@ where
       // fixme deserialize only values required only up to the next interaction
       let process_before_produces = ProcessBefore::Produces::deserialize(previous_run_produced)?;
       let last_step_consumes = process_before_produces.clone_just();
-      match self.last_step.handle_input(last_step_consumes, user_input).await? {
+      match self.form_step.handle_input(last_step_consumes, user_input).await? {
         InputValidation::Successful(a) => Ok(IntermediateRunOutcome::Continue(a.concat(process_before_produces))),
         InputValidation::Retry(a) => Ok(IntermediateRunOutcome::Yield(
           a,
@@ -88,7 +88,7 @@ where
   ) -> IntermediateRunResult<Self::Produces> {
     let last_step_consumes = process_before_produces.clone_just();
     Ok(IntermediateRunOutcome::Yield(
-      self.last_step.create_form(last_step_consumes).await?,
+      self.form_step.create_form(last_step_consumes).await?,
       process_before_produces.serialize()?,
       CurrentRunYieldedAt(self.step_index),
     ))

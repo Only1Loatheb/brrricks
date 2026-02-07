@@ -39,19 +39,19 @@ pub trait FlowingProcess: Sized {
   ) -> impl Future<Output = IntermediateRunResult<Self::Produces>>;
 
   fn then<
-    LinearConsumes: ParamList,
-    LinearProduces: ParamList + Concat<Self::Produces>,
-    LinearStep: Operation<Consumes = LinearConsumes, Produces = LinearProduces>,
+    OperationConsumes: ParamList,
+    OperationProduces: ParamList + Concat<Self::Produces>,
+    OperationStep: Operation<Consumes = OperationConsumes, Produces = OperationProduces>,
     ProcessBeforeProducesToLastStepConsumesIndices,
   >(
     self,
-    step: LinearStep,
+    step: OperationStep,
   ) -> impl FlowingProcess<
     ProcessBeforeProduces = Self::Produces,
-    Produces = <LinearProduces as Concat<Self::Produces>>::Concatenated,
+    Produces = <OperationProduces as Concat<Self::Produces>>::Concatenated,
   >
   where
-    for<'a> &'a Self::Produces: CloneJust<LinearConsumes, ProcessBeforeProducesToLastStepConsumesIndices>,
+    for<'a> &'a Self::Produces: CloneJust<OperationConsumes, ProcessBeforeProducesToLastStepConsumesIndices>,
   {
     OperationFlowingProcess {
       process_before: self,
@@ -85,7 +85,7 @@ pub trait FlowingProcess: Sized {
   {
     FormFlowingProcess {
       process_before: self,
-      last_step: step,
+      form_step: step,
       step_index: WILL_BE_RENUMBERED,
       phantom_data: Default::default(),
     }
@@ -124,7 +124,7 @@ pub trait FlowingProcess: Sized {
     > {
       process_before: self,
       splitter: step,
-      split_step_index: WILL_BE_RENUMBERED,
+      step_index: WILL_BE_RENUMBERED,
       phantom_data: Default::default(),
     }
   }

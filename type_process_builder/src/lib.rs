@@ -118,8 +118,8 @@ mod tests {
     }
   }
 
-  struct Linear1;
-  impl Operation for Linear1 {
+  struct Operation1;
+  impl Operation for Operation1 {
     type Consumes = HNil;
     type Produces = HList![Case1Param, CommonCaseParam];
 
@@ -128,8 +128,8 @@ mod tests {
     }
   }
 
-  struct Linear2;
-  impl Operation for Linear2 {
+  struct Operation2;
+  impl Operation for Operation2 {
     type Consumes = HNil;
     type Produces = HList![Case2Param, CommonCaseParam];
 
@@ -214,8 +214,8 @@ mod tests {
   async fn test_split() {
     let process = EntryA
       .split(SplitA)
-      .case_via(Case1, |x| x.then(Linear1))
-      .case_via(Case2, |x| x.then(Linear2))
+      .case_via(Case1, |x| x.then(Operation1))
+      .case_via(Case2, |x| x.then(Operation2))
       .end(FinalA)
       .build();
 
@@ -230,7 +230,7 @@ mod tests {
     let process = EntryA
       .split(SplitA)
       .case_via(Case1, |x| x.show(FormA))
-      .case_via(Case2, |x| x.then(Linear2))
+      .case_via(Case2, |x| x.then(Operation2))
       .end(FinalA)
       .build();
 

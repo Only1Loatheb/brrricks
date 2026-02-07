@@ -25,7 +25,7 @@ pub trait Operation {
 }
 
 #[derive(Debug, PartialEq, Eq)]
-pub enum InputValidation<Produced: ParamList> {
+pub enum InputValidation<Produced> {
   Successful(Produced),
   Retry(Message),
   Finish(Message),
@@ -52,6 +52,20 @@ pub trait Splitter {
   type Consumes: ParamList;
   type Produces: SplitterOutput;
   fn handle(&self, consumes: Self::Consumes) -> impl Future<Output = anyhow::Result<Self::Produces>>;
+}
+
+/// Works with at least two cases.
+/// Just produce link form with a single link using Form step
+pub trait FromSplitter {
+  type CreateFormConsumes: ParamList;
+  type ValidateInputConsumes: ParamList;
+  type Produces: SplitterOutput;
+  fn create_form(&self, consumes: Self::CreateFormConsumes) -> impl Future<Output = anyhow::Result<Message>>;
+  fn handle_input(
+    &self,
+    consumes: Self::ValidateInputConsumes,
+    user_input: String,
+  ) -> impl Future<Output = anyhow::Result<InputValidation<Self::Produces>>>;
 }
 
 pub trait Final {

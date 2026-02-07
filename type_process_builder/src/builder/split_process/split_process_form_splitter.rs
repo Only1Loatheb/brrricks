@@ -1,56 +1,68 @@
 use crate::builder::{
-  FlowingProcess, IntermediateFinalizedSplitOutcome, IntermediateFinalizedSplitResult, IntermediateRunOutcome,
-  ParamList, PreviousRunYieldedAt, SplitProcess,
+  CurrentRunYieldedAt, FlowingProcess, IntermediateFinalizedSplitOutcome, IntermediateFinalizedSplitResult,
+  IntermediateRunOutcome, ParamList, PreviousRunYieldedAt, SplitProcess,
 };
 use crate::param_list::clone_just::CloneJust;
 use crate::param_list::concat::Concat;
-use crate::step::Splitter;
+use crate::step::{FromSplitter, InputValidation};
 use frunk_core::coproduct::Coproduct;
 use serde_value::Value;
 use std::marker::PhantomData;
 
-pub struct SplitProcessSplitter<
+pub struct SplitProcessFormSplitter<
   Tag,
   ProcessBefore: FlowingProcess,
-  SplitterStepConsumes: ParamList,
+  CreateFormConsumes: ParamList,
+  ValidateInputConsumes: ParamList,
   SplitterProducesForFirstCase: ParamList,
   SplitterProducesForOtherCases,
-  SplitterStep: Splitter<
-      Consumes = SplitterStepConsumes,
+  SplitterStep: FromSplitter<
+      CreateFormConsumes = CreateFormConsumes,
+      ValidateInputConsumes = ValidateInputConsumes,
       Produces = Coproduct<(Tag, SplitterProducesForFirstCase), SplitterProducesForOtherCases>,
     >,
-  ProcessBeforeProducesToSplitterStepConsumesIndices,
+  ProcessBeforeProducesToCreateFormConsumesIndices,
+  ProcessBeforeProducesToValidateInputConsumesIndices,
 > {
   pub process_before: ProcessBefore,
   pub splitter: SplitterStep,
   pub step_index: usize,
-  pub phantom_data: PhantomData<ProcessBeforeProducesToSplitterStepConsumesIndices>,
+  pub phantom_data: PhantomData<(
+    ProcessBeforeProducesToCreateFormConsumesIndices,
+    ProcessBeforeProducesToValidateInputConsumesIndices,
+  )>,
 }
 
 impl<
   Tag,
   ProcessBefore: FlowingProcess,
-  SplitterStepConsumes: ParamList,
+  CreateFormConsumes: ParamList,
+  ValidateInputConsumes: ParamList,
   SplitterProducesForFirstCase: ParamList + Concat<ProcessBefore::Produces>,
   SplitterProducesForOtherCases,
-  SplitterStep: Splitter<
-      Consumes = SplitterStepConsumes,
+  SplitterStep: FromSplitter<
+      CreateFormConsumes = CreateFormConsumes,
+      ValidateInputConsumes = ValidateInputConsumes,
       Produces = Coproduct<(Tag, SplitterProducesForFirstCase), SplitterProducesForOtherCases>,
     >,
-  ProcessBeforeProducesToSplitterStepConsumesIndices,
+  ProcessBeforeProducesToCreateFormConsumesIndices,
+  ProcessBeforeProducesToValidateInputConsumesIndices,
 > SplitProcess<SplitterProducesForOtherCases>
-  for SplitProcessSplitter<
+  for SplitProcessFormSplitter<
     Tag,
     ProcessBefore,
-    SplitterStepConsumes,
+    CreateFormConsumes,
+    ValidateInputConsumes,
     SplitterProducesForFirstCase,
     SplitterProducesForOtherCases,
     SplitterStep,
-    ProcessBeforeProducesToSplitterStepConsumesIndices,
+    ProcessBeforeProducesToCreateFormConsumesIndices,
+    ProcessBeforeProducesToValidateInputConsumesIndices,
   >
 where
+  for<'a> &'a ProcessBefore::Produces: CloneJust<CreateFormConsumes, ProcessBeforeProducesToCreateFormConsumesIndices>,
   for<'a> &'a ProcessBefore::Produces:
-    CloneJust<SplitterStepConsumes, ProcessBeforeProducesToSplitterStepConsumesIndices>,
+    CloneJust<ValidateInputConsumes, ProcessBeforeProducesToValidateInputConsumesIndices>,
 {
   type ProcessBeforeSplitProduces = ProcessBefore::Produces;
   type SplitterProducesForFirstCase = SplitterProducesForFirstCase;
@@ -79,7 +91,25 @@ where
       }
     } else {
       let process_before_split_produced = ProcessBefore::Produces::deserialize(previous_run_produced)?;
-      self.continue_run(process_before_split_produced).await
+      let last_step_consumes = process_before_split_produced.clone_just();
+      match self.splitter.handle_input(last_step_consumes, user_input).await? {
+        InputValidation::Successful(splitter_produces) => {
+          let splitter_produces_to_other_cases = match splitter_produces {
+            Coproduct::Inl(a) => Coproduct::Inl(a.1),
+            Coproduct::Inr(b) => Coproduct::Inr(b),
+          };
+          Ok(IntermediateFinalizedSplitOutcome::GoToCase {
+            process_before_split_produced,
+            splitter_produces_to_other_cases,
+          })
+        }
+        InputValidation::Retry(a) => Ok(IntermediateFinalizedSplitOutcome::Yield(
+          a,
+          process_before_split_produced.serialize()?,
+          CurrentRunYieldedAt(self.step_index),
+        )),
+        InputValidation::Finish(a) => Ok(IntermediateFinalizedSplitOutcome::Finish(a)),
+      }
     }
   }
 
@@ -91,14 +121,11 @@ where
     Coproduct<Self::SplitterProducesForFirstCase, SplitterProducesForOtherCases>,
   > {
     let splitter_step_consumes = process_before_split_produced.clone_just();
-    let splitter_produces_to_other_cases = match self.splitter.handle(splitter_step_consumes).await? {
-      Coproduct::Inl(a) => Coproduct::Inl(a.1),
-      Coproduct::Inr(b) => Coproduct::Inr(b),
-    };
-    Ok(IntermediateFinalizedSplitOutcome::GoToCase {
-      process_before_split_produced,
-      splitter_produces_to_other_cases,
-    })
+    Ok(IntermediateFinalizedSplitOutcome::Yield(
+      self.splitter.create_form(splitter_step_consumes).await?,
+      process_before_split_produced.serialize()?,
+      CurrentRunYieldedAt(self.step_index),
+    ))
   }
 
   fn enumerate_steps(&mut self, last_used_index: usize) -> usize {

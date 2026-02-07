@@ -15,7 +15,7 @@ flowchart TD
     end
     FinalizedProcess -- "build" --> RunnableProcess
     Start -- "Entry Step" --> FlowingProcess
-    FlowingProcess -- "Linear Step or FlowingProcess" --> FlowingProcess
+    FlowingProcess -- "Operation Step or FlowingProcess" --> FlowingProcess
     FlowingProcess -- "Final Step or FinalizedProcess" --> FinalizedProcess
     
     FlowingProcess -- "Split Step" --> FinalizedSplitProcess
