@@ -1,5 +1,7 @@
 # Brrricks
 
+## Brrricks app session flow
+
 ```mermaid
 sequenceDiagram
     actor User
@@ -33,9 +35,44 @@ sequenceDiagram
     Platform -->> User: Display USSD screen
 ```
 
-## Process modelling
+## Process builder states
 
-[Process builder state diagram](type_process_builder/src/process_builder_diagram.mmd)
+```mermaid
+%%{ init: { 'flowchart': {'defaultRenderer': 'tidy-tree' } } }%%
+flowchart TD
+    classDef hidden display: none;
+    style Start fill-opacity:0, stroke-opacity:0;
+    Start[" "]
+    FinalizedSplitProcessSubgraph:::hidden
+    subgraph FinalizedSplitProcessSubgraph[" "]
+        FinalizedSplitProcess[FinalizedSplitProcess]
+        finalized_split_cases_final{{exhaustive?}}
+    end
+    FlowingSplitProcessSubgraph:::hidden
+    subgraph FlowingSplitProcessSubgraph[" "]
+        FlowingSplitProcess[FlowingSplitProcess]
+        flowing_split_cases{{exhaustive?}}
+    end
+    FinalizedProcess -- "build" --> RunnableProcess
+    Start -- "Entry Step" --> FlowingProcess
+    FlowingProcess -- "Operation Step\nor FlowingProcess" --> FlowingProcess
+    FlowingProcess -- "Final Step\nor FinalizedProcess" --> FinalizedProcess
+    
+    FlowingProcess -- "Split Step" --> FinalizedSplitProcess
+    FinalizedSplitProcess -- "FinalizedProcess" --> finalized_split_cases_final
+    finalized_split_cases_final -- "cases left" --> FinalizedSplitProcess
+    finalized_split_cases_final -- "all cases covered" --> FinalizedProcess
+    FinalizedSplitProcess -- "FlowingProcess" --> FlowingSplitProcess
+    FlowingSplitProcess -- "FinalizedProcess\nor FlowingProcess" --> flowing_split_cases
+    flowing_split_cases -- "cases left" --> FlowingSplitProcess
+    flowing_split_cases -- "all cases covered" --> FlowingProcess
+    Start ~~~ FlowingSplitProcess
+    click FlowingSplitProcess "https://github.com/Only1Loatheb/brrricks/blob/master/type_process_builder/src/builder/flowing_split_process.rs"
+    click FlowingProcess "https://github.com/Only1Loatheb/brrricks/blob/master/type_process_builder/src/builder/flowing_process.rs"
+    click FinalizedSplitProcess "https://github.com/Only1Loatheb/brrricks/blob/master/type_process_builder/src/builder/finalized_split_process.rs"
+    click FinalizedProcess "https://github.com/Only1Loatheb/brrricks/blob/master/type_process_builder/src/builder/finalized_process.rs"
+    click RunnableProcess "https://github.com/Only1Loatheb/brrricks/blob/master/type_process_builder/src/builder/runnable_process.rs"
+```
 
 ## Plausible use cases
 

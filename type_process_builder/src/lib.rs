@@ -3,11 +3,12 @@ pub mod param_list;
 pub mod step;
 
 // cargo doc --no-deps --package type_process_builder --features docs
-/// A sequence diagram
+/// View the diagrams
 #[cfg(feature = "docs")]
-#[doc = simple_mermaid::mermaid!("process_builder_diagram.mmd")]
+#[doc = simple_mermaid::mermaid!("../doc/brrricks_app_session_flow.mmd")]
+#[doc = simple_mermaid::mermaid!("../doc/process_builder_states.mmd")]
 #[cfg_attr(not(feature = "docs"), doc = "")]
-pub mod a {}
+pub mod documentation_diagrams {}
 
 #[cfg(test)]
 mod tests {
