@@ -15,15 +15,15 @@ flowchart TD
     end
     FinalizedProcess -- "build" --> RunnableProcess
     Start -- "Entry Step" --> FlowingProcess
-    FlowingProcess -- "Operation Step\nor FlowingProcess" --> FlowingProcess
-    FlowingProcess -- "Final Step\nor FinalizedProcess" --> FinalizedProcess
+    FlowingProcess -- "Operation Step or FlowingProcess" --> FlowingProcess
+    FlowingProcess -- "Final Step or FinalizedProcess" --> FinalizedProcess
     
     FlowingProcess -- "Split Step" --> FinalizedSplitProcess
     FinalizedSplitProcess -- "FinalizedProcess" --> finalized_split_cases_final
     finalized_split_cases_final -- "cases left" --> FinalizedSplitProcess
     finalized_split_cases_final -- "all cases covered" --> FinalizedProcess
     FinalizedSplitProcess -- "FlowingProcess" --> FlowingSplitProcess
-    FlowingSplitProcess -- "FinalizedProcess\nor FlowingProcess" --> flowing_split_cases
+    FlowingSplitProcess -- "FinalizedProcess or FlowingProcess" --> flowing_split_cases
     flowing_split_cases -- "cases left" --> FlowingSplitProcess
     flowing_split_cases -- "all cases covered" --> FlowingProcess
     Start ~~~ FlowingSplitProcess
