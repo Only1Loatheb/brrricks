@@ -14,7 +14,6 @@ use crate::param_list::concat::Concat;
 use crate::param_list::transform::TransformTo;
 use crate::step::{FailedInputValidationAttempts, Final, Form, Operation, Splitter};
 use frunk_core::coproduct::Coproduct;
-use serde_value::Value;
 use std::future::Future;
 
 /// Param value overlap is prevented by making reading them cumbersome <https://github.com/lloydmeta/frunk/issues/187>
@@ -28,7 +27,7 @@ pub trait FlowingProcess: Sized {
 
   fn resume_run(
     &self,
-    previous_run_produced: Value,
+    previous_run_produced: SessionContext,
     previous_run_yielded_at: PreviousRunYieldedAt,
     user_input: String,
     failed_input_validation_attempts: FailedInputValidationAttempts,

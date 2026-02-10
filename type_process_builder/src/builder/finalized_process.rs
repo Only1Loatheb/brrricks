@@ -1,10 +1,9 @@
 use crate::builder::flowing_process::FlowingProcess;
 use crate::builder::runnable_process::RunnableProcess;
-use crate::builder::{IntermediateRunOutcome, PreviousRunYieldedAt, RunOutcome, RunResult};
+use crate::builder::{IntermediateRunOutcome, PreviousRunYieldedAt, RunOutcome, RunResult, SessionContext};
 use crate::param_list::ParamList;
 use crate::param_list::transform::TransformTo;
 use crate::step::{FailedInputValidationAttempts, Final};
-use serde_value::Value;
 use std::future::Future;
 use std::marker::PhantomData;
 
@@ -13,7 +12,7 @@ pub trait FinalizedProcess: Sized {
 
   fn resume_run(
     &self,
-    previous_run_produced: Value,
+    previous_run_produced: SessionContext,
     previous_run_yielded_at: PreviousRunYieldedAt,
     user_input: String,
     failed_input_validation_attempts: FailedInputValidationAttempts,
@@ -58,7 +57,7 @@ where
 
   async fn resume_run(
     &self,
-    previous_run_produced: Value,
+    previous_run_produced: SessionContext,
     previous_run_yielded_at: PreviousRunYieldedAt,
     user_input: String,
     failed_input_validation_attempts: FailedInputValidationAttempts,

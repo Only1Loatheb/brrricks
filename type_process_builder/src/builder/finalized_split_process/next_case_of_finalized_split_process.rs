@@ -2,12 +2,11 @@ use crate::builder::subprocess::{Subprocess, subprocess};
 use crate::builder::{
   FinalizedProcess, FinalizedSplitProcess, FlowingCaseOfFinalizedSplitProcess, FlowingProcess,
   IntermediateFinalizedSplitOutcome, IntermediateFinalizedSplitResult, ParamList, PreviousRunYieldedAt, RunOutcome,
-  RunResult,
+  RunResult, SessionContext,
 };
 use crate::param_list::concat::Concat;
 use crate::step::FailedInputValidationAttempts;
 use frunk_core::coproduct::{CNil, Coproduct};
-use serde_value::Value;
 use std::marker::PhantomData;
 
 pub struct NextCaseOfFinalizedSplitProcess<
@@ -112,7 +111,7 @@ for NextCaseOfFinalizedSplitProcess<
 
   async fn resume_run(
     &self,
-    previous_run_produced: Value,
+    previous_run_produced: SessionContext,
     previous_run_yielded_at: PreviousRunYieldedAt,
     user_input: String,
     failed_input_validation_attempts: FailedInputValidationAttempts,
@@ -184,7 +183,7 @@ where
 
   async fn resume_run(
     &self,
-    previous_run_produced: Value,
+    previous_run_produced: SessionContext,
     previous_run_yielded_at: PreviousRunYieldedAt,
     user_input: String,
     failed_input_validation_attempts: FailedInputValidationAttempts,

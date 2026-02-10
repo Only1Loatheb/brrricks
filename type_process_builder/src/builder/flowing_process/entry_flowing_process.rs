@@ -1,7 +1,6 @@
 use crate::builder::*;
 use crate::param_list::ParamList;
 use crate::step::{Entry, FailedInputValidationAttempts};
-use anyhow::anyhow;
 use frunk_core::hlist::HNil;
 use serde_value::Value;
 use std::hint::unreachable_unchecked;
@@ -12,16 +11,12 @@ impl<Produces: ParamList, EntryStep: Entry<Value, Produces = Produces>> FlowingP
 
   async fn resume_run(
     &self,
-    previous_run_produced: Value,
+    previous_run_produced: SessionContext,
     _: PreviousRunYieldedAt,
     user_input: String,
     _failed_input_validation_attempts: FailedInputValidationAttempts,
   ) -> IntermediateRunResult<Self::Produces> {
-    let map = match previous_run_produced {
-      Value::Map(m) => m,
-      _ => return Err(anyhow!("Not a map")),
-    };
-    let result: Produces = EntryStep::handle(self, map, user_input).await?;
+    let result: Produces = EntryStep::handle(self, previous_run_produced, user_input).await?;
     Ok(IntermediateRunOutcome::Continue(result))
   }
 

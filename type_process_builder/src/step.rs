@@ -13,7 +13,7 @@ pub trait Entry<RawConsume: DeserializeOwned> {
   type Produces: ParamList;
   fn handle(
     &self,
-    consumes: BTreeMap<RawConsume, RawConsume>,
+    consumes: BTreeMap<u64, RawConsume>,
     shortcode_string: String,
   ) -> impl Future<Output = anyhow::Result<Self::Produces>>;
 }

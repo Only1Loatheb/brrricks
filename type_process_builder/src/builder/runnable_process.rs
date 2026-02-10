@@ -1,7 +1,6 @@
 use crate::builder::finalized_process::FinalizedProcess;
-use crate::builder::{PreviousRunYieldedAt, RunResult};
+use crate::builder::{PreviousRunYieldedAt, RunResult, SessionContext};
 use crate::step::FailedInputValidationAttempts;
-use serde_value::Value;
 
 pub struct RunnableProcess<UnderlyingProcess: FinalizedProcess> {
   finalized_process: UnderlyingProcess, // shouldn't be public
@@ -15,7 +14,7 @@ impl<UnderlyingProcess: FinalizedProcess> RunnableProcess<UnderlyingProcess> {
 
   pub async fn resume_run(
     &self,
-    previous_run_produced: Value,
+    previous_run_produced: SessionContext,
     previous_run_yielded_at: PreviousRunYieldedAt,
     user_input: String,
     failed_input_validation_attempts: FailedInputValidationAttempts,

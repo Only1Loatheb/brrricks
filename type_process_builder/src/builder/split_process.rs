@@ -5,12 +5,11 @@ use crate::builder::first_case_of_flowing_split_process::FirstCaseOfFlowingSplit
 use crate::builder::subprocess::{Subprocess, subprocess};
 use crate::builder::{
   FinalizedProcess, FirstCaseOfFinalizedSplitProcess, FlowingProcess, IntermediateFinalizedSplitResult, ParamList,
-  PreviousRunYieldedAt,
+  PreviousRunYieldedAt, SessionContext,
 };
 use crate::param_list::concat::Concat;
 use crate::step::FailedInputValidationAttempts;
 use frunk_core::coproduct::Coproduct;
-use serde_value::Value;
 use std::future::Future;
 
 /// We enforce at least one cases in the split.
@@ -24,7 +23,7 @@ pub trait SplitProcess<SplitterProducesForOtherCases>: Sized {
 
   fn resume_run(
     &self,
-    previous_run_produced: Value,
+    previous_run_produced: SessionContext,
     previous_run_yielded_at: PreviousRunYieldedAt,
     user_input: String,
     failed_input_validation_attempts: FailedInputValidationAttempts,

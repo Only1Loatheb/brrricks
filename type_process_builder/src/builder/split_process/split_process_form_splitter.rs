@@ -1,12 +1,11 @@
 use crate::builder::{
   CurrentRunYieldedAt, FlowingProcess, IntermediateFinalizedSplitOutcome, IntermediateFinalizedSplitResult,
-  IntermediateRunOutcome, ParamList, PreviousRunYieldedAt, SplitProcess,
+  IntermediateRunOutcome, ParamList, PreviousRunYieldedAt, SessionContext, SplitProcess,
 };
 use crate::param_list::clone_just::CloneJust;
 use crate::param_list::concat::Concat;
 use crate::step::{FailedInputValidationAttempts, FromSplitter, InputValidation};
 use frunk_core::coproduct::Coproduct;
-use serde_value::Value;
 use std::marker::PhantomData;
 
 pub struct SplitProcessFormSplitter<
@@ -70,7 +69,7 @@ where
 
   async fn resume_run(
     &self,
-    previous_run_produced: Value,
+    previous_run_produced: SessionContext,
     previous_run_yielded_at: PreviousRunYieldedAt,
     user_input: String,
     failed_input_validation_attempts: FailedInputValidationAttempts,

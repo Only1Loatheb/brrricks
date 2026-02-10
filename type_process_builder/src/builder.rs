@@ -20,6 +20,9 @@ pub use flowing_split_process::*;
 pub use runnable_process::*;
 use serde_value::Value;
 pub use split_process::*;
+use std::collections::BTreeMap;
+
+// type StepIndex = u32;
 
 #[derive(PartialEq, Debug, Eq, Clone, PartialOrd, Ord, Hash)]
 pub struct PreviousRunYieldedAt(pub usize);
@@ -29,10 +32,12 @@ pub struct CurrentRunYieldedAt(usize);
 
 pub(crate) const WILL_BE_RENUMBERED: usize = 0;
 
+pub(crate) type SessionContext = BTreeMap<u64, Value>;
+
 #[derive(Debug, PartialEq, Eq)]
 pub enum IntermediateRunOutcome<Produced: ParamList> {
   Continue(Produced),
-  Yield(Message, Value, CurrentRunYieldedAt),
+  Yield(Message, SessionContext, CurrentRunYieldedAt),
   Finish(Message),
   RetryUserInput(Message),
 }
@@ -45,7 +50,7 @@ pub enum IntermediateFinalizedSplitOutcome<ProcessBeforeSplitProduced: ParamList
     process_before_split_produced: ProcessBeforeSplitProduced,
     splitter_produces_to_other_cases: SplitterProducesForOtherCases,
   },
-  Yield(Message, Value, CurrentRunYieldedAt),
+  Yield(Message, SessionContext, CurrentRunYieldedAt),
   Finish(Message),
   RetryUserInput(Message),
 }
@@ -64,7 +69,7 @@ pub enum IntermediateFlowingSplitOutcome<
     process_before_split_produced: ProcessBeforeSplitProduced,
     splitter_produces_to_other_cases: SplitterProducesForOtherCases,
   },
-  Yield(Message, Value, CurrentRunYieldedAt),
+  Yield(Message, SessionContext, CurrentRunYieldedAt),
   Finish(Message),
   RetryUserInput(Message),
 }
@@ -79,7 +84,7 @@ pub type IntermediateFlowingSplitResult<
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum RunOutcome {
-  Yield(Message, Value, CurrentRunYieldedAt),
+  Yield(Message, SessionContext, CurrentRunYieldedAt),
   Finish(Message),
   RetryUserInput(Message),
 }

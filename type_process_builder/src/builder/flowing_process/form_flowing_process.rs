@@ -1,10 +1,10 @@
 use crate::builder::{
   CurrentRunYieldedAt, FlowingProcess, IntermediateRunOutcome, IntermediateRunResult, ParamList, PreviousRunYieldedAt,
+  SessionContext,
 };
 use crate::param_list::clone_just::CloneJust;
 use crate::param_list::concat::Concat;
 use crate::step::{FailedInputValidationAttempts, Form, InputValidation};
-use serde_value::Value;
 use std::marker::PhantomData;
 
 pub struct FormFlowingProcess<
@@ -52,7 +52,7 @@ where
 
   async fn resume_run(
     &self,
-    previous_run_produced: Value,
+    previous_run_produced: SessionContext,
     previous_run_yielded_at: PreviousRunYieldedAt,
     user_input: String,
     failed_input_validation_attempts: FailedInputValidationAttempts,

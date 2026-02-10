@@ -97,18 +97,18 @@ mod tests {
 
     async fn handle(
       &self,
-      mut consumes: BTreeMap<Value, Value>,
+      mut consumes: SessionContext,
       shortcode_string: String,
     ) -> anyhow::Result<HList![EntryParam]> {
       let msisdn_value = consumes
-        .remove(&Value::String("msisdn".into()))
+        .remove(&7)
         .ok_or_else(|| anyhow!("Admin error or error on frontend."))?;
       let msisdn = match msisdn_value {
         Value::String(string) => Msisdn::from(string).ok_or_else(|| anyhow!("Admin error on frontend.")),
         _ => Err(anyhow!("Admin error on frontend.")),
       }?;
       let operator = consumes
-        .remove(&Value::String("operator".into()))
+        .remove(&8)
         .ok_or_else(|| anyhow!("Admin error or error on frontend."))?;
       debug!("Operator: {:?}, {:?}", operator, msisdn);
       Ok(hlist!(EntryParam(
@@ -192,11 +192,11 @@ mod tests {
     }
   }
 
-  fn session_init_value() -> Value {
-    Value::Map(BTreeMap::from([
-      (Value::String("msisdn".into()), Value::String("2340000000000".into())),
-      (Value::String("operator".into()), Value::String("MTN".into())),
-    ]))
+  fn session_init_value() -> SessionContext {
+    BTreeMap::from([
+      (7, Value::String("2340000000000".into())),
+      (8, Value::String("MTN".into())),
+    ])
   }
 
   #[tokio::test]

@@ -1,6 +1,7 @@
-use crate::builder::{FlowingProcess, IntermediateRunOutcome, IntermediateRunResult, ParamList, PreviousRunYieldedAt};
+use crate::builder::{
+  FlowingProcess, IntermediateRunOutcome, IntermediateRunResult, ParamList, PreviousRunYieldedAt, SessionContext,
+};
 use crate::step::FailedInputValidationAttempts;
-use serde_value::Value;
 use std::marker::PhantomData;
 
 pub struct Subprocess<ProcessBeforeProduces> {
@@ -13,7 +14,7 @@ impl<ProcessBeforeProduces: ParamList> FlowingProcess for Subprocess<ProcessBefo
 
   async fn resume_run(
     &self,
-    previous_run_produced: Value,
+    previous_run_produced: SessionContext,
     _previous_run_yielded_at: PreviousRunYieldedAt,
     _user_input: String,
     _failed_input_validation_attempts: FailedInputValidationAttempts,

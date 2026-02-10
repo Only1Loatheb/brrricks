@@ -1,8 +1,9 @@
+use crate::builder::SessionContext;
 use frunk_core::hlist::{HCons, HList, HNil};
 use serde::Serialize;
 use serde::de::DeserializeOwned;
 use serde_value::SerializerError::Custom;
-use serde_value::{DeserializerError, SerializerError, Value, to_value};
+use serde_value::{DeserializerError, SerializerError, to_value};
 use std::collections::BTreeMap;
 use typenum::Unsigned;
 
@@ -21,38 +22,34 @@ pub trait ParamValue: Clone + Serialize + DeserializeOwned {
 // could be BTreeMap<String, Value> or even BTreeMap<type_id, Value> but there is no need for unnecessary type conversions
 pub trait ParamList: HList + Clone {
   // https://serde.rs/impl-serialize.html#serializing-a-sequence-or-map
-  fn serialize(&self) -> Result<Value, SerializerError> {
+  fn serialize(&self) -> Result<SessionContext, SerializerError> {
     let mut serialize_map = BTreeMap::new();
     self._serialize(&mut serialize_map)?;
-    Ok(Value::Map(serialize_map))
+    Ok(serialize_map)
   }
-  fn _serialize(&self, serialize_map: &mut BTreeMap<Value, Value>) -> Result<(), SerializerError>;
+  fn _serialize(&self, serialize_map: &mut SessionContext) -> Result<(), SerializerError>;
 
   // https://serde.rs/deserialize-map.html
-  fn deserialize(value: Value) -> Result<Self, DeserializerError> {
-    let mut map = match value {
-      Value::Map(m) => m,
-      _ => return Err(DeserializerError::Custom("Expected map".into())),
-    };
-    Self::_deserialize(&mut map)
+  fn deserialize(value: SessionContext) -> Result<Self, DeserializerError> {
+    Self::_deserialize(value)
   }
-  fn _deserialize(map: &mut BTreeMap<Value, Value>) -> Result<Self, DeserializerError>;
+  fn _deserialize(map: SessionContext) -> Result<Self, DeserializerError>;
 }
 
 impl ParamList for HNil {
-  fn _serialize(&self, _: &mut BTreeMap<Value, Value>) -> Result<(), SerializerError> {
+  fn _serialize(&self, _: &mut SessionContext) -> Result<(), SerializerError> {
     Ok(())
   }
 
-  fn _deserialize(_map: &mut BTreeMap<Value, Value>) -> Result<Self, DeserializerError> {
+  fn _deserialize(_map: SessionContext) -> Result<Self, DeserializerError> {
     Ok(HNil)
   }
 }
 
 impl<Head: ParamValue, Tail: ParamList> ParamList for HCons<Head, Tail> {
-  fn _serialize(&self, serialize_map: &mut BTreeMap<Value, Value>) -> Result<(), SerializerError> {
+  fn _serialize(&self, serialize_map: &mut SessionContext) -> Result<(), SerializerError> {
     self.tail._serialize(serialize_map)?;
-    let old_value = serialize_map.insert(Value::U64(Head::UID::U64), to_value(&self.head)?);
+    let old_value = serialize_map.insert(Head::UID::U64, to_value(&self.head)?);
     match old_value {
       None => Ok(()),
       Some(_) => Err(Custom(format!(
@@ -62,10 +59,9 @@ impl<Head: ParamValue, Tail: ParamList> ParamList for HCons<Head, Tail> {
     }
   }
 
-  fn _deserialize(map: &mut BTreeMap<Value, Value>) -> Result<Self, DeserializerError> {
-    let key = Value::U64(Head::UID::U64);
+  fn _deserialize(mut map: SessionContext) -> Result<Self, DeserializerError> {
     let value = map
-      .remove(&key)
+      .remove(&Head::UID::U64)
       .ok_or_else(|| DeserializerError::Custom(format!("Missing key: {}", Head::UID::U64)))?;
 
     let head: Head = Head::deserialize(value)?;
