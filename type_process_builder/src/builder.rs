@@ -28,7 +28,7 @@ type StepIndex = u32;
 pub struct PreviousRunYieldedAt(pub StepIndex);
 
 #[derive(PartialEq, Debug, Eq, Clone, PartialOrd, Ord, Hash)]
-pub struct CurrentRunYieldedAt(StepIndex);
+pub struct CurrentRunYieldedAt(pub StepIndex);
 
 pub(crate) const WILL_BE_RENUMBERED: StepIndex = 0;
 

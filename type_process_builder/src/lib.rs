@@ -19,7 +19,6 @@ mod tests {
   use anyhow::anyhow;
   use frunk_core::hlist::HNil;
   use frunk_core::{Coprod, HList, hlist};
-  use log::debug;
   use serde::{Deserialize, Serialize};
   use serde_value::Value;
   use std::collections::HashMap;
@@ -110,7 +109,6 @@ mod tests {
       let operator = consumes
         .remove(&8)
         .ok_or_else(|| anyhow!("Admin error or error on frontend."))?;
-      debug!("Operator: {:?}, {:?}", operator, msisdn);
       Ok(hlist!(EntryParam(
         msisdn,
         Operator::deserialize(operator)?,
