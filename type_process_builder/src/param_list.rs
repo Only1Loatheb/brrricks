@@ -4,7 +4,7 @@ use serde::Serialize;
 use serde::de::DeserializeOwned;
 use serde_value::SerializerError::Custom;
 use serde_value::{DeserializerError, SerializerError, to_value};
-use std::collections::BTreeMap;
+use std::collections::HashMap;
 use typenum::Unsigned;
 
 pub mod clone_just;
@@ -23,7 +23,7 @@ pub trait ParamValue: Clone + Serialize + DeserializeOwned {
 pub trait ParamList: HList + Clone {
   // https://serde.rs/impl-serialize.html#serializing-a-sequence-or-map
   fn serialize(&self) -> Result<SessionContext, SerializerError> {
-    let mut serialize_map = BTreeMap::new();
+    let mut serialize_map = HashMap::new();
     self._serialize(&mut serialize_map)?;
     Ok(serialize_map)
   }

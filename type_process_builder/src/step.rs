@@ -3,17 +3,17 @@ pub struct Message(pub String);
 
 // Should only pass params required in further part of the process, but I don't know what they are.
 // todo Make all the methods generic over Serializer
+use crate::builder::SessionContext;
 use crate::param_list::ParamList;
 use frunk_core::coproduct::Coproduct;
 use serde::de::DeserializeOwned;
-use std::collections::BTreeMap;
 use std::future::Future;
 
 pub trait Entry<RawConsume: DeserializeOwned> {
   type Produces: ParamList;
   fn handle(
     &self,
-    consumes: BTreeMap<u64, RawConsume>,
+    consumes: SessionContext,
     shortcode_string: String,
   ) -> impl Future<Output = anyhow::Result<Self::Produces>>;
 }

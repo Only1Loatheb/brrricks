@@ -22,7 +22,7 @@ mod tests {
   use log::debug;
   use serde::{Deserialize, Serialize};
   use serde_value::Value;
-  use std::collections::BTreeMap;
+  use std::collections::HashMap;
   use std::ops::Not;
   use typenum::*;
 
@@ -193,7 +193,7 @@ mod tests {
   }
 
   fn session_init_value() -> SessionContext {
-    BTreeMap::from([
+    HashMap::from([
       (7, Value::String("2340000000000".into())),
       (8, Value::String("MTN".into())),
     ])

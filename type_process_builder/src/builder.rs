@@ -20,7 +20,7 @@ pub use flowing_split_process::*;
 pub use runnable_process::*;
 use serde_value::Value;
 pub use split_process::*;
-use std::collections::BTreeMap;
+use std::collections::HashMap;
 
 type StepIndex = u32;
 
@@ -32,7 +32,7 @@ pub struct CurrentRunYieldedAt(StepIndex);
 
 pub(crate) const WILL_BE_RENUMBERED: StepIndex = 0;
 
-pub(crate) type SessionContext = BTreeMap<u64, Value>;
+pub(crate) type SessionContext = HashMap<u64, Value>;
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum IntermediateRunOutcome<Produced: ParamList> {
