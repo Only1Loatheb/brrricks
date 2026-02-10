@@ -2,7 +2,7 @@ use crate::builder::subprocess::{Subprocess, subprocess};
 use crate::builder::{
   FinalizedProcess, FinalizedSplitProcess, FlowingCaseOfFinalizedSplitProcess, FlowingProcess,
   IntermediateFinalizedSplitOutcome, IntermediateFinalizedSplitResult, ParamList, PreviousRunYieldedAt, RunOutcome,
-  RunResult, SessionContext,
+  RunResult, SessionContext, StepIndex,
 };
 use crate::param_list::concat::Concat;
 use crate::step::FailedInputValidationAttempts;
@@ -161,7 +161,7 @@ for NextCaseOfFinalizedSplitProcess<
     }
   }
 
-  fn enumerate_steps(&mut self, last_used_index: usize) -> usize {
+  fn enumerate_steps(&mut self, last_used_index: StepIndex) -> StepIndex {
     self.split_process_before.enumerate_steps(last_used_index)
   }
 }
@@ -213,7 +213,7 @@ where
     self.this_case.continue_run(this_case_consumes).await
   }
 
-  fn enumerate_steps(&mut self, last_used_index: usize) -> usize {
+  fn enumerate_steps(&mut self, last_used_index: StepIndex) -> StepIndex {
     self.split_process_before.enumerate_steps(last_used_index)
   }
 }

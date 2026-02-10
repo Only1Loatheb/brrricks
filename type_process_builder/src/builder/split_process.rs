@@ -5,7 +5,7 @@ use crate::builder::first_case_of_flowing_split_process::FirstCaseOfFlowingSplit
 use crate::builder::subprocess::{Subprocess, subprocess};
 use crate::builder::{
   FinalizedProcess, FirstCaseOfFinalizedSplitProcess, FlowingProcess, IntermediateFinalizedSplitResult, ParamList,
-  PreviousRunYieldedAt, SessionContext,
+  PreviousRunYieldedAt, SessionContext, StepIndex,
 };
 use crate::param_list::concat::Concat;
 use crate::step::FailedInputValidationAttempts;
@@ -96,5 +96,5 @@ pub trait SplitProcess<SplitterProducesForOtherCases>: Sized {
     }
   }
 
-  fn enumerate_steps(&mut self, last_used_index: usize) -> usize;
+  fn enumerate_steps(&mut self, last_used_index: StepIndex) -> StepIndex;
 }

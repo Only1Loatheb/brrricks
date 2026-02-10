@@ -1,7 +1,7 @@
 pub mod first_case_of_finalized_split_process;
 pub mod next_case_of_finalized_split_process;
 
-use crate::builder::{IntermediateFinalizedSplitResult, PreviousRunYieldedAt, SessionContext};
+use crate::builder::{IntermediateFinalizedSplitResult, PreviousRunYieldedAt, SessionContext, StepIndex};
 use crate::param_list::ParamList;
 use crate::param_list::concat::Concat;
 use crate::step::FailedInputValidationAttempts;
@@ -30,5 +30,5 @@ pub trait FinalizedSplitProcess<SplitterProducesForOtherCases>: Sized {
     >,
   ) -> impl Future<Output = IntermediateFinalizedSplitResult<Self::ProcessBeforeSplitProduces, SplitterProducesForOtherCases>>;
 
-  fn enumerate_steps(&mut self, last_used_index: usize) -> usize;
+  fn enumerate_steps(&mut self, last_used_index: StepIndex) -> StepIndex;
 }

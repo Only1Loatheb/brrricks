@@ -1,5 +1,6 @@
 use crate::builder::{
   FlowingProcess, IntermediateRunOutcome, IntermediateRunResult, ParamList, PreviousRunYieldedAt, SessionContext,
+  StepIndex,
 };
 use crate::param_list::clone_just::CloneJust;
 use crate::param_list::concat::Concat;
@@ -13,7 +14,7 @@ pub struct OperationFlowingProcess<
 > {
   pub process_before: ProcessBefore,
   pub last_step: OperationStep,
-  pub step_index: usize,
+  pub step_index: StepIndex,
   pub phantom_data: PhantomData<ProcessBeforeProducesToLastStepConsumesIndices>,
 }
 
@@ -71,7 +72,7 @@ where
     ))
   }
 
-  fn enumerate_steps(&mut self, last_used_index: usize) -> usize {
+  fn enumerate_steps(&mut self, last_used_index: StepIndex) -> StepIndex {
     let used_index = self.process_before.enumerate_steps(last_used_index);
     self.step_index = used_index + 1;
     self.step_index

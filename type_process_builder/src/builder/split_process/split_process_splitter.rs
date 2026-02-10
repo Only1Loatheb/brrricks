@@ -1,6 +1,6 @@
 use crate::builder::{
   FlowingProcess, IntermediateFinalizedSplitOutcome, IntermediateFinalizedSplitResult, IntermediateRunOutcome,
-  ParamList, PreviousRunYieldedAt, SessionContext, SplitProcess,
+  ParamList, PreviousRunYieldedAt, SessionContext, SplitProcess, StepIndex,
 };
 use crate::param_list::clone_just::CloneJust;
 use crate::param_list::concat::Concat;
@@ -22,7 +22,7 @@ pub struct SplitProcessSplitter<
 > {
   pub process_before: ProcessBefore,
   pub splitter: SplitterStep,
-  pub step_index: usize,
+  pub step_index: StepIndex,
   pub phantom_data: PhantomData<ProcessBeforeProducesToSplitterStepConsumesIndices>,
 }
 
@@ -107,7 +107,7 @@ where
     })
   }
 
-  fn enumerate_steps(&mut self, last_used_index: usize) -> usize {
+  fn enumerate_steps(&mut self, last_used_index: StepIndex) -> StepIndex {
     let used_index = self.process_before.enumerate_steps(last_used_index);
     self.step_index = used_index + 1;
     self.step_index

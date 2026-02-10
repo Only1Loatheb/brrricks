@@ -1,6 +1,6 @@
 use crate::builder::flowing_process::FlowingProcess;
 use crate::builder::runnable_process::RunnableProcess;
-use crate::builder::{IntermediateRunOutcome, PreviousRunYieldedAt, RunOutcome, RunResult, SessionContext};
+use crate::builder::{IntermediateRunOutcome, PreviousRunYieldedAt, RunOutcome, RunResult, SessionContext, StepIndex};
 use crate::param_list::ParamList;
 use crate::param_list::transform::TransformTo;
 use crate::step::{FailedInputValidationAttempts, Final};
@@ -24,7 +24,7 @@ pub trait FinalizedProcess: Sized {
     RunnableProcess::new(self)
   }
 
-  fn enumerate_steps(&mut self, last_used_index: usize) -> usize;
+  fn enumerate_steps(&mut self, last_used_index: StepIndex) -> StepIndex;
 }
 
 pub struct FlowingFinalizedProcess<
@@ -85,7 +85,7 @@ where
     ))
   }
 
-  fn enumerate_steps(&mut self, last_used_index: usize) -> usize {
+  fn enumerate_steps(&mut self, last_used_index: StepIndex) -> StepIndex {
     // most likely not worth to assign an index to final steps, but maybe test
     self.process_before.enumerate_steps(last_used_index)
   }

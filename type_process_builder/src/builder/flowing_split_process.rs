@@ -3,7 +3,7 @@ pub mod first_case_of_flowing_split_process;
 pub mod flowing_case_of_finalized_split_process;
 pub mod flowing_case_of_flowing_split_process;
 
-use crate::builder::{IntermediateFlowingSplitResult, PreviousRunYieldedAt, SessionContext};
+use crate::builder::{IntermediateFlowingSplitResult, PreviousRunYieldedAt, SessionContext, StepIndex};
 use crate::param_list::ParamList;
 use crate::param_list::concat::Concat;
 use crate::step::FailedInputValidationAttempts;
@@ -52,5 +52,5 @@ pub trait FlowingSplitProcess<SplitterProducesForOtherCases>: Sized {
     >,
   >;
 
-  fn enumerate_steps(&mut self, last_used_index: usize) -> usize;
+  fn enumerate_steps(&mut self, last_used_index: StepIndex) -> StepIndex;
 }

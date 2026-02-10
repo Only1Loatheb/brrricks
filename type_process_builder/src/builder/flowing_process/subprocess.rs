@@ -1,5 +1,6 @@
 use crate::builder::{
   FlowingProcess, IntermediateRunOutcome, IntermediateRunResult, ParamList, PreviousRunYieldedAt, SessionContext,
+  StepIndex,
 };
 use crate::step::FailedInputValidationAttempts;
 use std::marker::PhantomData;
@@ -30,7 +31,7 @@ impl<ProcessBeforeProduces: ParamList> FlowingProcess for Subprocess<ProcessBefo
     Ok(IntermediateRunOutcome::Continue(process_before_produces))
   }
 
-  fn enumerate_steps(&mut self, last_used_index: usize) -> usize {
+  fn enumerate_steps(&mut self, last_used_index: StepIndex) -> StepIndex {
     last_used_index
   }
 }

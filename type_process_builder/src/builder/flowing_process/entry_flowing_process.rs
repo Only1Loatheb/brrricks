@@ -24,7 +24,7 @@ impl<Produces: ParamList, EntryStep: Entry<Value, Produces = Produces>> FlowingP
     unsafe { unreachable_unchecked() }
   }
 
-  fn enumerate_steps(&mut self, last_used_index: usize) -> usize {
+  fn enumerate_steps(&mut self, last_used_index: StepIndex) -> StepIndex {
     last_used_index
   }
 }

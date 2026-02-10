@@ -22,15 +22,15 @@ use serde_value::Value;
 pub use split_process::*;
 use std::collections::BTreeMap;
 
-// type StepIndex = u32;
+type StepIndex = u32;
 
 #[derive(PartialEq, Debug, Eq, Clone, PartialOrd, Ord, Hash)]
-pub struct PreviousRunYieldedAt(pub usize);
+pub struct PreviousRunYieldedAt(pub StepIndex);
 
 #[derive(PartialEq, Debug, Eq, Clone, PartialOrd, Ord, Hash)]
-pub struct CurrentRunYieldedAt(usize);
+pub struct CurrentRunYieldedAt(StepIndex);
 
-pub(crate) const WILL_BE_RENUMBERED: usize = 0;
+pub(crate) const WILL_BE_RENUMBERED: StepIndex = 0;
 
 pub(crate) type SessionContext = BTreeMap<u64, Value>;
 
