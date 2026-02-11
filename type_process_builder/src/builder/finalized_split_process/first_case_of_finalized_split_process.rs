@@ -159,6 +159,7 @@ for FirstCaseOfFinalizedSplitProcess<
   }
 
   fn enumerate_steps(&mut self, last_used_index: StepIndex) -> StepIndex {
-    self.split_process_before.enumerate_steps(last_used_index)
+    let used_index = self.split_process_before.enumerate_steps(last_used_index);
+    self.this_case.enumerate_steps(used_index)
   }
 }
