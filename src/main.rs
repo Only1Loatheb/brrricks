@@ -150,14 +150,14 @@ async fn main() -> io::Result<()> {
         previous_run_produced = value;
         previous_run_yielded_at = PreviousRunYieldedAt(yielded_at.0);
         failed_attempts = FailedInputValidationAttempts(0);
-        println!("yielded: {:?}", msg);
+        println!("yielded: {}", msg.0);
       }
       RunOutcome::RetryUserInput(msg) => {
         failed_attempts = FailedInputValidationAttempts(failed_attempts.0 + 1);
-        println!("retry: {:?}", msg);
+        println!("retry: {}", msg.0);
       }
       RunOutcome::Finish(msg) => {
-        println!("finished: {:?}", msg);
+        println!("finished: {}", msg.0);
         return Ok(());
       }
     }

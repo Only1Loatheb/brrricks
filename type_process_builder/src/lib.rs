@@ -30,12 +30,13 @@ mod tests {
 
   impl Msisdn {
     fn from(string: String) -> Option<Msisdn> {
-      let prefix_len = string.len().checked_sub(10)?;
-      // deny optional '+' https://doc.rust-lang.org/std/primitive.u64.html#method.from_str
-      let _: () = string.starts_with('+').not().then_some(())?;
       string
-        .split_at_checked(prefix_len)
-        .and_then(|(_prefix, suffix)| suffix.parse::<u64>().ok())
+        .split_at_checked(string.len().checked_sub(10)?)
+        .and_then(|(_prefix, suffix)| {
+          // deny optional '+' https://doc.rust-lang.org/std/primitive.u64.html#method.from_str
+          let _: () = suffix.starts_with('+').not().then_some(())?;
+          suffix.parse::<u64>().ok()
+        })
         .map(|x| Msisdn(x))
     }
   }
@@ -253,5 +254,58 @@ mod tests {
       )
       .await;
     assert!(matches!(run_result.unwrap(), RunOutcome::Yield(message, ..) if message.0 == "Enter a number"));
+  }
+
+  #[tokio::test]
+  async fn test_resume() {
+    let process = EntryA
+      .split(SplitA)
+      .case_via(Case1, |x| x.show(FormA))
+      .case_via(Case2, |x| x.then(Operation2))
+      .end(FinalA)
+      .build();
+
+    let messages = ["*123#", "Enter a number", "a number", "Good bye"];
+
+    test_process_producess_messages(process, messages).await;
+  }
+
+  async fn test_process_producess_messages(process: RunnableProcess<impl FinalizedProcess>, messages: [&str; 4]) {
+    let mut previous_run_produced = session_init_value();
+    let mut previous_run_yielded_at = PreviousRunYieldedAt(0);
+    let mut failed_attempts = FailedInputValidationAttempts(0);
+    let mut messages_index = 0;
+    loop {
+      let run_outcome = process
+        .resume_run(
+          previous_run_produced.clone(),
+          previous_run_yielded_at.clone(),
+          messages[messages_index].into(),
+          failed_attempts.clone(),
+        )
+        .await
+        .expect("Test failed");
+      messages_index += 1;
+      match run_outcome {
+        RunOutcome::Yield(msg, value, yielded_at) => {
+          previous_run_produced = value;
+          previous_run_yielded_at = PreviousRunYieldedAt(yielded_at.0);
+          failed_attempts = FailedInputValidationAttempts(0);
+
+          assert_eq!(msg.0, messages[messages_index])
+        }
+        RunOutcome::RetryUserInput(msg) => {
+          failed_attempts = FailedInputValidationAttempts(failed_attempts.0 + 1);
+
+          assert_eq!(msg.0, messages[messages_index])
+        }
+        RunOutcome::Finish(msg) => {
+          assert_eq!(msg.0, messages[messages_index]);
+          break;
+        }
+      }
+      messages_index += 1;
+    }
+    assert_eq!(messages_index + 1, messages.len());
   }
 }
