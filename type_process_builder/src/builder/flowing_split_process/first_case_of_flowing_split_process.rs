@@ -3,7 +3,7 @@ use crate::builder::{
   FinalizedCaseOfFlowingSplitProcess, FinalizedProcess, FlowingCaseOfFlowingSplitProcess, FlowingProcess,
   FlowingSplitProcess, IntermediateFinalizedSplitOutcome, IntermediateFlowingSplitOutcome,
   IntermediateFlowingSplitResult, IntermediateRunOutcome, ParamList, PreviousRunYieldedAt, SessionContext,
-  SplitProcess, StepIndex,
+  SplitProcess, StepIndex, WILL_BE_RENUMBERED,
 };
 use crate::param_list::concat::Concat;
 use crate::step::FailedInputValidationAttempts;
@@ -19,6 +19,7 @@ pub struct FirstCaseOfFlowingSplitProcess<
 > {
   pub split_process_before: ProcessBefore,
   pub this_case: ThisCase,
+  pub idx: StepIndex,
   pub phantom_data: PhantomData<(
     ThisTag,
     SplitterProducesForThisCase,
@@ -96,6 +97,7 @@ FirstCaseOfFlowingSplitProcess<
       this_case: create_case(subprocess::<
         <SplitterProducesForNextCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
       >()),
+      idx: WILL_BE_RENUMBERED,
       phantom_data: Default::default(),
     }
   }
@@ -135,18 +137,29 @@ for FirstCaseOfFlowingSplitProcess<
     SplitterProducesForOtherCases,
     ThisCase::Produces,
   > {
-    let process_before_output = self
-      .split_process_before
-      .resume_run(previous_run_produced, previous_run_yielded_at, user_input, failed_input_validation_attempts)
-      .await?;
-    match process_before_output {
-      IntermediateFinalizedSplitOutcome::GoToCase {
-        process_before_split_produced,
-        splitter_produces_to_other_cases,
-      } => self.continue_run(process_before_split_produced, splitter_produces_to_other_cases).await,
-      IntermediateFinalizedSplitOutcome::Yield(a, b, c) => Ok(IntermediateFlowingSplitOutcome::Yield(a, b, c)),
-      IntermediateFinalizedSplitOutcome::Finish(a) => Ok(IntermediateFlowingSplitOutcome::Finish(a)),
-      IntermediateFinalizedSplitOutcome::RetryUserInput(a) => Ok(IntermediateFlowingSplitOutcome::RetryUserInput(a)),
+    if previous_run_yielded_at.0 < self.idx {
+      let process_before_output = self
+        .split_process_before
+        .resume_run(previous_run_produced, previous_run_yielded_at, user_input, failed_input_validation_attempts)
+        .await?;
+      match process_before_output {
+        IntermediateFinalizedSplitOutcome::GoToCase {
+          process_before_split_produced,
+          splitter_produces_to_other_cases,
+        } => self.continue_run(process_before_split_produced, splitter_produces_to_other_cases).await,
+        IntermediateFinalizedSplitOutcome::Yield(a, b, c) => Ok(IntermediateFlowingSplitOutcome::Yield(a, b, c)),
+        IntermediateFinalizedSplitOutcome::Finish(a) => Ok(IntermediateFlowingSplitOutcome::Finish(a)),
+        IntermediateFinalizedSplitOutcome::RetryUserInput(a) => Ok(IntermediateFlowingSplitOutcome::RetryUserInput(a)),
+      }
+    } else {
+      let a = self.this_case.resume_run(previous_run_produced, previous_run_yielded_at, user_input,
+                                failed_input_validation_attempts).await?;
+      match a {
+        IntermediateRunOutcome::Continue(a) => Ok(IntermediateFlowingSplitOutcome::Continue(a)),
+        IntermediateRunOutcome::Yield(a, b, c) => Ok(IntermediateFlowingSplitOutcome::Yield(a, b, c)),
+        IntermediateRunOutcome::Finish(a) => Ok(IntermediateFlowingSplitOutcome::Finish(a)),
+        IntermediateRunOutcome::RetryUserInput(a) => Ok(IntermediateFlowingSplitOutcome::RetryUserInput(a)),
+      }
     }
   }
 
@@ -181,6 +194,7 @@ for FirstCaseOfFlowingSplitProcess<
 
   fn enumerate_steps(&mut self, last_used_index: StepIndex) -> StepIndex {
     let used_index = self.split_process_before.enumerate_steps(last_used_index);
+    self.idx = used_index + 1;
     self.this_case.enumerate_steps(used_index)
   }
 }

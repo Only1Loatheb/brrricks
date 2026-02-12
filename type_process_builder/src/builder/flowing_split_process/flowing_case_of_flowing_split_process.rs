@@ -2,7 +2,7 @@ use crate::builder::subprocess::{Subprocess, subprocess};
 use crate::builder::{
   FinalizedCaseOfFlowingSplitProcess, FinalizedProcess, FlowingProcess, FlowingSplitProcess,
   IntermediateFlowingSplitOutcome, IntermediateFlowingSplitResult, IntermediateRunOutcome, IntermediateRunResult,
-  ParamList, PreviousRunYieldedAt, SessionContext, StepIndex,
+  ParamList, PreviousRunYieldedAt, SessionContext, StepIndex, WILL_BE_RENUMBERED,
 };
 use crate::param_list::concat::Concat;
 use crate::param_list::intersect::Intersect;
@@ -22,6 +22,7 @@ pub struct FlowingCaseOfFlowingSplitProcess<
 {
   pub split_process_before: ProcessBefore,
   pub this_case: ThisCase,
+  pub idx: StepIndex,
   pub phantom_data: PhantomData<(
     ThisTag,
     SplitterProducesForThisCase,
@@ -99,6 +100,7 @@ FlowingCaseOfFlowingSplitProcess<
       this_case: create_case(subprocess::<
         <SplitterProducesForNextCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
       >()),
+      idx: WILL_BE_RENUMBERED,
       phantom_data: Default::default(),
     }
   }
@@ -256,6 +258,7 @@ where
 
   fn enumerate_steps(&mut self, last_used_index: StepIndex) -> StepIndex {
     let used_index = self.split_process_before.enumerate_steps(last_used_index);
+    self.idx = used_index +1;
     self.this_case.enumerate_steps(used_index)
   }
 }

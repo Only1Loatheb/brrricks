@@ -3,7 +3,7 @@ use crate::builder::{
   FinalizedCaseOfFlowingSplitProcess, FinalizedProcess, FinalizedSplitProcess, FlowingCaseOfFlowingSplitProcess,
   FlowingProcess, FlowingSplitProcess, IntermediateFinalizedSplitOutcome, IntermediateFlowingSplitOutcome,
   IntermediateFlowingSplitResult, IntermediateRunOutcome, IntermediateRunResult, ParamList, PreviousRunYieldedAt,
-  SessionContext, StepIndex,
+  SessionContext, StepIndex, WILL_BE_RENUMBERED,
 };
 use crate::param_list::concat::Concat;
 use crate::step::FailedInputValidationAttempts;
@@ -95,6 +95,7 @@ FlowingCaseOfFinalizedSplitProcess<
       this_case: create_case(subprocess::<
         <SplitterProducesForNextCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
       >()),
+      idx: WILL_BE_RENUMBERED,
       phantom_data: Default::default(),
     }
   }

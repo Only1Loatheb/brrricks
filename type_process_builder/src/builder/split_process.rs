@@ -5,7 +5,7 @@ use crate::builder::first_case_of_flowing_split_process::FirstCaseOfFlowingSplit
 use crate::builder::subprocess::{Subprocess, subprocess};
 use crate::builder::{
   FinalizedProcess, FirstCaseOfFinalizedSplitProcess, FlowingProcess, IntermediateFinalizedSplitResult, ParamList,
-  PreviousRunYieldedAt, SessionContext, StepIndex,
+  PreviousRunYieldedAt, SessionContext, StepIndex, WILL_BE_RENUMBERED,
 };
 use crate::param_list::concat::Concat;
 use crate::step::FailedInputValidationAttempts;
@@ -92,6 +92,7 @@ pub trait SplitProcess<SplitterProducesForOtherCases>: Sized {
       this_case: create_case(subprocess::<
         <Self::SplitterProducesForFirstCase as Concat<Self::ProcessBeforeSplitProduces>>::Concatenated,
       >()),
+      idx: WILL_BE_RENUMBERED,
       phantom_data: Default::default(),
     }
   }
