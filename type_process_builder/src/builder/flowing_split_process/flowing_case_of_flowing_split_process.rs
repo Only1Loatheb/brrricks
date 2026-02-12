@@ -22,7 +22,7 @@ pub struct FlowingCaseOfFlowingSplitProcess<
 {
   pub split_process_before: ProcessBefore,
   pub this_case: ThisCase,
-  pub idx: StepIndex,
+  pub first_step_in_case_index: StepIndex,
   pub phantom_data: PhantomData<(
     ThisTag,
     SplitterProducesForThisCase,
@@ -72,6 +72,7 @@ FlowingCaseOfFlowingSplitProcess<
       this_case: create_case(subprocess::<
         <SplitterProducesForNextCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
       >()),
+      first_step_in_case_index: WILL_BE_RENUMBERED,
       phantom_data: Default::default(),
     }
   }
@@ -93,14 +94,14 @@ FlowingCaseOfFlowingSplitProcess<
   > where
     ProcessBefore::EveryFlowingCaseProduces: Intersect<ThisCase::Produces>,
     <ProcessBefore::EveryFlowingCaseProduces as Intersect<ThisCase::Produces>>::Intersection: ParamList,
-    ThisCase::Produces: TransformTo<<ProcessBefore ::EveryFlowingCaseProduces as Intersect<ThisCase::Produces>>::Intersection, ThisIndices>
+    ThisCase::Produces: TransformTo<<ProcessBefore::EveryFlowingCaseProduces as Intersect<ThisCase::Produces>>::Intersection, ThisIndices>,
   {
     FlowingCaseOfFlowingSplitProcess {
       split_process_before: self,
       this_case: create_case(subprocess::<
         <SplitterProducesForNextCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
       >()),
-      idx: WILL_BE_RENUMBERED,
+      first_step_in_case_index: WILL_BE_RENUMBERED,
       phantom_data: Default::default(),
     }
   }
@@ -138,25 +139,39 @@ where
     user_input: String,
     failed_input_validation_attempts: FailedInputValidationAttempts,
   ) -> IntermediateFlowingSplitResult<Self::ProcessBeforeSplitProduces, SplitterProducesForOtherCases, Self::EveryFlowingCaseProduces> {
-    let process_before_output = self
-      .split_process_before
-      .resume_run(previous_run_produced, previous_run_yielded_at, user_input, failed_input_validation_attempts)
-      .await?;
-    match process_before_output {
-      IntermediateFlowingSplitOutcome::Continue(a) => Ok(IntermediateFlowingSplitOutcome::Continue(a.intersect())),
-      IntermediateFlowingSplitOutcome::GoToCase {
-        process_before_split_produced,
-        splitter_produces_to_other_cases,
-      } => {
-        let produced = match splitter_produces_to_other_cases {
-          Coproduct::Inl((_pd, params)) => Coproduct::Inl(params),
-          Coproduct::Inr(inr_value) => Coproduct::Inr(inr_value),
-        };
-        self.continue_run(process_before_split_produced, produced).await
+    if previous_run_yielded_at.0 < self.first_step_in_case_index {
+      let process_before_output = self
+        .split_process_before
+        .resume_run(previous_run_produced, previous_run_yielded_at, user_input, failed_input_validation_attempts)
+        .await?;
+      match process_before_output {
+        IntermediateFlowingSplitOutcome::Continue(a) => Ok(IntermediateFlowingSplitOutcome::Continue(a.intersect())),
+        IntermediateFlowingSplitOutcome::GoToCase {
+          process_before_split_produced,
+          splitter_produces_to_other_cases,
+        } => {
+          let produced = match splitter_produces_to_other_cases {
+            Coproduct::Inl((_pd, params)) => Coproduct::Inl(params),
+            Coproduct::Inr(inr_value) => Coproduct::Inr(inr_value),
+          };
+          self.continue_run(process_before_split_produced, produced).await
+        }
+        IntermediateFlowingSplitOutcome::Yield(a, b, c) => Ok(IntermediateFlowingSplitOutcome::Yield(a, b, c)),
+        IntermediateFlowingSplitOutcome::Finish(a) => Ok(IntermediateFlowingSplitOutcome::Finish(a)),
+        IntermediateFlowingSplitOutcome::RetryUserInput(a) => Ok(IntermediateFlowingSplitOutcome::RetryUserInput(a)),
       }
-      IntermediateFlowingSplitOutcome::Yield(a, b, c) => Ok(IntermediateFlowingSplitOutcome::Yield(a, b, c)),
-      IntermediateFlowingSplitOutcome::Finish(a) => Ok(IntermediateFlowingSplitOutcome::Finish(a)),
-      IntermediateFlowingSplitOutcome::RetryUserInput(a) => Ok(IntermediateFlowingSplitOutcome::RetryUserInput(a)),
+    } else {
+      match self.this_case.resume_run(
+        previous_run_produced,
+        previous_run_yielded_at,
+        user_input,
+        failed_input_validation_attempts,
+      ).await? {
+          IntermediateRunOutcome::Continue(a) => Ok(IntermediateFlowingSplitOutcome::Continue(a.transform())),
+          IntermediateRunOutcome::Yield(a, b, c) => Ok(IntermediateFlowingSplitOutcome::Yield(a, b, c)),
+          IntermediateRunOutcome::Finish(a) => Ok(IntermediateFlowingSplitOutcome::Finish(a)),
+          IntermediateRunOutcome::RetryUserInput(a) => Ok(IntermediateFlowingSplitOutcome::RetryUserInput(a)),
+      }
     }
   }
 
@@ -187,6 +202,7 @@ where
 
   fn enumerate_steps(&mut self, last_used_index: StepIndex) -> StepIndex {
     let used_index = self.split_process_before.enumerate_steps(last_used_index);
+    self.first_step_in_case_index = used_index + 1;
     self.this_case.enumerate_steps(used_index)
   }
 }
@@ -258,7 +274,7 @@ where
 
   fn enumerate_steps(&mut self, last_used_index: StepIndex) -> StepIndex {
     let used_index = self.split_process_before.enumerate_steps(last_used_index);
-    self.idx = used_index +1;
+    self.first_step_in_case_index = used_index + 1;
     self.this_case.enumerate_steps(used_index)
   }
 }

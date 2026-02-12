@@ -65,6 +65,7 @@ pub trait SplitProcess<SplitterProducesForOtherCases>: Sized {
       this_case: create_case(subprocess::<
         <Self::SplitterProducesForFirstCase as Concat<Self::ProcessBeforeSplitProduces>>::Concatenated,
       >()),
+      first_step_in_case_index: WILL_BE_RENUMBERED,
       phantom_data: Default::default(),
     }
   }
@@ -92,7 +93,7 @@ pub trait SplitProcess<SplitterProducesForOtherCases>: Sized {
       this_case: create_case(subprocess::<
         <Self::SplitterProducesForFirstCase as Concat<Self::ProcessBeforeSplitProduces>>::Concatenated,
       >()),
-      idx: WILL_BE_RENUMBERED,
+      first_step_in_case_index: WILL_BE_RENUMBERED,
       phantom_data: Default::default(),
     }
   }
