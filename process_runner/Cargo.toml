@@ -7,3 +7,8 @@ edition = "2024"
 
 [dependencies]
 type_process_builder = { path = "../type_process_builder" }
+qrios_api_axum_server = { path = "../qrios_api_axum_server", features = ["server"]}
+async-trait = "0.1"
+http = "1.0"
+headers = "0.4"
+axum-extra = "0.12"

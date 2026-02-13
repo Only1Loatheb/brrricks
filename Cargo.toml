@@ -9,6 +9,7 @@ build = "build.rs"
 members = [
     "type_process_builder",
     "process_runner",
+    "qrios_api_axum_server",
 ]
 
 [dependencies]

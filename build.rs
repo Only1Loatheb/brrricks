@@ -1,9 +1,9 @@
-use std::fs;
 use std::path::Path;
+use std::process::Command;
+use std::{env, fs};
 
 pub fn main() {
   monk::init();
-
   update_diagram_in_readme(
     Path::new("type_process_builder/doc/brrricks_app_session_flow.mmd"),
     "## Brrricks app session flow",
@@ -12,6 +12,7 @@ pub fn main() {
     Path::new("type_process_builder/doc/process_builder_states.mmd"),
     "## Process builder states",
   );
+  generate_qrios_api_axum_server();
 }
 
 fn update_diagram_in_readme(diagram_path: &Path, section_header: &str) {
@@ -56,4 +57,44 @@ fn update_diagram_in_readme(diagram_path: &Path, section_header: &str) {
   new_readme.push_str(&readme[content_end..]);
 
   fs::write(readme_path, new_readme).expect("Failed to write updated README.md");
+}
+
+fn generate_qrios_api_axum_server() {
+  println!("cargo:rerun-if-changed=qrios-ussd-api-swagger.json");
+  let project_dir = env::current_dir().expect("failed to get current dir");
+  let project_dir = project_dir.to_str().expect("non-utf8 path");
+  println!("project_dir: {}", project_dir);
+  let uid = String::from_utf8(Command::new("id").arg("-u").output().unwrap().stdout)
+    .unwrap()
+    .trim()
+    .to_string();
+
+  let gid = String::from_utf8(Command::new("id").arg("-g").output().unwrap().stdout)
+    .unwrap()
+    .trim()
+    .to_string();
+  let status = Command::new("docker")
+    .args([
+      "run",
+      "--rm",
+      "--user",
+      &format!("{uid}:{gid}"),
+      "-v",
+      &format!("{project_dir}:/local"),
+      "openapitools/openapi-generator-cli",
+      "generate",
+      "-i",
+      "/local/qrios-ussd-api-swagger.json",
+      "-g",
+      "rust-axum",
+      "-o",
+      "/local/qrios_api_axum_server",
+      "--additional-properties=packageName=qrios_api_axum_server",
+    ])
+    .status()
+    .expect("failed to run docker");
+
+  if !status.success() {
+    panic!("openapi-generator failed");
+  }
 }

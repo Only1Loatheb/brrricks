@@ -1,0 +1,1845 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "QRIOS USSD API documentation",
+    "description": "This API is *not* exposed by Qrios, but it should be implemented by the developer. Qrios will call this API on developer's side to provide information about USSD sessions and the developer should answer with information regarding what should happen next in the aforementioned sessions.",
+    "version": "1.6.0"
+  },
+  "servers": [
+    {
+      "url": "https://example-developer-ussd-app.com",
+      "description": "URL to developer's USSD app"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Developer's app endpoints",
+      "description": "Endpoints to be implemented by the developer."
+    }
+  ],
+  "paths": {
+    "/ussdSessionEvent/new": {
+      "post": {
+        "tags": [
+          "Developer's app endpoints"
+        ],
+        "summary": "Called when a new USSD session is starting",
+        "description": "This endpoint is called when the user enters the USSD session (either by user entering the session via shortcode or developer initiating it via push message using Qrios API or redirecting from other USSD app). Here, we're provided with basic information about the user - their phone number and mobile operator. We also get input, which can either be a shortcode dialed by the user (e.g. \\*425\\*\\<app_sub_shortcode>\\*\\<input>#) or context data associated with push message request from Qrios API (using `/ussd/app/push` endpoint) or redirection to optional process. In order to track the session, a unique session ID is also provided - it will be repeated through all messages sent to the server that relate to the session. There are also data about client ID (ID of the developer who runs the app) and app ID. <br/> The response should include what the user should see in USSD response message - you can show them a view (a message with optional ability to input text) or redirect to other USSD API application or ask a process to guide them towards an activity (e.g. making a payment). You can also pass context data, which will be included in the next message sent to the developer's app.",
+        "operationId": "postUssdsessioneventNew",
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "description": "The authorization secret value according to the configured authorization method of the USSD app",
+            "required": false,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UssdSessionEvent.NewSession"
+              },
+              "examples": {
+                "UssdSessionNewDialExample": {
+                  "summary": "User calls in",
+                  "description": "This type of request is made when the user dials a shortcode (e.g. \\*425\\*425\\*12345\\#). The request contains the entire shortcode string rather than a part of it.",
+                  "value": {
+                    "clientId": "x97uJ23b",
+                    "appId": "AppIdGeneratedByQriosApi",
+                    "sessionId": "8a444af8-4b03-4545-8677-2a6c924bdddb",
+                    "msisdn": "2341234567890",
+                    "operator": "mtn",
+                    "input": {
+                      "shortcodeString": "*425*425*12345#",
+                      "type": "Dial"
+                    }
+                  }
+                },
+                "UssdSessionNewPushExample": {
+                  "summary": "Push message will be sent to a user",
+                  "description": "This type of request is made when a push message is sent to a user using Qrios API. The request contains context data passed in request sent using Qrios API.",
+                  "value": {
+                    "clientId": "x97uJ23b",
+                    "appId": "AppIdGeneratedByQriosApi",
+                    "sessionId": "8a444af8-4b03-4545-8677-2a6c924bdddb",
+                    "msisdn": "2341234567890",
+                    "operator": "mtn",
+                    "input": {
+                      "contextData": "devCorrelationId:12345",
+                      "type": "Push"
+                    }
+                  }
+                },
+                "UssdSessionRedirectToProcessWithoutParamsExample": {
+                  "summary": "Other USSD application redirects its user to developer's USSD application process without parameters",
+                  "description": "This type of request is made when other developer redirects its session to developer's USSD application. User can continue the session he dialed in current application.",
+                  "value": {
+                    "clientId": "x97uJ23b",
+                    "appId": "AppIdGeneratedByQriosApi",
+                    "sessionId": "8a444af8-4b03-4545-8677-2a6c924bdddb",
+                    "msisdn": "2341234567890",
+                    "operator": "mtn",
+                    "input": {
+                      "processId": "menu",
+                      "process": {
+                        "id": "menu",
+                        "params": {}
+                      },
+                      "type": "Redirect"
+                    }
+                  }
+                },
+                "UssdSessionRedirectToProcessWithParamsExample": {
+                  "summary": "Other USSD application redirects its user to developer's USSD application process with defined parameters",
+                  "description": "This type of request is made when other developer redirects its session to developer's USSD application. User can continue the session he dialed in current application.",
+                  "value": {
+                    "clientId": "x97uJ23b",
+                    "appId": "AppIdGeneratedByQriosApi",
+                    "sessionId": "8a444af8-4b03-4545-8677-2a6c924bdddb",
+                    "msisdn": "2341234567890",
+                    "operator": "mtn",
+                    "input": {
+                      "processId": "payment",
+                      "process": {
+                        "id": "payment",
+                        "params": {
+                          "amount": "100",
+                          "receiver_msisdn": "2341001001001"
+                        }
+                      },
+                      "type": "Redirect"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Session start has been successfully handled by the developer, the response contains a USSD command issued to a user.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UssdSessionCommand"
+                },
+                "examples": {
+                  "InputViewExample": {
+                    "summary": "Display text to a user, expect input",
+                    "value": {
+                      "action": {
+                        "view": {
+                          "message": "Please provide Your account number:",
+                          "type": "InputView"
+                        },
+                        "type": "ShowView"
+                      },
+                      "contextData": "devCorrelationId:12345"
+                    }
+                  },
+                  "InputViewExampleWithSessionTag": {
+                    "summary": "Display text to a user, expect input",
+                    "value": {
+                      "action": {
+                        "view": {
+                          "message": "Please provide Your account number:",
+                          "type": "InputView"
+                        },
+                        "type": "ShowView"
+                      },
+                      "contextData": "devCorrelationId:12345",
+                      "sessionTag": "account_opening_flow"
+                    }
+                  },
+                  "InfoViewExample": {
+                    "summary": "Display text to a user, don't expect input",
+                    "value": {
+                      "action": {
+                        "view": {
+                          "message": "Hello world!",
+                          "type": "InfoView"
+                        },
+                        "type": "ShowView"
+                      },
+                      "contextData": "devCorrelationId:12345"
+                    }
+                  },
+                  "RedirectExample": {
+                    "summary": "Redirect to other USSD API application",
+                    "value": {
+                      "action": {
+                        "destinationAppId": "b56r455",
+                        "process": {
+                          "id": "payment",
+                          "params": {
+                            "amount": "100",
+                            "receiver_msisdn": "2341001001001"
+                          }
+                        },
+                        "type": "Redirect"
+                      },
+                      "contextData": "devCorrelationId:12345"
+                    }
+                  },
+                  "MerchantPaymentProcessFlexibleExample": {
+                    "summary": "Ask for merchant payment (let user select bank and account)",
+                    "value": {
+                      "action": {
+                        "process": {
+                          "operationId": "535bdec5-ea1c-4737-b9e2-04a9743d4227",
+                          "merchantCode": "89440477",
+                          "amount": 1320.5,
+                          "paymentMode": {
+                            "type": "Flexible"
+                          },
+                          "type": "MerchantPaymentProcess"
+                        },
+                        "type": "RunProcess"
+                      },
+                      "contextData": "devCorrelationId:12345"
+                    }
+                  },
+                  "MerchantPaymentProcessFixedBankExample": {
+                    "summary": "Ask for merchant payment (let user select bank account from predefined bank)",
+                    "value": {
+                      "action": {
+                        "process": {
+                          "operationId": "535bdec5-ea1c-4737-b9e2-04a9743d4227",
+                          "merchantCode": "89440477",
+                          "amount": 1320.5,
+                          "paymentMode": {
+                            "bank": "023",
+                            "type": "FixedBank"
+                          },
+                          "executionMode": {
+                            "type": "WithoutWaitingForBank"
+                          },
+                          "type": "MerchantPaymentProcess"
+                        },
+                        "type": "RunProcess"
+                      },
+                      "contextData": "devCorrelationId:12345"
+                    }
+                  },
+                  "MerchantPaymentProcessFixedAccountExample": {
+                    "summary": "Ask for merchant payment (user's bank account is predefined)",
+                    "value": {
+                      "action": {
+                        "process": {
+                          "operationId": "535bdec5-ea1c-4737-b9e2-04a9743d4227",
+                          "merchantCode": "89440477",
+                          "amount": 1320.5,
+                          "paymentMode": {
+                            "bank": "023",
+                            "account": "1234567890",
+                            "type": "FixedAccount"
+                          },
+                          "executionMode": {
+                            "millis": 15000,
+                            "type": "WithBankResponseTimeout"
+                          },
+                          "type": "MerchantPaymentProcess"
+                        },
+                        "type": "RunProcess"
+                      },
+                      "contextData": "devCorrelationId:12345"
+                    }
+                  },
+                  "EmbeddedProcessGenericExample": {
+                    "summary": "Ask for a functionality that hands over control to Qrios application",
+                    "value": {
+                      "action": {
+                        "process": {
+                          "processId": "process-id-from-qrios-documentation",
+                          "params": {
+                            "process-specific-param-name-1": "param-value-1",
+                            "process-specific-param-name-2": "param-value-2"
+                          },
+                          "type": "EmbeddedProcess"
+                        },
+                        "type": "RunProcess"
+                      },
+                      "contextData": "devCorrelationId:12345"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ussdSessionEvent/continue": {
+      "post": {
+        "tags": [
+          "Developer's app endpoints"
+        ],
+        "summary": "Called when a USSD session is continuing (user responded to previous message)",
+        "description": "This endpoint is called when the user decides to continue a continuing session by providing input. Here, we're provided with data that identify the application (client ID and app ID) and current session (session ID). Then, the request passes a result - it can either be a value inputted by the user (with InputView) or the result of a process (e.g. merchant payment process). The result is an outcome of previous response sent to the server. The request also passes contextData that have been previously submitted. <br/> The response should include what the user should see in USSD response message - you can show them a view (a message with optional ability to input text) or redirect user to the other USSD API application or ask a process to guide them towards an activity (e.g. making a payment). You can also pass context data, which will be included in the next message sent to the developer's app.",
+        "operationId": "postUssdsessioneventContinue",
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "description": "The authorization secret value according to the configured authorization method of the USSD app",
+            "required": false,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContinueSession"
+              },
+              "examples": {
+                "InputResultExample": {
+                  "summary": "User returns input",
+                  "description": "If you asked user to provide input, the result will be sent in a message like this. \"value\" field provides input from the user (e.g. if the user types in \"1\" and clicks \"Send\", the field's value will be \"1\").",
+                  "value": {
+                    "clientId": "x97uJ23b",
+                    "appId": "AppIdGeneratedByQriosApi",
+                    "sessionId": "8a444af8-4b03-4545-8677-2a6c924bdddb",
+                    "result": {
+                      "value": "1",
+                      "type": "InputResult"
+                    },
+                    "contextData": "devCorrelationId:12345"
+                  }
+                },
+                "MerchantPaymentResultSuccessExample": {
+                  "summary": "Merchant payment succeeds",
+                  "description": "This type of message is sent if the payment succeeds.",
+                  "value": {
+                    "clientId": "x97uJ23b",
+                    "appId": "AppIdGeneratedByQriosApi",
+                    "sessionId": "8a444af8-4b03-4545-8677-2a6c924bdddb",
+                    "result": {
+                      "operationId": "535bdec5-ea1c-4737-b9e2-04a9743d4227",
+                      "status": {
+                        "type": "Success"
+                      },
+                      "type": "MerchantPaymentResult"
+                    },
+                    "contextData": "devCorrelationId:12345"
+                  }
+                },
+                "MerchantPaymentResultUnknownExample": {
+                  "summary": "Merchant payment status unknown",
+                  "description": "In some cases, the state of the payment may not be known at the time of response. This does not mean the payment has succeeded or failed. Use /operation endpoint in Qrios API to query for payment status later.",
+                  "value": {
+                    "clientId": "x97uJ23b",
+                    "appId": "AppIdGeneratedByQriosApi",
+                    "sessionId": "8a444af8-4b03-4545-8677-2a6c924bdddb",
+                    "result": {
+                      "operationId": "535bdec5-ea1c-4737-b9e2-04a9743d4227",
+                      "status": {
+                        "type": "Unknown"
+                      },
+                      "type": "MerchantPaymentResult"
+                    },
+                    "contextData": "devCorrelationId:12345"
+                  }
+                },
+                "MerchantPaymentResultFailureExample": {
+                  "summary": "Merchant payment fails",
+                  "description": "If the payment fails, the response will contain \"cause\" field. This field will describe the cause of failure. Merchant payment failure means that the payment was explicitly denied rather than uncertain.",
+                  "value": {
+                    "clientId": "x97uJ23b",
+                    "appId": "AppIdGeneratedByQriosApi",
+                    "sessionId": "8a444af8-4b03-4545-8677-2a6c924bdddb",
+                    "result": {
+                      "operationId": "535bdec5-ea1c-4737-b9e2-04a9743d4227",
+                      "status": {
+                        "cause": {
+                          "type": "InsufficientBalance"
+                        },
+                        "type": "Failure"
+                      },
+                      "type": "MerchantPaymentResult"
+                    },
+                    "contextData": "devCorrelationId:12345"
+                  }
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Session continuation has been successfully handled by the developer, the response contains a USSD command issued to a user.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UssdSessionCommand"
+                },
+                "examples": {
+                  "InputViewExample": {
+                    "summary": "Display text to a user, expect input",
+                    "value": {
+                      "action": {
+                        "view": {
+                          "message": "Please provide Your account number:",
+                          "type": "InputView"
+                        },
+                        "type": "ShowView"
+                      },
+                      "contextData": "devCorrelationId:12345"
+                    }
+                  },
+                  "InputViewExampleWithSessionTag": {
+                    "summary": "Display text to a user, expect input",
+                    "value": {
+                      "action": {
+                        "view": {
+                          "message": "Please provide Your account number:",
+                          "type": "InputView"
+                        },
+                        "type": "ShowView"
+                      },
+                      "contextData": "devCorrelationId:12345",
+                      "sessionTag": "account_opening_flow"
+                    }
+                  },
+                  "InfoViewExample": {
+                    "summary": "Display text to a user, don't expect input",
+                    "value": {
+                      "action": {
+                        "view": {
+                          "message": "Hello world!",
+                          "type": "InfoView"
+                        },
+                        "type": "ShowView"
+                      },
+                      "contextData": "devCorrelationId:12345"
+                    }
+                  },
+                  "RedirectExample": {
+                    "summary": "Redirect to other USSD API application",
+                    "value": {
+                      "action": {
+                        "destinationAppId": "b56r455",
+                        "process": {
+                          "id": "payment",
+                          "params": {
+                            "amount": "100",
+                            "receiver_msisdn": "2341001001001"
+                          }
+                        },
+                        "type": "Redirect"
+                      },
+                      "contextData": "devCorrelationId:12345"
+                    }
+                  },
+                  "MerchantPaymentProcessFlexibleExample": {
+                    "summary": "Ask for merchant payment (let user select bank and account)",
+                    "value": {
+                      "action": {
+                        "process": {
+                          "operationId": "535bdec5-ea1c-4737-b9e2-04a9743d4227",
+                          "merchantCode": "89440477",
+                          "amount": 1320.5,
+                          "paymentMode": {
+                            "type": "Flexible"
+                          },
+                          "type": "MerchantPaymentProcess"
+                        },
+                        "type": "RunProcess"
+                      },
+                      "contextData": "devCorrelationId:12345"
+                    }
+                  },
+                  "MerchantPaymentProcessFixedBankExample": {
+                    "summary": "Ask for merchant payment (let user select bank account from predefined bank)",
+                    "value": {
+                      "action": {
+                        "process": {
+                          "operationId": "535bdec5-ea1c-4737-b9e2-04a9743d4227",
+                          "merchantCode": "89440477",
+                          "amount": 1320.5,
+                          "paymentMode": {
+                            "bank": "023",
+                            "type": "FixedBank"
+                          },
+                          "executionMode": {
+                            "type": "WithoutWaitingForBank"
+                          },
+                          "type": "MerchantPaymentProcess"
+                        },
+                        "type": "RunProcess"
+                      },
+                      "contextData": "devCorrelationId:12345"
+                    }
+                  },
+                  "MerchantPaymentProcessFixedAccountExample": {
+                    "summary": "Ask for merchant payment (user's bank account is predefined)",
+                    "value": {
+                      "action": {
+                        "process": {
+                          "operationId": "535bdec5-ea1c-4737-b9e2-04a9743d4227",
+                          "merchantCode": "89440477",
+                          "amount": 1320.5,
+                          "paymentMode": {
+                            "bank": "023",
+                            "account": "1234567890",
+                            "type": "FixedAccount"
+                          },
+                          "executionMode": {
+                            "millis": 15000,
+                            "type": "WithBankResponseTimeout"
+                          },
+                          "type": "MerchantPaymentProcess"
+                        },
+                        "type": "RunProcess"
+                      },
+                      "contextData": "devCorrelationId:12345"
+                    }
+                  },
+                  "EmbeddedProcessGenericExample": {
+                    "summary": "Ask for a functionality that hands over control to Qrios application",
+                    "value": {
+                      "action": {
+                        "process": {
+                          "processId": "process-id-from-qrios-documentation",
+                          "params": {
+                            "process-specific-param-name-1": "param-value-1",
+                            "process-specific-param-name-2": "param-value-2"
+                          },
+                          "type": "EmbeddedProcess"
+                        },
+                        "type": "RunProcess"
+                      },
+                      "contextData": "devCorrelationId:12345"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ussdSessionEvent/close": {
+      "post": {
+        "tags": [
+          "Developer's app endpoints"
+        ],
+        "summary": "Called when a USSD session is closing gracefully (user cannot provide more input, user exits, session times out)",
+        "description": "This endpoint is called when the session closes gracefully, i.e. the end of the session is not caused by an error. There are three ways in which that can happen - the session may end naturally, as no input can be provided by the user (that happens when InfoView is used); the user may end the session by pressing \"Cancel\" on their phone; or the session is ended by the mobile operator due to timeout (e.g. two minutes).<br/>No response body is expected at this point as the session has been closed.",
+        "operationId": "postUssdsessioneventClose",
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "description": "The authorization secret value according to the configured authorization method of the USSD app",
+            "required": false,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CloseSession"
+              },
+              "examples": {
+                "CloseEndExample": {
+                  "summary": "Session ends naturally",
+                  "description": "The session closes, as further input is not expected.",
+                  "value": {
+                    "clientId": "x97uJ23b",
+                    "appId": "AppIdGeneratedByQriosApi",
+                    "sessionId": "8a444af8-4b03-4545-8677-2a6c924bdddb",
+                    "reason": {
+                      "type": "End"
+                    },
+                    "contextData": "devCorrelationId:12345"
+                  }
+                },
+                "CloseAbandonExample": {
+                  "summary": "Session is abandoned",
+                  "description": "The session closes, as the user has left it (e.g. by pressing Cancel on their phone).",
+                  "value": {
+                    "clientId": "x97uJ23b",
+                    "appId": "AppIdGeneratedByQriosApi",
+                    "sessionId": "8a444af8-4b03-4545-8677-2a6c924bdddb",
+                    "reason": {
+                      "type": "Abandon"
+                    },
+                    "contextData": "devCorrelationId:12345"
+                  }
+                },
+                "CloseTimeoutExample": {
+                  "summary": "Session times out",
+                  "description": "The session is closed by mobile operator due to being too long.",
+                  "value": {
+                    "clientId": "x97uJ23b",
+                    "appId": "AppIdGeneratedByQriosApi",
+                    "sessionId": "8a444af8-4b03-4545-8677-2a6c924bdddb",
+                    "reason": {
+                      "type": "Timeout"
+                    },
+                    "contextData": "devCorrelationId:12345"
+                  }
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Session end has been successfully handled by the developer; the server acknowledges that the session has been closed. Response body is empty."
+          },
+          "204": {
+            "description": "Session end has been successfully handled by the developer; the server acknowledges that the session has been closed. Response body is empty."
+          }
+        }
+      }
+    },
+    "/ussdSessionEvent/abort": {
+      "post": {
+        "tags": [
+          "Developer's app endpoints"
+        ],
+        "summary": "Called when a USSD session is being aborted (internal error)",
+        "description": "This endpoint is called when the session is aborted due to an internal error. This can happen in a number of ways, which are not usually detailed - the exception being an error of insufficient funds available in the virtual purse. When such an error happens, the USSD session is ended and a request is sent to this endpoint to inform of an error. <br/>No response body is expected at this point as the session has been aborted.",
+        "operationId": "postUssdsessioneventAbort",
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "description": "The authorization secret value according to the configured authorization method of the USSD app",
+            "required": false,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AbortSession"
+              },
+              "examples": {
+                "CloseEndExample": {
+                  "summary": "Missing Privilege",
+                  "description": "The session is aborted due to missing USSD privilege",
+                  "value": {
+                    "clientId": "x97uJ23b",
+                    "appId": "AppIdGeneratedByQriosApi",
+                    "sessionId": "8a444af8-4b03-4545-8677-2a6c924bdddb",
+                    "reason": {
+                      "privilege": "UssdApi",
+                      "type": "MissingPrivilege"
+                    }
+                  }
+                },
+                "AbortInsufficientBalanceExample": {
+                  "summary": "Insufficient funds",
+                  "description": "The session is aborted as you don't have enough funds to continue using the service. Top up your virtual purse to continue using the service",
+                  "value": {
+                    "clientId": "x97uJ23b",
+                    "appId": "AppIdGeneratedByQriosApi",
+                    "sessionId": "8a444af8-4b03-4545-8677-2a6c924bdddb",
+                    "reason": {
+                      "type": "InsufficientBalanceInVirtualPurse"
+                    }
+                  }
+                },
+                "AbortDuplicatedOperationExample": {
+                  "summary": "Duplicated Operation",
+                  "description": "The session is aborted because of trying to invoke the same operation (like merchant payment) once again",
+                  "value": {
+                    "clientId": "x97uJ23b",
+                    "appId": "AppIdGeneratedByQriosApi",
+                    "sessionId": "8a444af8-4b03-4545-8677-2a6c924bdddb",
+                    "reason": {
+                      "operationId": "535bdec5-ea1c-4737-b9e2-04a9743d4227",
+                      "type": "DuplicatedOperation"
+                    }
+                  }
+                },
+                "AbortUnexpectedUssdAppResponseExample": {
+                  "summary": "Unexpected USSD App Response",
+                  "description": "The session is aborted because previous USSD app response was malformed or not expected",
+                  "value": {
+                    "clientId": "x97uJ23b",
+                    "appId": "AppIdGeneratedByQriosApi",
+                    "sessionId": "8a444af8-4b03-4545-8677-2a6c924bdddb",
+                    "reason": {
+                      "type": "UnexpectedUssdAppResponse"
+                    }
+                  }
+                },
+                "AbortInternalErrorExample": {
+                  "summary": "Internal Error",
+                  "description": "The session is aborted due to internal error in Qrios API",
+                  "value": {
+                    "clientId": "x97uJ23b",
+                    "appId": "AppIdGeneratedByQriosApi",
+                    "sessionId": "8a444af8-4b03-4545-8677-2a6c924bdddb",
+                    "reason": {
+                      "type": "InternalError"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "The aborting of the session has been successfully handled by the developer; the server acknowledges that the session has been aborted. Response body is empty."
+          },
+          "204": {
+            "description": "The aborting of the session has been successfully handled by the developer; the server acknowledges that the session has been aborted. Response body is empty."
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AbortSession": {
+        "required": [
+          "appId",
+          "clientId",
+          "reason",
+          "sessionId"
+        ],
+        "type": "object",
+        "properties": {
+          "clientId": {
+            "type": "string",
+            "description": "Client identifier of the developer using Qrios platform."
+          },
+          "appId": {
+            "type": "string",
+            "description": "Identifier of the USSD app created on Qrios platform.",
+            "example": "b56r455"
+          },
+          "sessionId": {
+            "type": "string",
+            "description": "Unique identifier of USSD session."
+          },
+          "reason": {
+            "$ref": "#/components/schemas/AbortSession.AbortReason"
+          }
+        },
+        "description": "The event sent when the USSD session is aborted (internal error)."
+      },
+      "AbortSession.AbortReason": {
+        "discriminator": {
+          "propertyName": "type",
+          "mapping": {
+            "DuplicatedOperation": "#/components/schemas/AbortSession.AbortReason.DuplicatedOperation",
+            "InsufficientBalanceInVirtualPurse": "#/components/schemas/AbortSession.AbortReason.InsufficientBalanceInVirtualPurse",
+            "InternalError": "#/components/schemas/AbortSession.AbortReason.InternalError",
+            "MissingPrivilege": "#/components/schemas/AbortSession.AbortReason.MissingPrivilege",
+            "UnexpectedUssdAppResponse": "#/components/schemas/AbortSession.AbortReason.UnexpectedUssdAppResponse"
+          }
+        },
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/AbortSession.AbortReason.DuplicatedOperation"
+          },
+          {
+            "$ref": "#/components/schemas/AbortSession.AbortReason.InsufficientBalanceInVirtualPurse"
+          },
+          {
+            "$ref": "#/components/schemas/AbortSession.AbortReason.InternalError"
+          },
+          {
+            "$ref": "#/components/schemas/AbortSession.AbortReason.MissingPrivilege"
+          },
+          {
+            "$ref": "#/components/schemas/AbortSession.AbortReason.UnexpectedUssdAppResponse"
+          }
+        ]
+      },
+      "AbortSession.AbortReason.DuplicatedOperation": {
+        "required": [
+          "operationId",
+          "type"
+        ],
+        "type": "object",
+        "properties": {
+          "operationId": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          }
+        },
+        "description": "USSD process abort reason - operation, eg. Merchant Payment, was previously invoked with given identifier."
+      },
+      "AbortSession.AbortReason.InsufficientBalanceInVirtualPurse": {
+        "required": [
+          "type"
+        ],
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string"
+          }
+        },
+        "description": "USSD process abort reason - not enough funds to fulfil the request."
+      },
+      "AbortSession.AbortReason.InternalError": {
+        "required": [
+          "type"
+        ],
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string"
+          }
+        },
+        "description": "USSD process abort reason - there was some internal error in Qrios API."
+      },
+      "AbortSession.AbortReason.MissingPrivilege": {
+        "required": [
+          "privilege",
+          "type"
+        ],
+        "type": "object",
+        "properties": {
+          "privilege": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          }
+        },
+        "description": "USSD process abort reason - there are no required privileges to run a USSD operation."
+      },
+      "AbortSession.AbortReason.UnexpectedUssdAppResponse": {
+        "required": [
+          "type"
+        ],
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string"
+          }
+        },
+        "description": "USSD process abort reason - previous USSD app response was malformed or not expected."
+      },
+      "CloseSession": {
+        "required": [
+          "appId",
+          "clientId",
+          "contextData",
+          "reason",
+          "sessionId"
+        ],
+        "type": "object",
+        "properties": {
+          "clientId": {
+            "type": "string",
+            "description": "Client identifier of the developer using Qrios platform."
+          },
+          "appId": {
+            "type": "string",
+            "description": "Identifier of the USSD app created on Qrios platform.",
+            "example": "b56r455"
+          },
+          "sessionId": {
+            "type": "string",
+            "description": "Unique identifier of USSD session."
+          },
+          "reason": {
+            "$ref": "#/components/schemas/CloseSession.CloseReason"
+          },
+          "contextData": {
+            "type": "string",
+            "description": "String set by the developer and carried over throughout the session."
+          }
+        },
+        "description": "The event sent when the USSD session is closed (user can no longer input data, user leaves the session, session times out)."
+      },
+      "CloseSession.CloseReason": {
+        "discriminator": {
+          "propertyName": "type",
+          "mapping": {
+            "Abandon": "#/components/schemas/CloseSession.CloseReason.Abandon",
+            "End": "#/components/schemas/CloseSession.CloseReason.End",
+            "Timeout": "#/components/schemas/CloseSession.CloseReason.Timeout"
+          }
+        },
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/CloseSession.CloseReason.Abandon"
+          },
+          {
+            "$ref": "#/components/schemas/CloseSession.CloseReason.End"
+          },
+          {
+            "$ref": "#/components/schemas/CloseSession.CloseReason.Timeout"
+          }
+        ]
+      },
+      "CloseSession.CloseReason.Abandon": {
+        "required": [
+          "type"
+        ],
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string"
+          }
+        },
+        "description": "Abandon - the user leaves the session (e.g. the user presses \"Cancel\" on the phone)."
+      },
+      "CloseSession.CloseReason.End": {
+        "required": [
+          "type"
+        ],
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string"
+          }
+        },
+        "description": "End - the session ends naturally (e.g. the user can no longer input data)."
+      },
+      "CloseSession.CloseReason.Timeout": {
+        "required": [
+          "type"
+        ],
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string"
+          }
+        },
+        "description": "Timeout - the session is ended by the mobile operator (e.g. after two minutes)."
+      },
+      "ContinueSession": {
+        "required": [
+          "appId",
+          "clientId",
+          "contextData",
+          "result",
+          "sessionId"
+        ],
+        "type": "object",
+        "properties": {
+          "clientId": {
+            "type": "string",
+            "description": "Client identifier of the developer using Qrios platform."
+          },
+          "appId": {
+            "type": "string",
+            "description": "Identifier of the USSD app created on Qrios platform.",
+            "example": "b56r455"
+          },
+          "sessionId": {
+            "type": "string",
+            "description": "Unique identifier of USSD session."
+          },
+          "result": {
+            "$ref": "#/components/schemas/UssdActionResult"
+          },
+          "contextData": {
+            "type": "string",
+            "description": "String set by the developer and carried over throughout the session."
+          }
+        },
+        "description": "The event sent when the USSD session continues (input is received or process ends)."
+      },
+      "LegacyAppRedirect": {
+        "required": [
+          "type",
+          "uri"
+        ],
+        "type": "object",
+        "description": "Developer's USSD App requests a redirect to some Legacy USSD App"
+      },
+      "LegacyAppRedirect.Uri": {
+        "type": "string",
+        "description": "Url of the Legacy USSD App"
+      },
+      "LegacyAppRedirect.UssdApiUrl": {
+        "type": "string",
+        "description": "Url of the USSD API"
+      },
+      "Map": {
+        "type": "object",
+        "additionalProperties": {
+          "type": "string"
+        }
+      },
+      "MerchantPaymentProcess.ExecutionMode": {
+        "discriminator": {
+          "propertyName": "type",
+          "mapping": {
+            "WithBankResponseTimeout": "#/components/schemas/MerchantPaymentProcess.ExecutionMode.WithBankResponseTimeout",
+            "WithoutWaitingForBank": "#/components/schemas/MerchantPaymentProcess.ExecutionMode.WithoutWaitingForBank"
+          }
+        },
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/MerchantPaymentProcess.ExecutionMode.WithBankResponseTimeout"
+          },
+          {
+            "$ref": "#/components/schemas/MerchantPaymentProcess.ExecutionMode.WithoutWaitingForBank"
+          }
+        ]
+      },
+      "MerchantPaymentProcess.ExecutionMode.WithBankResponseTimeout": {
+        "required": [
+          "millis",
+          "type"
+        ],
+        "type": "object",
+        "properties": {
+          "millis": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "type": {
+            "type": "string"
+          }
+        },
+        "description": "Merchant payment process will use a timeout when finalizing."
+      },
+      "MerchantPaymentProcess.ExecutionMode.WithoutWaitingForBank": {
+        "required": [
+          "type"
+        ],
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string"
+          }
+        },
+        "description": "Merchant payment process will not use a timeout when finalizing."
+      },
+      "MerchantPaymentProcess.PaymentMode": {
+        "discriminator": {
+          "propertyName": "type",
+          "mapping": {
+            "FixedAccount": "#/components/schemas/MerchantPaymentProcess.PaymentMode.FixedAccount",
+            "FixedBank": "#/components/schemas/MerchantPaymentProcess.PaymentMode.FixedBank",
+            "Flexible": "#/components/schemas/MerchantPaymentProcess.PaymentMode.Flexible"
+          }
+        },
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/MerchantPaymentProcess.PaymentMode.FixedAccount"
+          },
+          {
+            "$ref": "#/components/schemas/MerchantPaymentProcess.PaymentMode.FixedBank"
+          },
+          {
+            "$ref": "#/components/schemas/MerchantPaymentProcess.PaymentMode.Flexible"
+          }
+        ]
+      },
+      "MerchantPaymentProcess.PaymentMode.FixedAccount": {
+        "required": [
+          "accountNumber",
+          "bank",
+          "type"
+        ],
+        "type": "object",
+        "properties": {
+          "accountNumber": {
+            "type": "string",
+            "description": "Number of the account which will be used in transaction. Account numbers can be obtained with Qrios API using `/merchants/accounts` endpoint."
+          },
+          "bank": {
+            "type": "string",
+            "description": "Code of the bank which will be used in transaction. Bank codes can be obtained with Qrios API using `/merchants/accounts` endpoint."
+          },
+          "type": {
+            "type": "string"
+          }
+        },
+        "description": "Fixed account mode in merchant payment process, with account ID specified."
+      },
+      "MerchantPaymentProcess.PaymentMode.FixedBank": {
+        "required": [
+          "bank",
+          "type"
+        ],
+        "type": "object",
+        "properties": {
+          "bank": {
+            "type": "string",
+            "description": "Code of the bank which will be used in transaction. Bank codes can be obtained with Qrios API using `/merchants/accounts` endpoint."
+          },
+          "type": {
+            "type": "string"
+          }
+        },
+        "description": "Fixed bank mode in merchant payment process, with bank ID specified. The account from provided bank will then be selected within the process."
+      },
+      "MerchantPaymentProcess.PaymentMode.Flexible": {
+        "required": [
+          "type"
+        ],
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string"
+          }
+        },
+        "description": "Flexible payment mode in merchant payment process. The account will then be selected within the process."
+      },
+      "MerchantPaymentResult.OperationStatus": {
+        "discriminator": {
+          "propertyName": "type",
+          "mapping": {
+            "Failure": "#/components/schemas/MerchantPaymentResult.OperationStatus.Failure",
+            "Success": "#/components/schemas/MerchantPaymentResult.OperationStatus.Success",
+            "Unknown": "#/components/schemas/MerchantPaymentResult.OperationStatus.Unknown"
+          }
+        },
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/MerchantPaymentResult.OperationStatus.Failure"
+          },
+          {
+            "$ref": "#/components/schemas/MerchantPaymentResult.OperationStatus.Success"
+          },
+          {
+            "$ref": "#/components/schemas/MerchantPaymentResult.OperationStatus.Unknown"
+          }
+        ]
+      },
+      "MerchantPaymentResult.OperationStatus.Failure": {
+        "required": [
+          "cause",
+          "type"
+        ],
+        "type": "object",
+        "properties": {
+          "cause": {
+            "$ref": "#/components/schemas/MerchantPaymentResult.OperationStatus.Failure.Cause"
+          },
+          "type": {
+            "type": "string"
+          }
+        },
+        "description": "Merchant payment operation failed (there was no charge for sure)"
+      },
+      "MerchantPaymentResult.OperationStatus.Failure.Cause": {
+        "type": "string",
+        "description": "The reason why the operation failed.",
+        "enum": [
+          "AuthenticationFailed",
+          "InsufficientBalance",
+          "InvalidMerchant",
+          "NoAccounts",
+          "SwitchUnavailable",
+          "Other"
+        ]
+      },
+      "MerchantPaymentResult.OperationStatus.Success": {
+        "required": [
+          "type"
+        ],
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string"
+          }
+        },
+        "description": "Merchant payment operation finished with success"
+      },
+      "MerchantPaymentResult.OperationStatus.Unknown": {
+        "required": [
+          "type"
+        ],
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string"
+          }
+        },
+        "description": "Cannot determine if merchant payment operation succeed or not"
+      },
+      "NewSession.SessionInput.Dial": {
+        "required": [
+          "shortcodeString",
+          "type"
+        ],
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "example": "Dial",
+            "enum": [
+              "Dial"
+            ]
+          },
+          "shortcodeString": {
+            "type": "string",
+            "description": "Shortcode string dialed by the user",
+            "example": "*425*001*123#"
+          }
+        },
+        "description": "Input provided when the user dials into the session (dials the shortcode string)"
+      },
+      "NewSession.SessionInput.Push": {
+        "required": [
+          "contextData",
+          "type"
+        ],
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "example": "Push",
+            "enum": [
+              "Push"
+            ]
+          },
+          "contextData": {
+            "type": "string",
+            "description": "Context regarding the push message."
+          }
+        },
+        "description": "Input provided when session is begun by a push message sent to a user."
+      },
+      "NewSession.SessionInput.Redirect": {
+        "required": [
+          "type"
+        ],
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "example": "Redirect",
+            "enum": [
+              "Redirect"
+            ]
+          },
+          "processId": {
+            "type": "string",
+            "deprecated": true
+          },
+          "process": {
+            "$ref": "#/components/schemas/UssdApp.Process"
+          }
+        },
+        "description": "Input provided when session is redirected from different USSD application."
+      },
+      "NewSession.SessionInput.Redirect.Params": {
+        "type": "object",
+        "additionalProperties": {
+          "type": "string"
+        },
+        "description": "Parameters of the process. Keys should be considered as process param names and their values as process param values."
+      },
+      "Redirect": {
+        "required": [
+          "destinationAppId",
+          "type"
+        ],
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "example": "Redirect",
+            "enum": [
+              "Redirect"
+            ]
+          },
+          "destinationAppId": {
+            "type": "string",
+            "description": "Identifier of the USSD app created on Qrios platform.",
+            "example": "b56r455"
+          },
+          "process": {
+            "$ref": "#/components/schemas/UssdApp.Process"
+          }
+        },
+        "description": "Developer's USSD App returns USSD process result as a map of params"
+      },
+      "ReturnFromRedirect": {
+        "required": [
+          "resultParams",
+          "type"
+        ],
+        "type": "object",
+        "properties": {
+          "resultParams": {
+            "$ref": "#/components/schemas/ReturnFromRedirect.ResultParams"
+          }
+        },
+        "description": "If the current session was redirected from some other app, then this UssdAction redirects back to the calling app within the same USSD session"
+      },
+      "ReturnFromRedirect.ResultParams": {
+        "type": "object",
+        "additionalProperties": {
+          "type": "string"
+        },
+        "description": "Result parameters returned in the \"return from redirect\". Keys should be considered as result parameter names and their values as result parameter values."
+      },
+      "RunProcess": {
+        "required": [
+          "process",
+          "type"
+        ],
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "example": "RunProcess",
+            "enum": [
+              "RunProcess"
+            ]
+          },
+          "process": {
+            "$ref": "#/components/schemas/UssdProcess"
+          }
+        },
+        "description": "Run a predefined process. The process will then take control of the session (will send prompts to the user and handle responses from the user) until it returns control along with a response. From the view of a user, they will interact with a single app."
+      },
+      "ShowView": {
+        "required": [
+          "type",
+          "view"
+        ],
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "example": "ShowView",
+            "enum": [
+              "ShowView"
+            ]
+          },
+          "view": {
+            "$ref": "#/components/schemas/UssdView"
+          }
+        },
+        "description": "Display a given view to the user. A view is a text message that will appear on the screen with optional ability to input data."
+      },
+      "UssdAction": {
+        "description": "Action to be sent back to the user. It can either start a predefined process or show a view.",
+        "oneOf": [
+          {
+            "required": [
+              "LegacyAppRedirect"
+            ],
+            "type": "object"
+          },
+          {
+            "required": [
+              "Redirect"
+            ],
+            "type": "object",
+            "properties": {
+              "Redirect": {
+                "$ref": "#/components/schemas/Redirect"
+              }
+            }
+          },
+          {
+            "required": [
+              "ReturnFromRedirect"
+            ],
+            "type": "object"
+          },
+          {
+            "required": [
+              "RunProcess"
+            ],
+            "type": "object",
+            "properties": {
+              "RunProcess": {
+                "$ref": "#/components/schemas/RunProcess"
+              }
+            }
+          },
+          {
+            "required": [
+              "ShowView"
+            ],
+            "type": "object",
+            "properties": {
+              "ShowView": {
+                "$ref": "#/components/schemas/ShowView"
+              }
+            }
+          }
+        ]
+      },
+      "UssdActionResult": {
+        "description": "Result of USSD action. Either input provided by the user or the result of a previously-initiated process.",
+        "oneOf": [
+          {
+            "required": [
+              "EmbeddedProcessResult"
+            ],
+            "type": "object",
+            "properties": {
+              "EmbeddedProcessResult": {
+                "$ref": "#/components/schemas/UssdActionResult.EmbeddedProcessResult"
+              }
+            }
+          },
+          {
+            "required": [
+              "InputResult"
+            ],
+            "type": "object",
+            "properties": {
+              "InputResult": {
+                "$ref": "#/components/schemas/UssdActionResult.InputResult"
+              }
+            }
+          },
+          {
+            "required": [
+              "MerchantPaymentResult"
+            ],
+            "type": "object",
+            "properties": {
+              "MerchantPaymentResult": {
+                "$ref": "#/components/schemas/UssdActionResult.MerchantPaymentResult"
+              }
+            }
+          },
+          {
+            "required": [
+              "ReturnFromRedirectResult"
+            ],
+            "type": "object"
+          }
+        ]
+      },
+      "UssdActionResult.EmbeddedProcessResult": {
+        "required": [
+          "resultParams",
+          "type"
+        ],
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "example": "EmbeddedProcessResult",
+            "enum": [
+              "EmbeddedProcessResult"
+            ]
+          },
+          "resultParams": {
+            "$ref": "#/components/schemas/UssdActionResult.EmbeddedProcessResult.ResultParams"
+          }
+        },
+        "description": "Returns control of the session back to the developer and passes the result of embedded process execution."
+      },
+      "UssdActionResult.EmbeddedProcessResult.ResultParams": {
+        "type": "object",
+        "additionalProperties": {
+          "type": "string"
+        },
+        "description": "Result of the `embedded process`. Keys should be considered as result parameter names and their values as result parameter values."
+      },
+      "UssdActionResult.InputResult": {
+        "required": [
+          "type",
+          "value"
+        ],
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "example": "InputResult",
+            "enum": [
+              "InputResult"
+            ]
+          },
+          "value": {
+            "type": "string",
+            "description": "Raw value typed in by the user."
+          }
+        },
+        "description": "Input from the user; provided by UssdAction.UssdView.InputView."
+      },
+      "UssdActionResult.MerchantPaymentResult": {
+        "required": [
+          "operationId",
+          "status",
+          "type"
+        ],
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "example": "MerchantPaymentResult",
+            "enum": [
+              "MerchantPaymentResult"
+            ]
+          },
+          "operationId": {
+            "type": "string",
+            "description": "Merchant payment operation id"
+          },
+          "status": {
+            "$ref": "#/components/schemas/MerchantPaymentResult.OperationStatus"
+          }
+        },
+        "description": "Result from merchant payment process; provided by UssdProcess.MerchantPaymentProcess."
+      },
+      "UssdActionResult.ReturnFromRedirectResult": {
+        "required": [
+          "resultParams",
+          "type"
+        ],
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "example": "ReturnFromRedirectResult",
+            "enum": [
+              "ReturnFromRedirectResult"
+            ]
+          },
+          "resultParams": {
+            "$ref": "#/components/schemas/UssdActionResult.ReturnFromRedirectResult.ResultParams"
+          }
+        },
+        "description": "Result returned from the app, to which the session was previously redirected."
+      },
+      "UssdActionResult.ReturnFromRedirectResult.ResultParams": {
+        "type": "object",
+        "additionalProperties": {
+          "type": "string"
+        },
+        "description": "Result of the `return from redirection`. Keys should be considered as result parameter names and their values as result parameter values."
+      },
+      "UssdApp.Process": {
+        "required": [
+          "id",
+          "params"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Identifier of the process. Based on this parameter, developer can decide eg. what USSD screen will be shown next."
+          },
+          "params": {
+            "$ref": "#/components/schemas/NewSession.SessionInput.Redirect.Params"
+          }
+        },
+        "description": "It indicates which process inside USSD App should be invoked"
+      },
+      "UssdProcess": {
+        "description": "The process control is handed over to (flow continues within the process until the process continues or aborts).",
+        "oneOf": [
+          {
+            "required": [
+              "EmbeddedProcess"
+            ],
+            "type": "object",
+            "properties": {
+              "EmbeddedProcess": {
+                "$ref": "#/components/schemas/UssdProcess.EmbeddedProcess"
+              }
+            }
+          },
+          {
+            "required": [
+              "MerchantPaymentProcess"
+            ],
+            "type": "object",
+            "properties": {
+              "MerchantPaymentProcess": {
+                "$ref": "#/components/schemas/UssdProcess.MerchantPaymentProcess"
+              }
+            }
+          }
+        ]
+      },
+      "UssdProcess.EmbeddedProcess": {
+        "required": [
+          "params",
+          "processId"
+        ],
+        "type": "object",
+        "properties": {
+          "processId": {
+            "type": "string",
+            "description": "embedded process id"
+          },
+          "params": {
+            "$ref": "#/components/schemas/Map"
+          }
+        },
+        "description": "Initiate an embedded process. This action causes the Qrios system to hand over control to an external application. The user may be prompted to provide credentials during the embedded process. After the embedded process is complete, the ussdSessionEvent/continue API endpoint is called to deliver the result and return control of the session to the developer application."
+      },
+      "UssdProcess.MerchantPaymentProcess": {
+        "required": [
+          "amount",
+          "merchantCode",
+          "operationId",
+          "paymentMode"
+        ],
+        "type": "object",
+        "properties": {
+          "operationId": {
+            "type": "string",
+            "description": "Merchant payment operation id"
+          },
+          "merchantCode": {
+            "type": "string",
+            "description": "Merchant code"
+          },
+          "amount": {
+            "type": "number",
+            "format": "Amount in Naira with at most two decimal places.",
+            "example": 12.34
+          },
+          "paymentMode": {
+            "$ref": "#/components/schemas/MerchantPaymentProcess.PaymentMode"
+          },
+          "executionMode": {
+            "$ref": "#/components/schemas/MerchantPaymentProcess.ExecutionMode"
+          }
+        },
+        "description": "Initiation of merchant payment process. In this process, the control is handed over to an external USSD merchant payment process. The user will be asked for credentials and the payment will commence. As the process ends, it will call this API to deliver the result and hand control over the session back to the server."
+      },
+      "UssdSessionCommand": {
+        "required": [
+          "action",
+          "contextData"
+        ],
+        "type": "object",
+        "properties": {
+          "action": {
+            "$ref": "#/components/schemas/UssdAction"
+          },
+          "contextData": {
+            "type": "string",
+            "description": "String set by the developer and carried over throughout the session."
+          },
+          "sessionTag": {
+            "type": "string",
+            "description": "String value set by the developer, it will be visible in the billing information. Most recent session tag replaces previous value."
+          }
+        },
+        "description": "Command issued to the user, along with context data."
+      },
+      "UssdSessionEvent.NewSession": {
+        "required": [
+          "appId",
+          "clientId",
+          "input",
+          "msisdn",
+          "operator",
+          "sessionId"
+        ],
+        "type": "object",
+        "properties": {
+          "clientId": {
+            "type": "string",
+            "description": "Client identifier of the developer using Qrios platform."
+          },
+          "appId": {
+            "type": "string",
+            "description": "Identifier of the USSD app created on Qrios platform.",
+            "example": "b56r455"
+          },
+          "sessionId": {
+            "type": "string",
+            "description": "Unique identifier of USSD session."
+          },
+          "msisdn": {
+            "type": "string",
+            "description": "Phone number of customer who initiated the USSD session (e.g. +2341234567891).",
+            "format": "+234'10 digits' or 234'10 digits' or 0'10 digits' or +0'10 digits' or '10 digits'",
+            "example": "1234512345"
+          },
+          "operator": {
+            "type": "string",
+            "description": "MSISDN's mobile operator (e.g. mtn).",
+            "enum": [
+              "mtn",
+              "airtel",
+              "glo",
+              "etisalat"
+            ]
+          },
+          "input": {
+            "$ref": "#/components/schemas/UssdSessionEvent.NewSession.SessionInput"
+          }
+        },
+        "description": "The event sent when the USSD session starts (user initiates the session)."
+      },
+      "UssdSessionEvent.NewSession.SessionInput": {
+        "description": "Input provided when starting the session.",
+        "oneOf": [
+          {
+            "required": [
+              "Dial"
+            ],
+            "type": "object",
+            "properties": {
+              "Dial": {
+                "$ref": "#/components/schemas/NewSession.SessionInput.Dial"
+              }
+            }
+          },
+          {
+            "required": [
+              "Push"
+            ],
+            "type": "object",
+            "properties": {
+              "Push": {
+                "$ref": "#/components/schemas/NewSession.SessionInput.Push"
+              }
+            }
+          },
+          {
+            "required": [
+              "Redirect"
+            ],
+            "type": "object",
+            "properties": {
+              "Redirect": {
+                "$ref": "#/components/schemas/NewSession.SessionInput.Redirect"
+              }
+            }
+          }
+        ]
+      },
+      "UssdView": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/UssdView.ChooserView"
+          },
+          {
+            "$ref": "#/components/schemas/UssdView.InfoView"
+          },
+          {
+            "$ref": "#/components/schemas/UssdView.InputView"
+          }
+        ]
+      },
+      "UssdView.ChooserView": {
+        "required": [
+          "title",
+          "type"
+        ],
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "Text that will be displayed before the chooser items"
+          },
+          "items": {
+            "minItems": 1,
+            "type": "array",
+            "description": "Chooser items, each will be presented to user in a new line. All items must have unique access keys.",
+            "items": {
+              "$ref": "#/components/schemas/UssdView.ChooserView.Item"
+            }
+          },
+          "separator": {
+            "minLength": 1,
+            "type": "string",
+            "description": "Text, that separates each item's accessKey and label when the ChooserView is rendered"
+          },
+          "type": {
+            "type": "string",
+            "example": "ChooserView",
+            "enum": [
+              "ChooserView"
+            ]
+          }
+        },
+        "description": "A chooser (menu) view. User can choose one of the chooser items.\nIf user picks invalid option (when user input does not match any of the available items), then the user will be asked to try again.\nIt will be done internally by the USSD API without involving developer's app.\nIt's guaranteed, that the user input sent in next request to the developer's app will match one of the provided items.\nThe session will continue when this message is sent."
+      },
+      "UssdView.ChooserView.Item": {
+        "required": [
+          "accessKey",
+          "label"
+        ],
+        "type": "object",
+        "properties": {
+          "accessKey": {
+            "minLength": 1,
+            "type": "string",
+            "description": "Text, that identifies the chooser item. User will have to send this value as input in order to choose the item"
+          },
+          "label": {
+            "minLength": 1,
+            "type": "string",
+            "description": "Description of the choose item"
+          }
+        },
+        "description": "Represents single chooser view item"
+      },
+      "UssdView.InfoView": {
+        "required": [
+          "message",
+          "type"
+        ],
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "Final message that will be displayed to the user"
+          },
+          "type": {
+            "type": "string",
+            "example": "InfoView",
+            "enum": [
+              "InfoView"
+            ]
+          }
+        },
+        "description": "A text-only view; does not take any user input. The session will be closed when this message is sent."
+      },
+      "UssdView.InputView": {
+        "required": [
+          "message",
+          "type"
+        ],
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "Message that will be displayed to the user, for example asking the user to input some value"
+          },
+          "type": {
+            "type": "string",
+            "example": "InputView",
+            "enum": [
+              "InputView"
+            ]
+          }
+        },
+        "description": "A view with text; takes user input. The session will continue when this message is sent."
+      }
+    }
+  }
+}
