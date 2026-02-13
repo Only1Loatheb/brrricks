@@ -4,13 +4,14 @@ use std::path::Path;
 pub fn main() {
   monk::init();
 
-  let flow_diagram_path = Path::new("type_process_builder/doc/brrricks_app_session_flow.mmd");
-  let flow_section_header = "## Brrricks app session flow";
-  update_diagram_in_readme(flow_diagram_path, flow_section_header);
-
-  let flow_diagram_path = Path::new("type_process_builder/doc/process_builder_states.mmd");
-  let flow_section_header = "## Process builder states";
-  update_diagram_in_readme(flow_diagram_path, flow_section_header);
+  update_diagram_in_readme(
+    Path::new("type_process_builder/doc/brrricks_app_session_flow.mmd"),
+    "## Brrricks app session flow",
+  );
+  update_diagram_in_readme(
+    Path::new("type_process_builder/doc/process_builder_states.mmd"),
+    "## Process builder states",
+  );
 }
 
 fn update_diagram_in_readme(diagram_path: &Path, section_header: &str) {
