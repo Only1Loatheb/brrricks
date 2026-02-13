@@ -13,7 +13,7 @@ use qrios_api_axum_server::models::{
 };
 use type_process_builder::builder::{FinalizedProcess, RunnableProcess};
 
-struct ServerImpl<Process: FinalizedProcess> {
+pub struct ServerImpl<Process: FinalizedProcess> {
   process: RunnableProcess<Process>,
 }
 
@@ -32,6 +32,7 @@ impl<Process: FinalizedProcess + Sync> qrios_api_axum_server::apis::developers_a
     header_params: &PostUssdsessioneventAbortHeaderParams,
     body: &AbortSession,
   ) -> Result<PostUssdsessioneventAbortResponse, ()> {
+    _ = self.process;
     todo!()
   }
 
