@@ -1,14 +1,21 @@
 pub mod qrios_api_process_runner {}
 
-use std::ops::Not;
 use async_trait::async_trait;
 use qrios_api_axum_server::apis::ErrorHandler;
 use qrios_api_axum_server::apis::developers_app_endpoints::{
   PostUssdsessioneventAbortResponse, PostUssdsessioneventCloseResponse, PostUssdsessioneventContinueResponse,
   PostUssdsessioneventNewResponse,
 };
-use qrios_api_axum_server::models::{AbortSession, CloseSession, ContinueSession, PostUssdsessioneventAbortHeaderParams, PostUssdsessioneventCloseHeaderParams, PostUssdsessioneventContinueHeaderParams, PostUssdsessioneventNewHeaderParams, UssdSessionEventNewSession, UssdSessionEventNewSessionSessionInput};
+use qrios_api_axum_server::models::{
+  AbortSession, CloseSession, ContinueSession, PostUssdsessioneventAbortHeaderParams,
+  PostUssdsessioneventCloseHeaderParams, PostUssdsessioneventContinueHeaderParams, PostUssdsessioneventNewHeaderParams,
+  UssdSessionEventNewSession, UssdSessionEventNewSessionSessionInput,
+};
+use qrios_api_types::{EntryParam, Msisdn, Operator, ShortcodeString};
 use serde::{Deserialize, Serialize};
+use serde_value::Value;
+use std::collections::HashMap;
+use std::ops::Not;
 use type_process_builder::builder::{FinalizedProcess, PreviousRunYieldedAt, RunnableProcess};
 use type_process_builder::step::FailedInputValidationAttempts;
 
@@ -21,7 +28,7 @@ impl<Process: FinalizedProcess> ErrorHandler<()> for QriosUssdApiService<Process
 #[allow(unused_variables)]
 #[async_trait]
 impl<Process: FinalizedProcess + Sync> qrios_api_axum_server::apis::developers_app_endpoints::DevelopersAppEndpoints
-for QriosUssdApiService<Process>
+  for QriosUssdApiService<Process>
 {
   async fn post_ussdsessionevent_abort(
     &self,
@@ -65,23 +72,19 @@ for QriosUssdApiService<Process>
     header_params: &PostUssdsessioneventNewHeaderParams,
     body: &UssdSessionEventNewSession,
   ) -> Result<PostUssdsessioneventNewResponse, ()> {
-    let previous_run_yielded_at = PreviousRunYieldedAt(0);
-    let failed_attempts = FailedInputValidationAttempts(0);
-    let _ = body.session_id;
     let shortcode_string = match body.input {
       UssdSessionEventNewSessionSessionInput::UssdSessionEventNewSessionSessionInputOneOf(x) => x.dial.shortcode_string,
       UssdSessionEventNewSessionSessionInput::UssdSessionEventNewSessionSessionInputOneOf1(_) => todo!(),
       UssdSessionEventNewSessionSessionInput::UssdSessionEventNewSessionSessionInputOneOf2(_) => todo!(),
-    }
-    self.process.resume_run(
-      previous_run_yielded_at,
-      shortcode_string,
-      failed_attempts,
-    )
-
-    previous_run_produced: SessionContext,
-    previous_run_yielded_at: PreviousRunYieldedAt,
-    user_input: String,
-    failed_input_validation_attempts: FailedInputValidationAttempts,
+    };
+    self
+      .process
+      .resume_run(
+        HashMap::from([(0, Value::String(body.msisdn)), (1, Value::String(body.operator))]),
+        PreviousRunYieldedAt(0),
+        shortcode_string,
+        FailedInputValidationAttempts(0),
+      )
+      .await?
   }
 }

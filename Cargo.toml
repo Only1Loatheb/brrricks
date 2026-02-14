@@ -10,14 +10,13 @@ members = [
     "type_process_builder",
     "qrios_api_process_runner",
     "qrios_api_axum_server",
-    "qrios_api_types",
 ]
 
 [dependencies]
 type_process_builder = { path = "type_process_builder" }
 qrios_api_process_runner = { path = "qrios_api_process_runner" }
 anyhow = "1.0"
-serde-value = "0.7.0"
+serde-value = "0.7"
 serde = { version = "1.0", features = ["derive"] }
 frunk_core = "0.4"
 typenum = { version = "1.0" }
