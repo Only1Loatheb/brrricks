@@ -1,5 +1,5 @@
 [package]
-name = "process_runner"
+name = "qrios_api_process_runner"
 version = "0.1.0"
 edition = "2024"
 
@@ -8,7 +8,9 @@ edition = "2024"
 [dependencies]
 type_process_builder = { path = "../type_process_builder" }
 qrios_api_axum_server = { path = "../qrios_api_axum_server", features = ["server"]}
+qrios_api_types = { path = "../qrios_api_types"}
 async-trait = "0.1"
 http = "1.0"
 headers = "0.4"
 axum-extra = "0.12"
+serde = { version = "1.0", features = ["derive"] }

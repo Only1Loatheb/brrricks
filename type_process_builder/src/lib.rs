@@ -27,7 +27,6 @@ mod tests {
 
   #[derive(Clone, Debug, Deserialize, Serialize)]
   struct Msisdn(u64);
-
   impl Msisdn {
     fn from(string: String) -> Option<Msisdn> {
       string
@@ -41,7 +40,7 @@ mod tests {
     }
   }
 
-  #[derive(Clone, Deserialize, Serialize)]
+  #[derive(Clone, Debug, Deserialize, Serialize)]
   enum Operator {
     MTN,
   }

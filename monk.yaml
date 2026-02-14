@@ -16,7 +16,7 @@ pre-push:
         exit 1
       fi
     - cargo check --workspace --all-targets
-    - cargo fmt --package bricks type_process_builder process_runner
+    - cargo fmt --package bricks type_process_builder qrios_api_process_runner
     - cargo fix --workspace --all-targets --all-features --allow-dirty
     - cargo clippy --fix --allow-dirty --all-targets --all-features
     - |
