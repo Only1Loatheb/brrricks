@@ -8,7 +8,7 @@ use crate::step::FailedInputValidationAttempts;
 use frunk_core::coproduct::Coproduct;
 use std::future::Future;
 
-pub trait FinalizedSplitProcess<SplitterProducesForOtherCases>: Sized {
+pub trait FinalizedSplitProcess<SplitterProducesForOtherCases>: Sized + Sync {
   type ProcessBeforeSplitProduces: ParamList;
   type SplitterProducesForThisCase: ParamList + Concat<Self::ProcessBeforeSplitProduces>;
   type SplitterTagForThisCase;

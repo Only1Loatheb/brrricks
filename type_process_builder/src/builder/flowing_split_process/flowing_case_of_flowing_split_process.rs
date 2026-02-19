@@ -14,10 +14,10 @@ use std::marker::PhantomData;
 pub struct FlowingCaseOfFlowingSplitProcess<
   ThisTag,
   SplitterProducesForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
-  SplitterProducesForOtherCases,
+  SplitterProducesForOtherCases: Sync,
   ProcessBefore: FlowingSplitProcess<Coproduct<(ThisTag, SplitterProducesForThisCase), SplitterProducesForOtherCases>>,
   ThisCase: FlowingProcess<ProcessBeforeProduces=<SplitterProducesForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated>,
-  Indices,
+  Indices: Sync,
 >
 {
   pub split_process_before: ProcessBefore,
@@ -32,14 +32,14 @@ pub struct FlowingCaseOfFlowingSplitProcess<
 }
 
 impl<
-  ThisTag,
-  NextTag,
-  SplitterProducesForOtherCases,
+  ThisTag: Sync,
+  NextTag: Sync,
+  SplitterProducesForOtherCases: Sync,
   ProcessBefore: FlowingSplitProcess<Coproduct<(ThisTag, SplitterProducesForThisCase), Coproduct<(NextTag, SplitterProducesForNextCase), SplitterProducesForOtherCases>>>,
   SplitterProducesForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
   SplitterProducesForNextCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
   ThisCase: FlowingProcess<ProcessBeforeProduces=<SplitterProducesForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated>,
-  ThisIndices,
+  ThisIndices: Sync,
 >
 FlowingCaseOfFlowingSplitProcess<
   ThisTag,
@@ -79,7 +79,7 @@ FlowingCaseOfFlowingSplitProcess<
 
   pub fn case_via<
     NextCase: FlowingProcess<ProcessBeforeProduces=<SplitterProducesForNextCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated>,
-    NextIndices,
+    NextIndices: Sync,
   >(
     self,
     _assumed_tag: NextTag,
@@ -108,12 +108,12 @@ FlowingCaseOfFlowingSplitProcess<
 }
 
 impl<
-  ThisTag,
+  ThisTag: Sync,
   SplitterProducesForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
-  SplitterProducesForOtherCases,
+  SplitterProducesForOtherCases: Sync,
   ProcessBefore: FlowingSplitProcess<Coproduct<(ThisTag, SplitterProducesForThisCase), SplitterProducesForOtherCases>>,
   ThisCase: FlowingProcess<ProcessBeforeProduces=<SplitterProducesForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated>,
-  Indices,
+  Indices: Sync,
 > FlowingSplitProcess<SplitterProducesForOtherCases>
 for FlowingCaseOfFlowingSplitProcess<
   ThisTag,
@@ -209,13 +209,13 @@ where
 
 /// last case
 impl<
-  ThisTag,
+  ThisTag: Sync,
   SplitterProducesForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
   ProcessBefore: FlowingSplitProcess<Coproduct<(ThisTag, SplitterProducesForThisCase), CNil>>,
   ThisCase: FlowingProcess<ProcessBeforeProduces=
   <SplitterProducesForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
   >,
-  Indices,
+  Indices: Sync,
 > FlowingProcess
 for FlowingCaseOfFlowingSplitProcess<
   ThisTag,

@@ -13,7 +13,7 @@ use std::marker::PhantomData;
 pub struct FirstCaseOfFlowingSplitProcess<
   ThisTag,
   SplitterProducesForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
-  SplitterProducesForOtherCases,
+  SplitterProducesForOtherCases: Sync,
   ProcessBefore: SplitProcess<SplitterProducesForOtherCases>,
   ThisCase: FlowingProcess<ProcessBeforeProduces=<SplitterProducesForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated>,
 > {

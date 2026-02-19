@@ -10,7 +10,7 @@ use serde::de::DeserializeOwned;
 use serde_value::Value;
 use std::future::Future;
 
-pub trait Entry<RawConsume: DeserializeOwned> {
+pub trait Entry<RawConsume: DeserializeOwned>: Sync {
   type Produces: ParamList;
   fn handle(
     &self,
@@ -19,7 +19,7 @@ pub trait Entry<RawConsume: DeserializeOwned> {
   ) -> impl Future<Output = anyhow::Result<Self::Produces>>;
 }
 
-pub trait Operation {
+pub trait Operation: Sync {
   type Consumes: ParamList;
   type Produces: ParamList;
   fn handle(&self, consumes: Self::Consumes) -> impl Future<Output = anyhow::Result<Self::Produces>>;
@@ -35,7 +35,7 @@ pub enum InputValidation<Produced> {
   Finish(Message),
 }
 
-pub trait Form {
+pub trait Form: Sync {
   type CreateFormConsumes: ParamList;
   type ValidateInputConsumes: ParamList;
   type Produces: ParamList;
@@ -48,12 +48,13 @@ pub trait Form {
   ) -> impl Future<Output = anyhow::Result<InputValidation<Self::Produces>>>;
 }
 
-pub trait SplitterOutput {}
-impl<Tag, ThisCase: ParamList, OtherCase> SplitterOutput for Coproduct<(Tag, ThisCase), OtherCase> {}
+pub trait SplitterOutput: Send + Sync{}
+impl<Tag: Send + Sync, ThisCase: ParamList, OtherCase: Send + Sync> SplitterOutput for Coproduct<(Tag, ThisCase), 
+  OtherCase> {}
 
 /// Works with at least two cases.
 /// Just produce link form with a single link using Form step
-pub trait Splitter {
+pub trait Splitter: Sync {
   type Consumes: ParamList;
   type Produces: SplitterOutput;
   fn handle(&self, consumes: Self::Consumes) -> impl Future<Output = anyhow::Result<Self::Produces>>;
@@ -61,7 +62,7 @@ pub trait Splitter {
 
 /// Works with at least two cases.
 /// Just produce link form with a single link using Form step
-pub trait FromSplitter {
+pub trait FromSplitter: Sync {
   type CreateFormConsumes: ParamList;
   type ValidateInputConsumes: ParamList;
   type Produces: SplitterOutput;
@@ -74,7 +75,7 @@ pub trait FromSplitter {
   ) -> impl Future<Output = anyhow::Result<InputValidation<Self::Produces>>>;
 }
 
-pub trait Final {
+pub trait Final: Sync {
   type Consumes: ParamList;
   fn handle(&self, consumes: Self::Consumes) -> impl Future<Output = anyhow::Result<Message>>;
 }

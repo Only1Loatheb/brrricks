@@ -7,7 +7,7 @@ use crate::step::{FailedInputValidationAttempts, Final};
 use std::future::Future;
 use std::marker::PhantomData;
 
-pub trait FinalizedProcess: Sized {
+pub trait FinalizedProcess: Sized + Sync {
   type ProcessBeforeProduces: ParamList;
 
   fn resume_run(
@@ -16,7 +16,7 @@ pub trait FinalizedProcess: Sized {
     previous_run_yielded_at: PreviousRunYieldedAt,
     user_input: String,
     failed_input_validation_attempts: FailedInputValidationAttempts,
-  ) -> impl Future<Output = RunResult>;
+  ) -> impl Future<Output = RunResult> + Send;
 
   fn continue_run(&self, process_before_produces: Self::ProcessBeforeProduces) -> impl Future<Output = RunResult>;
 
@@ -42,7 +42,7 @@ impl<
   ProcessBefore: FlowingProcess,
   FinalConsumes: ParamList,
   FinalStep: Final<Consumes = FinalConsumes>,
-  ProcessBeforeProducesTransformToFinalConsumesIndices,
+  ProcessBeforeProducesTransformToFinalConsumesIndices: Sync,
 > FinalizedProcess
   for FlowingFinalizedProcess<
     ProcessBefore,

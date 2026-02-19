@@ -20,7 +20,7 @@ use std::future::Future;
 /// Well you can work around this `limitation` by providing the indices explicitly
 /// or replaceing [Concat] with [intersect::Intersect] in the implementation.
 /// Don't do that. The params should be immutable to avoid the need to overwrite them with every session context save.
-pub trait FlowingProcess: Sized {
+pub trait FlowingProcess: Sized + Sync {
   type ProcessBeforeProduces: ParamList;
   type Produces: ParamList;
   // add a dependent type for split process to pass values produced by the splitter step to this specific branch.

@@ -14,7 +14,7 @@ pub struct SplitProcessFormSplitter<
   CreateFormConsumes: ParamList,
   ValidateInputConsumes: ParamList,
   SplitterProducesForFirstCase: ParamList,
-  SplitterProducesForOtherCases,
+  SplitterProducesForOtherCases: Sync,
   SplitterStep: FromSplitter<
       CreateFormConsumes = CreateFormConsumes,
       ValidateInputConsumes = ValidateInputConsumes,
@@ -38,14 +38,14 @@ impl<
   CreateFormConsumes: ParamList,
   ValidateInputConsumes: ParamList,
   SplitterProducesForFirstCase: ParamList + Concat<ProcessBefore::Produces>,
-  SplitterProducesForOtherCases,
+  SplitterProducesForOtherCases: Sync,
   SplitterStep: FromSplitter<
       CreateFormConsumes = CreateFormConsumes,
       ValidateInputConsumes = ValidateInputConsumes,
       Produces = Coproduct<(Tag, SplitterProducesForFirstCase), SplitterProducesForOtherCases>,
     >,
-  ProcessBeforeProducesToCreateFormConsumesIndices,
-  ProcessBeforeProducesToValidateInputConsumesIndices,
+  ProcessBeforeProducesToCreateFormConsumesIndices: Sync,
+  ProcessBeforeProducesToValidateInputConsumesIndices: Sync,
 > SplitProcess<SplitterProducesForOtherCases>
   for SplitProcessFormSplitter<
     Tag,

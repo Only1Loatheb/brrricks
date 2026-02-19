@@ -23,7 +23,7 @@ impl<
   LastStepConsumes: ParamList,
   LastStepProduces: ParamList + Concat<ProcessBefore::Produces>,
   OperationStep: Operation<Consumes = LastStepConsumes, Produces = LastStepProduces>,
-  ProcessBeforeProducesToLastStepConsumesIndices,
+  ProcessBeforeProducesToLastStepConsumesIndices: Sync,
 > FlowingProcess
   for OperationFlowingProcess<ProcessBefore, OperationStep, ProcessBeforeProducesToLastStepConsumesIndices>
 where

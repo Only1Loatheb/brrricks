@@ -14,12 +14,12 @@ pub mod transform;
 
 /// clone (required by run method) should be used in brick instead
 /// Use [typenum::op] to generate UID if the desired typenum const is missing.
-pub trait ParamValue: Clone + Serialize + DeserializeOwned {
+pub trait ParamValue: Clone + Serialize + DeserializeOwned + Send + Sync {
   type UID: Unsigned;
 }
 
 // use io:Read or Serializer and Deserializer wrappers instead of serde_value
-pub trait ParamList: HList + Clone {
+pub trait ParamList: HList + Clone + Send + Sync {
   // https://serde.rs/impl-serialize.html#serializing-a-sequence-or-map
   fn serialize(&self) -> Result<SessionContext, SerializerError> {
     let mut serialize_map = HashMap::new();

@@ -49,7 +49,7 @@ impl<
   >
 where
   for<'a> &'a ProcessBefore::Produces:
-    CloneJust<SplitterStepConsumes, ProcessBeforeProducesToSplitterStepConsumesIndices>,
+    CloneJust<SplitterStepConsumes, ProcessBeforeProducesToSplitterStepConsumesIndices>, ProcessBeforeProducesToSplitterStepConsumesIndices: Sync
 {
   type ProcessBeforeSplitProduces = ProcessBefore::Produces;
   type SplitterProducesForFirstCase = SplitterProducesForFirstCase;
