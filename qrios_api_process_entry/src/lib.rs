@@ -24,6 +24,7 @@ impl Msisdn {
 }
 
 #[derive(PartialEq, Debug, Eq, Clone, Copy, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+#[allow(non_camel_case_types)]
 pub enum Operator {
   mtn,
   airtel,
