@@ -12,7 +12,7 @@ pub fn main() {
     Path::new("type_process_builder/doc/process_builder_states.mmd"),
     "## Process builder states",
   );
-  generate_qrios_api_axum_server();
+  // generate_qrios_api_axum_server();
 }
 
 fn update_diagram_in_readme(diagram_path: &Path, section_header: &str) {
