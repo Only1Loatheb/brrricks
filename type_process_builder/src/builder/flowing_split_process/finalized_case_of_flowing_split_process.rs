@@ -29,7 +29,7 @@ pub struct FinalizedCaseOfFlowingSplitProcess<
 impl<
   ThisTag: Send + Sync,
   NextTag: Send + Sync,
-  SplitterProducesForOtherCases,
+  SplitterProducesForOtherCases: Send + Sync,
   ProcessBefore: FlowingSplitProcess<
     Coproduct<(ThisTag, SplitterProducesForThisCase), Coproduct<(NextTag, SplitterProducesForNextCase), SplitterProducesForOtherCases>>,
   >,
@@ -74,7 +74,7 @@ FinalizedCaseOfFlowingSplitProcess<
   pub fn case_via<
     NextCase: FlowingProcess<ProcessBeforeProduces=<SplitterProducesForNextCase as
     Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated>,
-    Indices,
+    Indices: Sync,
   >(
     self,
     _assumed_tag: NextTag,
@@ -100,9 +100,9 @@ FinalizedCaseOfFlowingSplitProcess<
 }
 
 impl<
-  ThisTag,
+  ThisTag: Send + Sync,
   SplitterProducesForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
-  SplitterProducesForOtherCases,
+  SplitterProducesForOtherCases: Send + Sync,
   ProcessBefore: FlowingSplitProcess<Coproduct<(ThisTag, SplitterProducesForThisCase), SplitterProducesForOtherCases>>,
   ThisCase: FinalizedProcess<ProcessBeforeProduces=<SplitterProducesForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated>,
   > FlowingSplitProcess<SplitterProducesForOtherCases>
@@ -193,7 +193,7 @@ ThisCase,
 
 /// the last case
 impl<
-  ThisTag,
+  ThisTag: Send + Sync,
   SplitterProducesForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
   ProcessBefore: FlowingSplitProcess<Coproduct<(ThisTag, SplitterProducesForThisCase), CNil>>,
   ThisCase: FinalizedProcess<ProcessBeforeProduces=<SplitterProducesForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated>,

@@ -42,7 +42,7 @@ pub trait FlowingProcess: Sized + Sync {
     OperationConsumes: ParamList,
     OperationProduces: ParamList + Concat<Self::Produces>,
     OperationStep: Operation<Consumes = OperationConsumes, Produces = OperationProduces>,
-    ProcessBeforeProducesToLastStepConsumesIndices,
+    ProcessBeforeProducesToLastStepConsumesIndices: Sync,
   >(
     self,
     step: OperationStep,
@@ -70,8 +70,8 @@ pub trait FlowingProcess: Sized + Sync {
         ValidateInputConsumes = ValidateInputConsumes,
         Produces = FormProduces,
       >,
-    ProcessBeforeProducesToCreateFormConsumesIndices,
-    ProcessBeforeProducesToValidateInputConsumesIndices,
+    ProcessBeforeProducesToCreateFormConsumesIndices: Sync,
+    ProcessBeforeProducesToValidateInputConsumesIndices: Sync,
   >(
     self,
     step: FormStep,
@@ -92,15 +92,15 @@ pub trait FlowingProcess: Sized + Sync {
   }
 
   fn split<
-    Tag,
+    Tag: Send + Sync,
     SplitterStepConsumes: ParamList,
     SplitterProducesForFirstCase: ParamList + Concat<Self::Produces>,
-    SplitterProducesForOtherCases,
+    SplitterProducesForOtherCases: Send + Sync,
     SplitterStep: Splitter<
         Consumes = SplitterStepConsumes,
         Produces = Coproduct<(Tag, SplitterProducesForFirstCase), SplitterProducesForOtherCases>,
       >,
-    ProcessBeforeProducesToSplitterStepConsumesIndices,
+    ProcessBeforeProducesToSplitterStepConsumesIndices: Sync,
   >(
     self,
     step: SplitterStep,
@@ -132,7 +132,7 @@ pub trait FlowingProcess: Sized + Sync {
   fn end<
     FinalConsumes: ParamList,
     FinalStep: Final<Consumes = FinalConsumes>,
-    ProcessBeforeProducesToLastStepConsumesIndices,
+    ProcessBeforeProducesToLastStepConsumesIndices: Sync,
   >(
     self,
     step: FinalStep,

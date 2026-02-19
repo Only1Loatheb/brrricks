@@ -31,7 +31,7 @@ impl<
   ProcessBefore: FlowingProcess,
   SplitterStepConsumes: ParamList,
   SplitterProducesForFirstCase: ParamList + Concat<ProcessBefore::Produces>,
-  SplitterProducesForOtherCases,
+  SplitterProducesForOtherCases: Send + Sync,
   SplitterStep: Splitter<
       Consumes = SplitterStepConsumes,
       Produces = Coproduct<(Tag, SplitterProducesForFirstCase), SplitterProducesForOtherCases>,

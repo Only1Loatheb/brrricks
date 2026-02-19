@@ -42,7 +42,7 @@ pub enum IntermediateRunOutcome<Produced: ParamList> {
   RetryUserInput(Message),
 }
 
-pub type IntermediateRunResult<T> = anyhow::Result<IntermediateRunOutcome<T>>;
+pub type IntermediateRunResult<T: ParamList> = anyhow::Result<IntermediateRunOutcome<T>>;
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum IntermediateFinalizedSplitOutcome<ProcessBeforeSplitProduced: ParamList, SplitterProducesForOtherCases> {
