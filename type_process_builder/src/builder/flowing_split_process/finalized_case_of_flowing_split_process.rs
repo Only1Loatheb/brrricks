@@ -10,9 +10,9 @@ use frunk_core::coproduct::{CNil, Coproduct};
 use std::marker::PhantomData;
 
 pub struct FinalizedCaseOfFlowingSplitProcess<
-  ThisTag,
+  ThisTag: Send + Sync,
   SplitterProducesForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
-  SplitterProducesForOtherCases: Sync,
+  SplitterProducesForOtherCases: Send + Sync,
   ProcessBefore: FlowingSplitProcess<Coproduct<(ThisTag, SplitterProducesForThisCase), SplitterProducesForOtherCases>>,
   ThisCase: FinalizedProcess<ProcessBeforeProduces=<SplitterProducesForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated>,
 > {
@@ -27,8 +27,8 @@ pub struct FinalizedCaseOfFlowingSplitProcess<
 }
 
 impl<
-  ThisTag: Sync,
-  NextTag: Sync,
+  ThisTag: Send + Sync,
+  NextTag: Send + Sync,
   SplitterProducesForOtherCases,
   ProcessBefore: FlowingSplitProcess<
     Coproduct<(ThisTag, SplitterProducesForThisCase), Coproduct<(NextTag, SplitterProducesForNextCase), SplitterProducesForOtherCases>>,

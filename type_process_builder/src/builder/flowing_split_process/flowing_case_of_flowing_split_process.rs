@@ -12,9 +12,9 @@ use frunk_core::coproduct::{CNil, Coproduct};
 use std::marker::PhantomData;
 
 pub struct FlowingCaseOfFlowingSplitProcess<
-  ThisTag,
+  ThisTag: Send + Sync,
   SplitterProducesForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
-  SplitterProducesForOtherCases: Sync,
+  SplitterProducesForOtherCases: Send + Sync,
   ProcessBefore: FlowingSplitProcess<Coproduct<(ThisTag, SplitterProducesForThisCase), SplitterProducesForOtherCases>>,
   ThisCase: FlowingProcess<ProcessBeforeProduces=<SplitterProducesForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated>,
   Indices: Sync,
@@ -32,9 +32,9 @@ pub struct FlowingCaseOfFlowingSplitProcess<
 }
 
 impl<
-  ThisTag: Sync,
-  NextTag: Sync,
-  SplitterProducesForOtherCases: Sync,
+  ThisTag: Send + Sync,
+  NextTag: Send + Sync,
+  SplitterProducesForOtherCases: Send + Sync,
   ProcessBefore: FlowingSplitProcess<Coproduct<(ThisTag, SplitterProducesForThisCase), Coproduct<(NextTag, SplitterProducesForNextCase), SplitterProducesForOtherCases>>>,
   SplitterProducesForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
   SplitterProducesForNextCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
@@ -108,9 +108,9 @@ FlowingCaseOfFlowingSplitProcess<
 }
 
 impl<
-  ThisTag: Sync,
+  ThisTag: Send + Sync,
   SplitterProducesForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
-  SplitterProducesForOtherCases: Sync,
+  SplitterProducesForOtherCases: Send + Sync,
   ProcessBefore: FlowingSplitProcess<Coproduct<(ThisTag, SplitterProducesForThisCase), SplitterProducesForOtherCases>>,
   ThisCase: FlowingProcess<ProcessBeforeProduces=<SplitterProducesForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated>,
   Indices: Sync,
@@ -209,7 +209,7 @@ where
 
 /// last case
 impl<
-  ThisTag: Sync,
+  ThisTag: Send + Sync,
   SplitterProducesForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
   ProcessBefore: FlowingSplitProcess<Coproduct<(ThisTag, SplitterProducesForThisCase), CNil>>,
   ThisCase: FlowingProcess<ProcessBeforeProduces=

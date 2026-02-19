@@ -10,9 +10,9 @@ use frunk_core::coproduct::{CNil, Coproduct};
 use std::marker::PhantomData;
 
 pub struct NextCaseOfFinalizedSplitProcess<
-  ThisTag,
+  ThisTag: Send + Sync,
   SplitterProducesForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
-  SplitterProducesForOtherCases: Sync,
+  SplitterProducesForOtherCases: Send + Sync,
   ProcessBefore: FinalizedSplitProcess<Coproduct<(ThisTag, SplitterProducesForThisCase), SplitterProducesForOtherCases>>,
   ThisCase: FinalizedProcess<ProcessBeforeProduces=<SplitterProducesForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated>,
 > {
@@ -23,9 +23,9 @@ pub struct NextCaseOfFinalizedSplitProcess<
 }
 
 impl<
-  ThisTag,
-  NextTag: Sync,
-  SplitterProducesForOtherCases: Sync,
+  ThisTag: Send + Sync,
+  NextTag: Send + Sync,
+  SplitterProducesForOtherCases: Send + Sync,
   ProcessBefore: FinalizedSplitProcess<
     Coproduct<
       (ThisTag, SplitterProducesForThisCase),
@@ -94,9 +94,9 @@ NextCaseOfFinalizedSplitProcess<
 }
 
 impl<
-  ThisTag: Sync,
+  ThisTag: Send + Sync,
   SplitterProducesForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
-  SplitterProducesForOtherCases: Sync,
+  SplitterProducesForOtherCases: Send + Sync,
   ProcessBefore: FinalizedSplitProcess<Coproduct<(ThisTag, SplitterProducesForThisCase), SplitterProducesForOtherCases>>,
   ThisCase: FinalizedProcess<ProcessBeforeProduces=<SplitterProducesForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated>,
 > FinalizedSplitProcess<SplitterProducesForOtherCases>
@@ -183,7 +183,7 @@ for NextCaseOfFinalizedSplitProcess<
 
 /// the last case
 impl<
-  ThisTag: Sync,
+  ThisTag: Send + Sync,
   SplitterProducesForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
   ProcessBefore: FinalizedSplitProcess<Coproduct<(ThisTag, SplitterProducesForThisCase), CNil>>,
   ThisCase: FinalizedProcess<

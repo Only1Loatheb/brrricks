@@ -9,7 +9,7 @@ use frunk_core::coproduct::Coproduct;
 use std::marker::PhantomData;
 
 pub struct SplitProcessSplitter<
-  Tag,
+  Tag: Send + Sync,
   ProcessBefore: FlowingProcess,
   SplitterStepConsumes: ParamList,
   SplitterProducesForFirstCase: ParamList,
@@ -27,7 +27,7 @@ pub struct SplitProcessSplitter<
 }
 
 impl<
-  Tag,
+  Tag: Send + Sync,
   ProcessBefore: FlowingProcess,
   SplitterStepConsumes: ParamList,
   SplitterProducesForFirstCase: ParamList + Concat<ProcessBefore::Produces>,

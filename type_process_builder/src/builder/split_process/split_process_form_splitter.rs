@@ -9,12 +9,12 @@ use frunk_core::coproduct::Coproduct;
 use std::marker::PhantomData;
 
 pub struct SplitProcessFormSplitter<
-  Tag,
+  Tag: Send + Sync,
   ProcessBefore: FlowingProcess,
   CreateFormConsumes: ParamList,
   ValidateInputConsumes: ParamList,
   SplitterProducesForFirstCase: ParamList,
-  SplitterProducesForOtherCases: Sync,
+  SplitterProducesForOtherCases: Send + Sync,
   SplitterStep: FromSplitter<
       CreateFormConsumes = CreateFormConsumes,
       ValidateInputConsumes = ValidateInputConsumes,
@@ -33,12 +33,12 @@ pub struct SplitProcessFormSplitter<
 }
 
 impl<
-  Tag,
+  Tag: Send + Sync,
   ProcessBefore: FlowingProcess,
   CreateFormConsumes: ParamList,
   ValidateInputConsumes: ParamList,
   SplitterProducesForFirstCase: ParamList + Concat<ProcessBefore::Produces>,
-  SplitterProducesForOtherCases: Sync,
+  SplitterProducesForOtherCases: Send + Sync,
   SplitterStep: FromSplitter<
       CreateFormConsumes = CreateFormConsumes,
       ValidateInputConsumes = ValidateInputConsumes,
