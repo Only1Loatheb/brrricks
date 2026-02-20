@@ -44,18 +44,19 @@ impl ParamList for HNil {
 
 impl<Head: ParamValue, Tail: ParamList> ParamList for HCons<Head, Tail> {
   fn _serialize(&self, session_context: &mut SessionContext) -> Result<(), SerializerError> {
-    session_context.push((Head::UID::U32, to_value(&self.head)?));
     self.tail._serialize(session_context)?;
+    session_context.push((Head::UID::U32, to_value(&self.head)?));
     Ok(())
   }
 
   /// https://isocpp.org/blog/2014/06/stroustrup-lists
   fn _deserialize(mut session_context: SessionContext) -> Result<Self, DeserializerError> {
-    let index = session_context
+    let position = session_context
       .iter()
+      .rev()
       .position(|(k, _)| *k == Head::UID::U32)
       .ok_or_else(|| DeserializerError::Custom(format!("Missing key: {}", Head::UID::U64)))?;
-    let (_, value) = session_context.swap_remove(index);
+    let (_, value) = session_context.swap_remove((session_context.len() - 1) - position);
     let head: Head = Head::deserialize(value)?;
     let tail = Tail::_deserialize(session_context)?;
     Ok(HCons { head, tail })
