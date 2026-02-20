@@ -2,7 +2,6 @@ use anyhow::anyhow;
 use frunk_core::{HList, hlist};
 use serde::{Deserialize, Serialize};
 use serde_value::Value;
-use std::collections::HashMap;
 use std::ops::Not;
 use type_process_builder::param_list::ParamValue;
 use type_process_builder::step::Entry;
@@ -47,19 +46,21 @@ impl Entry<Value> for DialedSessionEntry {
 
   async fn handle(
     &self,
-    mut consumes: HashMap<u64, Value>,
+    mut consumes: Vec<(u32, Value)>,
     shortcode_string: String,
   ) -> anyhow::Result<Self::Produces> {
-    let msisdn_value = consumes
-      .remove(&0)
-      .ok_or_else(|| anyhow!("Admin error or error on frontend."))?;
-    let msisdn = match msisdn_value {
-      Value::String(string) => Msisdn::from_string(string).ok_or_else(|| anyhow!("Admin error on frontend.")),
-      _ => Err(anyhow!("Admin error on frontend.")),
-    }?;
-    let operator = consumes
-      .remove(&1)
-      .ok_or_else(|| anyhow!("Admin error or error on frontend."))?;
+      let operator = consumes
+        .pop()
+        .ok_or_else(|| anyhow!("Admin error or error on frontend."))?
+        .1;
+      let msisdn_value = consumes
+        .pop()
+        .ok_or_else(|| anyhow!("Admin error or error on frontend."))?
+        .1;
+      let msisdn = match msisdn_value {
+        Value::String(string) => Msisdn::from_string(string).ok_or_else(|| anyhow!("Admin error on frontend.")),
+        _ => Err(anyhow!("Admin error on frontend.")),
+      }?;
     Ok(hlist!(DialedSessionEntryParam(
       msisdn,
       Operator::deserialize(operator)?,

@@ -2,9 +2,7 @@ use crate::builder::SessionContext;
 use frunk_core::hlist::{HCons, HList, HNil};
 use serde::Serialize;
 use serde::de::DeserializeOwned;
-use serde_value::SerializerError::Custom;
 use serde_value::{DeserializerError, SerializerError, to_value};
-use std::collections::HashMap;
 use typenum::Unsigned;
 
 pub mod clone_just;
@@ -18,21 +16,20 @@ pub trait ParamValue: Clone + Serialize + DeserializeOwned + Send + Sync {
   type UID: Unsigned;
 }
 
-// use io:Read or Serializer and Deserializer wrappers instead of serde_value
 pub trait ParamList: HList + Clone + Send + Sync {
   // https://serde.rs/impl-serialize.html#serializing-a-sequence-or-map
   fn serialize(&self) -> Result<SessionContext, SerializerError> {
-    let mut serialize_map = HashMap::new();
-    self._serialize(&mut serialize_map)?;
-    Ok(serialize_map)
+    let mut session_context = Vec::with_capacity(self.len());
+    self._serialize(&mut session_context)?;
+    Ok(session_context)
   }
   fn _serialize(&self, serialize_map: &mut SessionContext) -> Result<(), SerializerError>;
 
   // https://serde.rs/deserialize-map.html
-  fn deserialize(value: SessionContext) -> Result<Self, DeserializerError> {
-    Self::_deserialize(value)
+  fn deserialize(session_context: SessionContext) -> Result<Self, DeserializerError> {
+    Self::_deserialize(session_context)
   }
-  fn _deserialize(map: SessionContext) -> Result<Self, DeserializerError>;
+  fn _deserialize(session_context: SessionContext) -> Result<Self, DeserializerError>;
 }
 
 impl ParamList for HNil {
@@ -40,31 +37,27 @@ impl ParamList for HNil {
     Ok(())
   }
 
-  fn _deserialize(_map: SessionContext) -> Result<Self, DeserializerError> {
+  fn _deserialize(_session_context: SessionContext) -> Result<Self, DeserializerError> {
     Ok(HNil)
   }
 }
 
 impl<Head: ParamValue, Tail: ParamList> ParamList for HCons<Head, Tail> {
-  fn _serialize(&self, serialize_map: &mut SessionContext) -> Result<(), SerializerError> {
-    self.tail._serialize(serialize_map)?;
-    let old_value = serialize_map.insert(Head::UID::U64, to_value(&self.head)?);
-    match old_value {
-      None => Ok(()),
-      Some(_) => Err(Custom(format!(
-        "Two ParamValues have the same name: {}",
-        Head::UID::U64
-      ))),
-    }
+  fn _serialize(&self, session_context: &mut SessionContext) -> Result<(), SerializerError> {
+    session_context.push((Head::UID::U32, to_value(&self.head)?));
+    self.tail._serialize(session_context)?;
+    Ok(())
   }
 
-  fn _deserialize(mut map: SessionContext) -> Result<Self, DeserializerError> {
-    let value = map
-      .remove(&Head::UID::U64)
+  /// https://isocpp.org/blog/2014/06/stroustrup-lists
+  fn _deserialize(mut session_context: SessionContext) -> Result<Self, DeserializerError> {
+    let index = session_context
+      .iter()
+      .position(|(k, _)| *k == Head::UID::U32)
       .ok_or_else(|| DeserializerError::Custom(format!("Missing key: {}", Head::UID::U64)))?;
-
+    let (_, value) = session_context.swap_remove(index);
     let head: Head = Head::deserialize(value)?;
-    let tail = Tail::_deserialize(map)?;
+    let tail = Tail::_deserialize(session_context)?;
     Ok(HCons { head, tail })
   }
 }

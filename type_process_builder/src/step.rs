@@ -1,7 +1,6 @@
 #[derive(serde::Deserialize, serde::Serialize, PartialEq, Debug, Eq, Clone, PartialOrd, Ord, Hash)]
 pub struct Message(pub String);
 
-use std::collections::HashMap;
 // Should only pass params required in further part of the process, but I don't know what they are.
 // todo Make all the methods generic over Serializer
 use crate::param_list::ParamList;
@@ -14,7 +13,7 @@ pub trait Entry<RawConsume: DeserializeOwned>: Sync {
   type Produces: ParamList;
   fn handle(
     &self,
-    consumes: HashMap<u64, Value>,
+    consumes: Vec<(u32, Value)>,
     shortcode_string: String,
   ) -> impl Future<Output = anyhow::Result<Self::Produces>> + Send;
 }

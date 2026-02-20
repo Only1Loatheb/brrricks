@@ -15,7 +15,6 @@ use qrios_api_axum_server::models::{
   UssdViewInfoView, UssdViewInputView,
 };
 use serde_value::Value;
-use std::collections::HashMap;
 use type_process_builder::builder::{FinalizedProcess, PreviousRunYieldedAt, RunOutcome, RunnableProcess};
 use type_process_builder::step::FailedInputValidationAttempts;
 
@@ -80,10 +79,10 @@ impl<Process: FinalizedProcess + Sync> qrios_api_axum_server::apis::developers_a
     let a = self
       .process
       .resume_run(
-        HashMap::from([
+        vec![
           (0, Value::String(body.msisdn.clone())),
           (1, Value::String(body.operator.clone())),
-        ]),
+        ],
         PreviousRunYieldedAt(0),
         shortcode_string,
         FailedInputValidationAttempts(0),

@@ -21,14 +21,13 @@ mod tests {
   use frunk_core::{Coprod, HList, hlist};
   use serde::{Deserialize, Serialize};
   use serde_value::Value;
-  use std::collections::HashMap;
   use std::ops::Not;
   use typenum::*;
 
   #[derive(Clone, Debug, Deserialize, Serialize)]
   struct Msisdn(u64);
   impl Msisdn {
-    fn from(string: String) -> Option<Msisdn> {
+    fn from_string(string: String) -> Option<Msisdn> {
       string
         .split_at_checked(string.len().checked_sub(10)?)
         .and_then(|(_prefix, suffix)| {
@@ -99,16 +98,18 @@ mod tests {
       mut consumes: SessionContext,
       shortcode_string: String,
     ) -> anyhow::Result<HList![EntryParam]> {
+      let operator = consumes
+        .pop()
+        .ok_or_else(|| anyhow!("Admin error or error on frontend."))?
+        .1;
       let msisdn_value = consumes
-        .remove(&7)
-        .ok_or_else(|| anyhow!("Admin error or error on frontend."))?;
+        .pop()
+        .ok_or_else(|| anyhow!("Admin error or error on frontend."))?
+        .1;
       let msisdn = match msisdn_value {
-        Value::String(string) => Msisdn::from(string).ok_or_else(|| anyhow!("Admin error on frontend.")),
+        Value::String(string) => Msisdn::from_string(string).ok_or_else(|| anyhow!("Admin error on frontend.")),
         _ => Err(anyhow!("Admin error on frontend.")),
       }?;
-      let operator = consumes
-        .remove(&8)
-        .ok_or_else(|| anyhow!("Admin error or error on frontend."))?;
       Ok(hlist!(EntryParam(
         msisdn,
         Operator::deserialize(operator)?,
@@ -191,10 +192,10 @@ mod tests {
   }
 
   fn session_init_value() -> SessionContext {
-    HashMap::from([
-      (7, Value::String("2340000000000".into())),
-      (8, Value::String("MTN".into())),
-    ])
+    vec![
+      (0, Value::String("2340000000000".into())),
+      (1, Value::String("MTN".into())),
+    ]
   }
 
   #[tokio::test]

@@ -2,7 +2,6 @@ use frunk_core::hlist::HNil;
 use frunk_core::{Coprod, HList, hlist};
 use serde::{Deserialize, Serialize};
 use serde_value::Value;
-use std::collections::HashMap;
 use std::io::{self, Write};
 use type_process_builder::builder::*;
 use type_process_builder::step::{
@@ -52,11 +51,7 @@ struct EntryA;
 impl Entry<Value> for EntryA {
   type Produces = HList![EntryParam];
 
-  async fn handle(
-    &self,
-    _consumes: HashMap<u64, Value>,
-    shortcode_string: String,
-  ) -> anyhow::Result<HList![EntryParam]> {
+  async fn handle(&self, _consumes: Vec<(u32, Value)>, shortcode_string: String) -> anyhow::Result<HList![EntryParam]> {
     Ok(hlist!(EntryParam { shortcode_string }))
   }
 }
@@ -124,7 +119,7 @@ async fn main() -> io::Result<()> {
     .end(FinalA)
     .build();
 
-  let mut previous_run_produced = HashMap::new();
+  let mut previous_run_produced = Vec::new();
   let mut previous_run_yielded_at = PreviousRunYieldedAt(0);
   let mut failed_attempts = FailedInputValidationAttempts(0);
 
