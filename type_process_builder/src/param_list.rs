@@ -51,12 +51,11 @@ impl<Head: ParamValue, Tail: ParamList> ParamList for HCons<Head, Tail> {
 
   /// https://isocpp.org/blog/2014/06/stroustrup-lists
   fn _deserialize(mut session_context: SessionContext) -> Result<Self, DeserializerError> {
-    let position = session_context
+    let index = session_context
       .iter()
-      .rev()
-      .position(|(k, _)| *k == Head::UID::U32)
+      .rposition(|(k, _)| *k == Head::UID::U32)
       .ok_or_else(|| DeserializerError::Custom(format!("Missing key: {}", Head::UID::U64)))?;
-    let (_, value) = session_context.swap_remove((session_context.len() - 1) - position);
+    let (_, value) = session_context.swap_remove(index);
     let head: Head = Head::deserialize(value)?;
     let tail = Tail::_deserialize(session_context)?;
     Ok(HCons { head, tail })
