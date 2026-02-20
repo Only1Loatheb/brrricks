@@ -31,12 +31,12 @@ pub trait FlowingProcess: Sized + Sync {
     previous_run_yielded_at: PreviousRunYieldedAt,
     user_input: String,
     failed_input_validation_attempts: FailedInputValidationAttempts,
-  ) -> impl Future<Output = IntermediateRunResult<Self::Produces>>;
+  ) -> impl Future<Output = IntermediateRunResult<Self::Produces>> + Send;
 
   fn continue_run(
     &self,
     process_before_produces: Self::ProcessBeforeProduces,
-  ) -> impl Future<Output = IntermediateRunResult<Self::Produces>>;
+  ) -> impl Future<Output = IntermediateRunResult<Self::Produces>> + Send;
 
   fn then<
     OperationConsumes: ParamList,

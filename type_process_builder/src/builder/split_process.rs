@@ -19,7 +19,7 @@ use std::future::Future;
 pub trait SplitProcess<SplitterProducesForOtherCases: Send + Sync>: Sized + Sync {
   type ProcessBeforeSplitProduces: ParamList;
   type SplitterProducesForFirstCase: ParamList + Concat<Self::ProcessBeforeSplitProduces>;
-  type SplitterTagForFirstCase;
+  type SplitterTagForFirstCase: Send + Sync;
 
   fn resume_run(
     &self,
@@ -32,7 +32,7 @@ pub trait SplitProcess<SplitterProducesForOtherCases: Send + Sync>: Sized + Sync
       Self::ProcessBeforeSplitProduces,
       Coproduct<Self::SplitterProducesForFirstCase, SplitterProducesForOtherCases>,
     >,
-  >;
+  > + Send;
 
   fn continue_run(
     &self,
@@ -42,7 +42,7 @@ pub trait SplitProcess<SplitterProducesForOtherCases: Send + Sync>: Sized + Sync
       Self::ProcessBeforeSplitProduces,
       Coproduct<Self::SplitterProducesForFirstCase, SplitterProducesForOtherCases>,
     >,
-  >;
+  > + Send;
 
   fn case<ThisCase: FinalizedProcess>(
     self,

@@ -11,7 +11,7 @@ use std::future::Future;
 pub trait FinalizedSplitProcess<SplitterProducesForOtherCases>: Sized + Sync {
   type ProcessBeforeSplitProduces: ParamList;
   type SplitterProducesForThisCase: ParamList + Concat<Self::ProcessBeforeSplitProduces>;
-  type SplitterTagForThisCase;
+  type SplitterTagForThisCase: Send + Sync;
 
   fn resume_run(
     &self,
@@ -19,7 +19,9 @@ pub trait FinalizedSplitProcess<SplitterProducesForOtherCases>: Sized + Sync {
     previous_run_yielded_at: PreviousRunYieldedAt,
     user_input: String,
     failed_input_validation_attempts: FailedInputValidationAttempts,
-  ) -> impl Future<Output = IntermediateFinalizedSplitResult<Self::ProcessBeforeSplitProduces, SplitterProducesForOtherCases>>;
+  ) -> impl Future<
+    Output = IntermediateFinalizedSplitResult<Self::ProcessBeforeSplitProduces, SplitterProducesForOtherCases>,
+  > + Send;
 
   fn continue_run(
     &self,
@@ -28,7 +30,9 @@ pub trait FinalizedSplitProcess<SplitterProducesForOtherCases>: Sized + Sync {
       Self::SplitterProducesForThisCase,
       SplitterProducesForOtherCases,
     >,
-  ) -> impl Future<Output = IntermediateFinalizedSplitResult<Self::ProcessBeforeSplitProduces, SplitterProducesForOtherCases>>;
+  ) -> impl Future<
+    Output = IntermediateFinalizedSplitResult<Self::ProcessBeforeSplitProduces, SplitterProducesForOtherCases>,
+  > + Send;
 
   fn enumerate_steps(&mut self, last_used_index: StepIndex) -> StepIndex;
 }

@@ -30,7 +30,7 @@ pub trait FlowingSplitProcess<SplitterProducesForOtherCases>: Sized + Sync {
       SplitterProducesForOtherCases,
       Self::EveryFlowingCaseProduces,
     >,
-  >;
+  > + Send;
 
   /// When a [crate::builder::flowing_process::FlowingProcess] is added to handle split case
   /// the top level process has to pass to the case what process before split produces and what splitter produced for it
@@ -50,7 +50,7 @@ pub trait FlowingSplitProcess<SplitterProducesForOtherCases>: Sized + Sync {
       SplitterProducesForOtherCases,
       Self::EveryFlowingCaseProduces,
     >,
-  >;
+  > + Send;
 
   fn enumerate_steps(&mut self, last_used_index: StepIndex) -> StepIndex;
 }

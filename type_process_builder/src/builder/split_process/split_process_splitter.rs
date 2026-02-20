@@ -36,7 +36,7 @@ impl<
       Consumes = SplitterStepConsumes,
       Produces = Coproduct<(Tag, SplitterProducesForFirstCase), SplitterProducesForOtherCases>,
     >,
-  ProcessBeforeProducesToSplitterStepConsumesIndices,
+  ProcessBeforeProducesToSplitterStepConsumesIndices: Sync,
 > SplitProcess<SplitterProducesForOtherCases>
   for SplitProcessSplitter<
     Tag,
@@ -49,7 +49,7 @@ impl<
   >
 where
   for<'a> &'a ProcessBefore::Produces:
-    CloneJust<SplitterStepConsumes, ProcessBeforeProducesToSplitterStepConsumesIndices>, ProcessBeforeProducesToSplitterStepConsumesIndices: Sync
+    CloneJust<SplitterStepConsumes, ProcessBeforeProducesToSplitterStepConsumesIndices>,
 {
   type ProcessBeforeSplitProduces = ProcessBefore::Produces;
   type SplitterProducesForFirstCase = SplitterProducesForFirstCase;

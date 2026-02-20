@@ -18,7 +18,10 @@ pub trait FinalizedProcess: Sized + Sync {
     failed_input_validation_attempts: FailedInputValidationAttempts,
   ) -> impl Future<Output = RunResult> + Send;
 
-  fn continue_run(&self, process_before_produces: Self::ProcessBeforeProduces) -> impl Future<Output = RunResult>;
+  fn continue_run(
+    &self,
+    process_before_produces: Self::ProcessBeforeProduces,
+  ) -> impl Future<Output = RunResult> + Send;
 
   fn build(self) -> RunnableProcess<Self> {
     RunnableProcess::new(self)
