@@ -3,11 +3,12 @@ pub mod first_case_of_flowing_split_process;
 pub mod flowing_case_of_finalized_split_process;
 pub mod flowing_case_of_flowing_split_process;
 
-use crate::builder::{IntermediateFlowingSplitResult, PreviousRunYieldedAt, SessionContext, StepIndex};
+use crate::builder::{IntermediateFlowingSplitResult, ParamUID, PreviousRunYieldedAt, SessionContext, StepIndex};
 use crate::param_list::ParamList;
 use crate::param_list::concat::Concat;
 use crate::step::FailedInputValidationAttempts;
 use frunk_core::coproduct::Coproduct;
+use std::collections::HashSet;
 use std::future::Future;
 
 /// Should we force the user to produce common params before the [crate::step::Splitter]?
@@ -52,5 +53,7 @@ pub trait FlowingSplitProcess<SplitterProducesForOtherCases>: Sized + Sync {
     >,
   > + Send;
 
-  fn enumerate_steps(&mut self, last_used_index: StepIndex) -> Result<StepIndex, ()>;
+  fn enumerate_steps(&mut self, last_used_index: StepIndex) -> StepIndex;
+
+  fn all_param_uids(&self, acc: &mut HashSet<ParamUID>);
 }

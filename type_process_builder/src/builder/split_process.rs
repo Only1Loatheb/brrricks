@@ -5,11 +5,12 @@ use crate::builder::first_case_of_flowing_split_process::FirstCaseOfFlowingSplit
 use crate::builder::subprocess::{Subprocess, subprocess};
 use crate::builder::{
   FinalizedProcess, FirstCaseOfFinalizedSplitProcess, FlowingProcess, IntermediateFinalizedSplitResult, ParamList,
-  PreviousRunYieldedAt, SessionContext, StepIndex, WILL_BE_RENUMBERED,
+  ParamUID, PreviousRunYieldedAt, SessionContext, StepIndex, WILL_BE_RENUMBERED,
 };
 use crate::param_list::concat::Concat;
 use crate::step::FailedInputValidationAttempts;
 use frunk_core::coproduct::Coproduct;
+use std::collections::HashSet;
 use std::future::Future;
 
 /// We enforce at least one cases in the split.
@@ -98,5 +99,7 @@ pub trait SplitProcess<SplitterProducesForOtherCases: Send + Sync>: Sized + Sync
     }
   }
 
-  fn enumerate_steps(&mut self, last_used_index: StepIndex) -> Result<StepIndex, ()>;
+  fn enumerate_steps(&mut self, last_used_index: StepIndex) -> StepIndex;
+
+  fn all_param_uids(&self, acc: &mut HashSet<ParamUID>);
 }

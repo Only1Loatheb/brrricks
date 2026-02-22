@@ -1,8 +1,9 @@
 use crate::builder::{
-  FlowingProcess, IntermediateRunOutcome, IntermediateRunResult, ParamList, PreviousRunYieldedAt, SessionContext,
-  StepIndex,
+  FlowingProcess, IntermediateRunOutcome, IntermediateRunResult, ParamList, ParamUID, PreviousRunYieldedAt,
+  SessionContext, StepIndex,
 };
 use crate::step::FailedInputValidationAttempts;
+use std::collections::HashSet;
 use std::marker::PhantomData;
 
 pub struct Subprocess<ProcessBeforeProduces> {
@@ -31,9 +32,11 @@ impl<ProcessBeforeProduces: ParamList> FlowingProcess for Subprocess<ProcessBefo
     Ok(IntermediateRunOutcome::Continue(process_before_produces))
   }
 
-  fn enumerate_steps(&mut self, last_used_index: StepIndex) -> Result<StepIndex, ()> {
-    Ok(last_used_index)
+  fn enumerate_steps(&mut self, last_used_index: StepIndex) -> StepIndex {
+    last_used_index
   }
+
+  fn all_param_uids(&self, _acc: &mut HashSet<ParamUID>) {}
 }
 
 pub fn subprocess<ProcessBeforeProduces: ParamList>() -> Subprocess<ProcessBeforeProduces> {

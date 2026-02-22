@@ -116,7 +116,7 @@ impl Final for FinalA {
 
 #[tokio::main]
 async fn main() -> io::Result<()> {
-  let process = EntryA
+  let demo_process = EntryA
     .split(SplitA)
     .case_via(Case1, |x| x.show(FormA))
     .case_via(Case2, |x| x.then(Operation2))
@@ -124,7 +124,7 @@ async fn main() -> io::Result<()> {
     .build("demo_process", 0);
 
   let mut previous_run_produced = Vec::new();
-  let mut previous_run_yielded_at = PreviousRunYieldedAt(std::num::NonZero::<u32>::MIN);
+  let mut previous_run_yielded_at = PreviousRunYieldedAt(StepIndex::MIN);
   let mut failed_attempts = FailedInputValidationAttempts(0);
 
   loop {
@@ -135,7 +135,7 @@ async fn main() -> io::Result<()> {
     io::stdin().read_line(&mut input)?;
     let user_input = input.trim().to_owned();
 
-    match process
+    match demo_process
       .resume_run(
         previous_run_produced.clone(),
         previous_run_yielded_at.clone(),

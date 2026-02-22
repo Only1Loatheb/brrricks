@@ -15,7 +15,7 @@ use qrios_api_axum_server::models::{
   UssdViewInfoView, UssdViewInputView,
 };
 use serde_value::Value;
-use type_process_builder::builder::{FinalizedProcess, PreviousRunYieldedAt, RunOutcome, RunnableProcess};
+use type_process_builder::builder::{FinalizedProcess, PreviousRunYieldedAt, RunOutcome, RunnableProcess, StepIndex};
 use type_process_builder::step::FailedInputValidationAttempts;
 
 pub struct QriosUssdApiService<Process: FinalizedProcess> {
@@ -83,7 +83,7 @@ impl<Process: FinalizedProcess + Sync> qrios_api_axum_server::apis::developers_a
           (0, Value::String(body.msisdn.clone())),
           (1, Value::String(body.operator.clone())),
         ],
-        PreviousRunYieldedAt(std::num::NonZero::<u32>::MIN),
+        PreviousRunYieldedAt(StepIndex::MIN),
         shortcode_string,
         FailedInputValidationAttempts(0),
       )

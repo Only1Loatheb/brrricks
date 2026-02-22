@@ -2,12 +2,13 @@ use crate::builder::subprocess::{Subprocess, subprocess};
 use crate::builder::{
   FinalizedCaseOfFlowingSplitProcess, FinalizedProcess, FinalizedSplitProcess, FlowingCaseOfFlowingSplitProcess,
   FlowingProcess, FlowingSplitProcess, IntermediateFinalizedSplitOutcome, IntermediateFlowingSplitOutcome,
-  IntermediateFlowingSplitResult, IntermediateRunOutcome, IntermediateRunResult, ParamList, PreviousRunYieldedAt,
-  SessionContext, StepIndex, WILL_BE_RENUMBERED,
+  IntermediateFlowingSplitResult, IntermediateRunOutcome, IntermediateRunResult, ParamList, ParamUID,
+  PreviousRunYieldedAt, SessionContext, StepIndex, WILL_BE_RENUMBERED,
 };
 use crate::param_list::concat::Concat;
 use crate::step::FailedInputValidationAttempts;
 use frunk_core::coproduct::{CNil, Coproduct};
+use std::collections::HashSet;
 use std::marker::PhantomData;
 
 pub struct FlowingCaseOfFinalizedSplitProcess<
@@ -22,7 +23,7 @@ pub struct FlowingCaseOfFinalizedSplitProcess<
 {
   pub split_process_before: ProcessBefore,
   pub this_case: ThisCase,
-  pub first_step_in_case_index: Option<StepIndex>,
+  pub first_step_in_case_index: StepIndex,
   pub phantom_data: PhantomData<(
     ThisTag,
     SplitterProducesForThisCase,
@@ -129,7 +130,7 @@ ThisCase,
     user_input: String,
     failed_input_validation_attempts: FailedInputValidationAttempts,
   ) -> IntermediateFlowingSplitResult<Self::ProcessBeforeSplitProduces, SplitterProducesForOtherCases, Self::EveryFlowingCaseProduces> {
-    if previous_run_yielded_at.0 < self.first_step_in_case_index.unwrap() {
+    if previous_run_yielded_at.0 < self.first_step_in_case_index {
       let process_before_output = self
         .split_process_before
         .resume_run(previous_run_produced, previous_run_yielded_at, user_input, failed_input_validation_attempts)
@@ -189,11 +190,16 @@ ThisCase,
     }
   }
 
-  fn enumerate_steps(&mut self, last_used_index: StepIndex) -> Result<StepIndex, ()> {
-    let used_index = self.split_process_before.enumerate_steps(last_used_index)?;
-    let next_index = used_index.checked_add(1).ok_or(())?;
-    self.first_step_in_case_index = Some(next_index);
+  fn enumerate_steps(&mut self, last_used_index: StepIndex) -> StepIndex {
+    let used_index = self.split_process_before.enumerate_steps(last_used_index);
+    self.first_step_in_case_index = used_index + 1;
     self.this_case.enumerate_steps(used_index)
+  }
+
+  fn all_param_uids(&self, acc: &mut HashSet<ParamUID>) {
+            self.split_process_before.all_param_uids(acc);
+    SplitterProducesForThisCase::all_param_uids(acc);
+    self.this_case.all_param_uids(acc);
   }
 }
 
@@ -254,10 +260,15 @@ for FlowingCaseOfFinalizedSplitProcess<
     todo!()
   }
 
-  fn enumerate_steps(&mut self, last_used_index: StepIndex) -> Result<StepIndex, ()> {
-    let used_index = self.split_process_before.enumerate_steps(last_used_index)?;
-    let next_index = used_index.checked_add(1).ok_or(())?;
-    self.first_step_in_case_index = Some(next_index);
+  fn enumerate_steps(&mut self, last_used_index: StepIndex) -> StepIndex {
+    let used_index = self.split_process_before.enumerate_steps(last_used_index);
+    self.first_step_in_case_index = used_index + 1;
     self.this_case.enumerate_steps(used_index)
+  }
+
+  fn all_param_uids(&self, acc: &mut HashSet<ParamUID>) {
+            self.split_process_before.all_param_uids(acc);
+    SplitterProducesForThisCase::all_param_uids(acc);
+    self.this_case.all_param_uids(acc);
   }
 }

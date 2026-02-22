@@ -1,8 +1,9 @@
-use crate::builder::SessionContext;
+use crate::builder::{ParamUID, SessionContext};
 use frunk_core::hlist::{HCons, HList, HNil};
 use serde::Serialize;
 use serde::de::DeserializeOwned;
 use serde_value::{DeserializerError, SerializerError, to_value};
+use std::collections::HashSet;
 use typenum::Unsigned;
 
 pub mod clone_just;
@@ -30,6 +31,8 @@ pub trait ParamList: HList + Clone + Send + Sync {
     Self::_deserialize(session_context)
   }
   fn _deserialize(session_context: SessionContext) -> Result<Self, DeserializerError>;
+
+  fn all_param_uids(acc: &mut HashSet<ParamUID>);
 }
 
 impl ParamList for HNil {
@@ -40,6 +43,8 @@ impl ParamList for HNil {
   fn _deserialize(_session_context: SessionContext) -> Result<Self, DeserializerError> {
     Ok(HNil)
   }
+
+  fn all_param_uids(_acc: &mut HashSet<ParamUID>) {}
 }
 
 impl<Head: ParamValue, Tail: ParamList> ParamList for HCons<Head, Tail> {
@@ -54,10 +59,18 @@ impl<Head: ParamValue, Tail: ParamList> ParamList for HCons<Head, Tail> {
     let index = session_context
       .iter()
       .rposition(|(k, _)| *k == Head::UID::U32)
-      .ok_or_else(|| DeserializerError::Custom(format!("Missing key: {}", Head::UID::U64)))?;
+      .ok_or_else(|| {
+        let head_param_uid: ParamUID = Head::UID::U32;
+        DeserializerError::Custom(format!("Missing key: {head_param_uid}"))
+      })?;
     let (_, value) = session_context.swap_remove(index);
     let head: Head = Head::deserialize(value)?;
     let tail = Tail::_deserialize(session_context)?;
     Ok(HCons { head, tail })
+  }
+
+  fn all_param_uids(acc: &mut HashSet<ParamUID>) {
+    acc.insert(Head::UID::U32);
+    Tail::all_param_uids(acc)
   }
 }

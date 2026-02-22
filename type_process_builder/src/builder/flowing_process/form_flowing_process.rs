@@ -1,10 +1,11 @@
 use crate::builder::{
-  CurrentRunYieldedAt, FlowingProcess, IntermediateRunOutcome, IntermediateRunResult, ParamList, PreviousRunYieldedAt,
-  SessionContext, StepIndex,
+  CurrentRunYieldedAt, FlowingProcess, IntermediateRunOutcome, IntermediateRunResult, ParamList, ParamUID,
+  PreviousRunYieldedAt, SessionContext, StepIndex,
 };
 use crate::param_list::clone_just::CloneJust;
 use crate::param_list::concat::Concat;
 use crate::step::{FailedInputValidationAttempts, Form, InputValidation};
+use std::collections::HashSet;
 use std::marker::PhantomData;
 
 pub struct FormFlowingProcess<
@@ -15,7 +16,7 @@ pub struct FormFlowingProcess<
 > {
   pub process_before: ProcessBefore,
   pub form_step: FormStep,
-  pub step_index: Option<StepIndex>,
+  pub step_index: StepIndex,
   pub phantom_data: PhantomData<(
     ProcessBeforeProducesToCreateFormConsumesIndices,
     ProcessBeforeProducesToValidateInputConsumesIndices,
@@ -57,7 +58,7 @@ where
     user_input: String,
     failed_input_validation_attempts: FailedInputValidationAttempts,
   ) -> IntermediateRunResult<Self::Produces> {
-    if previous_run_yielded_at.0 < self.step_index.unwrap() {
+    if previous_run_yielded_at.0 < self.step_index {
       let process_before_output = self
         .process_before
         .resume_run(
@@ -97,14 +98,18 @@ where
     Ok(IntermediateRunOutcome::Yield(
       self.form_step.create_form(last_step_consumes).await?,
       process_before_produces.serialize()?,
-      CurrentRunYieldedAt(self.step_index.unwrap()),
+      CurrentRunYieldedAt(self.step_index),
     ))
   }
 
-  fn enumerate_steps(&mut self, last_used_index: StepIndex) -> Result<StepIndex, ()> {
-    let used_index = self.process_before.enumerate_steps(last_used_index)?;
-    let next_index = used_index.checked_add(1).ok_or(())?;
-    self.step_index = Some(next_index);
-    Ok(next_index)
+  fn enumerate_steps(&mut self, last_used_index: StepIndex) -> StepIndex {
+    let used_index = self.process_before.enumerate_steps(last_used_index);
+    self.step_index = used_index + 1;
+    self.step_index
+  }
+
+  fn all_param_uids(&self, acc: &mut HashSet<ParamUID>) {
+    self.process_before.all_param_uids(acc);
+    FormStep::Produces::all_param_uids(acc);
   }
 }

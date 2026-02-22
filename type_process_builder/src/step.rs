@@ -26,7 +26,7 @@ pub trait Operation: Sync {
 }
 
 #[derive(PartialEq, Debug, Eq, Clone, PartialOrd, Ord, Hash)]
-pub struct FailedInputValidationAttempts(pub u32);
+pub struct FailedInputValidationAttempts(pub u16);
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum InputValidation<Produced> {

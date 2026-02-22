@@ -23,7 +23,7 @@ pub use split_process::*;
 
 /// This enables some memory layout optimization. For example, Option<NonZero<u32>> is the same size as u32:
 /// https://doc.rust-lang.org/beta/std/num/struct.NonZero.html
-type StepIndex = std::num::NonZero<u32>;
+pub type StepIndex = i32;
 
 #[derive(PartialEq, Debug, Eq, Clone, PartialOrd, Ord, Hash)]
 pub struct PreviousRunYieldedAt(pub StepIndex);
@@ -31,7 +31,7 @@ pub struct PreviousRunYieldedAt(pub StepIndex);
 #[derive(PartialEq, Debug, Eq, Clone, PartialOrd, Ord, Hash)]
 pub struct CurrentRunYieldedAt(pub StepIndex);
 
-pub(crate) const WILL_BE_RENUMBERED: Option<StepIndex> = None;
+pub(crate) const WILL_BE_RENUMBERED: i32 = i32::MAX;
 
 pub type ParamUID = u32;
 

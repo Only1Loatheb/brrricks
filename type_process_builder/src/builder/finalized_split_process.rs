@@ -1,11 +1,12 @@
 pub mod first_case_of_finalized_split_process;
 pub mod next_case_of_finalized_split_process;
 
-use crate::builder::{IntermediateFinalizedSplitResult, PreviousRunYieldedAt, SessionContext, StepIndex};
+use crate::builder::{IntermediateFinalizedSplitResult, ParamUID, PreviousRunYieldedAt, SessionContext, StepIndex};
 use crate::param_list::ParamList;
 use crate::param_list::concat::Concat;
 use crate::step::FailedInputValidationAttempts;
 use frunk_core::coproduct::Coproduct;
+use std::collections::HashSet;
 use std::future::Future;
 
 pub trait FinalizedSplitProcess<SplitterProducesForOtherCases>: Sized + Sync {
@@ -34,5 +35,7 @@ pub trait FinalizedSplitProcess<SplitterProducesForOtherCases>: Sized + Sync {
     Output = IntermediateFinalizedSplitResult<Self::ProcessBeforeSplitProduces, SplitterProducesForOtherCases>,
   > + Send;
 
-  fn enumerate_steps(&mut self, last_used_index: StepIndex) -> Result<StepIndex, ()>;
+  fn enumerate_steps(&mut self, last_used_index: StepIndex) -> StepIndex;
+
+  fn all_param_uids(&self, acc: &mut HashSet<ParamUID>);
 }

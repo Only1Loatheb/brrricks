@@ -1,11 +1,12 @@
 use crate::builder::{
   FlowingProcess, IntermediateFinalizedSplitOutcome, IntermediateFinalizedSplitResult, IntermediateRunOutcome,
-  ParamList, PreviousRunYieldedAt, SessionContext, SplitProcess, StepIndex,
+  ParamList, ParamUID, PreviousRunYieldedAt, SessionContext, SplitProcess, StepIndex,
 };
 use crate::param_list::clone_just::CloneJust;
 use crate::param_list::concat::Concat;
 use crate::step::{FailedInputValidationAttempts, Splitter};
 use frunk_core::coproduct::Coproduct;
+use std::collections::HashSet;
 use std::marker::PhantomData;
 
 pub struct SplitProcessSplitter<
@@ -22,7 +23,7 @@ pub struct SplitProcessSplitter<
 > {
   pub process_before: ProcessBefore,
   pub splitter: SplitterStep,
-  pub step_index: Option<StepIndex>,
+  pub step_index: StepIndex,
   pub phantom_data: PhantomData<ProcessBeforeProducesToSplitterStepConsumesIndices>,
 }
 
@@ -65,7 +66,7 @@ where
     Self::ProcessBeforeSplitProduces,
     Coproduct<Self::SplitterProducesForFirstCase, SplitterProducesForOtherCases>,
   > {
-    if previous_run_yielded_at.0 < self.step_index.unwrap() {
+    if previous_run_yielded_at.0 < self.step_index {
       let process_before_output = self
         .process_before
         .resume_run(
@@ -107,10 +108,13 @@ where
     })
   }
 
-  fn enumerate_steps(&mut self, last_used_index: StepIndex) -> Result<StepIndex, ()> {
-    let used_index = self.process_before.enumerate_steps(last_used_index)?;
-    let next_index = used_index.checked_add(1).ok_or(())?;
-    self.step_index = Some(next_index);
-    Ok(next_index)
+  fn enumerate_steps(&mut self, last_used_index: StepIndex) -> StepIndex {
+    let used_index = self.process_before.enumerate_steps(last_used_index);
+    self.step_index = used_index + 1;
+    self.step_index
+  }
+
+  fn all_param_uids(&self, acc: &mut HashSet<ParamUID>) {
+    self.process_before.all_param_uids(acc);
   }
 }

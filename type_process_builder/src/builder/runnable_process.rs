@@ -1,6 +1,7 @@
 use crate::builder::finalized_process::FinalizedProcess;
-use crate::builder::{ParamUID, PreviousRunYieldedAt, RunResult, SessionContext};
+use crate::builder::{ParamUID, PreviousRunYieldedAt, RunResult, SessionContext, StepIndex};
 use crate::step::FailedInputValidationAttempts;
+use std::collections::HashSet;
 
 pub struct RunnableProcess<UnderlyingProcess: FinalizedProcess> {
   finalized_process: UnderlyingProcess, // shouldn't be public
@@ -10,9 +11,7 @@ pub struct RunnableProcess<UnderlyingProcess: FinalizedProcess> {
 
 impl<UnderlyingProcess: FinalizedProcess> RunnableProcess<UnderlyingProcess> {
   pub fn new(mut finalized_process: UnderlyingProcess, name: &'static str, version: u32) -> Self {
-    finalized_process
-      .enumerate_steps(std::num::NonZero::<u32>::MIN)
-      .unwrap();
+    finalized_process.enumerate_steps(StepIndex::MIN);
     Self {
       finalized_process,
       name,
@@ -38,8 +37,10 @@ impl<UnderlyingProcess: FinalizedProcess> RunnableProcess<UnderlyingProcess> {
       .await
   }
 
-  pub fn all_columns(&self) -> Vec<ParamUID> {
-    Vec::new()
+  pub fn all_param_uids(&self) -> HashSet<ParamUID> {
+    let mut all_param_uids = HashSet::<ParamUID>::new();
+    self.finalized_process.all_param_uids(&mut all_param_uids);
+    all_param_uids
   }
 
   pub fn get_name(&self) -> &'static str {

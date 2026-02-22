@@ -3,6 +3,7 @@ use crate::param_list::ParamList;
 use crate::step::{Entry, FailedInputValidationAttempts};
 use frunk_core::hlist::HNil;
 use serde_value::Value;
+use std::collections::HashSet;
 use std::hint::unreachable_unchecked;
 
 impl<Produces: ParamList, EntryStep: Entry<Value, Produces = Produces>> FlowingProcess for EntryStep {
@@ -24,7 +25,11 @@ impl<Produces: ParamList, EntryStep: Entry<Value, Produces = Produces>> FlowingP
     unsafe { unreachable_unchecked() }
   }
 
-  fn enumerate_steps(&mut self, last_used_index: StepIndex) -> Result<StepIndex, ()> {
-    Ok(last_used_index)
+  fn enumerate_steps(&mut self, last_used_index: StepIndex) -> StepIndex {
+    last_used_index
+  }
+
+  fn all_param_uids(&self, acc: &mut HashSet<ParamUID>) {
+    EntryStep::Produces::all_param_uids(acc);
   }
 }

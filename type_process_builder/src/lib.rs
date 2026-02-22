@@ -206,7 +206,7 @@ mod tests {
     let run_result = process
       .resume_run(
         session_init_value(),
-        PreviousRunYieldedAt(std::num::NonZero::<u32>::MIN),
+        PreviousRunYieldedAt(StepIndex::MIN),
         "*123#".to_string(),
         FailedInputValidationAttempts(0),
       )
@@ -229,7 +229,7 @@ mod tests {
     let run_result = process
       .resume_run(
         session_init_value(),
-        PreviousRunYieldedAt(std::num::NonZero::<u32>::MIN),
+        PreviousRunYieldedAt(StepIndex::MIN),
         "*123#".to_string(),
         FailedInputValidationAttempts(0),
       )
@@ -249,7 +249,7 @@ mod tests {
     let run_result = process
       .resume_run(
         session_init_value(),
-        PreviousRunYieldedAt(std::num::NonZero::<u32>::MIN),
+        PreviousRunYieldedAt(StepIndex::MIN),
         "*123#".to_string(),
         FailedInputValidationAttempts(0),
       )
@@ -273,7 +273,7 @@ mod tests {
 
   async fn test_process_producess_messages(process: RunnableProcess<impl FinalizedProcess>, messages: [&str; 4]) {
     let mut previous_run_produced = session_init_value();
-    let mut previous_run_yielded_at = PreviousRunYieldedAt(std::num::NonZero::<u32>::MIN);
+    let mut previous_run_yielded_at = PreviousRunYieldedAt(StepIndex::MIN);
     let mut failed_attempts = FailedInputValidationAttempts(0);
     let mut messages_index = 0;
     loop {

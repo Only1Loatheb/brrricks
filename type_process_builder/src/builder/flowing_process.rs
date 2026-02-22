@@ -14,6 +14,7 @@ use crate::param_list::concat::Concat;
 use crate::param_list::transform::TransformTo;
 use crate::step::{FailedInputValidationAttempts, Final, Form, Operation, Splitter};
 use frunk_core::coproduct::Coproduct;
+use std::collections::HashSet;
 use std::future::Future;
 
 /// Param value overlap is prevented by making reading them cumbersome <https://github.com/lloydmeta/frunk/issues/187>
@@ -147,5 +148,7 @@ pub trait FlowingProcess: Sized + Sync {
     }
   }
 
-  fn enumerate_steps(&mut self, last_used_index: StepIndex) -> Result<StepIndex, ()>;
+  fn enumerate_steps(&mut self, last_used_index: StepIndex) -> StepIndex;
+
+  fn all_param_uids(&self, acc: &mut HashSet<ParamUID>);
 }
