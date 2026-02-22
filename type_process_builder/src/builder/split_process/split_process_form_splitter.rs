@@ -25,7 +25,7 @@ pub struct SplitProcessFormSplitter<
 > {
   pub process_before: ProcessBefore,
   pub splitter: SplitterStep,
-  pub step_index: StepIndex,
+  pub step_index: Option<StepIndex>,
   pub phantom_data: PhantomData<(
     ProcessBeforeProducesToCreateFormConsumesIndices,
     ProcessBeforeProducesToValidateInputConsumesIndices,
@@ -77,7 +77,7 @@ where
     Self::ProcessBeforeSplitProduces,
     Coproduct<Self::SplitterProducesForFirstCase, SplitterProducesForOtherCases>,
   > {
-    if previous_run_yielded_at.0 < self.step_index {
+    if previous_run_yielded_at.0 < self.step_index.unwrap() {
       let process_before_output = self
         .process_before
         .resume_run(
@@ -130,13 +130,13 @@ where
     Ok(IntermediateFinalizedSplitOutcome::Yield(
       self.splitter.create_form(splitter_step_consumes).await?,
       process_before_split_produced.serialize()?,
-      CurrentRunYieldedAt(self.step_index),
+      CurrentRunYieldedAt(self.step_index.unwrap()),
     ))
   }
 
-  fn enumerate_steps(&mut self, last_used_index: StepIndex) -> StepIndex {
+  fn enumerate_steps(&mut self, last_used_index: StepIndex) -> Result<StepIndex, ()> {
     let used_index = self.process_before.enumerate_steps(last_used_index);
-    self.step_index = used_index + 1;
+    self.step_index = Some(used_index + 1);
     self.step_index
   }
 }

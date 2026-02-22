@@ -31,7 +31,7 @@ impl<ProcessBeforeProduces: ParamList> FlowingProcess for Subprocess<ProcessBefo
     Ok(IntermediateRunOutcome::Continue(process_before_produces))
   }
 
-  fn enumerate_steps(&mut self, last_used_index: StepIndex) -> StepIndex {
+  fn enumerate_steps(&mut self, last_used_index: StepIndex) -> Result<StepIndex, ()> {
     last_used_index
   }
 }

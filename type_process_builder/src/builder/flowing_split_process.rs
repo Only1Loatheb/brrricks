@@ -52,5 +52,5 @@ pub trait FlowingSplitProcess<SplitterProducesForOtherCases>: Sized + Sync {
     >,
   > + Send;
 
-  fn enumerate_steps(&mut self, last_used_index: StepIndex) -> StepIndex;
+  fn enumerate_steps(&mut self,last_used_index: StepIndex) -> Result<StepIndex, ()>;
 }

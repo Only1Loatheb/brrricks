@@ -21,7 +21,9 @@ pub use runnable_process::*;
 use serde_value::Value;
 pub use split_process::*;
 
-type StepIndex = u32;
+/// This enables some memory layout optimization. For example, Option<NonZero<u32>> is the same size as u32:
+/// https://doc.rust-lang.org/beta/std/num/struct.NonZero.html
+type StepIndex = std::num::NonZero<u32>;
 
 #[derive(PartialEq, Debug, Eq, Clone, PartialOrd, Ord, Hash)]
 pub struct PreviousRunYieldedAt(pub StepIndex);
@@ -29,7 +31,7 @@ pub struct PreviousRunYieldedAt(pub StepIndex);
 #[derive(PartialEq, Debug, Eq, Clone, PartialOrd, Ord, Hash)]
 pub struct CurrentRunYieldedAt(pub StepIndex);
 
-pub(crate) const WILL_BE_RENUMBERED: StepIndex = 0;
+pub(crate) const WILL_BE_RENUMBERED: Option<StepIndex> = None;
 
 pub type ParamUID = u32;
 

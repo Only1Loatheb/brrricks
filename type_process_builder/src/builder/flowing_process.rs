@@ -147,5 +147,5 @@ pub trait FlowingProcess: Sized + Sync {
     }
   }
 
-  fn enumerate_steps(&mut self, last_used_index: StepIndex) -> StepIndex;
+  fn enumerate_steps(&mut self,last_used_index: StepIndex) -> Result<StepIndex, ()>;
 }

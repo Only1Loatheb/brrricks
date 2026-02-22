@@ -23,11 +23,11 @@ pub trait FinalizedProcess: Sized + Sync {
     process_before_produces: Self::ProcessBeforeProduces,
   ) -> impl Future<Output = RunResult> + Send;
 
-  fn build(self, name: &'static str) -> RunnableProcess<Self> {
-    RunnableProcess::new(self, name)
+  fn build(self, name: &'static str, version: u32) -> RunnableProcess<Self> {
+    RunnableProcess::new(self, name, version)
   }
 
-  fn enumerate_steps(&mut self, last_used_index: StepIndex) -> StepIndex;
+  fn enumerate_steps(&mut self,last_used_index: StepIndex) -> Result<StepIndex, ()>;
 }
 
 pub struct FlowingFinalizedProcess<
@@ -88,7 +88,7 @@ where
     ))
   }
 
-  fn enumerate_steps(&mut self, last_used_index: StepIndex) -> StepIndex {
+  fn enumerate_steps(&mut self, last_used_index: StepIndex) -> Result<StepIndex, ()> {
     // most likely not worth to assign an index to final steps, but maybe test
     self.process_before.enumerate_steps(last_used_index)
   }

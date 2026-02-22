@@ -15,14 +15,15 @@ pub async fn create_table<Process: FinalizedProcess>(
   // remove trailing comma
   columns.pop();
 
+  let process_name = process.get_name();
+  let process_version = process.get_version();
   let sql = format!(
     r#"
-        CREATE TABLE IF NOT EXISTS my_table (
+        CREATE TABLE IF NOT EXISTS session_store.{process_name}_{process_version} (
             id BIGINT PRIMARY KEY,
-            {}
+            {columns}
         )
         "#,
-    columns
   );
 
   pool.execute(sql.as_str()).await?;

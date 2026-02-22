@@ -1,4 +1,3 @@
-use std::collections::HashSet;
 use crate::builder::finalized_process::FinalizedProcess;
 use crate::builder::{ParamUID, PreviousRunYieldedAt, RunResult, SessionContext};
 use crate::step::FailedInputValidationAttempts;
@@ -6,12 +5,17 @@ use crate::step::FailedInputValidationAttempts;
 pub struct RunnableProcess<UnderlyingProcess: FinalizedProcess> {
   finalized_process: UnderlyingProcess, // shouldn't be public
   name: &'static str,
+  version: u32,
 }
 
 impl<UnderlyingProcess: FinalizedProcess> RunnableProcess<UnderlyingProcess> {
-  pub fn new(mut finalized_process: UnderlyingProcess, name: &'static str,) -> Self {
+  pub fn new(mut finalized_process: UnderlyingProcess, name: &'static str, version: u32) -> Self {
     finalized_process.enumerate_steps(0);
-    Self { finalized_process, name}
+    Self {
+      finalized_process,
+      name,
+      version,
+    }
   }
 
   pub async fn resume_run(
@@ -34,5 +38,13 @@ impl<UnderlyingProcess: FinalizedProcess> RunnableProcess<UnderlyingProcess> {
 
   pub fn all_columns(&self) -> Vec<ParamUID> {
     Vec::new()
+  }
+
+  pub fn get_name(&self) -> &'static str {
+    self.name
+  }
+
+  pub fn get_version(&self) -> u32 {
+    self.version
   }
 }

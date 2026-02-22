@@ -14,7 +14,7 @@ pub struct OperationFlowingProcess<
 > {
   pub process_before: ProcessBefore,
   pub last_step: OperationStep,
-  pub step_index: StepIndex,
+  pub step_index: Option<StepIndex>,
   pub phantom_data: PhantomData<ProcessBeforeProducesToLastStepConsumesIndices>,
 }
 
@@ -39,7 +39,7 @@ where
     user_input: String,
     failed_input_validation_attempts: FailedInputValidationAttempts,
   ) -> IntermediateRunResult<Self::Produces> {
-    if previous_run_yielded_at.0 < self.step_index {
+    if previous_run_yielded_at.0 < self.step_index.unwrap() {
       let process_before_output = self
         .process_before
         .resume_run(
@@ -72,9 +72,10 @@ where
     ))
   }
 
-  fn enumerate_steps(&mut self, last_used_index: StepIndex) -> StepIndex {
+  fn enumerate_steps(&mut self, last_used_index: StepIndex) -> Result<StepIndex, ()> {
     let used_index = self.process_before.enumerate_steps(last_used_index);
-    self.step_index = used_index + 1;
-    self.step_index
+    let next_index = used_index.checked_add(1).ok_or(())?;
+    self.step_index = Some(next_index);
+    Ok(next_index)
   }
 }

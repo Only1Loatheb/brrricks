@@ -83,7 +83,7 @@ impl<Process: FinalizedProcess + Sync> qrios_api_axum_server::apis::developers_a
           (0, Value::String(body.msisdn.clone())),
           (1, Value::String(body.operator.clone())),
         ],
-        PreviousRunYieldedAt(0),
+        PreviousRunYieldedAt(std::num::NonZero::<u32>::MIN),
         shortcode_string,
         FailedInputValidationAttempts(0),
       )

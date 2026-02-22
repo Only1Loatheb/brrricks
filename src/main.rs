@@ -117,10 +117,10 @@ async fn main() -> io::Result<()> {
     .case_via(Case1, |x| x.show(FormA))
     .case_via(Case2, |x| x.then(Operation2))
     .end(FinalA)
-    .build();
+    .build("demo_process", 0);
 
   let mut previous_run_produced = Vec::new();
-  let mut previous_run_yielded_at = PreviousRunYieldedAt(0);
+  let mut previous_run_yielded_at = PreviousRunYieldedAt(std::num::NonZero::<u32>::MIN);
   let mut failed_attempts = FailedInputValidationAttempts(0);
 
   loop {

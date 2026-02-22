@@ -200,12 +200,12 @@ mod tests {
 
   #[tokio::test]
   async fn test_end() {
-    let process = EntryA.end(FinalNoConsumes).build("test_end");
+    let process = EntryA.end(FinalNoConsumes).build("test_end", 0);
 
     let run_result = process
       .resume_run(
         session_init_value(),
-        PreviousRunYieldedAt(0),
+        PreviousRunYieldedAt(std::num::NonZero::<u32>::MIN),
         "*123#".to_string(),
         FailedInputValidationAttempts(0),
       )
@@ -223,12 +223,12 @@ mod tests {
       .case_via(Case1, |x| x.then(Operation1))
       .case_via(Case2, |x| x.then(Operation2))
       .end(FinalA)
-      .build("test_split");
+      .build("test_split", 0);
 
     let run_result = process
       .resume_run(
         session_init_value(),
-        PreviousRunYieldedAt(0),
+        PreviousRunYieldedAt(std::num::NonZero::<u32>::MIN),
         "*123#".to_string(),
         FailedInputValidationAttempts(0),
       )
@@ -243,12 +243,12 @@ mod tests {
       .case_via(Case1, |x| x.show(FormA))
       .case_via(Case2, |x| x.then(Operation2))
       .end(FinalA)
-      .build("test_yield");
+      .build("test_yield", 0);
 
     let run_result = process
       .resume_run(
         session_init_value(),
-        PreviousRunYieldedAt(0),
+        PreviousRunYieldedAt(std::num::NonZero::<u32>::MIN),
         "*123#".to_string(),
         FailedInputValidationAttempts(0),
       )
@@ -263,7 +263,7 @@ mod tests {
       .case_via(Case1, |x| x.show(FormA))
       .case_via(Case2, |x| x.then(Operation2))
       .end(FinalA)
-      .build("test_resume");
+      .build("test_resume", 0);
 
     let messages = ["*123#", "Enter a number", "a number", "Good bye"];
 
@@ -272,7 +272,7 @@ mod tests {
 
   async fn test_process_producess_messages(process: RunnableProcess<impl FinalizedProcess>, messages: [&str; 4]) {
     let mut previous_run_produced = session_init_value();
-    let mut previous_run_yielded_at = PreviousRunYieldedAt(0);
+    let mut previous_run_yielded_at = PreviousRunYieldedAt(std::num::NonZero::<u32>::MIN);
     let mut failed_attempts = FailedInputValidationAttempts(0);
     let mut messages_index = 0;
     loop {
