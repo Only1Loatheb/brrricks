@@ -27,7 +27,7 @@ pub trait FinalizedProcess: Sized + Sync {
     RunnableProcess::new(self, name, version)
   }
 
-  fn enumerate_steps(&mut self,last_used_index: StepIndex) -> Result<StepIndex, ()>;
+  fn enumerate_steps(&mut self, last_used_index: StepIndex) -> Result<StepIndex, ()>;
 }
 
 pub struct FlowingFinalizedProcess<

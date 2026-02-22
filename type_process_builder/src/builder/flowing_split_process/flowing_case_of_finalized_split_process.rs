@@ -190,8 +190,9 @@ ThisCase,
   }
 
   fn enumerate_steps(&mut self, last_used_index: StepIndex) -> Result<StepIndex, ()> {
-    let used_index = self.split_process_before.enumerate_steps(last_used_index);
-    self.first_step_in_case_index = Some(used_index + 1);
+    let used_index = self.split_process_before.enumerate_steps(last_used_index)?;
+    let next_index = used_index.checked_add(1).ok_or(())?;
+    self.first_step_in_case_index = Some(next_index);
     self.this_case.enumerate_steps(used_index)
   }
 }
@@ -254,8 +255,9 @@ for FlowingCaseOfFinalizedSplitProcess<
   }
 
   fn enumerate_steps(&mut self, last_used_index: StepIndex) -> Result<StepIndex, ()> {
-    let used_index = self.split_process_before.enumerate_steps(last_used_index);
-    self.first_step_in_case_index = Some(used_index + 1);
+    let used_index = self.split_process_before.enumerate_steps(last_used_index)?;
+    let next_index = used_index.checked_add(1).ok_or(())?;
+    self.first_step_in_case_index = Some(next_index);
     self.this_case.enumerate_steps(used_index)
   }
 }

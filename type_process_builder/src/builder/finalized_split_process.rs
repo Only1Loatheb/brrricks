@@ -34,5 +34,5 @@ pub trait FinalizedSplitProcess<SplitterProducesForOtherCases>: Sized + Sync {
     Output = IntermediateFinalizedSplitResult<Self::ProcessBeforeSplitProduces, SplitterProducesForOtherCases>,
   > + Send;
 
-  fn enumerate_steps(&mut self,last_used_index: StepIndex) -> Result<StepIndex, ()>;
+  fn enumerate_steps(&mut self, last_used_index: StepIndex) -> Result<StepIndex, ()>;
 }

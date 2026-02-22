@@ -3,12 +3,12 @@ pub struct Message(pub String);
 
 // Should only pass params required in further part of the process, but I don't know what they are.
 // todo Make all the methods generic over Serializer
+use crate::builder::ParamUID;
 use crate::param_list::ParamList;
 use frunk_core::coproduct::Coproduct;
 use serde::de::DeserializeOwned;
 use serde_value::Value;
 use std::future::Future;
-use crate::builder::ParamUID;
 
 pub trait Entry<RawConsume: DeserializeOwned>: Sync {
   type Produces: ParamList;

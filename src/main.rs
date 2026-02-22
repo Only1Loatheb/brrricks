@@ -51,7 +51,11 @@ struct EntryA;
 impl Entry<Value> for EntryA {
   type Produces = HList![EntryParam];
 
-  async fn handle(&self, _consumes: Vec<(ParamUID, Value)>, shortcode_string: String) -> anyhow::Result<HList![EntryParam]> {
+  async fn handle(
+    &self,
+    _consumes: Vec<(ParamUID, Value)>,
+    shortcode_string: String,
+  ) -> anyhow::Result<HList![EntryParam]> {
     Ok(hlist!(EntryParam { shortcode_string }))
   }
 }

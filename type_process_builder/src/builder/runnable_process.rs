@@ -10,7 +10,9 @@ pub struct RunnableProcess<UnderlyingProcess: FinalizedProcess> {
 
 impl<UnderlyingProcess: FinalizedProcess> RunnableProcess<UnderlyingProcess> {
   pub fn new(mut finalized_process: UnderlyingProcess, name: &'static str, version: u32) -> Self {
-    finalized_process.enumerate_steps(0);
+    finalized_process
+      .enumerate_steps(std::num::NonZero::<u32>::MIN)
+      .unwrap();
     Self {
       finalized_process,
       name,

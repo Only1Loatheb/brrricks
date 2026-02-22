@@ -32,7 +32,7 @@ impl<ProcessBeforeProduces: ParamList> FlowingProcess for Subprocess<ProcessBefo
   }
 
   fn enumerate_steps(&mut self, last_used_index: StepIndex) -> Result<StepIndex, ()> {
-    last_used_index
+    Ok(last_used_index)
   }
 }
 

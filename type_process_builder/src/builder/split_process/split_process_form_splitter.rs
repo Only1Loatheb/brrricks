@@ -135,8 +135,9 @@ where
   }
 
   fn enumerate_steps(&mut self, last_used_index: StepIndex) -> Result<StepIndex, ()> {
-    let used_index = self.process_before.enumerate_steps(last_used_index);
-    self.step_index = Some(used_index + 1);
-    self.step_index
+    let used_index = self.process_before.enumerate_steps(last_used_index)?;
+    let next_index = used_index.checked_add(1).ok_or(())?;
+    self.step_index = Some(next_index);
+    Ok(next_index)
   }
 }
