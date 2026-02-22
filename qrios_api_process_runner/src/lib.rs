@@ -17,9 +17,7 @@ use qrios_api_axum_server::models::{
 };
 use serde_value::Value;
 use sqlx::PgPool;
-use type_process_builder::builder::{
-  CurrentRunYieldedAt, FinalizedProcess, PreviousRunYieldedAt, RunOutcome, RunnableProcess, StepIndex,
-};
+use type_process_builder::builder::{FinalizedProcess, PreviousRunYieldedAt, RunOutcome, RunnableProcess, StepIndex};
 use type_process_builder::step::FailedInputValidationAttempts;
 
 pub struct QriosUssdApiService<'a, Process: FinalizedProcess> {
@@ -120,21 +118,7 @@ impl<Process: FinalizedProcess + Sync> qrios_api_axum_server::apis::developers_a
         ))
       }
       Ok(RunOutcome::RetryUserInput(message)) => {
-        let id = store_session_context(
-          &self.pool,
-          CurrentRunYieldedAt(StepIndex::MIN),
-          FailedInputValidationAttempts(1),
-          &*init_session_context, // think about it fixme
-        )
-        .await
-        .or_else(|_| Err(()))?;
-        Ok((
-          id,
-          UssdView::UssdViewInputView(UssdViewInputView {
-            message: message.0,
-            r_type: "InputView".into(),
-          }),
-        ))
+        Err(()) // we haven't prompted user for input yet
       }
       Ok(RunOutcome::Finish(message)) => Ok((
         i64::MAX,
