@@ -1,7 +1,7 @@
 pub mod qrios_api_process_runner {}
 
 use async_trait::async_trait;
-use axum_postgres_session_store::create_table;
+use axum_postgres_session_store::{create_table, store_session_context};
 use qrios_api_axum_server::apis::ErrorHandler;
 use qrios_api_axum_server::apis::developers_app_endpoints::{
   PostUssdsessioneventAbortResponse, PostUssdsessioneventCloseResponse, PostUssdsessioneventContinueResponse,
@@ -17,7 +17,9 @@ use qrios_api_axum_server::models::{
 };
 use serde_value::Value;
 use sqlx::PgPool;
-use type_process_builder::builder::{FinalizedProcess, PreviousRunYieldedAt, RunOutcome, RunnableProcess, StepIndex};
+use type_process_builder::builder::{
+  CurrentRunYieldedAt, FinalizedProcess, PreviousRunYieldedAt, RunOutcome, RunnableProcess, StepIndex,
+};
 use type_process_builder::step::FailedInputValidationAttempts;
 
 pub struct QriosUssdApiService<'a, Process: FinalizedProcess> {
@@ -86,37 +88,64 @@ impl<Process: FinalizedProcess + Sync> qrios_api_axum_server::apis::developers_a
       UssdSessionEventNewSessionSessionInput::UssdSessionEventNewSessionSessionInputOneOf1(_) => todo!(),
       UssdSessionEventNewSessionSessionInput::UssdSessionEventNewSessionSessionInputOneOf2(_) => todo!(),
     };
+    let init_session_context = vec![
+      (0, Value::String(body.msisdn.clone())),
+      (1, Value::String(body.operator.clone())),
+    ];
     let a = self
       .process
       .resume_run(
-        vec![
-          (0, Value::String(body.msisdn.clone())),
-          (1, Value::String(body.operator.clone())),
-        ],
+        init_session_context.clone(),
         PreviousRunYieldedAt(StepIndex::MIN),
         shortcode_string,
         FailedInputValidationAttempts(0),
       )
       .await;
     match a {
-      // fixme session store the stuff
       Ok(RunOutcome::Yield(message, session_context, current_run_yielded_at)) => {
-        Ok(UssdView::UssdViewInputView(UssdViewInputView {
-          message: message.0,
-          r_type: "InputView".into(),
-        }))
+        let id = store_session_context(
+          &self.pool,
+          current_run_yielded_at,
+          FailedInputValidationAttempts(0),
+          &*session_context,
+        )
+        .await
+        .or_else(|_| Err(()))?;
+        Ok((
+          id,
+          UssdView::UssdViewInputView(UssdViewInputView {
+            message: message.0,
+            r_type: "InputView".into(),
+          }),
+        ))
       }
-      Ok(RunOutcome::RetryUserInput(message)) => Ok(UssdView::UssdViewInputView(UssdViewInputView {
-        message: message.0,
-        r_type: "InputView".into(),
-      })),
-      Ok(RunOutcome::Finish(message)) => Ok(UssdView::UssdViewInfoView(UssdViewInfoView {
-        message: message.0,
-        r_type: "InfoView".into(),
-      })),
+      Ok(RunOutcome::RetryUserInput(message)) => {
+        let id = store_session_context(
+          &self.pool,
+          CurrentRunYieldedAt(StepIndex::MIN),
+          FailedInputValidationAttempts(1),
+          &*init_session_context, // think about it fixme
+        )
+        .await
+        .or_else(|_| Err(()))?;
+        Ok((
+          id,
+          UssdView::UssdViewInputView(UssdViewInputView {
+            message: message.0,
+            r_type: "InputView".into(),
+          }),
+        ))
+      }
+      Ok(RunOutcome::Finish(message)) => Ok((
+        i64::MAX,
+        UssdView::UssdViewInfoView(UssdViewInfoView {
+          message: message.0,
+          r_type: "InfoView".into(),
+        }),
+      )),
       Err(_) => Err(()),
     }
-    .map(|ussd_view| {
+    .map(|(id, ussd_view)| {
       PostUssdsessioneventNewResponse::Status200_SessionStartHasBeenSuccessfullyHandledByTheDeveloper(
         UssdSessionCommand {
           action: UssdActionOneOf2(models::UssdActionOneOf2 {
@@ -125,7 +154,7 @@ impl<Process: FinalizedProcess + Sync> qrios_api_axum_server::apis::developers_a
               view: ussd_view,
             },
           }),
-          context_data: "session store magic number goes here".into(),
+          context_data: id.to_string(),
           session_tag: None,
         },
       )
