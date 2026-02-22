@@ -23,8 +23,8 @@ pub trait FinalizedProcess: Sized + Sync {
     process_before_produces: Self::ProcessBeforeProduces,
   ) -> impl Future<Output = RunResult> + Send;
 
-  fn build(self) -> RunnableProcess<Self> {
-    RunnableProcess::new(self)
+  fn build(self, name: &'static str) -> RunnableProcess<Self> {
+    RunnableProcess::new(self, name)
   }
 
   fn enumerate_steps(&mut self, last_used_index: StepIndex) -> StepIndex;

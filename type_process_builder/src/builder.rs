@@ -31,7 +31,9 @@ pub struct CurrentRunYieldedAt(pub StepIndex);
 
 pub(crate) const WILL_BE_RENUMBERED: StepIndex = 0;
 
-pub(crate) type SessionContext = Vec<(u32, Value)>;
+pub type ParamUID = u32;
+
+pub(crate) type SessionContext = Vec<(ParamUID, Value)>;
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum IntermediateRunOutcome<Produced: ParamList> {

@@ -6,6 +6,7 @@ use std::ops::Not;
 use type_process_builder::param_list::ParamValue;
 use type_process_builder::step::Entry;
 use typenum::U0;
+use type_process_builder::builder::ParamUID;
 
 #[derive(PartialEq, Debug, Eq, Clone, Copy, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 pub struct Msisdn(u64);
@@ -46,7 +47,7 @@ impl Entry<Value> for DialedSessionEntry {
 
   async fn handle(
     &self,
-    mut consumes: Vec<(u32, Value)>,
+    mut consumes: Vec<(ParamUID, Value)>,
     shortcode_string: String,
   ) -> anyhow::Result<Self::Produces> {
       let operator = consumes

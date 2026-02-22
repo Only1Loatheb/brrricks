@@ -8,12 +8,13 @@ use frunk_core::coproduct::Coproduct;
 use serde::de::DeserializeOwned;
 use serde_value::Value;
 use std::future::Future;
+use crate::builder::ParamUID;
 
 pub trait Entry<RawConsume: DeserializeOwned>: Sync {
   type Produces: ParamList;
   fn handle(
     &self,
-    consumes: Vec<(u32, Value)>,
+    consumes: Vec<(ParamUID, Value)>,
     shortcode_string: String,
   ) -> impl Future<Output = anyhow::Result<Self::Produces>> + Send;
 }

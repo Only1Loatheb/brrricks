@@ -1,0 +1,8 @@
+[package]
+name = "axum_postgres_session_store"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+type_process_builder = { path = "../type_process_builder" }
+sqlx = { version = "0.8", features = ["postgres"] }

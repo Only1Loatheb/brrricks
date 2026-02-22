@@ -200,7 +200,7 @@ mod tests {
 
   #[tokio::test]
   async fn test_end() {
-    let process = EntryA.end(FinalNoConsumes).build();
+    let process = EntryA.end(FinalNoConsumes).build("test_end");
 
     let run_result = process
       .resume_run(
@@ -223,7 +223,7 @@ mod tests {
       .case_via(Case1, |x| x.then(Operation1))
       .case_via(Case2, |x| x.then(Operation2))
       .end(FinalA)
-      .build();
+      .build("test_split");
 
     let run_result = process
       .resume_run(
@@ -243,7 +243,7 @@ mod tests {
       .case_via(Case1, |x| x.show(FormA))
       .case_via(Case2, |x| x.then(Operation2))
       .end(FinalA)
-      .build();
+      .build("test_yield");
 
     let run_result = process
       .resume_run(
@@ -263,7 +263,7 @@ mod tests {
       .case_via(Case1, |x| x.show(FormA))
       .case_via(Case2, |x| x.then(Operation2))
       .end(FinalA)
-      .build();
+      .build("test_resume");
 
     let messages = ["*123#", "Enter a number", "a number", "Good bye"];
 
