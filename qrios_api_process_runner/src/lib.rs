@@ -1,6 +1,7 @@
 pub mod qrios_api_process_runner {}
 
 use async_trait::async_trait;
+use axum_postgres_session_store::create_table;
 use qrios_api_axum_server::apis::ErrorHandler;
 use qrios_api_axum_server::apis::developers_app_endpoints::{
   PostUssdsessioneventAbortResponse, PostUssdsessioneventCloseResponse, PostUssdsessioneventContinueResponse,
@@ -15,19 +16,28 @@ use qrios_api_axum_server::models::{
   UssdViewInfoView, UssdViewInputView,
 };
 use serde_value::Value;
+use sqlx::PgPool;
 use type_process_builder::builder::{FinalizedProcess, PreviousRunYieldedAt, RunOutcome, RunnableProcess, StepIndex};
 use type_process_builder::step::FailedInputValidationAttempts;
 
-pub struct QriosUssdApiService<Process: FinalizedProcess> {
+pub struct QriosUssdApiService<'a, Process: FinalizedProcess> {
   process: RunnableProcess<Process>,
+  pool: &'a PgPool,
 }
 
-impl<Process: FinalizedProcess> ErrorHandler<()> for QriosUssdApiService<Process> {}
+impl<'a, Process: FinalizedProcess> QriosUssdApiService<'a, Process> {
+  pub async fn new(process: RunnableProcess<Process>, pool: &'a PgPool) -> Result<Self, sqlx::Error> {
+    create_table(&process, &pool).await?;
+    Ok(QriosUssdApiService { process, pool })
+  }
+}
+
+impl<Process: FinalizedProcess> ErrorHandler<()> for QriosUssdApiService<'_, Process> {}
 
 #[allow(unused_variables)]
 #[async_trait]
 impl<Process: FinalizedProcess + Sync> qrios_api_axum_server::apis::developers_app_endpoints::DevelopersAppEndpoints
-  for QriosUssdApiService<Process>
+  for QriosUssdApiService<'_, Process>
 {
   async fn post_ussdsessionevent_abort(
     &self,

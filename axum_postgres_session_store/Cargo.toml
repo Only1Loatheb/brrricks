@@ -5,4 +5,5 @@ edition = "2024"
 
 [dependencies]
 type_process_builder = { path = "../type_process_builder" }
-sqlx = { version = "0.8", features = ["postgres"] }
+sqlx = { version = "0.8", features = ["postgres", "json"] }
+serde-value = "0.7.0"
