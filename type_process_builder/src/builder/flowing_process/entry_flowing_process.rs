@@ -4,7 +4,6 @@ use crate::step::{Entry, FailedInputValidationAttempts};
 use frunk_core::hlist::HNil;
 use serde_value::Value;
 use std::collections::HashSet;
-use std::hint::unreachable_unchecked;
 
 impl<Produces: ParamList, EntryStep: Entry<Value, Produces = Produces>> FlowingProcess for EntryStep {
   type ProcessBeforeProduces = HNil;
@@ -22,7 +21,7 @@ impl<Produces: ParamList, EntryStep: Entry<Value, Produces = Produces>> FlowingP
   }
 
   async fn continue_run(&self, _: Self::ProcessBeforeProduces) -> IntermediateRunResult<Self::Produces> {
-    unsafe { unreachable_unchecked() }
+    unreachable!("We never continue run first step")
   }
 
   fn enumerate_steps(&mut self, last_used_index: StepIndex) -> StepIndex {

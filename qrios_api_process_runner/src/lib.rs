@@ -47,7 +47,6 @@ impl<Process: FinalizedProcess + Sync> qrios_api_axum_server::apis::developers_a
     header_params: &PostUssdsessioneventAbortHeaderParams,
     body: &AbortSession,
   ) -> Result<PostUssdsessioneventAbortResponse, ()> {
-    _ = self.process;
     todo!()
   }
 
@@ -93,7 +92,7 @@ impl<Process: FinalizedProcess + Sync> qrios_api_axum_server::apis::developers_a
     let a = self
       .process
       .resume_run(
-        init_session_context.clone(),
+        init_session_context,
         PreviousRunYieldedAt(StepIndex::MIN),
         shortcode_string,
         FailedInputValidationAttempts(0),
@@ -118,7 +117,7 @@ impl<Process: FinalizedProcess + Sync> qrios_api_axum_server::apis::developers_a
         ))
       }
       Ok(RunOutcome::RetryUserInput(message)) => {
-        Err(()) // we haven't prompted user for input yet
+        unreachable!("We haven't prompted user for input yet")
       }
       Ok(RunOutcome::Finish(message)) => Ok((
         i64::MAX,
