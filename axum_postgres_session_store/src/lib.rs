@@ -1,6 +1,6 @@
 use serde_value::Value;
 use sqlx::{Executor, PgPool, Row};
-use type_process_builder::builder::{CurrentRunYieldedAt, FinalizedProcess, ParamUID, RunnableProcess};
+use type_process_builder::builder::{CurrentRunYieldedAt, FinalizedProcess, ParamUID, PreviousRunYieldedAt, RunnableProcess};
 use type_process_builder::step::FailedInputValidationAttempts;
 
 /// previous_run_yielded_at can be used for session context caching
@@ -73,6 +73,7 @@ pub async fn create_session_context<Process: FinalizedProcess>(
 
 use std::fmt::Write;
 
+pub struct GetSessionContextQuery(String);
 /// Builds:
 /// SELECT "previous_run_yielded_at","failed_input_validation_attempts","0","1","2"
 /// FROM session_store.process_version
@@ -80,7 +81,7 @@ use std::fmt::Write;
 pub fn build_get_session_context_query<Process: FinalizedProcess>(
   process: &RunnableProcess<Process>,
   ordered_all_unique_param_uids: &Vec<ParamUID>,
-) -> String {
+) -> GetSessionContextQuery {
   let mut sql = String::with_capacity(64 + ordered_all_unique_param_uids.len() * 8);
 
   write!(
@@ -100,18 +101,18 @@ pub fn build_get_session_context_query<Process: FinalizedProcess>(
     " FROM session_store.{process_name}_{process_version} WHERE id = $1"
   )
   .unwrap();
-  sql
+  GetSessionContextQuery(sql)
 }
 
-pub async fn parse_row(
+pub async fn get_session_context(
   pool: &PgPool,
-  sql: &String,
+  sql: &GetSessionContextQuery,
   session_id: i64,
   ordered_all_unique_param_uids: &Vec<ParamUID>,
-) -> Result<(CurrentRunYieldedAt, FailedInputValidationAttempts, Vec<(u32, Value)>), sqlx::Error> {
-  let row = sqlx::query(&sql).bind(session_id).fetch_one(pool).await?;
+) -> Result<(PreviousRunYieldedAt, FailedInputValidationAttempts, Vec<(u32, Value)>), sqlx::Error> {
+  let row = sqlx::query(&sql.0).bind(session_id).fetch_one(pool).await?;
 
-  let current_run_yielded_at = CurrentRunYieldedAt(row.try_get(0)?);
+  let previous_run_yielded_at = PreviousRunYieldedAt(row.try_get(0)?);
   let failed_input_validation_attempts = FailedInputValidationAttempts(row.try_get::<i16, _>(1)? as u8);
 
   let mut session_context = Vec::with_capacity(ordered_all_unique_param_uids.len());
@@ -121,7 +122,7 @@ pub async fn parse_row(
   }
 
   Ok((
-    current_run_yielded_at,
+    previous_run_yielded_at,
     failed_input_validation_attempts,
     session_context,
   ))

@@ -1,9 +1,7 @@
 pub mod qrios_api_process_runner {}
 
 use async_trait::async_trait;
-use axum_postgres_session_store::{
-  build_get_session_context_query, create_session_context, create_session_context_table,
-};
+use axum_postgres_session_store::*;
 use qrios_api_axum_server::apis::ErrorHandler;
 use qrios_api_axum_server::apis::developers_app_endpoints::{
   PostUssdsessioneventAbortResponse, PostUssdsessioneventCloseResponse, PostUssdsessioneventContinueResponse,
@@ -14,8 +12,8 @@ use qrios_api_axum_server::models::UssdAction::UssdActionOneOf2;
 use qrios_api_axum_server::models::{
   AbortSession, CloseSession, ContinueSession, PostUssdsessioneventAbortHeaderParams,
   PostUssdsessioneventCloseHeaderParams, PostUssdsessioneventContinueHeaderParams, PostUssdsessioneventNewHeaderParams,
-  ShowView, UssdSessionCommand, UssdSessionEventNewSession, UssdSessionEventNewSessionSessionInput, UssdView,
-  UssdViewInfoView, UssdViewInputView,
+  ShowView, UssdActionResult, UssdSessionCommand, UssdSessionEventNewSession, UssdSessionEventNewSessionSessionInput,
+  UssdView, UssdViewInfoView, UssdViewInputView,
 };
 use serde_value::Value;
 use sqlx::PgPool;
@@ -29,7 +27,7 @@ pub struct QriosUssdApiService<'a, Process: FinalizedProcess> {
   process: RunnableProcess<Process>,
   pool: &'a PgPool,
   ordered_all_unique_param_uids: Vec<ParamUID>,
-  get_session_context_query: String,
+  get_session_context_query: GetSessionContextQuery,
 }
 
 impl<'a, Process: FinalizedProcess> QriosUssdApiService<'a, Process> {
@@ -37,7 +35,7 @@ impl<'a, Process: FinalizedProcess> QriosUssdApiService<'a, Process> {
     let ordered_all_unique_param_uids = {
       let mut all_param_uids = process.all_param_uids();
       let mut seen = HashSet::new();
-      all_param_uids.retain(|c| seen.insert(c));
+      all_param_uids.retain(|c| seen.insert(*c));
       all_param_uids.into_iter().rev().collect()
     };
     create_session_context_table(&pool, &process, &ordered_all_unique_param_uids).await?;
@@ -88,22 +86,33 @@ impl<Process: FinalizedProcess + Sync> qrios_api_axum_server::apis::developers_a
     header_params: &PostUssdsessioneventContinueHeaderParams,
     body: &ContinueSession,
   ) -> Result<PostUssdsessioneventContinueResponse, ()> {
-    let session_context = vec![
-      (0, Value::String(body.msisdn.clone())),
-      (1, Value::String(body.operator.clone())),
-    ];
+    let user_input = match body.result.clone() {
+      UssdActionResult::UssdActionResultOneOf(_) => todo!(),
+      UssdActionResult::UssdActionResultOneOf1(input_result) => input_result.input_result.value,
+      UssdActionResult::UssdActionResultOneOf2(_) => todo!(),
+      UssdActionResult::Object(_) => todo!(),
+    };
+    let (previous_run_yielded_at, failed_input_validation_attempts, session_context) = get_session_context(
+      self.pool,
+      &self.get_session_context_query,
+      body.context_data.parse::<i64>().map_err(|_| ())?,
+      &self.ordered_all_unique_param_uids,
+    )
+    .await
+    .map_err(|_| ())?;
     let run_result = self
       .process
       .resume_run(
         session_context,
-        PreviousRunYieldedAt(StepIndex::MIN),
-        "user_input".to_string(),
-        FailedInputValidationAttempts(0),
+        previous_run_yielded_at,
+        user_input,
+        failed_input_validation_attempts,
       )
       .await;
     match run_result {
       Ok(RunOutcome::Yield(message, session_context, current_run_yielded_at)) => {
         let id = create_session_context(
+          // fixme update
           &self.pool,
           &self.process,
           current_run_yielded_at,
@@ -111,7 +120,7 @@ impl<Process: FinalizedProcess + Sync> qrios_api_axum_server::apis::developers_a
           &*session_context,
         )
         .await
-        .or_else(|_| Err(()))?;
+        .map_err(|_| ())?;
         Ok((
           id,
           UssdView::UssdViewInputView(UssdViewInputView {
@@ -133,7 +142,7 @@ impl<Process: FinalizedProcess + Sync> qrios_api_axum_server::apis::developers_a
       Err(_) => Err(()),
     }
     .map(|(id, ussd_view)| {
-      PostUssdsessioneventNewResponse::Status200_SessionStartHasBeenSuccessfullyHandledByTheDeveloper(
+      PostUssdsessioneventContinueResponse::Status200_SessionContinuationHasBeenSuccessfullyHandledByTheDeveloper(
         UssdSessionCommand {
           action: UssdActionOneOf2(models::UssdActionOneOf2 {
             show_view: ShowView {
@@ -184,7 +193,7 @@ impl<Process: FinalizedProcess + Sync> qrios_api_axum_server::apis::developers_a
           &*session_context,
         )
         .await
-        .or_else(|_| Err(()))?;
+        .map_err(|_| ())?;
         Ok((
           id,
           UssdView::UssdViewInputView(UssdViewInputView {
