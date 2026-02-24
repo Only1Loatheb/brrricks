@@ -1,7 +1,9 @@
 pub mod qrios_api_process_runner {}
 
 use async_trait::async_trait;
-use axum_postgres_session_store::{create_table, store_session_context};
+use axum_postgres_session_store::{
+  build_get_session_context_query, create_session_context, create_session_context_table,
+};
 use qrios_api_axum_server::apis::ErrorHandler;
 use qrios_api_axum_server::apis::developers_app_endpoints::{
   PostUssdsessioneventAbortResponse, PostUssdsessioneventCloseResponse, PostUssdsessioneventContinueResponse,
@@ -17,18 +19,35 @@ use qrios_api_axum_server::models::{
 };
 use serde_value::Value;
 use sqlx::PgPool;
-use type_process_builder::builder::{FinalizedProcess, PreviousRunYieldedAt, RunOutcome, RunnableProcess, StepIndex};
+use std::collections::HashSet;
+use type_process_builder::builder::{
+  FinalizedProcess, ParamUID, PreviousRunYieldedAt, RunOutcome, RunnableProcess, StepIndex,
+};
 use type_process_builder::step::FailedInputValidationAttempts;
 
 pub struct QriosUssdApiService<'a, Process: FinalizedProcess> {
   process: RunnableProcess<Process>,
   pool: &'a PgPool,
+  ordered_all_unique_param_uids: Vec<ParamUID>,
+  get_session_context_query: String,
 }
 
 impl<'a, Process: FinalizedProcess> QriosUssdApiService<'a, Process> {
   pub async fn new(process: RunnableProcess<Process>, pool: &'a PgPool) -> Result<Self, sqlx::Error> {
-    create_table(&process, &pool).await?;
-    Ok(QriosUssdApiService { process, pool })
+    let ordered_all_unique_param_uids = {
+      let mut all_param_uids = process.all_param_uids();
+      let mut seen = HashSet::new();
+      all_param_uids.retain(|c| seen.insert(c));
+      all_param_uids.into_iter().rev().collect()
+    };
+    create_session_context_table(&pool, &process, &ordered_all_unique_param_uids).await?;
+    let get_session_context_query = build_get_session_context_query(&process, &ordered_all_unique_param_uids);
+    Ok(QriosUssdApiService {
+      process,
+      pool,
+      ordered_all_unique_param_uids,
+      get_session_context_query,
+    })
   }
 }
 
@@ -69,7 +88,64 @@ impl<Process: FinalizedProcess + Sync> qrios_api_axum_server::apis::developers_a
     header_params: &PostUssdsessioneventContinueHeaderParams,
     body: &ContinueSession,
   ) -> Result<PostUssdsessioneventContinueResponse, ()> {
-    todo!()
+    let session_context = vec![
+      (0, Value::String(body.msisdn.clone())),
+      (1, Value::String(body.operator.clone())),
+    ];
+    let run_result = self
+      .process
+      .resume_run(
+        session_context,
+        PreviousRunYieldedAt(StepIndex::MIN),
+        "user_input".to_string(),
+        FailedInputValidationAttempts(0),
+      )
+      .await;
+    match run_result {
+      Ok(RunOutcome::Yield(message, session_context, current_run_yielded_at)) => {
+        let id = create_session_context(
+          &self.pool,
+          &self.process,
+          current_run_yielded_at,
+          FailedInputValidationAttempts(0),
+          &*session_context,
+        )
+        .await
+        .or_else(|_| Err(()))?;
+        Ok((
+          id,
+          UssdView::UssdViewInputView(UssdViewInputView {
+            message: message.0,
+            r_type: "InputView".into(),
+          }),
+        ))
+      }
+      Ok(RunOutcome::RetryUserInput(message)) => {
+        unreachable!("We haven't prompted user for input yet")
+      }
+      Ok(RunOutcome::Finish(message)) => Ok((
+        i64::MAX,
+        UssdView::UssdViewInfoView(UssdViewInfoView {
+          message: message.0,
+          r_type: "InfoView".into(),
+        }),
+      )),
+      Err(_) => Err(()),
+    }
+    .map(|(id, ussd_view)| {
+      PostUssdsessioneventNewResponse::Status200_SessionStartHasBeenSuccessfullyHandledByTheDeveloper(
+        UssdSessionCommand {
+          action: UssdActionOneOf2(models::UssdActionOneOf2 {
+            show_view: ShowView {
+              r_type: "ShowView".into(),
+              view: ussd_view,
+            },
+          }),
+          context_data: id.to_string(),
+          session_tag: None,
+        },
+      )
+    })
   }
 
   async fn post_ussdsessionevent_new(
@@ -89,7 +165,7 @@ impl<Process: FinalizedProcess + Sync> qrios_api_axum_server::apis::developers_a
       (0, Value::String(body.msisdn.clone())),
       (1, Value::String(body.operator.clone())),
     ];
-    let a = self
+    let run_result = self
       .process
       .resume_run(
         init_session_context,
@@ -98,10 +174,11 @@ impl<Process: FinalizedProcess + Sync> qrios_api_axum_server::apis::developers_a
         FailedInputValidationAttempts(0),
       )
       .await;
-    match a {
+    match run_result {
       Ok(RunOutcome::Yield(message, session_context, current_run_yielded_at)) => {
-        let id = store_session_context(
+        let id = create_session_context(
           &self.pool,
+          &self.process,
           current_run_yielded_at,
           FailedInputValidationAttempts(0),
           &*session_context,

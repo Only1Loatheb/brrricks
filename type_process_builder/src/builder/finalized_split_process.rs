@@ -6,7 +6,6 @@ use crate::param_list::ParamList;
 use crate::param_list::concat::Concat;
 use crate::step::FailedInputValidationAttempts;
 use frunk_core::coproduct::Coproduct;
-use std::collections::HashSet;
 use std::future::Future;
 
 pub trait FinalizedSplitProcess<SplitterProducesForOtherCases>: Sized + Sync {
@@ -37,5 +36,5 @@ pub trait FinalizedSplitProcess<SplitterProducesForOtherCases>: Sized + Sync {
 
   fn enumerate_steps(&mut self, last_used_index: StepIndex) -> StepIndex;
 
-  fn all_param_uids(&self, acc: &mut HashSet<ParamUID>);
+  fn all_param_uids(&self, acc: &mut Vec<ParamUID>);
 }

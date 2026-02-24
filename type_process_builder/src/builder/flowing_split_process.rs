@@ -8,7 +8,6 @@ use crate::param_list::ParamList;
 use crate::param_list::concat::Concat;
 use crate::step::FailedInputValidationAttempts;
 use frunk_core::coproduct::Coproduct;
-use std::collections::HashSet;
 use std::future::Future;
 
 /// Should we force the user to produce common params before the [crate::step::Splitter]?
@@ -55,5 +54,5 @@ pub trait FlowingSplitProcess<SplitterProducesForOtherCases>: Sized + Sync {
 
   fn enumerate_steps(&mut self, last_used_index: StepIndex) -> StepIndex;
 
-  fn all_param_uids(&self, acc: &mut HashSet<ParamUID>);
+  fn all_param_uids(&self, acc: &mut Vec<ParamUID>);
 }

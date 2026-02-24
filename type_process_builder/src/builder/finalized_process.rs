@@ -6,7 +6,6 @@ use crate::builder::{
 use crate::param_list::ParamList;
 use crate::param_list::transform::TransformTo;
 use crate::step::{FailedInputValidationAttempts, Final};
-use std::collections::HashSet;
 use std::future::Future;
 use std::marker::PhantomData;
 
@@ -32,7 +31,7 @@ pub trait FinalizedProcess: Sized + Sync {
 
   fn enumerate_steps(&mut self, last_used_index: StepIndex) -> StepIndex;
 
-  fn all_param_uids(&self, acc: &mut HashSet<ParamUID>);
+  fn all_param_uids(&self, acc: &mut Vec<ParamUID>);
 }
 
 pub struct FlowingFinalizedProcess<
@@ -98,7 +97,7 @@ where
     self.process_before.enumerate_steps(last_used_index)
   }
 
-  fn all_param_uids(&self, acc: &mut HashSet<ParamUID>) {
+  fn all_param_uids(&self, acc: &mut Vec<ParamUID>) {
     self.process_before.all_param_uids(acc);
   }
 }

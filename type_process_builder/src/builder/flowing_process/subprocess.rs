@@ -3,7 +3,6 @@ use crate::builder::{
   SessionContext, StepIndex,
 };
 use crate::step::FailedInputValidationAttempts;
-use std::collections::HashSet;
 use std::marker::PhantomData;
 
 pub struct Subprocess<ProcessBeforeProduces> {
@@ -36,7 +35,7 @@ impl<ProcessBeforeProduces: ParamList> FlowingProcess for Subprocess<ProcessBefo
     last_used_index
   }
 
-  fn all_param_uids(&self, _acc: &mut HashSet<ParamUID>) {}
+  fn all_param_uids(&self, _acc: &mut Vec<ParamUID>) {}
 }
 
 pub fn subprocess<ProcessBeforeProduces: ParamList>() -> Subprocess<ProcessBeforeProduces> {

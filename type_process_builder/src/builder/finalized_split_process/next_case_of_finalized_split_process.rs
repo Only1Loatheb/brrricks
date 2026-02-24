@@ -7,7 +7,6 @@ use crate::builder::{
 use crate::param_list::concat::Concat;
 use crate::step::FailedInputValidationAttempts;
 use frunk_core::coproduct::{CNil, Coproduct};
-use std::collections::HashSet;
 use std::marker::PhantomData;
 
 pub struct NextCaseOfFinalizedSplitProcess<
@@ -181,7 +180,7 @@ for NextCaseOfFinalizedSplitProcess<
     self.this_case.enumerate_steps(used_index)
   }
 
-  fn all_param_uids(&self, acc: &mut HashSet<ParamUID>) {
+  fn all_param_uids(&self, acc: &mut Vec<ParamUID>) {
     self.split_process_before.all_param_uids(acc);
     SplitterProducesForThisCase::all_param_uids(acc);
     self.this_case.all_param_uids(acc);
@@ -241,7 +240,7 @@ where
     self.this_case.enumerate_steps(used_index)
   }
 
-  fn all_param_uids(&self, acc: &mut HashSet<ParamUID>) {
+  fn all_param_uids(&self, acc: &mut Vec<ParamUID>) {
     self.split_process_before.all_param_uids(acc);
     SplitterProducesForThisCase::all_param_uids(acc);
     self.this_case.all_param_uids(acc);

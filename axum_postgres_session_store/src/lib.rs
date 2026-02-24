@@ -1,15 +1,17 @@
 use serde_value::Value;
 use sqlx::{Executor, PgPool, Row};
-use type_process_builder::builder::{CurrentRunYieldedAt, FinalizedProcess, RunnableProcess};
+use type_process_builder::builder::{CurrentRunYieldedAt, FinalizedProcess, ParamUID, RunnableProcess};
 use type_process_builder::step::FailedInputValidationAttempts;
 
-pub async fn create_table<Process: FinalizedProcess>(
-  process: &RunnableProcess<Process>,
+/// previous_run_yielded_at can be used for session context caching
+pub async fn create_session_context_table<Process: FinalizedProcess>(
   pool: &PgPool,
+  process: &RunnableProcess<Process>,
+  ordered_all_unique_param_uids: &Vec<ParamUID>,
 ) -> Result<(), sqlx::Error> {
   let mut columns = String::new();
-  for col in process.all_param_uids() {
-    let name: u32 = col;
+  for col in ordered_all_unique_param_uids {
+    let name: &u32 = col;
     columns.push_str(&format!("\n\"{name}\" jsonb NULL,"));
   }
 
@@ -32,8 +34,9 @@ pub async fn create_table<Process: FinalizedProcess>(
   Ok(())
 }
 
-pub async fn store_session_context(
+pub async fn create_session_context<Process: FinalizedProcess>(
   pool: &PgPool,
+  process: &RunnableProcess<Process>,
   current_run_yielded_at: CurrentRunYieldedAt,
   failed_input_validation_attempts: FailedInputValidationAttempts,
   session_context: &[(u32, Value)],
@@ -49,8 +52,10 @@ pub async fn store_session_context(
     placeholders.push(format!("${}", i + 3));
   }
 
+  let process_name = process.get_name();
+  let process_version = process.get_version();
   let sql = format!(
-    "INSERT INTO my_table ({}) VALUES ({}) RETURNING id;",
+    "INSERT INTO session_store.{process_name}_{process_version} ({}) VALUES ({}) RETURNING id;",
     columns.join(", "),
     placeholders.join(", ")
   );
@@ -64,4 +69,60 @@ pub async fn store_session_context(
   }
 
   query.fetch_one(pool).await?.try_get("id")
+}
+
+use std::fmt::Write;
+
+/// Builds:
+/// SELECT "previous_run_yielded_at","failed_input_validation_attempts","0","1","2"
+/// FROM session_store.process_version
+/// WHERE id = $1
+pub fn build_get_session_context_query<Process: FinalizedProcess>(
+  process: &RunnableProcess<Process>,
+  ordered_all_unique_param_uids: &Vec<ParamUID>,
+) -> String {
+  let mut sql = String::with_capacity(64 + ordered_all_unique_param_uids.len() * 8);
+
+  write!(
+    sql,
+    "SELECT \"previous_run_yielded_at\",\"failed_input_validation_attempts\""
+  )
+  .unwrap();
+  for uid in ordered_all_unique_param_uids {
+    sql.push(',');
+    write!(sql, "\"{uid}\"").unwrap();
+  }
+
+  let process_name = process.get_name();
+  let process_version = process.get_version();
+  write!(
+    sql,
+    " FROM session_store.{process_name}_{process_version} WHERE id = $1"
+  )
+  .unwrap();
+  sql
+}
+
+pub async fn parse_row(
+  pool: &PgPool,
+  sql: &String,
+  session_id: i64,
+  ordered_all_unique_param_uids: &Vec<ParamUID>,
+) -> Result<(CurrentRunYieldedAt, FailedInputValidationAttempts, Vec<(u32, Value)>), sqlx::Error> {
+  let row = sqlx::query(&sql).bind(session_id).fetch_one(pool).await?;
+
+  let current_run_yielded_at = CurrentRunYieldedAt(row.try_get(0)?);
+  let failed_input_validation_attempts = FailedInputValidationAttempts(row.try_get::<i16, _>(1)? as u8);
+
+  let mut session_context = Vec::with_capacity(ordered_all_unique_param_uids.len());
+  for idx_and_param_uid in ordered_all_unique_param_uids.iter().enumerate() {
+    let value: sqlx::types::Json<Value> = row.try_get(idx_and_param_uid.0 + 2)?;
+    session_context.push((idx_and_param_uid.1.clone(), value.0));
+  }
+
+  Ok((
+    current_run_yielded_at,
+    failed_input_validation_attempts,
+    session_context,
+  ))
 }

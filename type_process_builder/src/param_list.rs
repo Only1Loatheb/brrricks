@@ -3,7 +3,6 @@ use frunk_core::hlist::{HCons, HList, HNil};
 use serde::Serialize;
 use serde::de::DeserializeOwned;
 use serde_value::{DeserializerError, SerializerError, to_value};
-use std::collections::HashSet;
 use typenum::Unsigned;
 
 pub mod clone_just;
@@ -32,7 +31,7 @@ pub trait ParamList: HList + Clone + Send + Sync {
   }
   fn _deserialize(session_context: SessionContext) -> Result<Self, DeserializerError>;
 
-  fn all_param_uids(acc: &mut HashSet<ParamUID>);
+  fn all_param_uids(acc: &mut Vec<ParamUID>);
 }
 
 impl ParamList for HNil {
@@ -44,7 +43,7 @@ impl ParamList for HNil {
     Ok(HNil)
   }
 
-  fn all_param_uids(_acc: &mut HashSet<ParamUID>) {}
+  fn all_param_uids(_acc: &mut Vec<ParamUID>) {}
 }
 
 impl<Head: ParamValue, Tail: ParamList> ParamList for HCons<Head, Tail> {
@@ -69,8 +68,8 @@ impl<Head: ParamValue, Tail: ParamList> ParamList for HCons<Head, Tail> {
     Ok(HCons { head, tail })
   }
 
-  fn all_param_uids(acc: &mut HashSet<ParamUID>) {
-    acc.insert(Head::UID::U32);
+  fn all_param_uids(acc: &mut Vec<ParamUID>) {
+    acc.push(Head::UID::U32);
     Tail::all_param_uids(acc)
   }
 }

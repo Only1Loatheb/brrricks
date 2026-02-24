@@ -3,7 +3,6 @@ use crate::param_list::ParamList;
 use crate::step::{Entry, FailedInputValidationAttempts};
 use frunk_core::hlist::HNil;
 use serde_value::Value;
-use std::collections::HashSet;
 
 impl<Produces: ParamList, EntryStep: Entry<Value, Produces = Produces>> FlowingProcess for EntryStep {
   type ProcessBeforeProduces = HNil;
@@ -28,7 +27,7 @@ impl<Produces: ParamList, EntryStep: Entry<Value, Produces = Produces>> FlowingP
     last_used_index
   }
 
-  fn all_param_uids(&self, acc: &mut HashSet<ParamUID>) {
+  fn all_param_uids(&self, acc: &mut Vec<ParamUID>) {
     EntryStep::Produces::all_param_uids(acc);
   }
 }

@@ -5,7 +5,6 @@ use crate::builder::{
 use crate::param_list::clone_just::CloneJust;
 use crate::param_list::concat::Concat;
 use crate::step::{FailedInputValidationAttempts, Operation};
-use std::collections::HashSet;
 use std::marker::PhantomData;
 
 pub struct OperationFlowingProcess<
@@ -79,7 +78,7 @@ where
     self.step_index
   }
 
-  fn all_param_uids(&self, acc: &mut HashSet<ParamUID>) {
+  fn all_param_uids(&self, acc: &mut Vec<ParamUID>) {
     self.process_before.all_param_uids(acc);
     OperationStep::Produces::all_param_uids(acc);
   }
