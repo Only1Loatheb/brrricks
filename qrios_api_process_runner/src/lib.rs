@@ -33,10 +33,13 @@ pub struct QriosUssdApiService<'a, Process: FinalizedProcess> {
 impl<'a, Process: FinalizedProcess> QriosUssdApiService<'a, Process> {
   pub async fn new(process: RunnableProcess<Process>, pool: &'a PgPool) -> Result<Self, sqlx::Error> {
     let ordered_all_unique_param_uids = {
-      let mut all_param_uids = process.all_param_uids();
       let mut seen = HashSet::new();
-      all_param_uids.retain(|c| seen.insert(*c));
-      all_param_uids.into_iter().rev().collect()
+      process
+        .all_param_uids()
+        .into_iter()
+        .rev()
+        .filter(|c| seen.insert(*c))
+        .collect::<Vec<_>>()
     };
     create_session_context_table(&pool, &process, &ordered_all_unique_param_uids).await?;
     let get_session_context_query = build_get_session_context_query(&process, &ordered_all_unique_param_uids);
