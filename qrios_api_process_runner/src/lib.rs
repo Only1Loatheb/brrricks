@@ -95,10 +95,11 @@ impl<Process: FinalizedProcess + Sync> qrios_api_axum_server::apis::developers_a
       UssdActionResult::UssdActionResultOneOf2(_) => todo!(),
       UssdActionResult::Object(_) => todo!(),
     };
+    let session_id = body.context_data.parse::<i64>().map_err(|_| ())?;
     let (previous_run_yielded_at, failed_input_validation_attempts, session_context) = get_session_context(
       self.pool,
       &self.get_session_context_query,
-      body.context_data.parse::<i64>().map_err(|_| ())?,
+      session_id,
       &self.ordered_all_unique_param_uids,
     )
     .await
@@ -133,10 +134,11 @@ impl<Process: FinalizedProcess + Sync> qrios_api_axum_server::apis::developers_a
         ))
       }
       Ok(RunOutcome::RetryUserInput(message)) => {
+        // fixme implement with FailedInputValidationAttempts bump
         unreachable!("We haven't prompted user for input yet")
       }
       Ok(RunOutcome::Finish(message)) => Ok((
-        i64::MAX,
+        session_id,
         UssdView::UssdViewInfoView(UssdViewInfoView {
           message: message.0,
           r_type: "InfoView".into(),
