@@ -29,6 +29,7 @@ pub trait ParamList: HList + Clone + Send + Sync {
   fn deserialize(session_context: SessionContext) -> Result<Self, DeserializerError> {
     Self::_deserialize(session_context)
   }
+  /// [crate::builder::RunnableProcess::ordered_all_unique_param_uids]
   fn _deserialize(session_context: SessionContext) -> Result<Self, DeserializerError>;
 
   fn all_param_uids(acc: &mut Vec<ParamUID>);

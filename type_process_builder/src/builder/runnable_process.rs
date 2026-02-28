@@ -1,6 +1,7 @@
 use crate::builder::finalized_process::FinalizedProcess;
 use crate::builder::{ParamUID, PreviousRunYieldedAt, RunResult, SessionContext, StepIndex};
 use crate::step::FailedInputValidationAttempts;
+use std::collections::HashSet;
 
 pub struct RunnableProcess<UnderlyingProcess: FinalizedProcess> {
   finalized_process: UnderlyingProcess, // shouldn't be public
@@ -36,10 +37,17 @@ impl<UnderlyingProcess: FinalizedProcess> RunnableProcess<UnderlyingProcess> {
       .await
   }
 
-  pub fn all_param_uids(&self) -> Vec<ParamUID> {
+  /// [crate::param_list::ParamList::_deserialize]
+  pub fn ordered_all_unique_param_uids(&self) -> Vec<ParamUID> {
     let mut all_param_uids = Vec::<ParamUID>::new();
     self.finalized_process.all_param_uids(&mut all_param_uids);
+
+    let mut seen = HashSet::new();
     all_param_uids
+      .into_iter()
+      .rev()
+      .filter(|c| seen.insert(*c))
+      .collect::<Vec<_>>()
   }
 
   pub fn get_name(&self) -> &'static str {

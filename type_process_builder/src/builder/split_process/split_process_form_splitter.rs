@@ -4,7 +4,7 @@ use crate::builder::{
 };
 use crate::param_list::clone_just::CloneJust;
 use crate::param_list::concat::Concat;
-use crate::step::{FailedInputValidationAttempts, FromSplitter, InputValidation};
+use crate::step::{FailedInputValidationAttempts, FormSplitter, InputValidation};
 use frunk_core::coproduct::Coproduct;
 use std::marker::PhantomData;
 
@@ -15,7 +15,7 @@ pub struct SplitProcessFormSplitter<
   ValidateInputConsumes: ParamList,
   SplitterProducesForFirstCase: ParamList,
   SplitterProducesForOtherCases: Send + Sync,
-  SplitterStep: FromSplitter<
+  SplitterStep: FormSplitter<
       CreateFormConsumes = CreateFormConsumes,
       ValidateInputConsumes = ValidateInputConsumes,
       Produces = Coproduct<(Tag, SplitterProducesForFirstCase), SplitterProducesForOtherCases>,
@@ -39,7 +39,7 @@ impl<
   ValidateInputConsumes: ParamList,
   SplitterProducesForFirstCase: ParamList + Concat<ProcessBefore::Produces>,
   SplitterProducesForOtherCases: Send + Sync,
-  SplitterStep: FromSplitter<
+  SplitterStep: FormSplitter<
       CreateFormConsumes = CreateFormConsumes,
       ValidateInputConsumes = ValidateInputConsumes,
       Produces = Coproduct<(Tag, SplitterProducesForFirstCase), SplitterProducesForOtherCases>,

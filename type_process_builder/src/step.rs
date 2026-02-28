@@ -64,7 +64,7 @@ pub trait Splitter: Sync {
 
 /// Works with at least two cases.
 /// Just produce link form with a single link using Form step
-pub trait FromSplitter: Sync {
+pub trait FormSplitter: Sync {
   type CreateFormConsumes: ParamList;
   type ValidateInputConsumes: ParamList;
   type Produces: SplitterOutput;

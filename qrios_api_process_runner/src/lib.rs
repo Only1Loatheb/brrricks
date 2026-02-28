@@ -17,7 +17,6 @@ use qrios_api_axum_server::models::{
 };
 use serde_value::Value;
 use sqlx::PgPool;
-use std::collections::HashSet;
 use type_process_builder::builder::{
   FinalizedProcess, ParamUID, PreviousRunYieldedAt, RunOutcome, RunnableProcess, StepIndex,
 };
@@ -32,15 +31,7 @@ pub struct QriosUssdApiService<'a, Process: FinalizedProcess> {
 
 impl<'a, Process: FinalizedProcess> QriosUssdApiService<'a, Process> {
   pub async fn new(process: RunnableProcess<Process>, pool: &'a PgPool) -> Result<Self, sqlx::Error> {
-    let ordered_all_unique_param_uids = {
-      let mut seen = HashSet::new();
-      process
-        .all_param_uids()
-        .into_iter()
-        .rev()
-        .filter(|c| seen.insert(*c))
-        .collect::<Vec<_>>()
-    };
+    let ordered_all_unique_param_uids = process.ordered_all_unique_param_uids();
     create_session_context_table(&pool, &process, &ordered_all_unique_param_uids).await?;
     let get_session_context_query = build_get_session_context_query(&process, &ordered_all_unique_param_uids);
     Ok(QriosUssdApiService {

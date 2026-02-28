@@ -4,9 +4,7 @@ use serde::{Deserialize, Serialize};
 use serde_value::Value;
 use std::io::{self, Write};
 use type_process_builder::builder::*;
-use type_process_builder::step::{
-  Entry, FailedInputValidationAttempts, Final, Form, InputValidation, Operation, Splitter,
-};
+use type_process_builder::step::{Entry, FailedInputValidationAttempts, Final, Form, FormSplitter, InputValidation};
 use typenum::*;
 
 #[derive(Clone, Deserialize, Serialize)]
@@ -18,33 +16,9 @@ impl ParamValue for EntryParam {
 }
 
 #[derive(Clone, Deserialize, Serialize)]
-struct Split1Param;
-impl ParamValue for Split1Param {
+struct Amount(u32);
+impl ParamValue for Amount {
   type UID = U1;
-}
-
-#[derive(Clone, Deserialize, Serialize)]
-struct Split2Param;
-impl ParamValue for Split2Param {
-  type UID = U2;
-}
-
-#[derive(Clone, Deserialize, Serialize)]
-struct CommonSplitParam;
-impl ParamValue for CommonSplitParam {
-  type UID = U3;
-}
-
-#[derive(Clone, Deserialize, Serialize)]
-struct Case2Param;
-impl ParamValue for Case2Param {
-  type UID = U4;
-}
-
-#[derive(Clone, Deserialize, Serialize)]
-struct CommonCaseParam;
-impl ParamValue for CommonCaseParam {
-  type UID = U5;
 }
 
 struct EntryA;
@@ -63,15 +37,26 @@ impl Entry<Value> for EntryA {
 pub struct Case1;
 pub struct Case2;
 struct SplitA;
-impl Splitter for SplitA {
-  type Consumes = HNil;
-  type Produces = Coprod![
-    (Case1, HList![Split1Param, CommonSplitParam]),
-    (Case2, HList![Split2Param, CommonSplitParam])
-  ];
+impl FormSplitter for SplitA {
+  type CreateFormConsumes = HNil;
+  type ValidateInputConsumes = HNil;
+  type Produces = Coprod![(Case1, HList![Amount]), (Case2, HNil)];
 
-  async fn handle(&self, _consumes: Self::Consumes) -> anyhow::Result<Self::Produces> {
-    Ok(Self::Produces::inject((Case1, hlist!(Split1Param, CommonSplitParam))))
+  async fn create_form(&self, _consumes: Self::CreateFormConsumes) -> anyhow::Result<Message> {
+    Ok(Message("Enter 1 for 100 or 2 for custom amount ".into()))
+  }
+
+  async fn handle_input(
+    &self,
+    _consumes: Self::ValidateInputConsumes,
+    user_input: String,
+    _failed_input_validation_attempts: FailedInputValidationAttempts,
+  ) -> anyhow::Result<InputValidation<Self::Produces>> {
+    Ok(match user_input.as_str() {
+      "1" => InputValidation::Successful(Self::Produces::inject((Case1, hlist!(Amount(100))))),
+      "2" => InputValidation::Successful(Self::Produces::inject((Case2, HNil))),
+      _ => InputValidation::Retry(Message("not 1 or 2".into())),
+    })
   }
 }
 
@@ -79,7 +64,7 @@ struct FormA;
 impl Form for FormA {
   type CreateFormConsumes = HNil;
   type ValidateInputConsumes = HNil;
-  type Produces = HList![CommonCaseParam];
+  type Produces = HList![Amount];
 
   async fn create_form(&self, _consumes: Self::CreateFormConsumes) -> anyhow::Result<Message> {
     Ok(Message("Enter a number".into()))
@@ -88,38 +73,32 @@ impl Form for FormA {
   async fn handle_input(
     &self,
     _consumes: Self::ValidateInputConsumes,
-    _user_input: String,
+    user_input: String,
     _failed_input_validation_attempts: FailedInputValidationAttempts,
   ) -> anyhow::Result<InputValidation<Self::Produces>> {
-    Ok(InputValidation::Successful(hlist![CommonCaseParam]))
-  }
-}
-
-struct Operation2;
-impl Operation for Operation2 {
-  type Consumes = HNil;
-  type Produces = HList![Case2Param, CommonCaseParam];
-
-  async fn handle(&self, _consumes: Self::Consumes) -> anyhow::Result<Self::Produces> {
-    Ok(hlist!(Case2Param, CommonCaseParam))
+    match user_input.parse::<u32>() {
+      Ok(value) => Ok(InputValidation::Successful(hlist![Amount(value)])),
+      Err(_) => Ok(InputValidation::Retry(Message("Invalid number".into()))),
+    }
   }
 }
 
 struct FinalA;
 impl Final for FinalA {
-  type Consumes = HList![EntryParam, CommonSplitParam, CommonCaseParam];
+  type Consumes = HList![EntryParam, Amount];
 
-  async fn handle(&self, _consumes: Self::Consumes) -> anyhow::Result<Message> {
-    Ok(Message("Good bye".into()))
+  async fn handle(&self, consumes: Self::Consumes) -> anyhow::Result<Message> {
+    let amount = consumes.tail.head.0;
+    Ok(Message(format!("The amount was: {amount}. Good bye!")))
   }
 }
 
 #[tokio::main]
 async fn main() -> io::Result<()> {
   let demo_process = EntryA
-    .split(SplitA)
-    .case_via(Case1, |x| x.show(FormA))
-    .case_via(Case2, |x| x.then(Operation2))
+    .show_split(SplitA)
+    .case_via(Case1, |x| x)
+    .case_via(Case2, |x| x.show(FormA))
     .end(FinalA)
     .build("demo_process", 0);
 
@@ -127,6 +106,7 @@ async fn main() -> io::Result<()> {
   let mut previous_run_yielded_at = PreviousRunYieldedAt(StepIndex::MIN);
   let mut failed_attempts = FailedInputValidationAttempts(0);
 
+  print!("Enter a shortcode");
   loop {
     print!("> ");
     io::stdout().flush()?;

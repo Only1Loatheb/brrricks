@@ -6,13 +6,14 @@ pub mod subprocess;
 use crate::builder::finalized_process::{FinalizedProcess, FlowingFinalizedProcess};
 use crate::builder::form_flowing_process::FormFlowingProcess;
 use crate::builder::operation_flowing_process::OperationFlowingProcess;
+use crate::builder::split_process_form_splitter::SplitProcessFormSplitter;
 use crate::builder::split_process_splitter::SplitProcessSplitter;
 use crate::builder::*;
 use crate::param_list::ParamList;
 use crate::param_list::clone_just::CloneJust;
 use crate::param_list::concat::Concat;
 use crate::param_list::transform::TransformTo;
-use crate::step::{FailedInputValidationAttempts, Final, Form, Operation, Splitter};
+use crate::step::{FailedInputValidationAttempts, Final, Form, FormSplitter, Operation, Splitter};
 use frunk_core::coproduct::Coproduct;
 use std::future::Future;
 
@@ -121,6 +122,50 @@ pub trait FlowingProcess: Sized + Sync {
       SplitterProducesForOtherCases,
       SplitterStep,
       ProcessBeforeProducesToSplitterStepConsumesIndices,
+    > {
+      process_before: self,
+      splitter: step,
+      step_index: WILL_BE_RENUMBERED,
+      phantom_data: Default::default(),
+    }
+  }
+
+  fn show_split<
+    Tag: Send + Sync,
+    CreateFormConsumes: ParamList,
+    ValidateInputConsumes: ParamList,
+    SplitterProducesForFirstCase: ParamList + Concat<Self::Produces>,
+    SplitterProducesForOtherCases: Send + Sync,
+    SplitterStep: FormSplitter<
+        CreateFormConsumes = CreateFormConsumes,
+        ValidateInputConsumes = ValidateInputConsumes,
+        Produces = Coproduct<(Tag, SplitterProducesForFirstCase), SplitterProducesForOtherCases>,
+      >,
+    ProcessBeforeProducesToCreateFormConsumesIndices: Sync,
+    ProcessBeforeProducesToValidateInputConsumesIndices: Sync,
+  >(
+    self,
+    step: SplitterStep,
+  ) -> impl SplitProcess<
+    SplitterProducesForOtherCases,
+    ProcessBeforeSplitProduces = Self::Produces,
+    SplitterProducesForFirstCase = SplitterProducesForFirstCase,
+    SplitterTagForFirstCase = Tag,
+  >
+  where
+    for<'a> &'a Self::Produces: CloneJust<CreateFormConsumes, ProcessBeforeProducesToCreateFormConsumesIndices>,
+    for<'a> &'a Self::Produces: CloneJust<ValidateInputConsumes, ProcessBeforeProducesToValidateInputConsumesIndices>,
+  {
+    SplitProcessFormSplitter::<
+      Tag,
+      Self,
+      CreateFormConsumes,
+      ValidateInputConsumes,
+      SplitterProducesForFirstCase,
+      SplitterProducesForOtherCases,
+      SplitterStep,
+      ProcessBeforeProducesToCreateFormConsumesIndices,
+      ProcessBeforeProducesToValidateInputConsumesIndices,
     > {
       process_before: self,
       splitter: step,
