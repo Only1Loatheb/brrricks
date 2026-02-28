@@ -71,12 +71,7 @@ where
   ) -> RunResult {
     let outcome = self
       .process_before
-      .resume_run(
-        previous_run_produced,
-        previous_run_yielded_at,
-        user_input,
-        failed_input_validation_attempts,
-      )
+      .resume_run(previous_run_produced, previous_run_yielded_at, user_input, failed_input_validation_attempts)
       .await?;
     match outcome {
       IntermediateRunOutcome::Continue(val) => self.continue_run(val).await,
@@ -87,9 +82,7 @@ where
   }
 
   async fn continue_run(&self, process_before_produces: Self::ProcessBeforeProduces) -> RunResult {
-    Ok(RunOutcome::Finish(
-      self.final_step.handle(process_before_produces.transform()).await?,
-    ))
+    Ok(RunOutcome::Finish(self.final_step.handle(process_before_produces.transform()).await?))
   }
 
   fn enumerate_steps(&mut self, last_used_index: StepIndex) -> StepIndex {

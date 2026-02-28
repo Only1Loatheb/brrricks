@@ -99,23 +99,13 @@ mod tests {
       mut consumes: SessionContext,
       shortcode_string: String,
     ) -> anyhow::Result<HList![EntryParam]> {
-      let operator = consumes
-        .pop()
-        .ok_or_else(|| anyhow!("Admin error or error on frontend."))?
-        .1;
-      let msisdn_value = consumes
-        .pop()
-        .ok_or_else(|| anyhow!("Admin error or error on frontend."))?
-        .1;
+      let operator = consumes.pop().ok_or_else(|| anyhow!("Admin error or error on frontend."))?.1;
+      let msisdn_value = consumes.pop().ok_or_else(|| anyhow!("Admin error or error on frontend."))?.1;
       let msisdn = match msisdn_value {
         Value::String(string) => Msisdn::from_string(string).ok_or_else(|| anyhow!("Admin error on frontend.")),
         _ => Err(anyhow!("Admin error on frontend.")),
       }?;
-      Ok(hlist!(EntryParam(
-        msisdn,
-        Operator::deserialize(operator)?,
-        ShortcodeString(shortcode_string)
-      )))
+      Ok(hlist!(EntryParam(msisdn, Operator::deserialize(operator)?, ShortcodeString(shortcode_string))))
     }
   }
 
@@ -144,10 +134,8 @@ mod tests {
   struct SplitA;
   impl Splitter for SplitA {
     type Consumes = HNil;
-    type Produces = Coprod![
-      (Case1, HList![Split1Param, CommonSplitParam]),
-      (Case2, HList![Split2Param, CommonSplitParam])
-    ];
+    type Produces =
+      Coprod![(Case1, HList![Split1Param, CommonSplitParam]), (Case2, HList![Split2Param, CommonSplitParam])];
 
     async fn handle(&self, _consumes: Self::Consumes) -> anyhow::Result<Self::Produces> {
       Ok(Self::Produces::inject((Case1, hlist!(Split1Param, CommonSplitParam))))
@@ -193,10 +181,7 @@ mod tests {
   }
 
   fn session_init_value() -> SessionContext {
-    vec![
-      (0, Value::String("2340000000000".into())),
-      (1, Value::String("MTN".into())),
-    ]
+    vec![(0, Value::String("2340000000000".into())), (1, Value::String("MTN".into()))]
   }
 
   #[tokio::test]
@@ -211,10 +196,7 @@ mod tests {
         FailedInputValidationAttempts(0),
       )
       .await;
-    assert_eq!(
-      run_result.unwrap(),
-      RunOutcome::Finish(Message("Empty good bye".into()))
-    );
+    assert_eq!(run_result.unwrap(), RunOutcome::Finish(Message("Empty good bye".into())));
   }
 
   #[tokio::test]
@@ -294,16 +276,16 @@ mod tests {
           failed_attempts = FailedInputValidationAttempts(0);
 
           assert_eq!(msg.0, messages[messages_index])
-        }
+        },
         RunOutcome::RetryUserInput(msg) => {
           failed_attempts = FailedInputValidationAttempts(failed_attempts.0 + 1);
 
           assert_eq!(msg.0, messages[messages_index])
-        }
+        },
         RunOutcome::Finish(msg) => {
           assert_eq!(msg.0, messages[messages_index]);
           break;
-        }
+        },
       }
       messages_index += 1;
     }

@@ -39,7 +39,5 @@ impl<ProcessBeforeProduces: ParamList> FlowingProcess for Subprocess<ProcessBefo
 }
 
 pub fn subprocess<ProcessBeforeProduces: ParamList>() -> Subprocess<ProcessBeforeProduces> {
-  Subprocess {
-    phantom_data: Default::default(),
-  }
+  Subprocess { phantom_data: Default::default() }
 }

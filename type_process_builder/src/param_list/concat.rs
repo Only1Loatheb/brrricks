@@ -23,9 +23,6 @@ impl<Head: ParamValue, Tail: Concat<RHS> + ParamList, RHS: ParamList> Concat<RHS
 
   #[inline(always)]
   fn concat(self, rhs: RHS) -> Self::Concatenated {
-    HCons {
-      head: self.head,
-      tail: self.tail.concat(rhs),
-    }
+    HCons { head: self.head, tail: self.tail.concat(rhs) }
   }
 }

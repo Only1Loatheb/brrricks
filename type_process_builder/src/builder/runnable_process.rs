@@ -12,11 +12,7 @@ pub struct RunnableProcess<UnderlyingProcess: FinalizedProcess> {
 impl<UnderlyingProcess: FinalizedProcess> RunnableProcess<UnderlyingProcess> {
   pub fn new(mut finalized_process: UnderlyingProcess, name: &'static str, version: u32) -> Self {
     finalized_process.enumerate_steps(StepIndex::MIN);
-    Self {
-      finalized_process,
-      name,
-      version,
-    }
+    Self { finalized_process, name, version }
   }
 
   pub async fn resume_run(
@@ -28,12 +24,7 @@ impl<UnderlyingProcess: FinalizedProcess> RunnableProcess<UnderlyingProcess> {
   ) -> RunResult {
     self
       .finalized_process
-      .resume_run(
-        previous_run_produced,
-        previous_run_yielded_at,
-        user_input,
-        failed_input_validation_attempts,
-      )
+      .resume_run(previous_run_produced, previous_run_yielded_at, user_input, failed_input_validation_attempts)
       .await
   }
 
@@ -43,11 +34,7 @@ impl<UnderlyingProcess: FinalizedProcess> RunnableProcess<UnderlyingProcess> {
     self.finalized_process.all_param_uids(&mut all_param_uids);
 
     let mut seen = HashSet::new();
-    all_param_uids
-      .into_iter()
-      .rev()
-      .filter(|c| seen.insert(*c))
-      .collect::<Vec<_>>()
+    all_param_uids.into_iter().rev().filter(|c| seen.insert(*c)).collect::<Vec<_>>()
   }
 
   pub fn get_name(&self) -> &'static str {

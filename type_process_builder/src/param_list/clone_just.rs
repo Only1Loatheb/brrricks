@@ -25,9 +25,6 @@ where
       <&'a HCons<SourceHead, SourceTail> as Plucker<&'a TargetHead, IndexHead>>::Remainder,
     ) = self.pluck();
     let tail = remainder.clone_just();
-    HCons {
-      head: head.clone(),
-      tail,
-    }
+    HCons { head: head.clone(), tail }
   }
 }

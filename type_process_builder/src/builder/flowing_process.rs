@@ -185,11 +185,7 @@ pub trait FlowingProcess: Sized + Sync {
   where
     Self::Produces: TransformTo<FinalConsumes, ProcessBeforeProducesToLastStepConsumesIndices>,
   {
-    FlowingFinalizedProcess {
-      process_before: self,
-      final_step: step,
-      phantom_data: Default::default(),
-    }
+    FlowingFinalizedProcess { process_before: self, final_step: step, phantom_data: Default::default() }
   }
 
   fn enumerate_steps(&mut self, last_used_index: StepIndex) -> StepIndex;

@@ -34,12 +34,7 @@ impl<'a, Process: FinalizedProcess> QriosUssdApiService<'a, Process> {
     let ordered_all_unique_param_uids = process.ordered_all_unique_param_uids();
     create_session_context_table(&pool, &process, &ordered_all_unique_param_uids).await?;
     let get_session_context_query = build_get_session_context_query(&process, &ordered_all_unique_param_uids);
-    Ok(QriosUssdApiService {
-      process,
-      pool,
-      ordered_all_unique_param_uids,
-      get_session_context_query,
-    })
+    Ok(QriosUssdApiService { process, pool, ordered_all_unique_param_uids, get_session_context_query })
   }
 }
 
@@ -87,22 +82,13 @@ impl<Process: FinalizedProcess + Sync> qrios_api_axum_server::apis::developers_a
       UssdActionResult::Object(_) => todo!(),
     };
     let session_id = body.context_data.parse::<i64>().map_err(|_| ())?;
-    let (previous_run_yielded_at, failed_input_validation_attempts, session_context) = get_session_context(
-      self.pool,
-      &self.get_session_context_query,
-      session_id,
-      &self.ordered_all_unique_param_uids,
-    )
-    .await
-    .map_err(|_| ())?;
+    let (previous_run_yielded_at, failed_input_validation_attempts, session_context) =
+      get_session_context(self.pool, &self.get_session_context_query, session_id, &self.ordered_all_unique_param_uids)
+        .await
+        .map_err(|_| ())?;
     let run_result = self
       .process
-      .resume_run(
-        session_context,
-        previous_run_yielded_at,
-        user_input,
-        failed_input_validation_attempts,
-      )
+      .resume_run(session_context, previous_run_yielded_at, user_input, failed_input_validation_attempts)
       .await;
     match run_result {
       Ok(RunOutcome::Yield(message, session_context, current_run_yielded_at)) => {
@@ -116,35 +102,22 @@ impl<Process: FinalizedProcess + Sync> qrios_api_axum_server::apis::developers_a
         )
         .await
         .map_err(|_| ())?;
-        Ok((
-          id,
-          UssdView::UssdViewInputView(UssdViewInputView {
-            message: message.0,
-            r_type: "InputView".into(),
-          }),
-        ))
-      }
+        Ok((id, UssdView::UssdViewInputView(UssdViewInputView { message: message.0, r_type: "InputView".into() })))
+      },
       Ok(RunOutcome::RetryUserInput(message)) => {
         // fixme implement with FailedInputValidationAttempts bump
         unreachable!("We haven't prompted user for input yet")
-      }
-      Ok(RunOutcome::Finish(message)) => Ok((
-        session_id,
-        UssdView::UssdViewInfoView(UssdViewInfoView {
-          message: message.0,
-          r_type: "InfoView".into(),
-        }),
-      )),
+      },
+      Ok(RunOutcome::Finish(message)) => {
+        Ok((session_id, UssdView::UssdViewInfoView(UssdViewInfoView { message: message.0, r_type: "InfoView".into() })))
+      },
       Err(_) => Err(()),
     }
     .map(|(id, ussd_view)| {
       PostUssdsessioneventContinueResponse::Status200_SessionContinuationHasBeenSuccessfullyHandledByTheDeveloper(
         UssdSessionCommand {
           action: UssdActionOneOf2(models::UssdActionOneOf2 {
-            show_view: ShowView {
-              r_type: "ShowView".into(),
-              view: ussd_view,
-            },
+            show_view: ShowView { r_type: "ShowView".into(), view: ussd_view },
           }),
           context_data: id.to_string(),
           session_tag: None,
@@ -166,10 +139,7 @@ impl<Process: FinalizedProcess + Sync> qrios_api_axum_server::apis::developers_a
       UssdSessionEventNewSessionSessionInput::UssdSessionEventNewSessionSessionInputOneOf1(_) => todo!(),
       UssdSessionEventNewSessionSessionInput::UssdSessionEventNewSessionSessionInputOneOf2(_) => todo!(),
     };
-    let init_session_context = vec![
-      (0, Value::String(body.msisdn.clone())),
-      (1, Value::String(body.operator.clone())),
-    ];
+    let init_session_context = vec![(0, Value::String(body.msisdn.clone())), (1, Value::String(body.operator.clone()))];
     let run_result = self
       .process
       .resume_run(
@@ -190,34 +160,21 @@ impl<Process: FinalizedProcess + Sync> qrios_api_axum_server::apis::developers_a
         )
         .await
         .map_err(|_| ())?;
-        Ok((
-          id,
-          UssdView::UssdViewInputView(UssdViewInputView {
-            message: message.0,
-            r_type: "InputView".into(),
-          }),
-        ))
-      }
+        Ok((id, UssdView::UssdViewInputView(UssdViewInputView { message: message.0, r_type: "InputView".into() })))
+      },
       Ok(RunOutcome::RetryUserInput(message)) => {
         unreachable!("We haven't prompted user for input yet")
-      }
-      Ok(RunOutcome::Finish(message)) => Ok((
-        i64::MAX,
-        UssdView::UssdViewInfoView(UssdViewInfoView {
-          message: message.0,
-          r_type: "InfoView".into(),
-        }),
-      )),
+      },
+      Ok(RunOutcome::Finish(message)) => {
+        Ok((i64::MAX, UssdView::UssdViewInfoView(UssdViewInfoView { message: message.0, r_type: "InfoView".into() })))
+      },
       Err(_) => Err(()),
     }
     .map(|(id, ussd_view)| {
       PostUssdsessioneventNewResponse::Status200_SessionStartHasBeenSuccessfullyHandledByTheDeveloper(
         UssdSessionCommand {
           action: UssdActionOneOf2(models::UssdActionOneOf2 {
-            show_view: ShowView {
-              r_type: "ShowView".into(),
-              view: ussd_view,
-            },
+            show_view: ShowView { r_type: "ShowView".into(), view: ussd_view },
           }),
           context_data: id.to_string(),
           session_tag: None,

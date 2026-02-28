@@ -1,2 +1,7 @@
 tab_spaces = 2
 max_width = 120
+newline_style = "Unix"
+match_block_trailing_comma = true
+edition = "2024"
+use_field_init_shorthand = true
+use_small_heuristics = "Max"

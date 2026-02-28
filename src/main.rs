@@ -116,12 +116,7 @@ async fn main() -> io::Result<()> {
     let user_input = input.trim().to_owned();
     println!("{previous_run_produced:?}");
     match demo_process
-      .resume_run(
-        previous_run_produced.clone(),
-        previous_run_yielded_at.clone(),
-        user_input,
-        failed_attempts.clone(),
-      )
+      .resume_run(previous_run_produced.clone(), previous_run_yielded_at.clone(), user_input, failed_attempts.clone())
       .await
       .map_err(io::Error::other)?
     {
@@ -131,15 +126,15 @@ async fn main() -> io::Result<()> {
         previous_run_yielded_at = PreviousRunYieldedAt(yielded_at.0);
         failed_attempts = FailedInputValidationAttempts(0);
         println!("yielded: {}", msg.0);
-      }
+      },
       RunOutcome::RetryUserInput(msg) => {
         failed_attempts = FailedInputValidationAttempts(failed_attempts.0 + 1);
         println!("retry: {}", msg.0);
-      }
+      },
       RunOutcome::Finish(msg) => {
         println!("finished: {}", msg.0);
         return Ok(());
-      }
+      },
     }
   }
 }

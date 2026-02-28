@@ -60,12 +60,7 @@ where
     if previous_run_yielded_at.0 < self.step_index {
       let process_before_output = self
         .process_before
-        .resume_run(
-          previous_run_produced,
-          previous_run_yielded_at,
-          user_input,
-          failed_input_validation_attempts,
-        )
+        .resume_run(previous_run_produced, previous_run_yielded_at, user_input, failed_input_validation_attempts)
         .await?;
       match process_before_output {
         IntermediateRunOutcome::Continue(process_before_produces) => self.continue_run(process_before_produces).await,
@@ -77,11 +72,7 @@ where
       // fixme deserialize only values required only up to the next interaction
       let process_before_produces = ProcessBefore::Produces::deserialize(previous_run_produced)?;
       let last_step_consumes = process_before_produces.clone_just();
-      match self
-        .form_step
-        .handle_input(last_step_consumes, user_input, failed_input_validation_attempts)
-        .await?
-      {
+      match self.form_step.handle_input(last_step_consumes, user_input, failed_input_validation_attempts).await? {
         InputValidation::Successful(a) => Ok(IntermediateRunOutcome::Continue(a.concat(process_before_produces))),
         InputValidation::Retry(a) => Ok(IntermediateRunOutcome::RetryUserInput(a)),
         InputValidation::Finish(a) => Ok(IntermediateRunOutcome::Finish(a)),

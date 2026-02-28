@@ -29,10 +29,8 @@ where
 {
   #[inline(always)]
   fn transform(self) -> HCons<TargetHead, TargetTail> {
-    let (head, remainder): (
-      TargetHead,
-      <HCons<SourceHead, SourceTail> as Plucker<TargetHead, IndexHead>>::Remainder,
-    ) = self.pluck();
+    let (head, remainder): (TargetHead, <HCons<SourceHead, SourceTail> as Plucker<TargetHead, IndexHead>>::Remainder) =
+      self.pluck();
     let tail: TargetTail = remainder.transform();
     HCons { head, tail }
   }

@@ -80,17 +80,12 @@ where
     if previous_run_yielded_at.0 < self.step_index {
       let process_before_output = self
         .process_before
-        .resume_run(
-          previous_run_produced,
-          previous_run_yielded_at,
-          user_input,
-          failed_input_validation_attempts,
-        )
+        .resume_run(previous_run_produced, previous_run_yielded_at, user_input, failed_input_validation_attempts)
         .await?;
       match process_before_output {
         IntermediateRunOutcome::Continue(process_before_split_produced) => {
           self.continue_run(process_before_split_produced).await
-        }
+        },
         IntermediateRunOutcome::Yield(a, b, c) => Ok(IntermediateFinalizedSplitOutcome::Yield(a, b, c)),
         IntermediateRunOutcome::Finish(a) => Ok(IntermediateFinalizedSplitOutcome::Finish(a)),
         IntermediateRunOutcome::RetryUserInput(a) => Ok(IntermediateFinalizedSplitOutcome::RetryUserInput(a)),
@@ -98,11 +93,7 @@ where
     } else {
       let process_before_split_produced = ProcessBefore::Produces::deserialize(previous_run_produced)?;
       let last_step_consumes = process_before_split_produced.clone_just();
-      match self
-        .splitter
-        .handle_input(last_step_consumes, user_input, failed_input_validation_attempts)
-        .await?
-      {
+      match self.splitter.handle_input(last_step_consumes, user_input, failed_input_validation_attempts).await? {
         InputValidation::Successful(splitter_produces) => {
           let splitter_produces_to_other_cases = match splitter_produces {
             Coproduct::Inl(a) => Coproduct::Inl(a.1),
@@ -112,7 +103,7 @@ where
             process_before_split_produced,
             splitter_produces_to_other_cases,
           })
-        }
+        },
         InputValidation::Retry(a) => Ok(IntermediateFinalizedSplitOutcome::RetryUserInput(a)),
         InputValidation::Finish(a) => Ok(IntermediateFinalizedSplitOutcome::Finish(a)),
       }

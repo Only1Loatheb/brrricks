@@ -42,12 +42,7 @@ where
     if previous_run_yielded_at.0 < self.step_index {
       let process_before_output = self
         .process_before
-        .resume_run(
-          previous_run_produced,
-          previous_run_yielded_at,
-          user_input,
-          failed_input_validation_attempts,
-        )
+        .resume_run(previous_run_produced, previous_run_yielded_at, user_input, failed_input_validation_attempts)
         .await?;
       match process_before_output {
         IntermediateRunOutcome::Continue(process_before_produces) => self.continue_run(process_before_produces).await,
@@ -67,9 +62,7 @@ where
   ) -> IntermediateRunResult<Self::Produces> {
     let last_step_consumes = process_before_produces.clone_just();
     let last_step_output = self.last_step.handle(last_step_consumes).await?;
-    Ok(IntermediateRunOutcome::Continue(
-      last_step_output.concat(process_before_produces),
-    ))
+    Ok(IntermediateRunOutcome::Continue(last_step_output.concat(process_before_produces)))
   }
 
   fn enumerate_steps(&mut self, last_used_index: StepIndex) -> StepIndex {
