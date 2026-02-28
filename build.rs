@@ -76,7 +76,7 @@ fn generate_qrios_api_axum_server() {
       "rust-axum",
       "-o",
       "/local/qrios_api_axum_server",
-      "--additional-properties=packageName=qrios_api_axum_server",
+      "--additional-properties=packageName=qrios_api_axum_server,disableValidator=true",
     ])
     .status()
     .expect("failed to run docker");

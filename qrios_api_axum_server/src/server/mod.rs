@@ -46,32 +46,6 @@ where
         .with_state(api_impl)
 }
 
-    #[derive(validator::Validate)]
-    #[allow(dead_code)]
-    struct PostUssdsessioneventAbortBodyValidator<'a> {
-          #[validate(nested)]
-          body: &'a models::AbortSession,
-    }
-
-
-#[tracing::instrument(skip_all)]
-fn post_ussdsessionevent_abort_validation(
-  header_params: models::PostUssdsessioneventAbortHeaderParams,
-        body: models::AbortSession,
-) -> std::result::Result<(
-  models::PostUssdsessioneventAbortHeaderParams,
-        models::AbortSession,
-), ValidationErrors>
-{
-  header_params.validate()?;
-              let b = PostUssdsessioneventAbortBodyValidator { body: &body };
-              b.validate()?;
-
-Ok((
-  header_params,
-    body,
-))
-}
 /// PostUssdsessioneventAbort - POST /ussdSessionEvent/abort
 #[tracing::instrument(skip_all)]
 async fn post_ussdsessionevent_abort<I, A, E>(
@@ -116,23 +90,6 @@ where
   };
 
 
-      #[allow(clippy::redundant_closure)]
-      let validation = tokio::task::spawn_blocking(move ||
-    post_ussdsessionevent_abort_validation(
-        header_params,
-          body,
-    )
-  ).await.unwrap();
-
-  let Ok((
-    header_params,
-      body,
-  )) = validation else {
-    return Response::builder()
-            .status(StatusCode::BAD_REQUEST)
-            .body(Body::from(validation.unwrap_err().to_string()))
-            .map_err(|_| StatusCode::BAD_REQUEST);
-  };
 
 
 
@@ -171,32 +128,6 @@ let result = api_impl.as_ref().post_ussdsessionevent_abort(
                                         resp.map_err(|e| { error!(error = ?e); StatusCode::INTERNAL_SERVER_ERROR })
 }
 
-    #[derive(validator::Validate)]
-    #[allow(dead_code)]
-    struct PostUssdsessioneventCloseBodyValidator<'a> {
-          #[validate(nested)]
-          body: &'a models::CloseSession,
-    }
-
-
-#[tracing::instrument(skip_all)]
-fn post_ussdsessionevent_close_validation(
-  header_params: models::PostUssdsessioneventCloseHeaderParams,
-        body: models::CloseSession,
-) -> std::result::Result<(
-  models::PostUssdsessioneventCloseHeaderParams,
-        models::CloseSession,
-), ValidationErrors>
-{
-  header_params.validate()?;
-              let b = PostUssdsessioneventCloseBodyValidator { body: &body };
-              b.validate()?;
-
-Ok((
-  header_params,
-    body,
-))
-}
 /// PostUssdsessioneventClose - POST /ussdSessionEvent/close
 #[tracing::instrument(skip_all)]
 async fn post_ussdsessionevent_close<I, A, E>(
@@ -241,23 +172,6 @@ where
   };
 
 
-      #[allow(clippy::redundant_closure)]
-      let validation = tokio::task::spawn_blocking(move ||
-    post_ussdsessionevent_close_validation(
-        header_params,
-          body,
-    )
-  ).await.unwrap();
-
-  let Ok((
-    header_params,
-      body,
-  )) = validation else {
-    return Response::builder()
-            .status(StatusCode::BAD_REQUEST)
-            .body(Body::from(validation.unwrap_err().to_string()))
-            .map_err(|_| StatusCode::BAD_REQUEST);
-  };
 
 
 
@@ -296,32 +210,6 @@ let result = api_impl.as_ref().post_ussdsessionevent_close(
                                         resp.map_err(|e| { error!(error = ?e); StatusCode::INTERNAL_SERVER_ERROR })
 }
 
-    #[derive(validator::Validate)]
-    #[allow(dead_code)]
-    struct PostUssdsessioneventContinueBodyValidator<'a> {
-          #[validate(nested)]
-          body: &'a models::ContinueSession,
-    }
-
-
-#[tracing::instrument(skip_all)]
-fn post_ussdsessionevent_continue_validation(
-  header_params: models::PostUssdsessioneventContinueHeaderParams,
-        body: models::ContinueSession,
-) -> std::result::Result<(
-  models::PostUssdsessioneventContinueHeaderParams,
-        models::ContinueSession,
-), ValidationErrors>
-{
-  header_params.validate()?;
-              let b = PostUssdsessioneventContinueBodyValidator { body: &body };
-              b.validate()?;
-
-Ok((
-  header_params,
-    body,
-))
-}
 /// PostUssdsessioneventContinue - POST /ussdSessionEvent/continue
 #[tracing::instrument(skip_all)]
 async fn post_ussdsessionevent_continue<I, A, E>(
@@ -366,23 +254,6 @@ where
   };
 
 
-      #[allow(clippy::redundant_closure)]
-      let validation = tokio::task::spawn_blocking(move ||
-    post_ussdsessionevent_continue_validation(
-        header_params,
-          body,
-    )
-  ).await.unwrap();
-
-  let Ok((
-    header_params,
-      body,
-  )) = validation else {
-    return Response::builder()
-            .status(StatusCode::BAD_REQUEST)
-            .body(Body::from(validation.unwrap_err().to_string()))
-            .map_err(|_| StatusCode::BAD_REQUEST);
-  };
 
 
 
@@ -429,32 +300,6 @@ let result = api_impl.as_ref().post_ussdsessionevent_continue(
                                         resp.map_err(|e| { error!(error = ?e); StatusCode::INTERNAL_SERVER_ERROR })
 }
 
-    #[derive(validator::Validate)]
-    #[allow(dead_code)]
-    struct PostUssdsessioneventNewBodyValidator<'a> {
-          #[validate(nested)]
-          body: &'a models::UssdSessionEventNewSession,
-    }
-
-
-#[tracing::instrument(skip_all)]
-fn post_ussdsessionevent_new_validation(
-  header_params: models::PostUssdsessioneventNewHeaderParams,
-        body: models::UssdSessionEventNewSession,
-) -> std::result::Result<(
-  models::PostUssdsessioneventNewHeaderParams,
-        models::UssdSessionEventNewSession,
-), ValidationErrors>
-{
-  header_params.validate()?;
-              let b = PostUssdsessioneventNewBodyValidator { body: &body };
-              b.validate()?;
-
-Ok((
-  header_params,
-    body,
-))
-}
 /// PostUssdsessioneventNew - POST /ussdSessionEvent/new
 #[tracing::instrument(skip_all)]
 async fn post_ussdsessionevent_new<I, A, E>(
@@ -499,23 +344,6 @@ where
   };
 
 
-      #[allow(clippy::redundant_closure)]
-      let validation = tokio::task::spawn_blocking(move ||
-    post_ussdsessionevent_new_validation(
-        header_params,
-          body,
-    )
-  ).await.unwrap();
-
-  let Ok((
-    header_params,
-      body,
-  )) = validation else {
-    return Response::builder()
-            .status(StatusCode::BAD_REQUEST)
-            .body(Body::from(validation.unwrap_err().to_string()))
-            .map_err(|_| StatusCode::BAD_REQUEST);
-  };
 
 
 
