@@ -114,7 +114,7 @@ async fn main() -> io::Result<()> {
     let mut input = String::new();
     io::stdin().read_line(&mut input)?;
     let user_input = input.trim().to_owned();
-
+    println!("{previous_run_produced:?}");
     match demo_process
       .resume_run(
         previous_run_produced.clone(),
@@ -126,6 +126,7 @@ async fn main() -> io::Result<()> {
       .map_err(io::Error::other)?
     {
       RunOutcome::Yield(msg, value, yielded_at) => {
+        println!("{value:?}");
         previous_run_produced = value;
         previous_run_yielded_at = PreviousRunYieldedAt(yielded_at.0);
         failed_attempts = FailedInputValidationAttempts(0);
