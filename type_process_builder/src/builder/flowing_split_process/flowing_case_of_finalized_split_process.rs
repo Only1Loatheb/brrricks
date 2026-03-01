@@ -196,7 +196,7 @@ ThisCase,
   }
 
   fn all_param_uids(&self, acc: &mut Vec<ParamUID>) {
-            self.split_process_before.all_param_uids(acc);
+    self.split_process_before.all_param_uids(acc);
     SplitterProducesForThisCase::all_param_uids(acc);
     self.this_case.all_param_uids(acc);
   }
@@ -266,7 +266,7 @@ for FlowingCaseOfFinalizedSplitProcess<
   }
 
   fn all_param_uids(&self, acc: &mut Vec<ParamUID>) {
-            self.split_process_before.all_param_uids(acc);
+    self.split_process_before.all_param_uids(acc);
     SplitterProducesForThisCase::all_param_uids(acc);
     self.this_case.all_param_uids(acc);
   }
