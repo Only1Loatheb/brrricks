@@ -17,6 +17,8 @@ use qrios_api_axum_server::models::{
 };
 use serde_value::Value;
 use sqlx::PgPool;
+use std::collections::HashSet;
+use std::ops::Not;
 use type_process_builder::builder::{
   FinalizedProcess, ParamUID, PreviousRunYieldedAt, RunOutcome, RunnableProcess, StepIndex,
 };
@@ -45,6 +47,7 @@ impl<Process: FinalizedProcess> ErrorHandler<()> for QriosUssdApiService<'_, Pro
 impl<Process: FinalizedProcess + Sync> qrios_api_axum_server::apis::developers_app_endpoints::DevelopersAppEndpoints
   for QriosUssdApiService<'_, Process>
 {
+  /// I guess we could delete by [AbortSession] session_id
   async fn post_ussdsessionevent_abort(
     &self,
     method: &http::method::Method,
@@ -53,7 +56,7 @@ impl<Process: FinalizedProcess + Sync> qrios_api_axum_server::apis::developers_a
     header_params: &PostUssdsessioneventAbortHeaderParams,
     body: &AbortSession,
   ) -> Result<PostUssdsessioneventAbortResponse, ()> {
-    todo!()
+    Ok(PostUssdsessioneventAbortResponse::Status200_TheAbortingOfTheSessionHasBeenSuccessfullyHandledByTheDeveloper)
   }
 
   async fn post_ussdsessionevent_close(
@@ -64,7 +67,9 @@ impl<Process: FinalizedProcess + Sync> qrios_api_axum_server::apis::developers_a
     header_params: &PostUssdsessioneventCloseHeaderParams,
     body: &CloseSession,
   ) -> Result<PostUssdsessioneventCloseResponse, ()> {
-    todo!()
+    let session_id = body.context_data.parse::<i64>().map_err(|_| ())?;
+    delete_session_context(self.pool, &self.process, session_id).await.map_err(|_| ())?;
+    Ok(PostUssdsessioneventCloseResponse::Status200_SessionEndHasBeenSuccessfullyHandledByTheDeveloper)
   }
 
   async fn post_ussdsessionevent_continue(
@@ -86,32 +91,45 @@ impl<Process: FinalizedProcess + Sync> qrios_api_axum_server::apis::developers_a
       get_session_context(self.pool, &self.get_session_context_query, session_id, &self.ordered_all_unique_param_uids)
         .await
         .map_err(|_| ())?;
+    let already_stored_params = session_context.iter().map(|x| x.0).collect::<HashSet<_>>();
     let run_result = self
       .process
       .resume_run(session_context, previous_run_yielded_at, user_input, failed_input_validation_attempts)
       .await;
     match run_result {
       Ok(RunOutcome::Yield(message, session_context, current_run_yielded_at)) => {
-        let id = create_session_context(
-          // fixme update
+        let new_params_to_store =
+          session_context.into_iter().filter(|x| already_stored_params.contains(&x.0).not()).collect::<Vec<_>>();
+        let id = update_session_context(
           &self.pool,
           &self.process,
+          session_id,
           current_run_yielded_at,
           FailedInputValidationAttempts(0),
-          &*session_context,
+          &*new_params_to_store,
         )
         .await
         .map_err(|_| ())?;
-        Ok((id, UssdView::UssdViewInputView(UssdViewInputView { message: message.0, r_type: "InputView".into() })))
+        Ok((
+          session_id,
+          UssdView::UssdViewInputView(UssdViewInputView { message: message.0, r_type: "InputView".into() }),
+        ))
       },
       Ok(RunOutcome::RetryUserInput(message)) => {
-        // fixme implement with FailedInputValidationAttempts bump
-        unreachable!("We haven't prompted user for input yet")
+        increment_failed_input_validation_attempts(self.pool, &self.process, session_id).await.map_err(|_| ())?;
+        Ok((
+          session_id,
+          UssdView::UssdViewInputView(UssdViewInputView { message: message.0, r_type: "InputView".into() }),
+        ))
       },
       Ok(RunOutcome::Finish(message)) => {
+        delete_session_context(self.pool, &self.process, session_id).await.map_err(|_| ())?;
         Ok((session_id, UssdView::UssdViewInfoView(UssdViewInfoView { message: message.0, r_type: "InfoView".into() })))
       },
-      Err(_) => Err(()),
+      Err(_) => {
+        delete_session_context(self.pool, &self.process, session_id).await.map_err(|_| ())?;
+        Err(())
+      },
     }
     .map(|(id, ussd_view)| {
       PostUssdsessioneventContinueResponse::Status200_SessionContinuationHasBeenSuccessfullyHandledByTheDeveloper(
