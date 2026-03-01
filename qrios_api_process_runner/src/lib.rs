@@ -110,34 +110,28 @@ impl<Process: FinalizedProcess + Sync> qrios_api_axum_server::apis::developers_a
         )
         .await
         .map_err(|_| ())?;
-        Ok((
-          session_id,
-          UssdView::UssdViewInputView(UssdViewInputView { message: message.0, r_type: "InputView".into() }),
-        ))
+        Ok(UssdView::UssdViewInputView(UssdViewInputView { message: message.0, r_type: "InputView".into() }))
       },
       Ok(RunOutcome::RetryUserInput(message)) => {
         increment_failed_input_validation_attempts(self.pool, &self.process, session_id).await.map_err(|_| ())?;
-        Ok((
-          session_id,
-          UssdView::UssdViewInputView(UssdViewInputView { message: message.0, r_type: "InputView".into() }),
-        ))
+        Ok(UssdView::UssdViewInputView(UssdViewInputView { message: message.0, r_type: "InputView".into() }))
       },
       Ok(RunOutcome::Finish(message)) => {
         delete_session_context(self.pool, &self.process, session_id).await.map_err(|_| ())?;
-        Ok((session_id, UssdView::UssdViewInfoView(UssdViewInfoView { message: message.0, r_type: "InfoView".into() })))
+        Ok(UssdView::UssdViewInfoView(UssdViewInfoView { message: message.0, r_type: "InfoView".into() }))
       },
       Err(_) => {
         delete_session_context(self.pool, &self.process, session_id).await.map_err(|_| ())?;
         Err(())
       },
     }
-    .map(|(id, ussd_view)| {
+    .map(|ussd_view| {
       PostUssdsessioneventContinueResponse::Status200_SessionContinuationHasBeenSuccessfullyHandledByTheDeveloper(
         UssdSessionCommand {
           action: UssdActionOneOf2(models::UssdActionOneOf2 {
             show_view: ShowView { r_type: "ShowView".into(), view: ussd_view },
           }),
-          context_data: id.to_string(),
+          context_data: session_id.to_string(),
           session_tag: None,
         },
       )
