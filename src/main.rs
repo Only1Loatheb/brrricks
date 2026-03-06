@@ -121,7 +121,6 @@ async fn main() -> io::Result<()> {
       .map_err(io::Error::other)?
     {
       RunOutcome::Yield(msg, value, yielded_at) => {
-        println!("{value:?}");
         previous_run_produced = value;
         previous_run_yielded_at = PreviousRunYieldedAt(yielded_at.0);
         failed_attempts = FailedInputValidationAttempts(0);

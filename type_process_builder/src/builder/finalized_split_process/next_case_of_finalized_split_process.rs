@@ -18,7 +18,7 @@ pub struct NextCaseOfFinalizedSplitProcess<
 > {
   pub split_process_before: ProcessBefore,
   pub this_case: ThisCase,
-  pub first_step_in_case_index: StepIndex,
+  pub case_index: StepIndex,
   pub phantom_data: PhantomData<(ThisTag, SplitterProducesForThisCase, SplitterProducesForOtherCases)>,
 }
 
@@ -61,7 +61,7 @@ NextCaseOfFinalizedSplitProcess<
       this_case: create_case(subprocess::<
         <SplitterProducesForNextCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
       >()),
-      first_step_in_case_index: WILL_BE_RENUMBERED,
+      case_index: WILL_BE_RENUMBERED,
       phantom_data: Default::default(),
     }
   }
@@ -87,7 +87,7 @@ NextCaseOfFinalizedSplitProcess<
       this_case: create_case(subprocess::<
         <SplitterProducesForNextCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
       >()),
-      first_step_in_case_index: WILL_BE_RENUMBERED,
+      case_index: WILL_BE_RENUMBERED,
       phantom_data: Default::default(),
     }
   }
@@ -119,7 +119,7 @@ for NextCaseOfFinalizedSplitProcess<
     user_input: String,
     failed_input_validation_attempts: FailedInputValidationAttempts,
   ) -> IntermediateFinalizedSplitResult<Self::ProcessBeforeSplitProduces, SplitterProducesForOtherCases> {
-    if previous_run_yielded_at.0 < self.first_step_in_case_index {
+    if previous_run_yielded_at.0 < self.case_index {
       let process_before_output = self
         .split_process_before
         .resume_run(previous_run_produced, previous_run_yielded_at, user_input, failed_input_validation_attempts)
@@ -176,8 +176,8 @@ for NextCaseOfFinalizedSplitProcess<
 
   fn enumerate_steps(&mut self, last_used_index: StepIndex) -> StepIndex {
     let used_index = self.split_process_before.enumerate_steps(last_used_index);
-    self.first_step_in_case_index = used_index + 1;
-    self.this_case.enumerate_steps(used_index)
+    self.case_index = used_index + 1;
+    self.this_case.enumerate_steps(self.case_index)
   }
 
   fn all_param_uids(&self, acc: &mut Vec<ParamUID>) {
@@ -236,8 +236,8 @@ where
 
   fn enumerate_steps(&mut self, last_used_index: StepIndex) -> StepIndex {
     let used_index = self.split_process_before.enumerate_steps(last_used_index);
-    self.first_step_in_case_index = used_index + 1;
-    self.this_case.enumerate_steps(used_index)
+    self.case_index = used_index + 1;
+    self.this_case.enumerate_steps(self.case_index)
   }
 
   fn all_param_uids(&self, acc: &mut Vec<ParamUID>) {

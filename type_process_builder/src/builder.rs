@@ -21,8 +21,6 @@ pub use runnable_process::*;
 use serde_value::Value;
 pub use split_process::*;
 
-/// This enables some memory layout optimization. For example, Option<NonZero<u32>> is the same size as u32:
-/// https://doc.rust-lang.org/beta/std/num/struct.NonZero.html
 pub type StepIndex = i32;
 
 #[derive(PartialEq, Debug, Eq, Clone, PartialOrd, Ord, Hash)]

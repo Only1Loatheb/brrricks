@@ -65,7 +65,7 @@ pub trait SplitProcess<SplitterProducesForOtherCases: Send + Sync>: Sized + Sync
       this_case: create_case(subprocess::<
         <Self::SplitterProducesForFirstCase as Concat<Self::ProcessBeforeSplitProduces>>::Concatenated,
       >()),
-      first_step_in_case_index: WILL_BE_RENUMBERED,
+      case_index: WILL_BE_RENUMBERED,
       phantom_data: Default::default(),
     }
   }
@@ -93,7 +93,7 @@ pub trait SplitProcess<SplitterProducesForOtherCases: Send + Sync>: Sized + Sync
       this_case: create_case(subprocess::<
         <Self::SplitterProducesForFirstCase as Concat<Self::ProcessBeforeSplitProduces>>::Concatenated,
       >()),
-      first_step_in_case_index: WILL_BE_RENUMBERED,
+      case_index: WILL_BE_RENUMBERED,
       phantom_data: Default::default(),
     }
   }
