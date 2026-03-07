@@ -17,8 +17,8 @@ pub struct FirstCaseOfFinalizedSplitProcess<
   ThisCase: FinalizedProcess,
 > {
   pub split_process_before: ProcessBefore,
-  pub this_case: ThisCase,
   pub case_index: StepIndex,
+  pub this_case: ThisCase,
   pub phantom_data: PhantomData<(ThisTag, SplitterProducesForThisCase, SplitterProducesForOtherCases)>,
 }
 
@@ -57,10 +57,10 @@ FirstCaseOfFinalizedSplitProcess<
   {
     NextCaseOfFinalizedSplitProcess {
       split_process_before: self,
+      case_index: WILL_BE_RENUMBERED,
       this_case: create_case(subprocess::<
         <SplitterProducesForNextCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
       >()),
-      case_index: WILL_BE_RENUMBERED,
       phantom_data: Default::default(),
     }
   }
@@ -83,10 +83,10 @@ FirstCaseOfFinalizedSplitProcess<
   {
     FlowingCaseOfFinalizedSplitProcess {
       split_process_before: self,
+      case_index: WILL_BE_RENUMBERED,
       this_case: create_case(subprocess::<
         <SplitterProducesForNextCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
       >()),
-      case_index: WILL_BE_RENUMBERED,
       phantom_data: Default::default(),
     }
   }

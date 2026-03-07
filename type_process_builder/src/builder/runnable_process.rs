@@ -5,8 +5,8 @@ use std::collections::HashSet;
 
 pub struct RunnableProcess<UnderlyingProcess: FinalizedProcess> {
   finalized_process: UnderlyingProcess, // shouldn't be public
-  name: &'static str,
-  version: u32,
+  name: &'static str,                   // immutable
+  version: u32,                         // immutable
 }
 
 impl<UnderlyingProcess: FinalizedProcess> RunnableProcess<UnderlyingProcess> {

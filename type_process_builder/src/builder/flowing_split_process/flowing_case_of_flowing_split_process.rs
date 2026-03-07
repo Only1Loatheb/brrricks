@@ -21,8 +21,8 @@ pub struct FlowingCaseOfFlowingSplitProcess<
 >
 {
   pub split_process_before: ProcessBefore,
-  pub this_case: ThisCase,
   pub case_index: StepIndex,
+  pub this_case: ThisCase,
   pub phantom_data: PhantomData<(
     ThisTag,
     SplitterProducesForThisCase,
@@ -69,10 +69,10 @@ FlowingCaseOfFlowingSplitProcess<
   {
     FinalizedCaseOfFlowingSplitProcess {
       split_process_before: self,
+      case_index: WILL_BE_RENUMBERED,
       this_case: create_case(subprocess::<
         <SplitterProducesForNextCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
       >()),
-      case_index: WILL_BE_RENUMBERED,
       phantom_data: Default::default(),
     }
   }
@@ -98,10 +98,10 @@ FlowingCaseOfFlowingSplitProcess<
   {
     FlowingCaseOfFlowingSplitProcess {
       split_process_before: self,
+      case_index: WILL_BE_RENUMBERED,
       this_case: create_case(subprocess::<
         <SplitterProducesForNextCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
       >()),
-      case_index: WILL_BE_RENUMBERED,
       phantom_data: Default::default(),
     }
   }
@@ -239,7 +239,7 @@ where
   type ProcessBeforeProduces = ProcessBefore::ProcessBeforeSplitProduces;
   type Produces = <ProcessBefore::EveryFlowingCaseProduces as Intersect<ThisCase::Produces>>::Intersection;
 
-  async fn resume_run(
+  async fn resume_run( // fixme
     &self,
     previous_run_produced: SessionContext,
     previous_run_yielded_at: PreviousRunYieldedAt,

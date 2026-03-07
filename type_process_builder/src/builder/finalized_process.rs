@@ -63,6 +63,7 @@ where
   type ProcessBeforeProduces = ProcessBefore::Produces;
 
   async fn resume_run(
+    // check where to resume when copying and pasting to finalized proces with finalized process instead of last case
     &self,
     previous_run_produced: SessionContext,
     previous_run_yielded_at: PreviousRunYieldedAt,
