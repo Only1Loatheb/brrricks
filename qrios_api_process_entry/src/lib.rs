@@ -50,18 +50,18 @@ impl Entry<Value> for DialedSessionEntry {
     mut consumes: Vec<(ParamUID, Value)>,
     shortcode_string: String,
   ) -> anyhow::Result<Self::Produces> {
-      let operator = consumes
-        .pop()
-        .ok_or_else(|| anyhow!("Admin error or error on frontend."))?
-        .1;
-      let msisdn_value = consumes
-        .pop()
-        .ok_or_else(|| anyhow!("Admin error or error on frontend."))?
-        .1;
-      let msisdn = match msisdn_value {
-        Value::String(string) => Msisdn::from_string(string).ok_or_else(|| anyhow!("Admin error on frontend.")),
-        _ => Err(anyhow!("Admin error on frontend.")),
-      }?;
+    let operator = consumes
+      .pop()
+      .ok_or_else(|| anyhow!("Admin error or error on frontend."))?
+      .1;
+    let msisdn_value = consumes
+      .pop()
+      .ok_or_else(|| anyhow!("Admin error or error on frontend."))?
+      .1;
+    let msisdn = match msisdn_value {
+      Value::String(string) => Msisdn::from_string(string).ok_or_else(|| anyhow!("Admin error on frontend.")),
+      _ => Err(anyhow!("Admin error on frontend.")),
+    }?;
     Ok(hlist!(DialedSessionEntryParam(
       msisdn,
       Operator::deserialize(operator)?,

@@ -157,7 +157,7 @@ for FirstCaseOfFlowingSplitProcess<
         previous_run_produced,
         previous_run_yielded_at,
         user_input,
-        failed_input_validation_attempts
+        failed_input_validation_attempts,
       ).await? {
         IntermediateRunOutcome::Continue(a) => Ok(IntermediateFlowingSplitOutcome::Continue(a)),
         IntermediateRunOutcome::Yield(a, b, c) => Ok(IntermediateFlowingSplitOutcome::Yield(a, b, c)),

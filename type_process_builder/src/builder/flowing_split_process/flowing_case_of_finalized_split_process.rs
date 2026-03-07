@@ -109,14 +109,14 @@ impl<
   SplitterProducesForOtherCases: Send + Sync,
   ProcessBefore: FinalizedSplitProcess<Coproduct<(ThisTag, SplitterProducesForThisCase), SplitterProducesForOtherCases>>,
   ThisCase: FlowingProcess<ProcessBeforeProduces=<SplitterProducesForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated>,
-  > FlowingSplitProcess<SplitterProducesForOtherCases>
-  for FlowingCaseOfFinalizedSplitProcess<
-ThisTag,
-SplitterProducesForThisCase,
-SplitterProducesForOtherCases,
-ProcessBefore,
-ThisCase,
-  >
+> FlowingSplitProcess<SplitterProducesForOtherCases>
+for FlowingCaseOfFinalizedSplitProcess<
+  ThisTag,
+  SplitterProducesForThisCase,
+  SplitterProducesForOtherCases,
+  ProcessBefore,
+  ThisCase,
+>
 {
   type ProcessBeforeSplitProduces = ProcessBefore::ProcessBeforeSplitProduces;
   type SplitterProducesForThisCase = SplitterProducesForThisCase;
@@ -156,10 +156,10 @@ ThisCase,
         user_input,
         failed_input_validation_attempts,
       ).await? {
-          IntermediateRunOutcome::Continue(a) => Ok(IntermediateFlowingSplitOutcome::Continue(a)),
-          IntermediateRunOutcome::Yield(a, b, c) => Ok(IntermediateFlowingSplitOutcome::Yield(a, b, c)),
-          IntermediateRunOutcome::Finish(a) => Ok(IntermediateFlowingSplitOutcome::Finish(a)),
-          IntermediateRunOutcome::RetryUserInput(a) => Ok(IntermediateFlowingSplitOutcome::RetryUserInput(a)),
+        IntermediateRunOutcome::Continue(a) => Ok(IntermediateFlowingSplitOutcome::Continue(a)),
+        IntermediateRunOutcome::Yield(a, b, c) => Ok(IntermediateFlowingSplitOutcome::Yield(a, b, c)),
+        IntermediateRunOutcome::Finish(a) => Ok(IntermediateFlowingSplitOutcome::Finish(a)),
+        IntermediateRunOutcome::RetryUserInput(a) => Ok(IntermediateFlowingSplitOutcome::RetryUserInput(a)),
       }
     }
   }
@@ -222,36 +222,50 @@ for FlowingCaseOfFinalizedSplitProcess<
   type ProcessBeforeProduces = ProcessBefore::ProcessBeforeSplitProduces;
   type Produces = ThisCase::Produces;
 
-  async fn resume_run( // fixme
+  async fn resume_run(
     &self,
     previous_run_produced: SessionContext,
     previous_run_yielded_at: PreviousRunYieldedAt,
     user_input: String,
     failed_input_validation_attempts: FailedInputValidationAttempts,
   ) -> IntermediateRunResult<Self::Produces> {
-    let process_before_output = self
-      .split_process_before
-      .resume_run(previous_run_produced, previous_run_yielded_at, user_input, failed_input_validation_attempts)
-      .await?;
-    match process_before_output {
-      IntermediateFinalizedSplitOutcome::GoToCase {
-        process_before_split_produced,
-        splitter_produces_to_other_cases,
-      } => match splitter_produces_to_other_cases {
-        Coproduct::Inl((_pd, produces_to_this_case)) => {
-          let this_case_consumes = produces_to_this_case.concat(process_before_split_produced);
-          match self.this_case.continue_run(this_case_consumes).await? {
-            IntermediateRunOutcome::Continue(this_case_produced) => Ok(IntermediateRunOutcome::Continue(this_case_produced)),
-            IntermediateRunOutcome::Yield(a, b, c) => Ok(IntermediateRunOutcome::Yield(a, b, c)),
-            IntermediateRunOutcome::Finish(a) => Ok(IntermediateRunOutcome::Finish(a)),
-            IntermediateRunOutcome::RetryUserInput(a) => Ok(IntermediateRunOutcome::RetryUserInput(a)),
+    if previous_run_yielded_at.0 < self.case_index {
+      let process_before_output = self
+        .split_process_before
+        .resume_run(previous_run_produced, previous_run_yielded_at, user_input, failed_input_validation_attempts)
+        .await?;
+      match process_before_output {
+        IntermediateFinalizedSplitOutcome::GoToCase {
+          process_before_split_produced,
+          splitter_produces_to_other_cases,
+        } => match splitter_produces_to_other_cases {
+          Coproduct::Inl((_pd, produces_to_this_case)) => {
+            let this_case_consumes = produces_to_this_case.concat(process_before_split_produced);
+            match self.this_case.continue_run(this_case_consumes).await? {
+              IntermediateRunOutcome::Continue(this_case_produced) => Ok(IntermediateRunOutcome::Continue(this_case_produced)),
+              IntermediateRunOutcome::Yield(a, b, c) => Ok(IntermediateRunOutcome::Yield(a, b, c)),
+              IntermediateRunOutcome::Finish(a) => Ok(IntermediateRunOutcome::Finish(a)),
+              IntermediateRunOutcome::RetryUserInput(a) => Ok(IntermediateRunOutcome::RetryUserInput(a)),
+            }
           }
-        }
-        Coproduct::Inr(c_nil) => match c_nil {},
-      },
-      IntermediateFinalizedSplitOutcome::Yield(a, b, c) => Ok(IntermediateRunOutcome::Yield(a, b, c)),
-      IntermediateFinalizedSplitOutcome::Finish(a) => Ok(IntermediateRunOutcome::Finish(a)),
-      IntermediateFinalizedSplitOutcome::RetryUserInput(a) => Ok(IntermediateRunOutcome::RetryUserInput(a)),
+          Coproduct::Inr(c_nil) => match c_nil {},
+        },
+        IntermediateFinalizedSplitOutcome::Yield(a, b, c) => Ok(IntermediateRunOutcome::Yield(a, b, c)),
+        IntermediateFinalizedSplitOutcome::Finish(a) => Ok(IntermediateRunOutcome::Finish(a)),
+        IntermediateFinalizedSplitOutcome::RetryUserInput(a) => Ok(IntermediateRunOutcome::RetryUserInput(a)),
+      }
+    } else {
+      match self.this_case.resume_run(
+        previous_run_produced,
+        previous_run_yielded_at,
+        user_input,
+        failed_input_validation_attempts,
+      ).await? {
+        IntermediateRunOutcome::Continue(a) => Ok(IntermediateRunOutcome::Continue(a)),
+        IntermediateRunOutcome::Yield(a, b, c) => Ok(IntermediateRunOutcome::Yield(a, b, c)),
+        IntermediateRunOutcome::Finish(a) => Ok(IntermediateRunOutcome::Finish(a)),
+        IntermediateRunOutcome::RetryUserInput(a) => Ok(IntermediateRunOutcome::RetryUserInput(a)),
+      }
     }
   }
 
