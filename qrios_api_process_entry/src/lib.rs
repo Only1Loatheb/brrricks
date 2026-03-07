@@ -3,10 +3,10 @@ use frunk_core::{HList, hlist};
 use serde::{Deserialize, Serialize};
 use serde_value::Value;
 use std::ops::Not;
+use type_process_builder::builder::ParamUID;
 use type_process_builder::param_list::ParamValue;
 use type_process_builder::step::Entry;
 use typenum::U0;
-use type_process_builder::builder::ParamUID;
 
 #[derive(PartialEq, Debug, Eq, Clone, Copy, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 pub struct Msisdn(u64);
@@ -50,22 +50,12 @@ impl Entry<Value> for DialedSessionEntry {
     mut consumes: Vec<(ParamUID, Value)>,
     shortcode_string: String,
   ) -> anyhow::Result<Self::Produces> {
-    let operator = consumes
-      .pop()
-      .ok_or_else(|| anyhow!("Admin error or error on frontend."))?
-      .1;
-    let msisdn_value = consumes
-      .pop()
-      .ok_or_else(|| anyhow!("Admin error or error on frontend."))?
-      .1;
+    let operator = consumes.pop().ok_or_else(|| anyhow!("Admin error or error on frontend."))?.1;
+    let msisdn_value = consumes.pop().ok_or_else(|| anyhow!("Admin error or error on frontend."))?.1;
     let msisdn = match msisdn_value {
       Value::String(string) => Msisdn::from_string(string).ok_or_else(|| anyhow!("Admin error on frontend.")),
       _ => Err(anyhow!("Admin error on frontend.")),
     }?;
-    Ok(hlist!(DialedSessionEntryParam(
-      msisdn,
-      Operator::deserialize(operator)?,
-      ShortcodeString(shortcode_string)
-    )))
+    Ok(hlist!(DialedSessionEntryParam(msisdn, Operator::deserialize(operator)?, ShortcodeString(shortcode_string))))
   }
 }

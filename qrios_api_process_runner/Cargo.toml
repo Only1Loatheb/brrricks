@@ -9,7 +9,6 @@ build = "build.rs"
 [dependencies]
 type_process_builder = { path = "../type_process_builder" }
 qrios_api_axum_server = { path = "../qrios_api_axum_server", features = ["server"] }
-sqlx_postgres_session_store = { path = "../sqlx_postgres_session_store" }
 sqlx = { version = "0.8", features = ["postgres"] }
 async-trait = "0.1"
 http = "1.0"
