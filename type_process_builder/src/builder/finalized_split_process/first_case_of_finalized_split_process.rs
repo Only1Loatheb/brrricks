@@ -127,11 +127,8 @@ for FirstCaseOfFinalizedSplitProcess<
         IntermediateFinalizedSplitOutcome::GoToCase {
           process_before_split_produced,
           splitter_produces_to_other_cases,
-        } => {
-          self
-            .continue_run(process_before_split_produced, splitter_produces_to_other_cases)
-            .await
-        }
+        } =>
+          self.continue_run(process_before_split_produced, splitter_produces_to_other_cases).await,
         IntermediateFinalizedSplitOutcome::Yield(a, b, c) => Ok(IntermediateFinalizedSplitOutcome::Yield(a, b, c)),
         IntermediateFinalizedSplitOutcome::Finish(a) => Ok(IntermediateFinalizedSplitOutcome::Finish(a)),
         IntermediateFinalizedSplitOutcome::RetryUserInput(a) => Ok(IntermediateFinalizedSplitOutcome::RetryUserInput(a)),
@@ -171,6 +168,19 @@ for FirstCaseOfFinalizedSplitProcess<
         process_before_split_produced,
         splitter_produces_to_other_cases,
       }),
+    }
+  }
+
+  async fn continue_run_from_splitter(&self, process_before_split_produced: Self::ProcessBeforeSplitProduces) -> IntermediateFinalizedSplitResult<Self::ProcessBeforeSplitProduces, SplitterProducesForOtherCases> {
+    let process_before_output = self.split_process_before.continue_run(process_before_split_produced).await?;
+    match process_before_output {
+      IntermediateFinalizedSplitOutcome::GoToCase {
+        process_before_split_produced,
+        splitter_produces_to_other_cases,
+      } => self.continue_run(process_before_split_produced, splitter_produces_to_other_cases).await,
+      IntermediateFinalizedSplitOutcome::Yield(a, b, c) => Ok(IntermediateFinalizedSplitOutcome::Yield(a, b, c)),
+      IntermediateFinalizedSplitOutcome::Finish(a) => Ok(IntermediateFinalizedSplitOutcome::Finish(a)),
+      IntermediateFinalizedSplitOutcome::RetryUserInput(a) => Ok(IntermediateFinalizedSplitOutcome::RetryUserInput(a)),
     }
   }
 

@@ -269,8 +269,28 @@ for FlowingCaseOfFinalizedSplitProcess<
     }
   }
 
-  async fn continue_run(&self, _process_before_produces: Self::ProcessBeforeProduces) -> IntermediateRunResult<Self::Produces> {
-    todo!()
+  async fn continue_run(&self, process_before_produces: Self::ProcessBeforeProduces) -> IntermediateRunResult<Self::Produces> {
+    let process_before_output = self.split_process_before.continue_run_from_splitter(process_before_produces).await?;
+    match process_before_output {
+      IntermediateFinalizedSplitOutcome::GoToCase {
+        process_before_split_produced,
+        splitter_produces_to_other_cases,
+      } => match splitter_produces_to_other_cases {
+        Coproduct::Inl((_pd, produces_to_this_case)) => {
+          let this_case_consumes = produces_to_this_case.concat(process_before_split_produced);
+          match self.this_case.continue_run(this_case_consumes).await? {
+            IntermediateRunOutcome::Continue(this_case_produced) => Ok(IntermediateRunOutcome::Continue(this_case_produced)),
+            IntermediateRunOutcome::Yield(a, b, c) => Ok(IntermediateRunOutcome::Yield(a, b, c)),
+            IntermediateRunOutcome::Finish(a) => Ok(IntermediateRunOutcome::Finish(a)),
+            IntermediateRunOutcome::RetryUserInput(a) => Ok(IntermediateRunOutcome::RetryUserInput(a)),
+          }
+        }
+        Coproduct::Inr(c_nil) => match c_nil {},
+      },
+      IntermediateFinalizedSplitOutcome::Yield(a, b, c) => Ok(IntermediateRunOutcome::Yield(a, b, c)),
+      IntermediateFinalizedSplitOutcome::Finish(a) => Ok(IntermediateRunOutcome::Finish(a)),
+      IntermediateFinalizedSplitOutcome::RetryUserInput(a) => Ok(IntermediateRunOutcome::RetryUserInput(a)),
+    }
   }
 
   fn enumerate_steps(&mut self, last_used_index: StepIndex) -> StepIndex {

@@ -34,6 +34,13 @@ pub trait FinalizedSplitProcess<SplitterProducesForOtherCases>: Sized + Sync {
     Output = IntermediateFinalizedSplitResult<Self::ProcessBeforeSplitProduces, SplitterProducesForOtherCases>,
   > + Send;
 
+  fn continue_run_from_splitter(
+    &self,
+    process_before_split_produced: Self::ProcessBeforeSplitProduces,
+  ) -> impl Future<
+    Output = IntermediateFinalizedSplitResult<Self::ProcessBeforeSplitProduces, SplitterProducesForOtherCases>,
+  > + Send;
+
   fn enumerate_steps(&mut self, last_used_index: StepIndex) -> StepIndex;
 
   fn all_param_uids(&self, acc: &mut Vec<ParamUID>);
