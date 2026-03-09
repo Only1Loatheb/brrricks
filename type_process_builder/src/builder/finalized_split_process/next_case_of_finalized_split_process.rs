@@ -174,25 +174,6 @@ for NextCaseOfFinalizedSplitProcess<
     }
   }
 
-  async fn continue_run_from_splitter(&self, process_before_split_produced: Self::ProcessBeforeSplitProduces) -> IntermediateFinalizedSplitResult<Self::ProcessBeforeSplitProduces, SplitterProducesForOtherCases> {
-    let process_before_output = self.split_process_before.continue_run_from_splitter(process_before_split_produced).await?;
-    match process_before_output {
-      IntermediateFinalizedSplitOutcome::GoToCase {
-        process_before_split_produced,
-        splitter_produces_to_other_cases,
-      } => {
-        let produced = match splitter_produces_to_other_cases {
-          Coproduct::Inl((_pd, params)) => Coproduct::Inl(params),
-          Coproduct::Inr(inr_value) => Coproduct::Inr(inr_value),
-        };
-        self.continue_run(process_before_split_produced, produced).await
-      }
-      IntermediateFinalizedSplitOutcome::Yield(a, b, c) => Ok(IntermediateFinalizedSplitOutcome::Yield(a, b, c)),
-      IntermediateFinalizedSplitOutcome::Finish(a) => Ok(IntermediateFinalizedSplitOutcome::Finish(a)),
-      IntermediateFinalizedSplitOutcome::RetryUserInput(a) => Ok(IntermediateFinalizedSplitOutcome::RetryUserInput(a)),
-    }
-  }
-
   fn enumerate_steps(&mut self, last_used_index: StepIndex) -> StepIndex {
     let used_index = self.split_process_before.enumerate_steps(last_used_index);
     self.case_index = used_index + 1;

@@ -184,26 +184,6 @@ for FinalizedCaseOfFlowingSplitProcess<
     }
   }
 
-  async fn continue_run_from_splitter(&self, process_before_split_produced: Self::ProcessBeforeSplitProduces) -> IntermediateFlowingSplitResult<Self::ProcessBeforeSplitProduces, SplitterProducesForOtherCases, Self::EveryFlowingCaseProduces> {
-    let process_before_output = self.split_process_before.continue_run_from_splitter(process_before_split_produced).await?;
-    match process_before_output {
-      IntermediateFlowingSplitOutcome::Continue(a) => Ok(IntermediateFlowingSplitOutcome::Continue(a)),
-      IntermediateFlowingSplitOutcome::GoToCase {
-        process_before_split_produced,
-        splitter_produces_to_other_cases,
-      } => {
-        let produced = match splitter_produces_to_other_cases {
-          Coproduct::Inl((_pd, params)) => Coproduct::Inl(params),
-          Coproduct::Inr(inr_value) => Coproduct::Inr(inr_value),
-        };
-        self.continue_run(process_before_split_produced, produced).await
-      }
-      IntermediateFlowingSplitOutcome::Yield(a, b, c) => Ok(IntermediateFlowingSplitOutcome::Yield(a, b, c)),
-      IntermediateFlowingSplitOutcome::Finish(a) => Ok(IntermediateFlowingSplitOutcome::Finish(a)),
-      IntermediateFlowingSplitOutcome::RetryUserInput(a) => Ok(IntermediateFlowingSplitOutcome::RetryUserInput(a)),
-    }
-  }
-
   fn enumerate_steps(&mut self, last_used_index: StepIndex) -> StepIndex {
     let used_index = self.split_process_before.enumerate_steps(last_used_index);
     self.case_index = used_index + 1;
