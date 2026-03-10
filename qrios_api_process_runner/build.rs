@@ -16,7 +16,7 @@ pub fn main() {
       &format!("{uid}:{gid}"),
       "-v",
       &format!("{project_dir}:/local"),
-      "openapitools/openapi-generator-cli",
+      "openapitools/openapi-generator-cli:v7.20.0",
       "generate",
       "-i",
       "/local/qrios-ussd-api-swagger.json",
