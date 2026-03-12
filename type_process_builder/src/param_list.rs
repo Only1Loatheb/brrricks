@@ -5,6 +5,7 @@ use serde::de::DeserializeOwned;
 use serde_value::{DeserializerError, SerializerError, to_value};
 use typenum::Unsigned;
 
+pub mod borrow_just;
 pub mod clone_just;
 pub mod concat;
 pub mod intersect;
