@@ -14,25 +14,25 @@ sequenceDiagram
     Platform ->> App: /session/new
     App ->> App: Process initial request
     App ->> SessionStore: Store session
-    SessionStore -->> App: Session stored
-    App -->> Platform: First USSD screen
-    Platform -->> User: Display USSD screen
+    SessionStore --) App: Session stored
+    App --) Platform: First USSD screen
+    Platform --) User: Display USSD screen
     User ->> Platform: Input value
     Platform ->> App: /session/continue
     App ->> SessionStore: Fetch session data
-    SessionStore -->> App: Session data
+    SessionStore --) App: Session data
     App ->> App: Process input
     App ->> SessionStore: Update session
-    SessionStore -->> App: Session updated
-    App -->> Platform: Input USSD screen
-    Platform -->> User: Display USSD screen
+    SessionStore --) App: Session updated
+    App --) Platform: Input USSD screen
+    Platform --) User: Display USSD screen
     User ->> Platform: Input value
     Platform ->> App: /session/continue
     App ->> SessionStore: Fetch session data
-    SessionStore -->> App: Session data
+    SessionStore --) App: Session data
     App ->> App: Process input
-    App -->> Platform: Final USSD screen
-    Platform -->> User: Display USSD screen
+    App --) Platform: Final USSD screen
+    Platform --) User: Display USSD screen
 ```
 
 ## Process builder states
