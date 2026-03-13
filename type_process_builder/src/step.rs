@@ -6,6 +6,7 @@ pub struct Message(pub String);
 use crate::builder::ParamUID;
 use crate::param_list::ParamList;
 use frunk_core::coproduct::Coproduct;
+use frunk_core::traits::ToRef;
 use serde::de::DeserializeOwned;
 use serde_value::Value;
 use std::future::Future;
@@ -56,10 +57,13 @@ impl<Tag: Send + Sync, ThisCase: ParamList, OtherCase: Send + Sync> SplitterOutp
 
 /// Works with at least two cases.
 /// Just produce link form with a single link using Form step
-pub trait Splitter: Sync {
-  type Consumes: ParamList;
+pub trait Splitter<'a>: Sync {
+  type Consumes: ParamList + ToRef<'a>;
   type Produces: SplitterOutput;
-  fn handle(&self, consumes: Self::Consumes) -> impl Future<Output = anyhow::Result<Self::Produces>> + Send;
+  fn handle(
+    &self,
+    consumes: <Self::Consumes as ToRef<'a>>::Output,
+  ) -> impl Future<Output = anyhow::Result<Self::Produces>> + Send;
 }
 
 /// Works with at least two cases.
