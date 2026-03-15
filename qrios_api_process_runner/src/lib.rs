@@ -2,11 +2,11 @@ mod session_store;
 
 use crate::session_store::*;
 use async_trait::async_trait;
-use qrios_api_axum_server::apis::ErrorHandler;
 use qrios_api_axum_server::apis::developers_app_endpoints::{
   PostUssdsessioneventAbortResponse, PostUssdsessioneventCloseResponse, PostUssdsessioneventContinueResponse,
   PostUssdsessioneventNewResponse,
 };
+use qrios_api_axum_server::apis::ErrorHandler;
 use qrios_api_axum_server::models;
 use qrios_api_axum_server::models::UssdAction::UssdActionOneOf2;
 use qrios_api_axum_server::models::{
@@ -45,7 +45,7 @@ impl<Process: FinalizedProcess> ErrorHandler<()> for QriosUssdApiService<'_, Pro
 #[allow(unused_variables)]
 #[async_trait]
 impl<Process: FinalizedProcess + Sync> qrios_api_axum_server::apis::developers_app_endpoints::DevelopersAppEndpoints
-  for QriosUssdApiService<'_, Process>
+for QriosUssdApiService<'_, Process>
 {
   /// I guess we could delete by [AbortSession] session_id
   async fn post_ussdsessionevent_abort(
@@ -108,34 +108,34 @@ impl<Process: FinalizedProcess + Sync> qrios_api_axum_server::apis::developers_a
           FailedInputValidationAttempts(0),
           &*new_params_to_store,
         )
-        .await
-        .map_err(|_| ())?;
+          .await
+          .map_err(|_| ())?;
         Ok(UssdView::UssdViewInputView(UssdViewInputView { message: message.0, r_type: "InputView".into() }))
-      },
+      }
       Ok(RunOutcome::RetryUserInput(message)) => {
         increment_failed_input_validation_attempts(self.pool, &self.process, session_id).await.map_err(|_| ())?;
         Ok(UssdView::UssdViewInputView(UssdViewInputView { message: message.0, r_type: "InputView".into() }))
-      },
+      }
       Ok(RunOutcome::Finish(message)) => {
         delete_session_context(self.pool, &self.process, session_id).await.map_err(|_| ())?;
         Ok(UssdView::UssdViewInfoView(UssdViewInfoView { message: message.0, r_type: "InfoView".into() }))
-      },
+      }
       Err(_) => {
         delete_session_context(self.pool, &self.process, session_id).await.map_err(|_| ())?;
         Err(())
-      },
+      }
     }
-    .map(|ussd_view| {
-      PostUssdsessioneventContinueResponse::Status200_SessionContinuationHasBeenSuccessfullyHandledByTheDeveloper(
-        UssdSessionCommand {
-          action: UssdActionOneOf2(models::UssdActionOneOf2 {
-            show_view: ShowView { r_type: "ShowView".into(), view: ussd_view },
-          }),
-          context_data: session_id.to_string(),
-          session_tag: None,
-        },
-      )
-    })
+      .map(|ussd_view| {
+        PostUssdsessioneventContinueResponse::Status200_SessionContinuationHasBeenSuccessfullyHandledByTheDeveloper(
+          UssdSessionCommand {
+            action: UssdActionOneOf2(models::UssdActionOneOf2 {
+              show_view: ShowView { r_type: "ShowView".into(), view: ussd_view },
+            }),
+            context_data: session_id.to_string(),
+            session_tag: None,
+          },
+        )
+      })
   }
 
   async fn post_ussdsessionevent_new(
@@ -170,31 +170,63 @@ impl<Process: FinalizedProcess + Sync> qrios_api_axum_server::apis::developers_a
           FailedInputValidationAttempts(0),
           &*session_context,
         )
-        .await
-        .map_err(|_| ())?;
+          .await
+          .map_err(|_| ())?;
         Ok((id, UssdView::UssdViewInputView(UssdViewInputView { message: message.0, r_type: "InputView".into() })))
-      },
+      }
       Ok(RunOutcome::RetryUserInput(message)) => {
         unreachable!("We haven't prompted user for input yet")
-      },
+      }
       Ok(RunOutcome::Finish(message)) => {
         Ok((i64::MAX, UssdView::UssdViewInfoView(UssdViewInfoView { message: message.0, r_type: "InfoView".into() })))
-      },
+      }
       Err(_) => Err(()),
     }
-    .map(|(id, ussd_view)| {
-      PostUssdsessioneventNewResponse::Status200_SessionStartHasBeenSuccessfullyHandledByTheDeveloper(
-        UssdSessionCommand {
-          action: UssdActionOneOf2(models::UssdActionOneOf2 {
-            show_view: ShowView { r_type: "ShowView".into(), view: ussd_view },
-          }),
-          context_data: id.to_string(),
-          session_tag: None,
-        },
-      )
-    })
+      .map(|(id, ussd_view)| {
+        PostUssdsessioneventNewResponse::Status200_SessionStartHasBeenSuccessfullyHandledByTheDeveloper(
+          UssdSessionCommand {
+            action: UssdActionOneOf2(models::UssdActionOneOf2 {
+              show_view: ShowView { r_type: "ShowView".into(), view: ussd_view },
+            }),
+            context_data: id.to_string(),
+            session_tag: None,
+          },
+        )
+      })
   }
 }
 
 #[cfg(test)]
-mod tests {}
+mod tests {
+  use crate::QriosUssdApiService;
+  use frunk_core::hlist::HNil;
+  use qrios_api_process_entry::DialedSessionEntry;
+  use type_process_builder::builder::FinalizedProcess;
+  use type_process_builder::builder::{FlowingProcess, Message};
+  use type_process_builder::step::Final;
+
+  #[tokio::test]
+  async fn test_split() {
+    struct NoOpFinalStep;
+    impl Final for NoOpFinalStep {
+      type Consumes = HNil;
+      async fn handle(&self, consumes: Self::Consumes) -> anyhow::Result<Message> {
+        Ok(Message("Good bye".into()))
+      }
+    }
+
+    let process = DialedSessionEntry.end(NoOpFinalStep).build("no_op_test", 0);
+
+    let service = QriosUssdApiService::new(process).await.expect("Failed to create QriosUssdApiService");
+
+    // let run_result = process
+    //   .resume_run(
+    //     session_init_value(),
+    //     PreviousRunYieldedAt(StepIndex::MIN),
+    //     "*123#".to_string(),
+    //     FailedInputValidationAttempts(0),
+    //   )
+    //   .await;
+    // assert_eq!(run_result.unwrap(), RunOutcome::Finish(Message("Good bye".into())));
+  }
+}
