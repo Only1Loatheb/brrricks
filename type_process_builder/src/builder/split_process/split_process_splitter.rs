@@ -2,22 +2,25 @@ use crate::builder::{
   FlowingProcess, IntermediateFinalizedSplitOutcome, IntermediateFinalizedSplitResult, IntermediateRunOutcome,
   ParamList, ParamUID, PreviousRunYieldedAt, SessionContext, SplitProcess, StepIndex,
 };
-use crate::param_list::clone_just::CloneJust;
+use crate::param_list::borrow_just::BorrowJust;
 use crate::param_list::concat::Concat;
 use crate::step::{FailedInputValidationAttempts, Splitter};
 use frunk_core::coproduct::Coproduct;
+use frunk_core::traits::ToRef;
 use std::marker::PhantomData;
 
 pub struct SplitProcessSplitter<
+  'a,
   Tag: Send + Sync,
   ProcessBefore: FlowingProcess,
   SplitterStepConsumes: ParamList,
   SplitterProducesForFirstCase: ParamList,
   SplitterProducesForOtherCases,
   SplitterStep: Splitter<
-      Consumes = SplitterStepConsumes,
-      Produces = Coproduct<(Tag, SplitterProducesForFirstCase), SplitterProducesForOtherCases>,
-    >,
+    'a,
+    Consumes=SplitterStepConsumes,
+    Produces=Coproduct<(Tag, SplitterProducesForFirstCase), SplitterProducesForOtherCases>,
+  >,
   ProcessBeforeProducesToSplitterStepConsumesIndices,
 > {
   pub process_before: ProcessBefore,
@@ -27,29 +30,31 @@ pub struct SplitProcessSplitter<
 }
 
 impl<
+  'a,
   Tag: Send + Sync,
   ProcessBefore: FlowingProcess,
-  SplitterStepConsumes: ParamList,
+  SplitterStepConsumes: ParamList + ToRef<'a>,
   SplitterProducesForFirstCase: ParamList + Concat<ProcessBefore::Produces>,
   SplitterProducesForOtherCases: Send + Sync,
   SplitterStep: Splitter<
-      Consumes = SplitterStepConsumes,
-      Produces = Coproduct<(Tag, SplitterProducesForFirstCase), SplitterProducesForOtherCases>,
-    >,
+    'a,
+    Consumes=SplitterStepConsumes,
+    Produces=Coproduct<(Tag, SplitterProducesForFirstCase), SplitterProducesForOtherCases>,
+  >,
   ProcessBeforeProducesToSplitterStepConsumesIndices: Sync,
 > SplitProcess<SplitterProducesForOtherCases>
-  for SplitProcessSplitter<
-    Tag,
-    ProcessBefore,
-    SplitterStepConsumes,
-    SplitterProducesForFirstCase,
-    SplitterProducesForOtherCases,
-    SplitterStep,
-    ProcessBeforeProducesToSplitterStepConsumesIndices,
-  >
+for SplitProcessSplitter<
+  'a,
+  Tag,
+  ProcessBefore,
+  SplitterStepConsumes,
+  SplitterProducesForFirstCase,
+  SplitterProducesForOtherCases,
+  SplitterStep,
+  ProcessBeforeProducesToSplitterStepConsumesIndices,
+>
 where
-  for<'a> &'a ProcessBefore::Produces:
-    CloneJust<SplitterStepConsumes, ProcessBeforeProducesToSplitterStepConsumesIndices>,
+  ProcessBefore::Produces: BorrowJust<'a, SplitterStepConsumes, ProcessBeforeProducesToSplitterStepConsumesIndices>,
 {
   type ProcessBeforeSplitProduces = ProcessBefore::Produces;
   type SplitterProducesForFirstCase = SplitterProducesForFirstCase;
@@ -73,7 +78,7 @@ where
       match process_before_output {
         IntermediateRunOutcome::Continue(process_before_split_produced) => {
           self.continue_run(process_before_split_produced).await
-        },
+        }
         IntermediateRunOutcome::Yield(a, b, c) => Ok(IntermediateFinalizedSplitOutcome::Yield(a, b, c)),
         IntermediateRunOutcome::Finish(a) => Ok(IntermediateFinalizedSplitOutcome::Finish(a)),
         IntermediateRunOutcome::RetryUserInput(a) => Ok(IntermediateFinalizedSplitOutcome::RetryUserInput(a)),
@@ -91,7 +96,7 @@ where
     Self::ProcessBeforeSplitProduces,
     Coproduct<Self::SplitterProducesForFirstCase, SplitterProducesForOtherCases>,
   > {
-    let splitter_step_consumes = process_before_split_produced.clone_just();
+    let splitter_step_consumes = process_before_split_produced.borrow_just();
     let splitter_produces_to_other_cases = match self.splitter.handle(splitter_step_consumes).await? {
       Coproduct::Inl(a) => Coproduct::Inl(a.1),
       Coproduct::Inr(b) => Coproduct::Inr(b),
