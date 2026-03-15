@@ -15,3 +15,6 @@ http = "1.0"
 headers = "0.4"
 axum-extra = "0.12"
 serde-value = "0.7"
+
+[dev-dependencies]
+qrios_api_reqwest_client = { path = "../qrios_api_reqwest_client" }

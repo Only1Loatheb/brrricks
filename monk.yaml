@@ -28,4 +28,7 @@ pre-push:
         exit 1
       fi
     - cargo clippy --all-targets --all-features -- -D warnings -W clippy::all
-    - cargo llvm-cov --fail-under-regions 27 --fail-under-functions 38 --fail-under-lines 30 --workspace --exclude qrios_api_axum_server
+    - |
+      cargo llvm-cov \
+      --fail-under-regions 27 --fail-under-functions 38 --fail-under-lines 30 \
+      --workspace --exclude qrios_api_axum_server --exclude qrios_api_reqwest_client

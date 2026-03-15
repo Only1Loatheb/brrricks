@@ -195,3 +195,6 @@ impl<Process: FinalizedProcess + Sync> qrios_api_axum_server::apis::developers_a
     })
   }
 }
+
+#[cfg(test)]
+mod tests {}

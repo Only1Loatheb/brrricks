@@ -1,11 +1,12 @@
 use std::env;
 use std::process::Command;
 
+const SWAGGER_FILE_NAME: &str = "qrios-ussd-api-swagger.json";
 pub fn main() {
-  let project_dir = env::current_dir().expect("failed to get current dir");
-  let project_dir = project_dir.parent().expect("We are in qrios_api_process_runner").to_str().expect("non-utf8 path");
-  println!("cargo:rerun-if-changed={project_dir}/qrios-ussd-api-swagger.json");
-
+  let current_dir = env::current_dir().expect("failed to get current dir");
+  let project_dir = current_dir.parent().expect("We are in qrios_api_process_runner").to_str().expect("non-utf8 path");
+  let swagger_path = format!("{project_dir}/{SWAGGER_FILE_NAME}");
+  println!("cargo:rerun-if-changed={swagger_path}");
   let uid = String::from_utf8(Command::new("id").arg("-u").output().unwrap().stdout).unwrap().trim().to_string();
   let gid = String::from_utf8(Command::new("id").arg("-g").output().unwrap().stdout).unwrap().trim().to_string();
   let status = Command::new("docker")
@@ -19,7 +20,7 @@ pub fn main() {
       "openapitools/openapi-generator-cli:v7.20.0",
       "generate",
       "-i",
-      "/local/qrios-ussd-api-swagger.json",
+      &format!("/local/{SWAGGER_FILE_NAME}"),
       "-g",
       "rust-axum",
       "-o",
