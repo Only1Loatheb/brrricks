@@ -2,11 +2,11 @@ mod session_store;
 
 use crate::session_store::*;
 use async_trait::async_trait;
+use qrios_api_axum_server::apis::ErrorHandler;
 use qrios_api_axum_server::apis::developers_app_endpoints::{
   PostUssdsessioneventAbortResponse, PostUssdsessioneventCloseResponse, PostUssdsessioneventContinueResponse,
   PostUssdsessioneventNewResponse,
 };
-use qrios_api_axum_server::apis::ErrorHandler;
 use qrios_api_axum_server::models;
 use qrios_api_axum_server::models::UssdAction::UssdActionOneOf2;
 use qrios_api_axum_server::models::{
@@ -45,7 +45,7 @@ impl<Process: FinalizedProcess> ErrorHandler<()> for QriosUssdApiService<Process
 #[allow(unused_variables)]
 #[async_trait]
 impl<Process: FinalizedProcess + Sync> qrios_api_axum_server::apis::developers_app_endpoints::DevelopersAppEndpoints
-for QriosUssdApiService<Process>
+  for QriosUssdApiService<Process>
 {
   /// I guess we could delete by [AbortSession] session_id
   async fn post_ussdsessionevent_abort(
@@ -108,34 +108,34 @@ for QriosUssdApiService<Process>
           FailedInputValidationAttempts(0),
           &*new_params_to_store,
         )
-          .await
-          .map_err(|_| ())?;
+        .await
+        .map_err(|_| ())?;
         Ok(UssdView::UssdViewInputView(UssdViewInputView { message: message.0, r_type: "InputView".into() }))
-      }
+      },
       Ok(RunOutcome::RetryUserInput(message)) => {
         increment_failed_input_validation_attempts(&self.pool, &self.process, session_id).await.map_err(|_| ())?;
         Ok(UssdView::UssdViewInputView(UssdViewInputView { message: message.0, r_type: "InputView".into() }))
-      }
+      },
       Ok(RunOutcome::Finish(message)) => {
         delete_session_context(&self.pool, &self.process, session_id).await.map_err(|_| ())?;
         Ok(UssdView::UssdViewInfoView(UssdViewInfoView { message: message.0, r_type: "InfoView".into() }))
-      }
+      },
       Err(_) => {
         delete_session_context(&self.pool, &self.process, session_id).await.map_err(|_| ())?;
         Err(())
-      }
+      },
     }
-      .map(|ussd_view| {
-        PostUssdsessioneventContinueResponse::Status200_SessionContinuationHasBeenSuccessfullyHandledByTheDeveloper(
-          UssdSessionCommand {
-            action: UssdActionOneOf2(models::UssdActionOneOf2 {
-              show_view: ShowView { r_type: "ShowView".into(), view: ussd_view },
-            }),
-            context_data: session_id.to_string(),
-            session_tag: None,
-          },
-        )
-      })
+    .map(|ussd_view| {
+      PostUssdsessioneventContinueResponse::Status200_SessionContinuationHasBeenSuccessfullyHandledByTheDeveloper(
+        UssdSessionCommand {
+          action: UssdActionOneOf2(models::UssdActionOneOf2 {
+            show_view: ShowView { r_type: "ShowView".into(), view: ussd_view },
+          }),
+          context_data: session_id.to_string(),
+          session_tag: None,
+        },
+      )
+    })
   }
 
   async fn post_ussdsessionevent_new(
@@ -170,29 +170,29 @@ for QriosUssdApiService<Process>
           FailedInputValidationAttempts(0),
           &*session_context,
         )
-          .await
-          .map_err(|_| ())?;
+        .await
+        .map_err(|_| ())?;
         Ok((id, UssdView::UssdViewInputView(UssdViewInputView { message: message.0, r_type: "InputView".into() })))
-      }
+      },
       Ok(RunOutcome::RetryUserInput(message)) => {
         unreachable!("We haven't prompted user for input yet")
-      }
+      },
       Ok(RunOutcome::Finish(message)) => {
         Ok((i64::MAX, UssdView::UssdViewInfoView(UssdViewInfoView { message: message.0, r_type: "InfoView".into() })))
-      }
+      },
       Err(_) => Err(()),
     }
-      .map(|(id, ussd_view)| {
-        PostUssdsessioneventNewResponse::Status200_SessionStartHasBeenSuccessfullyHandledByTheDeveloper(
-          UssdSessionCommand {
-            action: UssdActionOneOf2(models::UssdActionOneOf2 {
-              show_view: ShowView { r_type: "ShowView".into(), view: ussd_view },
-            }),
-            context_data: id.to_string(),
-            session_tag: None,
-          },
-        )
-      })
+    .map(|(id, ussd_view)| {
+      PostUssdsessioneventNewResponse::Status200_SessionStartHasBeenSuccessfullyHandledByTheDeveloper(
+        UssdSessionCommand {
+          action: UssdActionOneOf2(models::UssdActionOneOf2 {
+            show_view: ShowView { r_type: "ShowView".into(), view: ussd_view },
+          }),
+          context_data: id.to_string(),
+          session_tag: None,
+        },
+      )
+    })
   }
 }
 
@@ -201,6 +201,8 @@ mod tests {
   use crate::QriosUssdApiService;
   use frunk_core::hlist::HNil;
   use qrios_api_process_entry::DialedSessionEntry;
+  use qrios_api_reqwest_client::Client;
+  use qrios_api_reqwest_client::types::*;
   use sqlx::postgres::PgPoolOptions;
   use std::sync::Arc;
   use tokio::net::TcpListener;
@@ -223,7 +225,9 @@ mod tests {
 
     let pool = PgPoolOptions::new()
       .max_connections(5)
-      .connect("postgres://postgres:password@localhost/test").await.expect("Failed to connect to PostgreSQL server");
+      .connect("postgres://postgres:password@localhost/test")
+      .await
+      .expect("Failed to connect to PostgreSQL server");
 
     let service = QriosUssdApiService::new(process, pool).await.expect("Failed to create QriosUssdApiService");
     tracing_subscriber::fmt::init();
@@ -232,26 +236,37 @@ mod tests {
     // let app = app.layer(...);
     let listener = TcpListener::bind("127.0.0.1:0").await.expect("Failed to bind random port");
     let addr = listener.local_addr().expect("Failed to get server local address");
-    axum::serve(listener, app)
-      .with_graceful_shutdown(shutdown_signal())
+    axum::serve(listener, app).with_graceful_shutdown(shutdown_signal()).await.expect("Failed to start server");
+
+    let resp = Client::new(format!("http://{addr}").as_str())
+      .post_ussdsessionevent_new(
+        None,
+        &UssdSessionEventNewSession {
+          app_id: "val".into(),
+          client_id: "val".into(),
+          input: UssdSessionEventNewSessionSessionInput::Dial {
+            0: NewSessionSessionInputDial {
+              shortcode_string: "*425*001*123#".to_string(),
+              type_: NewSessionSessionInputDialType::Dial,
+            },
+          },
+          msisdn: "2341234567890".into(),
+          operator: UssdSessionEventNewSessionOperator::Mtn,
+          session_id: "val".into(),
+        },
+      )
       .await
-      .expect("Failed to start server");
-    // let run_result = process
-    //   .resume_run(
-    //     session_init_value(),
-    //     PreviousRunYieldedAt(StepIndex::MIN),
-    //     "*123#".to_string(),
-    //     FailedInputValidationAttempts(0),
-    //   )
-    //   .await;
-    // assert_eq!(run_result.unwrap(), RunOutcome::Finish(Message("Good bye".into())));
+      .expect("Failed to get a response from post_ussdsessionevent_new");
+    assert!(matches!(
+      resp.action.clone(),
+      UssdAction::Variant4{show_view: ShowView{view: UssdView::InfoView(UssdViewInfoView{message, ..}), ..}} if
+      message == "Good bye"
+    ))
   }
 
   async fn shutdown_signal() {
     let ctrl_c = async {
-      signal::ctrl_c()
-        .await
-        .expect("failed to install Ctrl+C handler");
+      signal::ctrl_c().await.expect("failed to install Ctrl+C handler");
     };
 
     #[cfg(unix)]

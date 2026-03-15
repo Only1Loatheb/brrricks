@@ -236,7 +236,7 @@ mod tests {
         FailedInputValidationAttempts(0),
       )
       .await;
-    assert!(matches!(run_result.unwrap(), RunOutcome::Yield(message, ..) if message.0 == "Enter a number"));
+    assert!(matches!(run_result, Ok(RunOutcome::Yield(message, ..)) if message.0 == "Enter a number"));
   }
 
   #[tokio::test]
