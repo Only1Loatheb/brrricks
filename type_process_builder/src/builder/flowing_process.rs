@@ -10,12 +10,13 @@ use crate::builder::operation_flowing_process::OperationFlowingProcess;
 use crate::builder::split_process_form_splitter::SplitProcessFormSplitter;
 use crate::builder::split_process_splitter::SplitProcessSplitter;
 use crate::builder::*;
-use crate::param_list::ParamList;
 use crate::param_list::clone_just::CloneJust;
 use crate::param_list::concat::Concat;
 use crate::param_list::transform::TransformTo;
+use crate::param_list::ParamList;
 use crate::step::{FailedInputValidationAttempts, Final, Form, FormSplitter, Operation, Splitter};
 use frunk_core::coproduct::Coproduct;
+use frunk_core::traits::ToRef;
 use std::future::Future;
 
 /// Param value overlap is prevented by making reading them cumbersome <https://github.com/lloydmeta/frunk/issues/187>
@@ -33,27 +34,27 @@ pub trait FlowingProcess: Sized + Sync {
     previous_run_yielded_at: PreviousRunYieldedAt,
     user_input: String,
     failed_input_validation_attempts: FailedInputValidationAttempts,
-  ) -> impl Future<Output = IntermediateRunResult<Self::Produces>> + Send;
+  ) -> impl Future<Output=IntermediateRunResult<Self::Produces>> + Send;
 
   fn continue_run(
     &self,
     process_before_produces: Self::ProcessBeforeProduces,
-  ) -> impl Future<Output = IntermediateRunResult<Self::Produces>> + Send;
+  ) -> impl Future<Output=IntermediateRunResult<Self::Produces>> + Send;
 
   fn then<
     OperationConsumes: ParamList,
     OperationProduces: ParamList + Concat<Self::Produces>,
-    OperationStep: Operation<Consumes = OperationConsumes, Produces = OperationProduces>,
+    OperationStep: Operation<Consumes=OperationConsumes, Produces=OperationProduces>,
     ProcessBeforeProducesToLastStepConsumesIndices: Sync,
   >(
     self,
     step: OperationStep,
   ) -> impl FlowingProcess<
-    ProcessBeforeProduces = Self::Produces,
-    Produces = <OperationProduces as Concat<Self::Produces>>::Concatenated,
+    ProcessBeforeProduces=Self::Produces,
+    Produces=<OperationProduces as Concat<Self::Produces>>::Concatenated,
   >
   where
-    for<'a> &'a Self::Produces: CloneJust<OperationConsumes, ProcessBeforeProducesToLastStepConsumesIndices>,
+      for<'a> &'a Self::Produces: CloneJust<OperationConsumes, ProcessBeforeProducesToLastStepConsumesIndices>,
   {
     OperationFlowingProcess {
       process_before: self,
@@ -68,22 +69,22 @@ pub trait FlowingProcess: Sized + Sync {
     ValidateInputConsumes: ParamList,
     FormProduces: ParamList + Concat<Self::Produces>,
     FormStep: Form<
-        CreateFormConsumes = CreateFormConsumes,
-        ValidateInputConsumes = ValidateInputConsumes,
-        Produces = FormProduces,
-      >,
+      CreateFormConsumes=CreateFormConsumes,
+      ValidateInputConsumes=ValidateInputConsumes,
+      Produces=FormProduces,
+    >,
     ProcessBeforeProducesToCreateFormConsumesIndices: Sync,
     ProcessBeforeProducesToValidateInputConsumesIndices: Sync,
   >(
     self,
     step: FormStep,
   ) -> impl FlowingProcess<
-    ProcessBeforeProduces = Self::Produces,
-    Produces = <FormProduces as Concat<Self::Produces>>::Concatenated,
+    ProcessBeforeProduces=Self::Produces,
+    Produces=<FormProduces as Concat<Self::Produces>>::Concatenated,
   >
   where
-    for<'a> &'a Self::Produces: CloneJust<CreateFormConsumes, ProcessBeforeProducesToCreateFormConsumesIndices>,
-    for<'a> &'a Self::Produces: CloneJust<ValidateInputConsumes, ProcessBeforeProducesToValidateInputConsumesIndices>,
+      for<'a> &'a Self::Produces: CloneJust<CreateFormConsumes, ProcessBeforeProducesToCreateFormConsumesIndices>,
+      for<'a> &'a Self::Produces: CloneJust<ValidateInputConsumes, ProcessBeforeProducesToValidateInputConsumesIndices>,
   {
     FormFlowingProcess {
       process_before: self,
@@ -96,26 +97,27 @@ pub trait FlowingProcess: Sized + Sync {
   fn split<
     'a,
     Tag: Send + Sync,
-    SplitterStepConsumes: ParamList,
+    SplitterStepConsumes: ParamList + ToRef<'a>,
     SplitterProducesForFirstCase: ParamList + Concat<Self::Produces>,
     SplitterProducesForOtherCases: Send + Sync,
     SplitterStep: Splitter<
-        'a,
-        Consumes = SplitterStepConsumes,
-        Produces = Coproduct<(Tag, SplitterProducesForFirstCase), SplitterProducesForOtherCases>,
-      >,
+      'a,
+      Consumes=SplitterStepConsumes,
+      Produces=Coproduct<(Tag, SplitterProducesForFirstCase), SplitterProducesForOtherCases>,
+    >,
     ProcessBeforeProducesToSplitterStepConsumesIndices: Sync,
   >(
     self,
     step: SplitterStep,
   ) -> impl SplitProcess<
     SplitterProducesForOtherCases,
-    ProcessBeforeSplitProduces = Self::Produces,
-    SplitterProducesForFirstCase = SplitterProducesForFirstCase,
-    SplitterTagForFirstCase = Tag,
+    ProcessBeforeSplitProduces=Self::Produces,
+    SplitterProducesForFirstCase=SplitterProducesForFirstCase,
+    SplitterTagForFirstCase=Tag,
   >
   where
-    for<'b> &'b Self::Produces: CloneJust<SplitterStepConsumes, ProcessBeforeProducesToSplitterStepConsumesIndices>,
+    Self::Produces: ToRef<'a>,
+    <Self::Produces as ToRef<'a>>::Output: TransformTo<<SplitterStepConsumes as ToRef<'a>>::Output, ProcessBeforeProducesToSplitterStepConsumesIndices>,
   {
     SplitProcessSplitter::<
       Tag,
@@ -140,10 +142,10 @@ pub trait FlowingProcess: Sized + Sync {
     SplitterProducesForFirstCase: ParamList + Concat<Self::Produces>,
     SplitterProducesForOtherCases: Send + Sync,
     SplitterStep: FormSplitter<
-        CreateFormConsumes = CreateFormConsumes,
-        ValidateInputConsumes = ValidateInputConsumes,
-        Produces = Coproduct<(Tag, SplitterProducesForFirstCase), SplitterProducesForOtherCases>,
-      >,
+      CreateFormConsumes=CreateFormConsumes,
+      ValidateInputConsumes=ValidateInputConsumes,
+      Produces=Coproduct<(Tag, SplitterProducesForFirstCase), SplitterProducesForOtherCases>,
+    >,
     ProcessBeforeProducesToCreateFormConsumesIndices: Sync,
     ProcessBeforeProducesToValidateInputConsumesIndices: Sync,
   >(
@@ -151,13 +153,13 @@ pub trait FlowingProcess: Sized + Sync {
     step: SplitterStep,
   ) -> impl SplitProcess<
     SplitterProducesForOtherCases,
-    ProcessBeforeSplitProduces = Self::Produces,
-    SplitterProducesForFirstCase = SplitterProducesForFirstCase,
-    SplitterTagForFirstCase = Tag,
+    ProcessBeforeSplitProduces=Self::Produces,
+    SplitterProducesForFirstCase=SplitterProducesForFirstCase,
+    SplitterTagForFirstCase=Tag,
   >
   where
-    for<'a> &'a Self::Produces: CloneJust<CreateFormConsumes, ProcessBeforeProducesToCreateFormConsumesIndices>,
-    for<'a> &'a Self::Produces: CloneJust<ValidateInputConsumes, ProcessBeforeProducesToValidateInputConsumesIndices>,
+      for<'a> &'a Self::Produces: CloneJust<CreateFormConsumes, ProcessBeforeProducesToCreateFormConsumesIndices>,
+      for<'a> &'a Self::Produces: CloneJust<ValidateInputConsumes, ProcessBeforeProducesToValidateInputConsumesIndices>,
   {
     SplitProcessFormSplitter::<
       Tag,
@@ -179,12 +181,12 @@ pub trait FlowingProcess: Sized + Sync {
 
   fn end<
     FinalConsumes: ParamList,
-    FinalStep: Final<Consumes = FinalConsumes>,
+    FinalStep: Final<Consumes=FinalConsumes>,
     ProcessBeforeProducesToLastStepConsumesIndices: Sync,
   >(
     self,
     step: FinalStep,
-  ) -> impl FinalizedProcess<ProcessBeforeProduces = Self::Produces>
+  ) -> impl FinalizedProcess<ProcessBeforeProduces=Self::Produces>
   where
     Self::Produces: TransformTo<FinalConsumes, ProcessBeforeProducesToLastStepConsumesIndices>,
   {

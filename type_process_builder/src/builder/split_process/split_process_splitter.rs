@@ -1,8 +1,8 @@
+use crate::builder::transform::TransformTo;
 use crate::builder::{
   FlowingProcess, IntermediateFinalizedSplitOutcome, IntermediateFinalizedSplitResult, IntermediateRunOutcome,
   ParamList, ParamUID, PreviousRunYieldedAt, SessionContext, SplitProcess, StepIndex,
 };
-use crate::param_list::borrow_just::BorrowJust;
 use crate::param_list::concat::Concat;
 use crate::step::{FailedInputValidationAttempts, Splitter};
 use frunk_core::coproduct::Coproduct;
@@ -54,7 +54,8 @@ for SplitProcessSplitter<
   ProcessBeforeProducesToSplitterStepConsumesIndices,
 >
 where
-  ProcessBefore::Produces: BorrowJust<'a, SplitterStepConsumes, ProcessBeforeProducesToSplitterStepConsumesIndices>,
+  ProcessBefore::Produces: ToRef<'a>,
+  <ProcessBefore::Produces as ToRef<'a>>::Output: TransformTo<<SplitterStepConsumes as ToRef<'a>>::Output, ProcessBeforeProducesToSplitterStepConsumesIndices>,
 {
   type ProcessBeforeSplitProduces = ProcessBefore::Produces;
   type SplitterProducesForFirstCase = SplitterProducesForFirstCase;
@@ -95,8 +96,10 @@ where
   ) -> IntermediateFinalizedSplitResult<
     Self::ProcessBeforeSplitProduces,
     Coproduct<Self::SplitterProducesForFirstCase, SplitterProducesForOtherCases>,
-  > {
-    let splitter_step_consumes: <SplitterStep::Consumes as ToRef<'a>>::Output = process_before_split_produced.borrow_just();
+  > where <ProcessBefore as FlowingProcess>::Produces: 'a
+  {
+    let x: &'a ProcessBefore::Produces = &process_before_split_produced;
+    let splitter_step_consumes = x.to_ref().transform();
     let splitter_produces_to_other_cases = match self.splitter.handle(splitter_step_consumes).await? {
       Coproduct::Inl(a) => Coproduct::Inl(a.1),
       Coproduct::Inr(b) => Coproduct::Inr(b),
