@@ -17,13 +17,13 @@ pub trait Entry<RawConsume: DeserializeOwned>: Sync {
     &self,
     consumes: Vec<(ParamUID, Value)>,
     shortcode_string: String,
-  ) -> impl Future<Output = anyhow::Result<Self::Produces>> + Send;
+  ) -> impl Future<Output=anyhow::Result<Self::Produces>> + Send;
 }
 
 pub trait Operation: Sync {
   type Consumes: ParamList;
   type Produces: ParamList;
-  fn handle(&self, consumes: Self::Consumes) -> impl Future<Output = anyhow::Result<Self::Produces>> + Send;
+  fn handle(&self, consumes: Self::Consumes) -> impl Future<Output=anyhow::Result<Self::Produces>> + Send;
 }
 
 #[derive(PartialEq, Debug, Eq, Clone, PartialOrd, Ord, Hash)]
@@ -40,30 +40,30 @@ pub trait Form: Sync {
   type CreateFormConsumes: ParamList;
   type ValidateInputConsumes: ParamList;
   type Produces: ParamList;
-  fn create_form(&self, consumes: Self::CreateFormConsumes) -> impl Future<Output = anyhow::Result<Message>> + Send;
+  fn create_form(&self, consumes: Self::CreateFormConsumes) -> impl Future<Output=anyhow::Result<Message>> + Send;
   fn handle_input(
     &self,
     consumes: Self::ValidateInputConsumes,
     user_input: String,
     failed_input_validation_attempts: FailedInputValidationAttempts,
-  ) -> impl Future<Output = anyhow::Result<InputValidation<Self::Produces>>> + Send;
+  ) -> impl Future<Output=anyhow::Result<InputValidation<Self::Produces>>> + Send;
 }
 
 pub trait SplitterOutput: Send + Sync {}
 impl<Tag: Send + Sync, ThisCase: ParamList, OtherCase: Send + Sync> SplitterOutput
-  for Coproduct<(Tag, ThisCase), OtherCase>
-{
-}
+for Coproduct<(Tag, ThisCase), OtherCase>
+{}
 
 /// Works with at least two cases.
 /// Just produce link form with a single link using Form step
-pub trait Splitter<'a>: Sync {
-  type Consumes: ParamList + ToRef<'a>;
+pub trait Splitter: Sync {
+  type Consumes: ParamList;
   type Produces: SplitterOutput;
-  fn handle(
+  fn handle<'a>(
     &self,
     consumes: <Self::Consumes as ToRef<'a>>::Output,
-  ) -> impl Future<Output = anyhow::Result<Self::Produces>> + Send;
+  ) -> impl Future<Output=anyhow::Result<Self::Produces>> + Send
+  where <Self as Splitter>::Consumes: ToRef<'a>;
 }
 
 /// Works with at least two cases.
@@ -72,16 +72,16 @@ pub trait FormSplitter: Sync {
   type CreateFormConsumes: ParamList;
   type ValidateInputConsumes: ParamList;
   type Produces: SplitterOutput;
-  fn create_form(&self, consumes: Self::CreateFormConsumes) -> impl Future<Output = anyhow::Result<Message>> + Send;
+  fn create_form(&self, consumes: Self::CreateFormConsumes) -> impl Future<Output=anyhow::Result<Message>> + Send;
   fn handle_input(
     &self,
     consumes: Self::ValidateInputConsumes,
     user_input: String,
     failed_input_validation_attempts: FailedInputValidationAttempts,
-  ) -> impl Future<Output = anyhow::Result<InputValidation<Self::Produces>>> + Send;
+  ) -> impl Future<Output=anyhow::Result<InputValidation<Self::Produces>>> + Send;
 }
 
 pub trait Final: Sync {
   type Consumes: ParamList;
-  fn handle(&self, consumes: Self::Consumes) -> impl Future<Output = anyhow::Result<Message>> + Send;
+  fn handle(&self, consumes: Self::Consumes) -> impl Future<Output=anyhow::Result<Message>> + Send;
 }

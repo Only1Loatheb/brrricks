@@ -10,14 +10,12 @@ use frunk_core::traits::ToRef;
 use std::marker::PhantomData;
 
 pub struct SplitProcessSplitter<
-  'a,
   Tag: Send + Sync,
   ProcessBefore: FlowingProcess,
   SplitterStepConsumes: ParamList,
   SplitterProducesForFirstCase: ParamList,
   SplitterProducesForOtherCases,
   SplitterStep: Splitter<
-    'a,
     Consumes=SplitterStepConsumes,
     Produces=Coproduct<(Tag, SplitterProducesForFirstCase), SplitterProducesForOtherCases>,
   >,
@@ -30,21 +28,18 @@ pub struct SplitProcessSplitter<
 }
 
 impl<
-  'a,
   Tag: Send + Sync,
   ProcessBefore: FlowingProcess,
-  SplitterStepConsumes: ParamList + ToRef<'a>,
+  SplitterStepConsumes: ParamList,
   SplitterProducesForFirstCase: ParamList + Concat<ProcessBefore::Produces>,
   SplitterProducesForOtherCases: Send + Sync,
   SplitterStep: Splitter<
-    'a,
     Consumes=SplitterStepConsumes,
     Produces=Coproduct<(Tag, SplitterProducesForFirstCase), SplitterProducesForOtherCases>,
   >,
   ProcessBeforeProducesToSplitterStepConsumesIndices: Sync,
 > SplitProcess<SplitterProducesForOtherCases>
 for SplitProcessSplitter<
-  'a,
   Tag,
   ProcessBefore,
   SplitterStepConsumes,
@@ -53,9 +48,6 @@ for SplitProcessSplitter<
   SplitterStep,
   ProcessBeforeProducesToSplitterStepConsumesIndices,
 >
-where
-  ProcessBefore::Produces: ToRef<'a>,
-  <ProcessBefore::Produces as ToRef<'a>>::Output: TransformTo<<SplitterStepConsumes as ToRef<'a>>::Output, ProcessBeforeProducesToSplitterStepConsumesIndices>,
 {
   type ProcessBeforeSplitProduces = ProcessBefore::Produces;
   type SplitterProducesForFirstCase = SplitterProducesForFirstCase;
@@ -96,14 +88,9 @@ where
   ) -> IntermediateFinalizedSplitResult<
     Self::ProcessBeforeSplitProduces,
     Coproduct<Self::SplitterProducesForFirstCase, SplitterProducesForOtherCases>,
-  > where <ProcessBefore as FlowingProcess>::Produces: 'a
+  >
   {
-    let x: &'a ProcessBefore::Produces = &process_before_split_produced;
-    let splitter_step_consumes = x.to_ref().transform();
-    let splitter_produces_to_other_cases = match self.splitter.handle(splitter_step_consumes).await? {
-      Coproduct::Inl(a) => Coproduct::Inl(a.1),
-      Coproduct::Inr(b) => Coproduct::Inr(b),
-    };
+    let splitter_produces_to_other_cases = self.aa(&process_before_split_produced).await?;
     Ok(IntermediateFinalizedSplitOutcome::GoToCase { process_before_split_produced, splitter_produces_to_other_cases })
   }
 
@@ -115,5 +102,43 @@ where
 
   fn all_param_uids(&self, acc: &mut Vec<ParamUID>) {
     self.process_before.all_param_uids(acc);
+  }
+}
+
+impl<Tag: Send + Sync,
+  ProcessBefore: FlowingProcess,
+  SplitterStepConsumes: ParamList,
+  SplitterProducesForFirstCase: ParamList + Concat<ProcessBefore::Produces>,
+  SplitterProducesForOtherCases: Send + Sync,
+  SplitterStep: Splitter<
+    Consumes=SplitterStepConsumes,
+    Produces=Coproduct<(Tag, SplitterProducesForFirstCase), SplitterProducesForOtherCases>,
+  >,
+  ProcessBeforeProducesToSplitterStepConsumesIndices: Sync
+> SplitProcessSplitter<
+  Tag,
+  ProcessBefore,
+  SplitterStepConsumes,
+  SplitterProducesForFirstCase,
+  SplitterProducesForOtherCases,
+  SplitterStep,
+  ProcessBeforeProducesToSplitterStepConsumesIndices
+> {
+  async fn aa<'a>(
+    &self,
+    process_before_split_produced: &<ProcessBefore as FlowingProcess>::Produces,
+  ) -> anyhow::Result<Coproduct<SplitterProducesForFirstCase, SplitterProducesForOtherCases>>
+  where
+    SplitterStepConsumes: ToRef<'a>,
+    ProcessBefore::Produces: ToRef<'a>,
+    <ProcessBefore::Produces as ToRef<'a>>::Output: TransformTo<<SplitterStepConsumes as ToRef<'a>>::Output, ProcessBeforeProducesToSplitterStepConsumesIndices>,
+    <ProcessBefore as FlowingProcess>::Produces: 'a,
+  {
+    let splitter_step_consumes = process_before_split_produced.to_ref().transform();
+    let splitter_produces_to_other_cases = match self.splitter.handle(splitter_step_consumes).await? {
+      Coproduct::Inl(a) => Coproduct::Inl(a.1),
+      Coproduct::Inr(b) => Coproduct::Inr(b),
+    };
+    Ok(splitter_produces_to_other_cases)
   }
 }

@@ -3,7 +3,6 @@ pub mod form_flowing_process;
 pub mod operation_flowing_process;
 pub mod subprocess;
 
-use crate::builder::borrow_just::BorrowJust;
 use crate::builder::finalized_process::{FinalizedProcess, FlowingFinalizedProcess};
 use crate::builder::form_flowing_process::FormFlowingProcess;
 use crate::builder::operation_flowing_process::OperationFlowingProcess;
@@ -101,7 +100,6 @@ pub trait FlowingProcess: Sized + Sync {
     SplitterProducesForFirstCase: ParamList + Concat<Self::Produces>,
     SplitterProducesForOtherCases: Send + Sync,
     SplitterStep: Splitter<
-      'a,
       Consumes=SplitterStepConsumes,
       Produces=Coproduct<(Tag, SplitterProducesForFirstCase), SplitterProducesForOtherCases>,
     >,

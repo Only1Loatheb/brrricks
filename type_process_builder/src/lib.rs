@@ -19,7 +19,8 @@ mod tests {
   use crate::step::{Form, Message};
   use anyhow::anyhow;
   use frunk_core::hlist::HNil;
-  use frunk_core::{Coprod, HList, hlist};
+  use frunk_core::traits::ToRef;
+  use frunk_core::{hlist, Coprod, HList};
   use serde::{Deserialize, Serialize};
   use serde_value::Value;
   use std::ops::Not;
@@ -135,9 +136,9 @@ mod tests {
   impl Splitter for SplitA {
     type Consumes = HNil;
     type Produces =
-      Coprod![(Case1, HList![Split1Param, CommonSplitParam]), (Case2, HList![Split2Param, CommonSplitParam])];
+    Coprod![(Case1, HList![Split1Param, CommonSplitParam]), (Case2, HList![Split2Param, CommonSplitParam])];
 
-    async fn handle(&self, _consumes: Self::Consumes) -> anyhow::Result<Self::Produces> {
+    async fn handle<'a>(&self, _consumes: <Self::Consumes as ToRef<'a>>::Output) -> anyhow::Result<Self::Produces> {
       Ok(Self::Produces::inject((Case1, hlist!(Split1Param, CommonSplitParam))))
     }
   }
@@ -276,16 +277,16 @@ mod tests {
           failed_attempts = FailedInputValidationAttempts(0);
 
           assert_eq!(msg.0, messages[messages_index])
-        },
+        }
         RunOutcome::RetryUserInput(msg) => {
           failed_attempts = FailedInputValidationAttempts(failed_attempts.0 + 1);
 
           assert_eq!(msg.0, messages[messages_index])
-        },
+        }
         RunOutcome::Finish(msg) => {
           assert_eq!(msg.0, messages[messages_index]);
           break;
-        },
+        }
       }
       messages_index += 1;
     }
