@@ -101,8 +101,9 @@ pub async fn get_session_context(
 
   let mut session_context = Vec::with_capacity(ordered_all_unique_param_uids.len());
   for idx_and_param_uid in ordered_all_unique_param_uids.iter().enumerate() {
-    let value: sqlx::types::Json<Value> = row.try_get(idx_and_param_uid.0 + 2)?;
-    session_context.push((idx_and_param_uid.1.clone(), value.0));
+    if let Ok(value) = row.try_get::<sqlx::types::Json<Value>, _>(idx_and_param_uid.0 + 2) {
+      session_context.push((idx_and_param_uid.1.clone(), value.0));
+    }
   }
 
   Ok((previous_run_yielded_at, failed_input_validation_attempts, session_context))
@@ -125,7 +126,7 @@ pub async fn delete_session_context<Process: FinalizedProcess>(
 fn table_name<Process: FinalizedProcess>(process: &RunnableProcess<Process>) -> String {
   let process_name = process.get_name();
   let process_version = process.get_version();
-  format!("session_store.{}_{}", process_name, process_version)
+  format!("session_store.{process_name}_{process_version}")
 }
 
 pub async fn increment_failed_input_validation_attempts<Process: FinalizedProcess>(
