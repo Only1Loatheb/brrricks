@@ -26,5 +26,7 @@ sequenceDiagram
     App ->> SessionStore: Fetch session data
     SessionStore --) App: Session data
     App ->> App: Process input
+    App ->> SessionStore: Delete session data
+    SessionStore --) App: Session deleted
     App --) Platform: Final USSD screen
     Platform --) User: Display USSD screen
