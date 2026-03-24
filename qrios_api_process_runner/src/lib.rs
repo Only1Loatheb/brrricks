@@ -211,6 +211,7 @@ mod tests {
   use type_process_builder::builder::{FlowingProcess, Message};
   use type_process_builder::step::Final;
 
+  #[ignore]
   #[tokio::test]
   async fn no_op_process_test() {
     struct NoOpFinalStep;

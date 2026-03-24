@@ -90,8 +90,8 @@ mod tests {
     type UID = U6;
   }
 
-  struct EntryA;
-  impl Entry<Value> for EntryA {
+  struct ExtractMsisdnOperatorAndShortcodeString;
+  impl Entry<Value> for ExtractMsisdnOperatorAndShortcodeString {
     type Produces = HList![EntryParam];
 
     async fn handle(
@@ -109,8 +109,8 @@ mod tests {
     }
   }
 
-  struct Operation1;
-  impl Operation for Operation1 {
+  struct ProduceCaseParam1;
+  impl Operation for ProduceCaseParam1 {
     type Consumes = HNil;
     type Produces = HList![Case1Param, CommonCaseParam];
 
@@ -119,8 +119,8 @@ mod tests {
     }
   }
 
-  struct Operation2;
-  impl Operation for Operation2 {
+  struct ProduceCaseParam2;
+  impl Operation for ProduceCaseParam2 {
     type Consumes = HNil;
     type Produces = HList![Case2Param, CommonCaseParam];
 
@@ -131,8 +131,8 @@ mod tests {
 
   pub struct Case1;
   pub struct Case2;
-  struct SplitA;
-  impl Splitter for SplitA {
+  struct SelectCase1;
+  impl Splitter for SelectCase1 {
     type Consumes = HNil;
     type Produces =
       Coprod![(Case1, HList![Split1Param, CommonSplitParam]), (Case2, HList![Split2Param, CommonSplitParam])];
@@ -142,8 +142,8 @@ mod tests {
     }
   }
 
-  struct FinalA;
-  impl Final for FinalA {
+  struct SayGoodByAndConsumeCommonParams;
+  impl Final for SayGoodByAndConsumeCommonParams {
     type Consumes = HList![EntryParam, CommonSplitParam, CommonCaseParam];
 
     async fn handle(&self, _consumes: Self::Consumes) -> anyhow::Result<Message> {
@@ -151,8 +151,8 @@ mod tests {
     }
   }
 
-  struct FormA;
-  impl Form for FormA {
+  struct CommonCaseParamNumberForm;
+  impl Form for CommonCaseParamNumberForm {
     type CreateFormConsumes = HNil;
     type ValidateInputConsumes = HNil;
     type Produces = HList![CommonCaseParam];
@@ -171,6 +171,49 @@ mod tests {
     }
   }
 
+  struct FinishAfterInput;
+  impl Form for FinishAfterInput {
+    type CreateFormConsumes = HNil;
+    type ValidateInputConsumes = HNil;
+    type Produces = HList![CommonCaseParam];
+
+    async fn create_form(&self, _consumes: Self::CreateFormConsumes) -> anyhow::Result<Message> {
+      Ok(Message("Last number in the process".into()))
+    }
+
+    async fn handle_input(
+      &self,
+      _consumes: Self::ValidateInputConsumes,
+      _user_input: String,
+      _failed_input_validation_attempts: FailedInputValidationAttempts,
+    ) -> anyhow::Result<InputValidation<Self::Produces>> {
+      Ok(InputValidation::Finish(Message("Always finnish".into())))
+    }
+  }
+
+  struct OneInputRetryForm;
+  impl Form for OneInputRetryForm {
+    type CreateFormConsumes = HNil;
+    type ValidateInputConsumes = HNil;
+    type Produces = HList![CommonCaseParam];
+
+    async fn create_form(&self, _consumes: Self::CreateFormConsumes) -> anyhow::Result<Message> {
+      Ok(Message("This will be discarded".into()))
+    }
+
+    async fn handle_input(
+      &self,
+      _consumes: Self::ValidateInputConsumes,
+      _user_input: String,
+      failed_input_validation_attempts: FailedInputValidationAttempts,
+    ) -> anyhow::Result<InputValidation<Self::Produces>> {
+      match failed_input_validation_attempts.0 {
+        0 => Ok(InputValidation::Retry(Message("This will be accepted".into()))),
+        _ => Ok(InputValidation::Successful(hlist![CommonCaseParam])),
+      }
+    }
+  }
+
   struct FinalNoConsumes;
   impl Final for FinalNoConsumes {
     type Consumes = HList![];
@@ -186,7 +229,7 @@ mod tests {
 
   #[tokio::test]
   async fn test_end() {
-    let process = EntryA.end(FinalNoConsumes).build("test_end", 0);
+    let process = ExtractMsisdnOperatorAndShortcodeString.end(FinalNoConsumes).build("", 0);
 
     let run_result = process
       .resume_run(
@@ -201,12 +244,12 @@ mod tests {
 
   #[tokio::test]
   async fn test_split() {
-    let process = EntryA
-      .split(SplitA)
-      .case_via(Case1, |x| x.then(Operation1))
-      .case_via(Case2, |x| x.then(Operation2))
-      .end(FinalA)
-      .build("test_split", 0);
+    let process = ExtractMsisdnOperatorAndShortcodeString
+      .split(SelectCase1)
+      .case_via(Case1, |x| x.then(ProduceCaseParam1))
+      .case_via(Case2, |x| x.then(ProduceCaseParam2))
+      .end(SayGoodByAndConsumeCommonParams)
+      .build("", 0);
 
     let run_result = process
       .resume_run(
@@ -220,40 +263,37 @@ mod tests {
   }
 
   #[tokio::test]
-  async fn test_yield() {
-    let process = EntryA
-      .split(SplitA)
-      .case_via(Case1, |x| x.show(FormA))
-      .case_via(Case2, |x| x.then(Operation2))
-      .end(FinalA)
-      .build("test_yield", 0);
+  async fn test_end_emitted_in_form_step() {
+    let process = ExtractMsisdnOperatorAndShortcodeString.show(FinishAfterInput).end(FinalNoConsumes).build("", 0);
+    let messages = ["*123#", "Last number in the process", "10", "Always finnish"];
+    test_process_producess_messages(process, messages).await;
+  }
 
-    let run_result = process
-      .resume_run(
-        session_init_value(),
-        PreviousRunYieldedAt(StepIndex::MIN),
-        "*123#".to_string(),
-        FailedInputValidationAttempts(0),
-      )
-      .await;
-    assert!(matches!(run_result, Ok(RunOutcome::Yield(message, ..)) if message.0 == "Enter a number"));
+  #[tokio::test]
+  async fn test_retry_emitted_in_form_step() {
+    let process = ExtractMsisdnOperatorAndShortcodeString.show(OneInputRetryForm).end(FinalNoConsumes).build("", 0);
+    let messages = ["*123#", "This will be discarded", "10", "This will be accepted", "20", "Empty good bye"];
+    test_process_producess_messages(process, messages).await;
   }
 
   #[tokio::test]
   async fn test_resume() {
-    let process = EntryA
-      .split(SplitA)
-      .case_via(Case1, |x| x.show(FormA))
-      .case_via(Case2, |x| x.then(Operation2))
-      .end(FinalA)
-      .build("test_resume", 0);
+    let process = ExtractMsisdnOperatorAndShortcodeString
+      .split(SelectCase1)
+      .case_via(Case1, |x| x.show(CommonCaseParamNumberForm))
+      .case_via(Case2, |x| x.then(ProduceCaseParam2))
+      .end(SayGoodByAndConsumeCommonParams)
+      .build("", 0);
 
     let messages = ["*123#", "Enter a number", "a number", "Good bye"];
 
     test_process_producess_messages(process, messages).await;
   }
 
-  async fn test_process_producess_messages(process: RunnableProcess<impl FinalizedProcess>, messages: [&str; 4]) {
+  async fn test_process_producess_messages<const EXCHANGED_MESSAGES: usize>(
+    process: RunnableProcess<impl FinalizedProcess>,
+    messages: [&str; EXCHANGED_MESSAGES],
+  ) {
     let mut previous_run_produced = session_init_value();
     let mut previous_run_yielded_at = PreviousRunYieldedAt(StepIndex::MIN);
     let mut failed_attempts = FailedInputValidationAttempts(0);
