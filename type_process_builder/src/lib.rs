@@ -142,6 +142,17 @@ mod tests {
     }
   }
 
+  struct SelectCase2;
+  impl Splitter for SelectCase2 {
+    type Consumes = HNil;
+    type Produces =
+      Coprod![(Case1, HList![Split1Param, CommonSplitParam]), (Case2, HList![Split2Param, CommonSplitParam])];
+
+    async fn handle(&self, _consumes: Self::Consumes) -> anyhow::Result<Self::Produces> {
+      Ok(Self::Produces::inject((Case2, hlist!(Split2Param, CommonSplitParam))))
+    }
+  }
+
   struct SayGoodByAndConsumeCommonParams;
   impl Final for SayGoodByAndConsumeCommonParams {
     type Consumes = HList![EntryParam, CommonSplitParam, CommonCaseParam];
@@ -168,6 +179,26 @@ mod tests {
       _failed_input_validation_attempts: FailedInputValidationAttempts,
     ) -> anyhow::Result<InputValidation<Self::Produces>> {
       Ok(InputValidation::Successful(hlist![CommonCaseParam]))
+    }
+  }
+
+  struct NoOpForm;
+  impl Form for NoOpForm {
+    type CreateFormConsumes = HNil;
+    type ValidateInputConsumes = HNil;
+    type Produces = HNil;
+
+    async fn create_form(&self, _consumes: Self::CreateFormConsumes) -> anyhow::Result<Message> {
+      Ok(Message("Straight to trash".into()))
+    }
+
+    async fn handle_input(
+      &self,
+      _consumes: Self::ValidateInputConsumes,
+      _user_input: String,
+      _failed_input_validation_attempts: FailedInputValidationAttempts,
+    ) -> anyhow::Result<InputValidation<Self::Produces>> {
+      Ok(InputValidation::Successful(HNil))
     }
   }
 
@@ -223,6 +254,15 @@ mod tests {
     }
   }
 
+  struct FinalConsumeCase2Param;
+  impl Final for FinalConsumeCase2Param {
+    type Consumes = HList![Case2Param];
+
+    async fn handle(&self, _consumes: Self::Consumes) -> anyhow::Result<Message> {
+      Ok(Message("I ate Case2Param".into()))
+    }
+  }
+
   fn session_init_value() -> SessionContext {
     vec![(0, Value::String("2340000000000".into())), (1, Value::String("MTN".into()))]
   }
@@ -230,16 +270,8 @@ mod tests {
   #[tokio::test]
   async fn test_end() {
     let process = ExtractMsisdnOperatorAndShortcodeString.end(FinalNoConsumes).build("", 0);
-
-    let run_result = process
-      .resume_run(
-        session_init_value(),
-        PreviousRunYieldedAt(StepIndex::MIN),
-        "*123#".to_string(),
-        FailedInputValidationAttempts(0),
-      )
-      .await;
-    assert_eq!(run_result.unwrap(), RunOutcome::Finish(Message("Empty good bye".into())));
+    let messages = ["*123#", "Empty good bye"];
+    test_process_producess_messages(process, messages).await;
   }
 
   #[tokio::test]
@@ -250,16 +282,8 @@ mod tests {
       .case_via(Case2, |x| x.then(ProduceCaseParam2))
       .end(SayGoodByAndConsumeCommonParams)
       .build("", 0);
-
-    let run_result = process
-      .resume_run(
-        session_init_value(),
-        PreviousRunYieldedAt(StepIndex::MIN),
-        "*123#".to_string(),
-        FailedInputValidationAttempts(0),
-      )
-      .await;
-    assert_eq!(run_result.unwrap(), RunOutcome::Finish(Message("Good bye".into())));
+    let messages = ["*123#", "Good bye"];
+    test_process_producess_messages(process, messages).await;
   }
 
   #[tokio::test]
@@ -277,16 +301,49 @@ mod tests {
   }
 
   #[tokio::test]
-  async fn test_resume() {
+  async fn test_resume_in_split() {
     let process = ExtractMsisdnOperatorAndShortcodeString
       .split(SelectCase1)
       .case_via(Case1, |x| x.show(CommonCaseParamNumberForm))
       .case_via(Case2, |x| x.then(ProduceCaseParam2))
       .end(SayGoodByAndConsumeCommonParams)
       .build("", 0);
-
     let messages = ["*123#", "Enter a number", "a number", "Good bye"];
+    test_process_producess_messages(process, messages).await;
+  }
 
+  #[tokio::test]
+  async fn test_end_first_case_of_finalized_split_process() {
+    let process = ExtractMsisdnOperatorAndShortcodeString
+      .split(SelectCase1)
+      .case_end(Case1, |x| x.end(FinalNoConsumes))
+      .case_end(Case2, |x| x.end(FinalNoConsumes))
+      .build("", 0);
+    let messages = ["*123#", "Empty good bye"];
+    test_process_producess_messages(process, messages).await;
+  }
+
+  #[ignore]
+  #[tokio::test]
+  async fn test_yield_first_case_of_finalized_split_process() {
+    let process = ExtractMsisdnOperatorAndShortcodeString
+      .split(SelectCase1)
+      .case_end(Case1, |x| x.show(NoOpForm).end(FinalNoConsumes))
+      .case_end(Case2, |x| x.end(FinalNoConsumes))
+      .build("", 0);
+    let messages = ["*123#", "Straight to trash", "10", "Empty good bye"];
+    test_process_producess_messages(process, messages).await;
+  }
+
+  #[tokio::test]
+  async fn test_flowing_case_of_finalized_split_process() {
+    let process = ExtractMsisdnOperatorAndShortcodeString
+      .split(SelectCase2)
+      .case_end(Case1, |x| x.end(FinalNoConsumes))
+      .case_via(Case2, |x| x.then(ProduceCaseParam2))
+      .end(FinalConsumeCase2Param)
+      .build("", 0);
+    let messages = ["*123#", "I ate Case2Param"];
     test_process_producess_messages(process, messages).await;
   }
 
@@ -298,6 +355,7 @@ mod tests {
     let mut previous_run_yielded_at = PreviousRunYieldedAt(StepIndex::MIN);
     let mut failed_attempts = FailedInputValidationAttempts(0);
     let mut messages_index = 0;
+    let _ = process.ordered_all_unique_param_uids(); // cover it in the tests
     loop {
       let run_outcome = process
         .resume_run(
