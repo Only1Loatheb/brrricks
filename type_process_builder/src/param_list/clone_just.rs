@@ -28,3 +28,17 @@ where
     HCons { head: head.clone(), tail }
   }
 }
+
+impl<TargetHead: Clone, TargetTail, SourceHead, SourceTail, IndexHead, IndexTail>
+  CloneJust<HCons<TargetHead, TargetTail>, HCons<IndexHead, IndexTail>>
+  for HCons<SourceHead, SourceTail>
+where
+  for<'a> &'a HCons<SourceHead, SourceTail>:
+    Plucker<&'a TargetHead, IndexHead>,
+  for<'a> <&'a HCons<SourceHead, SourceTail> as Plucker<&'a TargetHead, IndexHead>>::Remainder:
+    CloneJust<TargetTail, IndexTail>,
+{
+  fn clone_just(self) -> HCons<TargetHead, TargetTail> {
+    (&self).clone_just()
+  }
+}
