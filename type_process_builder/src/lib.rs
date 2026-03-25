@@ -270,7 +270,7 @@ mod tests {
   #[tokio::test]
   async fn test_end() {
     let process = ExtractMsisdnOperatorAndShortcodeString.end(FinalNoConsumes).build("", 0);
-    let messages = ["*123#", "Empty good bye"];
+    let messages = vec!["*123#", "Empty good bye"];
     test_process_producess_messages(process, messages).await;
   }
 
@@ -282,21 +282,21 @@ mod tests {
       .case_via(Case2, |x| x.then(ProduceCaseParam2))
       .end(SayGoodByAndConsumeCommonParams)
       .build("", 0);
-    let messages = ["*123#", "Good bye"];
+    let messages = vec!["*123#", "Good bye"];
     test_process_producess_messages(process, messages).await;
   }
 
   #[tokio::test]
   async fn test_end_emitted_in_form_step() {
     let process = ExtractMsisdnOperatorAndShortcodeString.show(FinishAfterInput).end(FinalNoConsumes).build("", 0);
-    let messages = ["*123#", "Last number in the process", "10", "Always finnish"];
+    let messages = vec!["*123#", "Last number in the process", "10", "Always finnish"];
     test_process_producess_messages(process, messages).await;
   }
 
   #[tokio::test]
   async fn test_retry_emitted_in_form_step() {
     let process = ExtractMsisdnOperatorAndShortcodeString.show(OneInputRetryForm).end(FinalNoConsumes).build("", 0);
-    let messages = ["*123#", "This will be discarded", "10", "This will be accepted", "20", "Empty good bye"];
+    let messages = vec!["*123#", "This will be discarded", "10", "This will be accepted", "20", "Empty good bye"];
     test_process_producess_messages(process, messages).await;
   }
 
@@ -308,7 +308,7 @@ mod tests {
       .case_via(Case2, |x| x.then(ProduceCaseParam2))
       .end(SayGoodByAndConsumeCommonParams)
       .build("", 0);
-    let messages = ["*123#", "Enter a number", "a number", "Good bye"];
+    let messages = vec!["*123#", "Enter a number", "a number", "Good bye"];
     test_process_producess_messages(process, messages).await;
   }
 
@@ -319,7 +319,7 @@ mod tests {
       .case_end(Case1, |x| x.end(FinalNoConsumes))
       .case_end(Case2, |x| x.end(FinalNoConsumes))
       .build("", 0);
-    let messages = ["*123#", "Empty good bye"];
+    let messages = vec!["*123#", "Empty good bye"];
     test_process_producess_messages(process, messages).await;
   }
 
@@ -331,7 +331,7 @@ mod tests {
       .case_end(Case1, |x| x.show(NoOpForm).end(FinalNoConsumes))
       .case_end(Case2, |x| x.end(FinalNoConsumes))
       .build("", 0);
-    let messages = ["*123#", "Straight to trash", "10", "Empty good bye"];
+    let messages = vec!["*123#", "Straight to trash", "10", "Empty good bye"];
     test_process_producess_messages(process, messages).await;
   }
 
@@ -343,14 +343,11 @@ mod tests {
       .case_via(Case2, |x| x.then(ProduceCaseParam2))
       .end(FinalConsumeCase2Param)
       .build("", 0);
-    let messages = ["*123#", "I ate Case2Param"];
+    let messages = vec!["*123#", "I ate Case2Param"];
     test_process_producess_messages(process, messages).await;
   }
 
-  async fn test_process_producess_messages<const EXCHANGED_MESSAGES: usize>(
-    process: RunnableProcess<impl FinalizedProcess>,
-    messages: [&str; EXCHANGED_MESSAGES],
-  ) {
+  async fn test_process_producess_messages(process: RunnableProcess<impl FinalizedProcess>, messages: Vec<&str>) {
     let mut previous_run_produced = session_init_value();
     let mut previous_run_yielded_at = PreviousRunYieldedAt(StepIndex::MIN);
     let mut failed_attempts = FailedInputValidationAttempts(0);
