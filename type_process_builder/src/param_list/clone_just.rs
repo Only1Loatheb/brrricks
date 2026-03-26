@@ -4,7 +4,7 @@ pub trait CloneJust<Target, Indices> {
   fn clone_just(self) -> Target;
 }
 
-impl<Source> CloneJust<HNil, HNil> for &Source {
+impl<Source> CloneJust<HNil, HNil> for Source {
   #[inline(always)]
   fn clone_just(self) -> HNil {
     HNil
@@ -30,11 +30,9 @@ where
 }
 
 impl<TargetHead: Clone, TargetTail, SourceHead, SourceTail, IndexHead, IndexTail>
-  CloneJust<HCons<TargetHead, TargetTail>, HCons<IndexHead, IndexTail>>
-  for HCons<SourceHead, SourceTail>
+  CloneJust<HCons<TargetHead, TargetTail>, HCons<IndexHead, IndexTail>> for HCons<SourceHead, SourceTail>
 where
-  for<'a> &'a HCons<SourceHead, SourceTail>:
-    Plucker<&'a TargetHead, IndexHead>,
+  for<'a> &'a HCons<SourceHead, SourceTail>: Plucker<&'a TargetHead, IndexHead>,
   for<'a> <&'a HCons<SourceHead, SourceTail> as Plucker<&'a TargetHead, IndexHead>>::Remainder:
     CloneJust<TargetTail, IndexTail>,
 {

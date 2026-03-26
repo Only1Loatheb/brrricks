@@ -18,7 +18,7 @@ mod tests {
   use crate::step::{Entry, FailedInputValidationAttempts, Final, InputValidation, Operation, Splitter};
   use crate::step::{Form, Message};
   use anyhow::anyhow;
-  use frunk_core::hlist::{HList, HNil};
+  use frunk_core::hlist::HNil;
   use frunk_core::{Coprod, HList, hlist};
   use serde::{Deserialize, Serialize};
   use serde_value::Value;

@@ -60,7 +60,7 @@ where
     &self,
     process_before_produces: Self::ProcessBeforeProduces,
   ) -> IntermediateRunResult<Self::Produces> {
-    let last_step_consumes = process_before_produces.clone_just();
+    let last_step_consumes = (&process_before_produces).clone_just();
     let last_step_output = self.last_step.handle(last_step_consumes).await?;
     Ok(IntermediateRunOutcome::Continue(last_step_output.concat(process_before_produces)))
   }
