@@ -153,6 +153,21 @@ mod tests {
     }
   }
 
+  pub struct Case3;
+  struct SelectCase3;
+  impl Splitter for SelectCase3 {
+    type Consumes = HNil;
+    type Produces = Coprod![
+      (Case1, HList![Split1Param, CommonSplitParam]),
+      (Case2, HList![Split2Param, CommonSplitParam]),
+      (Case3, HNil),
+    ];
+
+    async fn handle(&self, _consumes: Self::Consumes) -> anyhow::Result<Self::Produces> {
+      Ok(Self::Produces::inject((Case3, HNil)))
+    }
+  }
+
   struct SayGoodByAndConsumeCommonParams;
   impl Final for SayGoodByAndConsumeCommonParams {
     type Consumes = HList![EntryParam, CommonSplitParam, CommonCaseParam];
@@ -344,6 +359,19 @@ mod tests {
       .end(FinalConsumeCase2Param)
       .build("", 0);
     let messages = vec!["*123#", "I ate Case2Param"];
+    test_process_producess_messages(process, messages).await;
+  }
+
+  #[tokio::test]
+  async fn test_flowing_next_case_of_finalized_split_process() {
+    let process = ExtractMsisdnOperatorAndShortcodeString
+      .split(SelectCase3)
+      .case_end(Case1, |x| x.end(FinalNoConsumes))
+      .case_via(Case2, |x| x.then(ProduceCaseParam2))
+      .case_end(Case3, |x| x.end(FinalNoConsumes))
+      .end(FinalConsumeCase2Param)
+      .build("", 0);
+    let messages = vec!["*123#", "Empty good bye"];
     test_process_producess_messages(process, messages).await;
   }
 
