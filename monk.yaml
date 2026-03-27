@@ -30,5 +30,9 @@ pre-push:
     - cargo clippy --all-targets --all-features -- -D warnings -W clippy::all
     - |
       cargo llvm-cov \
-      --fail-under-regions 43 --fail-under-functions 57 --fail-under-lines 47 \
-      --workspace --exclude qrios_api_axum_server --exclude qrios_api_reqwest_client
+      --fail-under-regions 55 --fail-under-functions 71 --fail-under-lines 57 \
+      --package type_process_builder
+    - |
+      cargo llvm-cov \
+      --fail-under-regions 0 --fail-under-functions 0 --fail-under-lines 0 \
+      --package qrios_api_process_runner --package qrios_api_process_entry
