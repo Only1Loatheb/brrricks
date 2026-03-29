@@ -11,6 +11,8 @@ pub fn main() {
     Path::new("type_process_builder/doc/process_builder_states.mmd"),
     "## Process builder states",
   );
+
+  update_example_in_readme();
 }
 
 fn update_diagram_in_readme(diagram_path: &Path, section_header: &str) {
@@ -48,4 +50,28 @@ fn update_diagram_in_readme(diagram_path: &Path, section_header: &str) {
   new_readme.push_str(&readme[content_end..]);
 
   fs::write(readme_path, new_readme).expect("Failed to write updated README.md");
+}
+
+fn update_example_in_readme() {
+  let readme_path = "README.md";
+  let example_path = "src/main.rs";
+
+  let readme = fs::read_to_string(readme_path).expect("Failed to read README.md");
+
+  let example = fs::read_to_string(example_path).expect("Failed to read example");
+
+  let generated_section = format!("```rust\n{}\n```", example);
+
+  let start_marker = "<!-- EXAMPLE_START -->";
+  let end_marker = "<!-- EXAMPLE_END -->";
+
+  let start = readme.find(start_marker).expect("Missing EXAMPLE_START marker");
+  let end = readme.find(end_marker).expect("Missing EXAMPLE_END marker");
+
+  let new_readme =
+    format!("{}{}\n{}\n{}", &readme[..start + start_marker.len()], "\n", generated_section, &readme[end..]);
+
+  fs::write(readme_path, new_readme).expect("Failed to write README.md");
+
+  println!("cargo:rerun-if-changed={}", example_path);
 }
