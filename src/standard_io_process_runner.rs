@@ -3,7 +3,7 @@ use std::io::Write;
 use type_process_builder::builder::{FinalizedProcess, PreviousRunYieldedAt, RunOutcome, RunnableProcess, StepIndex};
 use type_process_builder::step::FailedInputValidationAttempts;
 
-pub(crate) async fn standard_io_process_interpreter<ProcessBeforeProduces>(
+pub(crate) async fn standard_io_process_runner<ProcessBeforeProduces>(
   demo_process: RunnableProcess<impl FinalizedProcess<ProcessBeforeProduces = ProcessBeforeProduces>>,
 ) -> io::Result<()> {
   let mut previous_run_produced = Vec::new();

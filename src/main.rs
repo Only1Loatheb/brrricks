@@ -1,6 +1,6 @@
-mod standard_io_process_interpreter;
+mod standard_io_process_runner;
 
-use crate::standard_io_process_interpreter::standard_io_process_interpreter;
+use crate::standard_io_process_runner::standard_io_process_runner;
 use frunk_core::hlist::HNil;
 use frunk_core::{Coprod, HList, hlist, hlist_pat};
 use serde::{Deserialize, Serialize};
@@ -103,5 +103,5 @@ async fn main() -> std::io::Result<()> {
     .case_via(CustomAmount, |x| x.show(AmountForm))
     .end(DisplayAmount)
     .build("demo_process", 0);
-  standard_io_process_interpreter(process).await
+  standard_io_process_runner(process).await
 }

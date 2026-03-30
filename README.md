@@ -12,7 +12,7 @@ early termination paths.
 
 ## Goals
 
-Process implemented with this library has the following invariants enforced at compile-time:
+Process implemented with this library has the following invariants enforced at **compile-time**:
 
 - each step may only consume parameters that are known to be produced earlier in the process,
 - all execution paths must terminate in a final step,
@@ -21,7 +21,7 @@ Process implemented with this library has the following invariants enforced at c
 
 ## Example
 
-Process flowchart:
+The following flowchart illustrates an example process:
 ```mermaid
 flowchart TD
     ShortcodeStringEntry --> SelectAmountSource{{SelectAmountSource}}
@@ -30,13 +30,13 @@ flowchart TD
     AmountForm --> DisplayAmount
 ```
 
-Process implementation:
+The process shown in the flowchart can be implemented using `Brrricks`:
 <!-- EXAMPLE_START -->
 
 ```rust
-mod standard_io_process_interpreter;
+mod standard_io_process_runner;
 
-use crate::standard_io_process_interpreter::standard_io_process_interpreter;
+use crate::standard_io_process_runner::standard_io_process_runner;
 use frunk_core::hlist::HNil;
 use frunk_core::{Coprod, HList, hlist, hlist_pat};
 use serde::{Deserialize, Serialize};
@@ -139,11 +139,16 @@ async fn main() -> std::io::Result<()> {
     .case_via(CustomAmount, |x| x.show(AmountForm))
     .end(DisplayAmount)
     .build("demo_process", 0);
-  standard_io_process_interpreter(process).await
+  standard_io_process_runner(process).await
 }
 
 ```
 <!-- EXAMPLE_END -->
+
+To run the example process in your terminal, execute the following command:
+```console
+cargo run
+```
 
 ## Brrricks app session flow
 
@@ -194,37 +199,35 @@ sequenceDiagram
 }%%
 flowchart TD
     classDef hidden display: none;
-    style Start fill-opacity: 0, stroke-opacity: 0;
-    Start[" "]
-FinalizedSplitProcessSubgraph:::hidden
-subgraph FinalizedSplitProcessSubgraph[" "]
-FinalizedSplitProcess[FinalizedSplitProcess]
-finalized_split_cases_final{{exhaustive?}}
-end
-FlowingSplitProcessSubgraph:::hidden
-subgraph FlowingSplitProcessSubgraph[" "]
-FlowingSplitProcess[FlowingSplitProcess]
-flowing_split_cases{{exhaustive?}}
-end
-FinalizedProcess -- " build " --> RunnableProcess
-Start -- " Entry Step " --> FlowingProcess
-FlowingProcess -- " Operation Step or FlowingProcess " --> FlowingProcess
-FlowingProcess -- " Final Step or FinalizedProcess" --> FinalizedProcess
-
-FlowingProcess -- " Split Step" --> FinalizedSplitProcess
-FinalizedSplitProcess -- " FinalizedProcess " --> finalized_split_cases_final
-finalized_split_cases_final -- " cases left " --> FinalizedSplitProcess
-finalized_split_cases_final -- " all cases covered " --> FinalizedProcess
-FinalizedSplitProcess -- " FlowingProcess " --> FlowingSplitProcess
-FlowingSplitProcess -- " FinalizedProcess or FlowingProcess " --> flowing_split_cases
-flowing_split_cases -- " cases left " --> FlowingSplitProcess
-flowing_split_cases -- " all cases covered " --> FlowingProcess
-Start ~~~ FlowingSplitProcess
-click FlowingSplitProcess "https://github.com/Only1Loatheb/brrricks/blob/master/type_process_builder/src/builder/flowing_split_process.rs"
-click FlowingProcess "https://github.com/Only1Loatheb/brrricks/blob/master/type_process_builder/src/builder/flowing_process.rs"
-click FinalizedSplitProcess "https://github.com/Only1Loatheb/brrricks/blob/master/type_process_builder/src/builder/finalized_split_process.rs"
-click FinalizedProcess "https://github.com/Only1Loatheb/brrricks/blob/master/type_process_builder/src/builder/finalized_process.rs"
-click RunnableProcess "https://github.com/Only1Loatheb/brrricks/blob/master/type_process_builder/src/builder/runnable_process.rs"
+    Start:::hidden
+    FinalizedSplitProcessSubgraph:::hidden
+    subgraph FinalizedSplitProcessSubgraph
+        FinalizedSplitProcess[FinalizedSplitProcess]
+        finalized_split_cases_final{{exhaustive?}}
+    end
+    FlowingSplitProcessSubgraph:::hidden
+    subgraph FlowingSplitProcessSubgraph
+        FlowingSplitProcess[FlowingSplitProcess]
+        flowing_split_cases{{exhaustive?}}
+    end
+    FinalizedProcess -- " build " --> RunnableProcess
+    Start -- " Entry Step " --> FlowingProcess
+    FlowingProcess -- " Operation Step or FlowingProcess " --> FlowingProcess
+    FlowingProcess -- " Final Step or FinalizedProcess " --> FinalizedProcess
+    FlowingProcess -- " Split Step " --> FinalizedSplitProcess
+    FinalizedSplitProcess -- " FinalizedProcess " --> finalized_split_cases_final
+    finalized_split_cases_final -- " cases left " --> FinalizedSplitProcess
+    finalized_split_cases_final -- " all cases covered " --> FinalizedProcess
+    FinalizedSplitProcess -- " FlowingProcess " --> FlowingSplitProcess
+    FlowingSplitProcess -- " FinalizedProcess or FlowingProcess " --> flowing_split_cases
+    flowing_split_cases -- " cases left " --> FlowingSplitProcess
+    flowing_split_cases -- " all cases covered " --> FlowingProcess
+    Start ~~~ FlowingSplitProcess
+    click FlowingSplitProcess "https://github.com/Only1Loatheb/brrricks/blob/master/type_process_builder/src/builder/flowing_split_process.rs"
+    click FlowingProcess "https://github.com/Only1Loatheb/brrricks/blob/master/type_process_builder/src/builder/flowing_process.rs"
+    click FinalizedSplitProcess "https://github.com/Only1Loatheb/brrricks/blob/master/type_process_builder/src/builder/finalized_split_process.rs"
+    click FinalizedProcess "https://github.com/Only1Loatheb/brrricks/blob/master/type_process_builder/src/builder/finalized_process.rs"
+    click RunnableProcess "https://github.com/Only1Loatheb/brrricks/blob/master/type_process_builder/src/builder/runnable_process.rs"
 ```
 
 ## Plausible use cases
