@@ -201,6 +201,26 @@ where
     }
   }
 
+  async fn run_split_subprocess(&self, process_before_split_produced: Self::ProcessBeforeSplitProduces) -> IntermediateFlowingSplitResult<Self::ProcessBeforeSplitProduces, SplitterProducesForOtherCases, Self::EveryFlowingCaseProduces> {
+    let process_before_output = self.split_process_before.run_split_subprocess(process_before_split_produced).await?;
+    match process_before_output {
+      IntermediateFlowingSplitOutcome::Continue(a) => Ok(IntermediateFlowingSplitOutcome::Continue(a.intersect())),
+      IntermediateFlowingSplitOutcome::GoToCase {
+        process_before_split_produced,
+        splitter_produces_to_other_cases,
+      } => {
+        let produced = match splitter_produces_to_other_cases {
+          Coproduct::Inl((_pd, params)) => Coproduct::Inl(params),
+          Coproduct::Inr(inr_value) => Coproduct::Inr(inr_value),
+        };
+        self.continue_run(process_before_split_produced, produced).await
+      }
+      IntermediateFlowingSplitOutcome::Yield(a, b, c) => Ok(IntermediateFlowingSplitOutcome::Yield(a, b, c)),
+      IntermediateFlowingSplitOutcome::Finish(a) => Ok(IntermediateFlowingSplitOutcome::Finish(a)),
+      IntermediateFlowingSplitOutcome::RetryUserInput(a) => Ok(IntermediateFlowingSplitOutcome::RetryUserInput(a)),
+    }
+  }
+
   fn enumerate_steps(&mut self, last_used_index: StepIndex) -> StepIndex {
     let used_index = self.split_process_before.enumerate_steps(last_used_index);
     self.case_index = used_index + 1;
@@ -314,7 +334,29 @@ where
   }
 
   async fn run_subprocess(&self, subprocess_consumes: Self::SubprocessConsumes) -> IntermediateRunResult<Self::Produces> {
-    todo!()
+    let process_before_output = self.split_process_before.run_split_subprocess(process_before_produces).await?;
+    match process_before_output {
+      IntermediateFlowingSplitOutcome::Continue(a) => Ok(IntermediateRunOutcome::Continue(a.intersect())),
+      IntermediateFlowingSplitOutcome::GoToCase {
+        process_before_split_produced,
+        splitter_produces_to_other_cases,
+      } => match splitter_produces_to_other_cases {
+        Coproduct::Inl((_pd, produces_to_this_case)) => {
+          let this_case_consumes = produces_to_this_case.concat(process_before_split_produced);
+          match self.this_case.continue_run(this_case_consumes).await? {
+            IntermediateRunOutcome::Continue(this_case_produced) =>
+              Ok(IntermediateRunOutcome::Continue(this_case_produced.transform())),
+            IntermediateRunOutcome::Yield(a, b, c) => Ok(IntermediateRunOutcome::Yield(a, b, c)),
+            IntermediateRunOutcome::Finish(a) => Ok(IntermediateRunOutcome::Finish(a)),
+            IntermediateRunOutcome::RetryUserInput(a) => Ok(IntermediateRunOutcome::RetryUserInput(a)),
+          }
+        }
+        Coproduct::Inr(c_nil) => match c_nil {},
+      },
+      IntermediateFlowingSplitOutcome::Yield(a, b, c) => Ok(IntermediateRunOutcome::Yield(a, b, c)),
+      IntermediateFlowingSplitOutcome::Finish(a) => Ok(IntermediateRunOutcome::Finish(a)),
+      IntermediateFlowingSplitOutcome::RetryUserInput(a) => Ok(IntermediateRunOutcome::RetryUserInput(a)),
+    }
   }
 
   fn enumerate_steps(&mut self, last_used_index: StepIndex) -> StepIndex {

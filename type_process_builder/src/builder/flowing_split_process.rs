@@ -52,6 +52,17 @@ pub trait FlowingSplitProcess<SplitterProducesForOtherCases>: Sized + Sync {
     >,
   > + Send;
 
+  fn run_split_subprocess(
+    &self,
+    process_before_split_produced: Self::ProcessBeforeSplitProduces,
+  ) -> impl Future<
+    Output = IntermediateFlowingSplitResult<
+      Self::ProcessBeforeSplitProduces,
+      SplitterProducesForOtherCases,
+      Self::EveryFlowingCaseProduces,
+    >,
+  > + Send;
+
   fn enumerate_steps(&mut self, last_used_index: StepIndex) -> StepIndex;
 
   fn all_param_uids(&self, acc: &mut Vec<ParamUID>);
