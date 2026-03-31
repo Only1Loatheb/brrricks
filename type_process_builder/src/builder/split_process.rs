@@ -20,6 +20,7 @@ pub trait SplitProcess<SplitterProducesForOtherCases: Send + Sync>: Sized + Sync
   type ProcessBeforeSplitProduces: ParamList;
   type SplitterProducesForFirstCase: ParamList + Concat<Self::ProcessBeforeSplitProduces>;
   type SplitterTagForFirstCase: Send + Sync;
+  type SubprocessConsumes: ParamList;
 
   fn resume_run(
     &self,
@@ -37,6 +38,16 @@ pub trait SplitProcess<SplitterProducesForOtherCases: Send + Sync>: Sized + Sync
   fn continue_run(
     &self,
     process_before_split_produced: Self::ProcessBeforeSplitProduces,
+  ) -> impl Future<
+    Output = IntermediateFinalizedSplitResult<
+      Self::ProcessBeforeSplitProduces,
+      Coproduct<Self::SplitterProducesForFirstCase, SplitterProducesForOtherCases>,
+    >,
+  > + Send;
+
+  fn run_subprocess(
+    &self,
+    subprocess_consumes: Self::SubprocessConsumes,
   ) -> impl Future<
     Output = IntermediateFinalizedSplitResult<
       Self::ProcessBeforeSplitProduces,

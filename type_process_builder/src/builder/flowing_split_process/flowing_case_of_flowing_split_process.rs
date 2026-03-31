@@ -10,7 +10,6 @@ use crate::param_list::transform::TransformTo;
 use crate::step::FailedInputValidationAttempts;
 use frunk_core::coproduct::{CNil, Coproduct};
 use std::marker::PhantomData;
-use frunk_core::hlist::HNil;
 
 pub struct FlowingCaseOfFlowingSplitProcess<
   ThisTag: Send + Sync,
@@ -132,6 +131,7 @@ where
   type ProcessBeforeSplitProduces = ProcessBefore::ProcessBeforeSplitProduces;
   type SplitterProducesForThisCase = SplitterProducesForThisCase;
   type EveryFlowingCaseProduces = <ProcessBefore::EveryFlowingCaseProduces as Intersect<ThisCase::Produces>>::Intersection;
+  type SubprocessConsumes = ProcessBefore::SubprocessConsumes;
 
   async fn resume_run(
     &self,
@@ -201,8 +201,8 @@ where
     }
   }
 
-  async fn run_split_subprocess(&self, process_before_split_produced: Self::ProcessBeforeSplitProduces) -> IntermediateFlowingSplitResult<Self::ProcessBeforeSplitProduces, SplitterProducesForOtherCases, Self::EveryFlowingCaseProduces> {
-    let process_before_output = self.split_process_before.run_split_subprocess(process_before_split_produced).await?;
+  async fn run_split_subprocess(&self, subprocess_consumes: Self::SubprocessConsumes) -> IntermediateFlowingSplitResult<Self::ProcessBeforeSplitProduces, SplitterProducesForOtherCases, Self::EveryFlowingCaseProduces> {
+    let process_before_output = self.split_process_before.run_split_subprocess(subprocess_consumes).await?;
     match process_before_output {
       IntermediateFlowingSplitOutcome::Continue(a) => Ok(IntermediateFlowingSplitOutcome::Continue(a.intersect())),
       IntermediateFlowingSplitOutcome::GoToCase {
@@ -259,7 +259,7 @@ where
 {
   type ProcessBeforeProduces = ProcessBefore::ProcessBeforeSplitProduces;
   type Produces = <ProcessBefore::EveryFlowingCaseProduces as Intersect<ThisCase::Produces>>::Intersection;
-  type SubprocessConsumes = HNil; // todo
+  type SubprocessConsumes = ProcessBefore::SubprocessConsumes;
 
   async fn resume_run(
     &self,
@@ -334,7 +334,7 @@ where
   }
 
   async fn run_subprocess(&self, subprocess_consumes: Self::SubprocessConsumes) -> IntermediateRunResult<Self::Produces> {
-    let process_before_output = self.split_process_before.run_split_subprocess(process_before_produces).await?;
+    let process_before_output = self.split_process_before.run_split_subprocess(subprocess_consumes).await?;
     match process_before_output {
       IntermediateFlowingSplitOutcome::Continue(a) => Ok(IntermediateRunOutcome::Continue(a.intersect())),
       IntermediateFlowingSplitOutcome::GoToCase {

@@ -54,6 +54,7 @@ where
   type ProcessBeforeSplitProduces = ProcessBefore::Produces;
   type SplitterProducesForFirstCase = SplitterProducesForFirstCase;
   type SplitterTagForFirstCase = Tag;
+  type SubprocessConsumes = ProcessBefore::SubprocessConsumes;
 
   async fn resume_run(
     &self,
@@ -97,6 +98,24 @@ where
       Coproduct::Inr(b) => Coproduct::Inr(b),
     };
     Ok(IntermediateFinalizedSplitOutcome::GoToCase { process_before_split_produced, splitter_produces_to_other_cases })
+  }
+
+  async fn run_subprocess(
+    &self,
+    subprocess_consumes: Self::SubprocessConsumes,
+  ) -> IntermediateFinalizedSplitResult<
+    Self::ProcessBeforeSplitProduces,
+    Coproduct<Self::SplitterProducesForFirstCase, SplitterProducesForOtherCases>,
+  > {
+    let process_before_output = self.process_before.run_subprocess(subprocess_consumes).await?;
+    match process_before_output {
+      IntermediateRunOutcome::Continue(process_before_split_produced) => {
+        self.continue_run(process_before_split_produced).await
+      },
+      IntermediateRunOutcome::Yield(a, b, c) => Ok(IntermediateFinalizedSplitOutcome::Yield(a, b, c)),
+      IntermediateRunOutcome::Finish(a) => Ok(IntermediateFinalizedSplitOutcome::Finish(a)),
+      IntermediateRunOutcome::RetryUserInput(a) => Ok(IntermediateFinalizedSplitOutcome::RetryUserInput(a)),
+    }
   }
 
   fn enumerate_steps(&mut self, last_used_index: StepIndex) -> StepIndex {

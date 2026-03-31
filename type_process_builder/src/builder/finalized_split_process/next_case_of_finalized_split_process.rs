@@ -111,6 +111,7 @@ for NextCaseOfFinalizedSplitProcess<
   type ProcessBeforeSplitProduces = ProcessBefore::ProcessBeforeSplitProduces;
   type SplitterProducesForThisCase = SplitterProducesForThisCase;
   type SplitterTagForThisCase = ThisTag;
+  type SubprocessConsumes = ProcessBefore::SubprocessConsumes;
 
   async fn resume_run(
     &self,
@@ -174,8 +175,8 @@ for NextCaseOfFinalizedSplitProcess<
     }
   }
 
-  async fn run_split_subprocess(&self, process_before_split_produced: Self::ProcessBeforeSplitProduces) -> IntermediateFinalizedSplitResult<Self::ProcessBeforeSplitProduces, SplitterProducesForOtherCases> {
-    let process_before_output = self.split_process_before.run_split_subprocess(process_before_split_produced).await?;
+  async fn run_split_subprocess(&self, subprocess_consumes: Self::SubprocessConsumes,) -> IntermediateFinalizedSplitResult<Self::ProcessBeforeSplitProduces, SplitterProducesForOtherCases> {
+    let process_before_output = self.split_process_before.run_split_subprocess(subprocess_consumes).await?;
     match process_before_output {
       IntermediateFinalizedSplitOutcome::GoToCase {
         process_before_split_produced,

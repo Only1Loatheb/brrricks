@@ -1,4 +1,4 @@
-use crate::builder::subprocess::{Subprocess, subprocess};
+use crate::builder::subprocess::{subprocess, Subprocess};
 use crate::builder::{
   FinalizedCaseOfFlowingSplitProcess, FinalizedProcess, FinalizedSplitProcess, FlowingCaseOfFlowingSplitProcess,
   FlowingProcess, FlowingSplitProcess, IntermediateFinalizedSplitOutcome, IntermediateFlowingSplitOutcome,
@@ -8,7 +8,6 @@ use crate::builder::{
 use crate::param_list::concat::Concat;
 use crate::step::FailedInputValidationAttempts;
 use frunk_core::coproduct::{CNil, Coproduct};
-use frunk_core::hlist::HNil;
 use std::marker::PhantomData;
 
 pub struct FlowingCaseOfFinalizedSplitProcess<
@@ -122,6 +121,7 @@ for FlowingCaseOfFinalizedSplitProcess<
   type ProcessBeforeSplitProduces = ProcessBefore::ProcessBeforeSplitProduces;
   type SplitterProducesForThisCase = SplitterProducesForThisCase;
   type EveryFlowingCaseProduces = ThisCase::Produces;
+  type SubprocessConsumes = ProcessBefore::SubprocessConsumes;
 
   async fn resume_run(
     &self,
@@ -190,8 +190,8 @@ for FlowingCaseOfFinalizedSplitProcess<
     }
   }
 
-  async fn run_split_subprocess(&self, process_before_split_produced: Self::ProcessBeforeSplitProduces) -> IntermediateFlowingSplitResult<Self::ProcessBeforeSplitProduces, SplitterProducesForOtherCases, Self::EveryFlowingCaseProduces> {
-    let process_before_output = self.split_process_before.run_split_subprocess(process_before_split_produced).await?;
+  async fn run_split_subprocess(&self, subprocess_consumes: Self::SubprocessConsumes,) -> IntermediateFlowingSplitResult<Self::ProcessBeforeSplitProduces, SplitterProducesForOtherCases, Self::EveryFlowingCaseProduces> {
+    let process_before_output = self.split_process_before.run_split_subprocess(subprocess_consumes).await?;
     match process_before_output {
       IntermediateFinalizedSplitOutcome::GoToCase {
         process_before_split_produced,
@@ -241,7 +241,7 @@ for FlowingCaseOfFinalizedSplitProcess<
 {
   type ProcessBeforeProduces = ProcessBefore::ProcessBeforeSplitProduces;
   type Produces = ThisCase::Produces;
-  type SubprocessConsumes = HNil; // todo
+  type SubprocessConsumes = ProcessBefore::SubprocessConsumes;
 
   async fn resume_run(
     &self,
@@ -313,8 +313,8 @@ for FlowingCaseOfFinalizedSplitProcess<
     unreachable!("continue_run from last case is unreachable. The process is always continued from SplitProcess")
   }
 
-  async fn run_subprocess(&self, subprocess_consumes: Self::SubprocessConsumes) -> IntermediateRunResult<Self::Produces> {
-        let process_before_output = self.split_process_before.run_split_subprocess(process_before_produces).await?;
+  async fn run_subprocess(&self, subprocess_consumes: Self::SubprocessConsumes,) -> IntermediateRunResult<Self::Produces> {
+        let process_before_output = self.split_process_before.run_split_subprocess(subprocess_consumes).await?;
     match process_before_output {
       IntermediateFinalizedSplitOutcome::GoToCase {
         process_before_split_produced,
