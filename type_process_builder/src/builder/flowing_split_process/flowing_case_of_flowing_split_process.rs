@@ -10,6 +10,7 @@ use crate::param_list::transform::TransformTo;
 use crate::step::FailedInputValidationAttempts;
 use frunk_core::coproduct::{CNil, Coproduct};
 use std::marker::PhantomData;
+use frunk_core::hlist::HNil;
 
 pub struct FlowingCaseOfFlowingSplitProcess<
   ThisTag: Send + Sync,
@@ -238,6 +239,7 @@ where
 {
   type ProcessBeforeProduces = ProcessBefore::ProcessBeforeSplitProduces;
   type Produces = <ProcessBefore::EveryFlowingCaseProduces as Intersect<ThisCase::Produces>>::Intersection;
+  type SubprocessConsumes = HNil; // todo
 
   async fn resume_run(
     &self,
@@ -309,6 +311,10 @@ where
   /// ```
   async fn continue_run(&self, _process_before_produces: Self::ProcessBeforeProduces) -> IntermediateRunResult<Self::Produces> {
         unreachable!("continue_run from last case is unreachable. The process is always continued from SplitProcess")
+  }
+
+  async fn run_subprocess(&self, subprocess_consumes: Self::SubprocessConsumes) -> IntermediateRunResult<Self::Produces> {
+    todo!()
   }
 
   fn enumerate_steps(&mut self, last_used_index: StepIndex) -> StepIndex {

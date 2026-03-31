@@ -208,6 +208,7 @@ for FinalizedCaseOfFlowingSplitProcess<ThisTag, SplitterProducesForThisCase, CNi
 {
   type ProcessBeforeProduces = <SplitterProducesForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated;
   type Produces = ProcessBefore::EveryFlowingCaseProduces;
+  type SubprocessConsumes = ProcessBefore::ProcessBeforeSplitProduces;
 
   async fn resume_run(
     &self,
@@ -261,6 +262,10 @@ for FinalizedCaseOfFlowingSplitProcess<ThisTag, SplitterProducesForThisCase, CNi
       RunOutcome::Finish(a) => Ok(IntermediateRunOutcome::Finish(a)),
       RunOutcome::RetryUserInput(a) => Ok(IntermediateRunOutcome::RetryUserInput(a)),
     }
+  }
+
+  async fn run_subprocess(&self, subprocess_consumes: Self::SubprocessConsumes) -> IntermediateRunResult<Self::Produces> {
+    todo!()
   }
 
   fn enumerate_steps(&mut self, last_used_index: StepIndex) -> StepIndex {

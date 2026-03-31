@@ -24,6 +24,7 @@ use std::future::Future;
 pub trait FlowingProcess: Sized + Sync {
   type ProcessBeforeProduces: ParamList;
   type Produces: ParamList;
+  type SubprocessConsumes: ParamList;
   // add a dependent type for split process to pass values produced by the splitter step to this specific branch.
 
   fn resume_run(
@@ -37,6 +38,11 @@ pub trait FlowingProcess: Sized + Sync {
   fn continue_run(
     &self,
     process_before_produces: Self::ProcessBeforeProduces,
+  ) -> impl Future<Output = IntermediateRunResult<Self::Produces>> + Send;
+
+  fn run_subprocess(
+    &self,
+    subprocess_consumes: Self::SubprocessConsumes,
   ) -> impl Future<Output = IntermediateRunResult<Self::Produces>> + Send;
 
   fn then<

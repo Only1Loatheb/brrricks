@@ -12,6 +12,7 @@ pub struct Subprocess<ProcessBeforeProduces> {
 impl<ProcessBeforeProduces: ParamList> FlowingProcess for Subprocess<ProcessBeforeProduces> {
   type ProcessBeforeProduces = ProcessBeforeProduces;
   type Produces = ProcessBeforeProduces;
+  type SubprocessConsumes = ProcessBeforeProduces;
 
   async fn resume_run(
     &self,
@@ -29,6 +30,10 @@ impl<ProcessBeforeProduces: ParamList> FlowingProcess for Subprocess<ProcessBefo
     process_before_produces: Self::ProcessBeforeProduces,
   ) -> IntermediateRunResult<Self::Produces> {
     Ok(IntermediateRunOutcome::Continue(process_before_produces))
+  }
+
+  async fn run_subprocess(&self, subprocess_consumes: Self::SubprocessConsumes) -> IntermediateRunResult<Self::Produces> {
+    self.continue_run(subprocess_consumes).await
   }
 
   fn enumerate_steps(&mut self, last_used_index: StepIndex) -> StepIndex {
