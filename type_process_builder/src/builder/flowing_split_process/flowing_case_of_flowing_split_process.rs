@@ -187,7 +187,7 @@ where
     match splitter_produces_for_this_case_or_other_cases_consumes {
       Coproduct::Inl(splitter_produces_for_this_case) => {
         let this_case_consumes = splitter_produces_for_this_case.concat(process_before_split_produced);
-        match self.this_case.continue_run(this_case_consumes).await? {
+        match self.this_case.run_subprocess(this_case_consumes).await? {
           IntermediateRunOutcome::Continue(a) => Ok(IntermediateFlowingSplitOutcome::Continue(a.transform())),
           IntermediateRunOutcome::Yield(a, b, c) => Ok(IntermediateFlowingSplitOutcome::Yield(a, b, c)),
           IntermediateRunOutcome::Finish(a) => Ok(IntermediateFlowingSplitOutcome::Finish(a)),
@@ -281,7 +281,7 @@ where
         } => match splitter_produces_to_other_cases {
           Coproduct::Inl((_pd, produces_to_this_case)) => {
             let this_case_consumes = produces_to_this_case.concat(process_before_split_produced);
-            match self.this_case.continue_run(this_case_consumes).await? {
+            match self.this_case.run_subprocess(this_case_consumes).await? {
               IntermediateRunOutcome::Continue(this_case_produced) =>
                 Ok(IntermediateRunOutcome::Continue(this_case_produced.transform())),
               IntermediateRunOutcome::Yield(a, b, c) => Ok(IntermediateRunOutcome::Yield(a, b, c)),
@@ -343,7 +343,7 @@ where
       } => match splitter_produces_to_other_cases {
         Coproduct::Inl((_pd, produces_to_this_case)) => {
           let this_case_consumes = produces_to_this_case.concat(process_before_split_produced);
-          match self.this_case.continue_run(this_case_consumes).await? {
+          match self.this_case.run_subprocess(this_case_consumes).await? {
             IntermediateRunOutcome::Continue(this_case_produced) =>
               Ok(IntermediateRunOutcome::Continue(this_case_produced.transform())),
             IntermediateRunOutcome::Yield(a, b, c) => Ok(IntermediateRunOutcome::Yield(a, b, c)),

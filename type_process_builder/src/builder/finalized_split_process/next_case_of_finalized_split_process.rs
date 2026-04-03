@@ -162,7 +162,7 @@ for NextCaseOfFinalizedSplitProcess<
     match splitter_produces_for_this_case_or_other_cases_consumes {
       Coproduct::Inl(splitter_produces_for_this_case) => {
         let this_case_consumes = splitter_produces_for_this_case.concat(process_before_split_produced);
-        match self.this_case.continue_run(this_case_consumes).await? {
+        match self.this_case.run_subprocess(this_case_consumes).await? {
           RunOutcome::Yield(a, b, c) => Ok(IntermediateFinalizedSplitOutcome::Yield(a, b, c)),
           RunOutcome::Finish(a) => Ok(IntermediateFinalizedSplitOutcome::Finish(a)),
           RunOutcome::RetryUserInput(a) => Ok(IntermediateFinalizedSplitOutcome::RetryUserInput(a)),
@@ -175,7 +175,7 @@ for NextCaseOfFinalizedSplitProcess<
     }
   }
 
-  async fn run_split_subprocess(&self, subprocess_consumes: Self::SubprocessConsumes,) -> IntermediateFinalizedSplitResult<Self::ProcessBeforeSplitProduces, SplitterProducesForOtherCases> {
+  async fn run_split_subprocess(&self, subprocess_consumes: Self::SubprocessConsumes) -> IntermediateFinalizedSplitResult<Self::ProcessBeforeSplitProduces, SplitterProducesForOtherCases> {
     let process_before_output = self.split_process_before.run_split_subprocess(subprocess_consumes).await?;
     match process_before_output {
       IntermediateFinalizedSplitOutcome::GoToCase {
@@ -221,6 +221,7 @@ where
   ProcessBefore::SplitterProducesForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
 {
   type ProcessBeforeProduces = <SplitterProducesForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated;
+  type SubprocessConsumes = ProcessBefore::SubprocessConsumes;
 
   async fn resume_run(
     &self,
@@ -241,7 +242,7 @@ where
         } => match splitter_produces_to_other_cases {
           Coproduct::Inl((_pd, splitter_produces_for_this_case)) => {
             let this_case_consumes = splitter_produces_for_this_case.concat(process_before_split_produced);
-            self.this_case.continue_run(this_case_consumes).await
+            self.this_case.run_subprocess(this_case_consumes).await
           }
           Coproduct::Inr(c_nil) => match c_nil {},
         },
@@ -261,7 +262,19 @@ where
   }
 
   async fn continue_run(&self, this_case_consumes: Self::ProcessBeforeProduces) -> RunResult {
-    self.this_case.continue_run(this_case_consumes).await
+    self.this_case.run_subprocess(this_case_consumes).await
+  }
+
+  async fn run_subprocess(&self, subprocess_consumes: Self::SubprocessConsumes) -> RunResult {
+    let process_before_output = self.run_split_subprocess(subprocess_consumes).await?;
+    match process_before_output {
+      IntermediateFinalizedSplitOutcome::GoToCase {
+        process_before_split_produced, splitter_produces_to_other_cases
+      } => { match splitter_produces_to_other_cases {} }
+      IntermediateFinalizedSplitOutcome::Yield(a, b, c) => Ok(RunOutcome::Yield(a, b, c)),
+      IntermediateFinalizedSplitOutcome::Finish(a) => Ok(RunOutcome::Finish(a)),
+      IntermediateFinalizedSplitOutcome::RetryUserInput(a) => Ok(RunOutcome::RetryUserInput(a)),
+    }
   }
 
   fn enumerate_steps(&mut self, last_used_index: StepIndex) -> StepIndex {

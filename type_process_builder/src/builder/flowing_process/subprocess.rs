@@ -32,7 +32,10 @@ impl<ProcessBeforeProduces: ParamList> FlowingProcess for Subprocess<ProcessBefo
     Ok(IntermediateRunOutcome::Continue(process_before_produces))
   }
 
-  async fn run_subprocess(&self, subprocess_consumes: Self::SubprocessConsumes) -> IntermediateRunResult<Self::Produces> {
+  async fn run_subprocess(
+    &self,
+    subprocess_consumes: Self::SubprocessConsumes,
+  ) -> IntermediateRunResult<Self::Produces> {
     self.continue_run(subprocess_consumes).await
   }
 
