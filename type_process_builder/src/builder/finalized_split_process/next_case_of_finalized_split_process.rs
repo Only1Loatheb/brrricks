@@ -14,7 +14,7 @@ pub struct NextCaseOfFinalizedSplitProcess<
   SplitterProducesForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
   SplitterProducesForOtherCases: Send + Sync,
   ProcessBefore: FinalizedSplitProcess<Coproduct<(ThisTag, SplitterProducesForThisCase), SplitterProducesForOtherCases>>,
-  ThisCase: FinalizedProcess<ProcessBeforeProduces=<SplitterProducesForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated>,
+  ThisCase: FinalizedProcess<SubprocessConsumes=<SplitterProducesForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated>,
 > {
   pub split_process_before: ProcessBefore,
   pub case_index: StepIndex,
@@ -34,7 +34,7 @@ impl<
   >,
   SplitterProducesForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
   SplitterProducesForNextCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
-  ThisCase: FinalizedProcess<ProcessBeforeProduces=<SplitterProducesForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated>,
+  ThisCase: FinalizedProcess<SubprocessConsumes=<SplitterProducesForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated>,
 >
 NextCaseOfFinalizedSplitProcess<
   ThisTag,
@@ -45,7 +45,7 @@ NextCaseOfFinalizedSplitProcess<
 >
 {
   pub fn case_end<NextCase: FinalizedProcess<
-    ProcessBeforeProduces=<SplitterProducesForNextCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
+    SubprocessConsumes=<SplitterProducesForNextCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
   >>(
     self,
     _assumed_tag: NextTag,
@@ -68,7 +68,7 @@ NextCaseOfFinalizedSplitProcess<
 
   pub fn case_via<
     NextCase: FlowingProcess<
-      ProcessBeforeProduces=<SplitterProducesForNextCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated
+      SubprocessConsumes=<SplitterProducesForNextCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated
     >,
   >(
     self,
@@ -98,7 +98,8 @@ impl<
   SplitterProducesForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
   SplitterProducesForOtherCases: Send + Sync,
   ProcessBefore: FinalizedSplitProcess<Coproduct<(ThisTag, SplitterProducesForThisCase), SplitterProducesForOtherCases>>,
-  ThisCase: FinalizedProcess<ProcessBeforeProduces=<SplitterProducesForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated>,
+  ThisCase: FinalizedProcess<SubprocessConsumes=<SplitterProducesForThisCase as
+  Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated>,
 > FinalizedSplitProcess<SplitterProducesForOtherCases>
 for NextCaseOfFinalizedSplitProcess<
   ThisTag,
@@ -213,7 +214,7 @@ impl<
   SplitterProducesForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
   ProcessBefore: FinalizedSplitProcess<Coproduct<(ThisTag, SplitterProducesForThisCase), CNil>>,
   ThisCase: FinalizedProcess<
-    ProcessBeforeProduces=<SplitterProducesForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
+    SubprocessConsumes=<SplitterProducesForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
   >,
 > FinalizedProcess
 for NextCaseOfFinalizedSplitProcess<ThisTag, SplitterProducesForThisCase, CNil, ProcessBefore, ThisCase>
@@ -269,7 +270,7 @@ where
     let process_before_output = self.run_split_subprocess(subprocess_consumes).await?;
     match process_before_output {
       IntermediateFinalizedSplitOutcome::GoToCase {
-        process_before_split_produced, splitter_produces_to_other_cases
+        process_before_split_produced: _, splitter_produces_to_other_cases
       } => { match splitter_produces_to_other_cases {} }
       IntermediateFinalizedSplitOutcome::Yield(a, b, c) => Ok(RunOutcome::Yield(a, b, c)),
       IntermediateFinalizedSplitOutcome::Finish(a) => Ok(RunOutcome::Finish(a)),

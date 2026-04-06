@@ -33,7 +33,7 @@ impl<
   >,
   SplitterProducesForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
   SplitterProducesForNextCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
-  ThisCase: FinalizedProcess<ProcessBeforeProduces=<SplitterProducesForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated>,
+  ThisCase: FinalizedProcess<SubprocessConsumes=<SplitterProducesForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated>,
 >
 FirstCaseOfFinalizedSplitProcess<
   ThisTag,
@@ -45,7 +45,7 @@ FirstCaseOfFinalizedSplitProcess<
 {
   pub fn case_end<
     NextCase: FinalizedProcess<
-      ProcessBeforeProduces=<SplitterProducesForNextCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
+      SubprocessConsumes=<SplitterProducesForNextCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
     >,
   >(
     self,
@@ -67,7 +67,7 @@ FirstCaseOfFinalizedSplitProcess<
 
   pub fn case_via<
     NextCase: FlowingProcess<
-      ProcessBeforeProduces=<SplitterProducesForNextCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated
+      SubprocessConsumes=<SplitterProducesForNextCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated
     >,
   >(
     self,
@@ -84,9 +84,7 @@ FirstCaseOfFinalizedSplitProcess<
     FlowingCaseOfFinalizedSplitProcess {
       split_process_before: self,
       case_index: WILL_BE_RENUMBERED,
-      this_case: create_case(subprocess::<
-        <SplitterProducesForNextCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
-      >()),
+      this_case: create_case(subprocess::<<SplitterProducesForNextCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated>()),
       phantom_data: Default::default(),
     }
   }
@@ -97,7 +95,7 @@ impl<
   SplitterProducesForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
   SplitterProducesForOtherCases: Send + Sync,
   ProcessBefore: SplitProcess<SplitterProducesForOtherCases, SplitterProducesForFirstCase=SplitterProducesForThisCase>,
-  ThisCase: FinalizedProcess<ProcessBeforeProduces=<SplitterProducesForThisCase as Concat<<ProcessBefore>::ProcessBeforeSplitProduces>>::Concatenated>,
+  ThisCase: FinalizedProcess<SubprocessConsumes=<SplitterProducesForThisCase as Concat<<ProcessBefore>::ProcessBeforeSplitProduces>>::Concatenated>,
 > FinalizedSplitProcess<SplitterProducesForOtherCases>
 for FirstCaseOfFinalizedSplitProcess<
   ThisTag,

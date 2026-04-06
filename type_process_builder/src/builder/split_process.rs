@@ -82,7 +82,7 @@ pub trait SplitProcess<SplitterProducesForOtherCases: Send + Sync>: Sized + Sync
   }
 
   fn case_via<
-    ThisCase: FlowingProcess<ProcessBeforeProduces=<Self::SplitterProducesForFirstCase as Concat<Self::ProcessBeforeSplitProduces>>::Concatenated>,
+    ThisCase: FlowingProcess<SubprocessConsumes=<Self::SplitterProducesForFirstCase as Concat<Self::ProcessBeforeSplitProduces>>::Concatenated>,
   >(
     self,
     _assumed_tag: Self::SplitterTagForFirstCase,

@@ -15,7 +15,7 @@ pub struct FirstCaseOfFlowingSplitProcess<
   SplitterProducesForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
   SplitterProducesForOtherCases: Send + Sync,
   ProcessBefore: SplitProcess<SplitterProducesForOtherCases>,
-  ThisCase: FlowingProcess<ProcessBeforeProduces=<SplitterProducesForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated>,
+  ThisCase: FlowingProcess<SubprocessConsumes=<SplitterProducesForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated>,
 > {
   pub split_process_before: ProcessBefore,
   pub case_index: StepIndex,
@@ -40,7 +40,7 @@ impl<
   SplitterProducesForNextCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
   ThisCaseProduces: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
   ThisCase: FlowingProcess<
-    ProcessBeforeProduces=<SplitterProducesForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
+    SubprocessConsumes=<SplitterProducesForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
     Produces=ThisCaseProduces,
   >,
 >
@@ -53,7 +53,7 @@ FirstCaseOfFlowingSplitProcess<
 >
 {
   pub fn case_end<
-    NextCase: FinalizedProcess<ProcessBeforeProduces=<SplitterProducesForNextCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated>,
+    NextCase: FinalizedProcess<SubprocessConsumes=<SplitterProducesForNextCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated>,
   >(
     self,
     _assumed_tag: NextTag,
@@ -77,8 +77,9 @@ FirstCaseOfFlowingSplitProcess<
   }
 
   pub fn case_via<
-    NextCase: FlowingProcess<ProcessBeforeProduces=<SplitterProducesForNextCase as
-    Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated>,
+    NextCase: FlowingProcess<
+      SubprocessConsumes=<SplitterProducesForNextCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated
+    >,
     Indices: Sync,
   >(
     self,
@@ -111,7 +112,7 @@ impl<
   ProcessBefore: SplitProcess<SplitterProducesForOtherCases, SplitterProducesForFirstCase=SplitterProducesForThisCase>,
   ThisCaseProduces: ParamList,
   ThisCase: FlowingProcess<
-    ProcessBeforeProduces=<SplitterProducesForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
+    SubprocessConsumes=<SplitterProducesForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
     Produces=ThisCaseProduces,
   >,
 > FlowingSplitProcess<SplitterProducesForOtherCases>

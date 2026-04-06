@@ -1,9 +1,8 @@
 use crate::builder::subprocess::{Subprocess, subprocess};
 use crate::builder::{
   FinalizedProcess, FlowingCaseOfFlowingSplitProcess, FlowingProcess, FlowingSplitProcess,
-  IntermediateFinalizedSplitOutcome, IntermediateFlowingSplitOutcome, IntermediateFlowingSplitResult,
-  IntermediateRunOutcome, IntermediateRunResult, ParamList, ParamUID, PreviousRunYieldedAt, RunOutcome, SessionContext,
-  StepIndex, WILL_BE_RENUMBERED,
+  IntermediateFlowingSplitOutcome, IntermediateFlowingSplitResult, IntermediateRunOutcome, IntermediateRunResult,
+  ParamList, ParamUID, PreviousRunYieldedAt, RunOutcome, SessionContext, StepIndex, WILL_BE_RENUMBERED,
 };
 use crate::param_list::concat::Concat;
 use crate::step::FailedInputValidationAttempts;
@@ -15,7 +14,7 @@ pub struct FinalizedCaseOfFlowingSplitProcess<
   SplitterProducesForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
   SplitterProducesForOtherCases: Send + Sync,
   ProcessBefore: FlowingSplitProcess<Coproduct<(ThisTag, SplitterProducesForThisCase), SplitterProducesForOtherCases>>,
-  ThisCase: FinalizedProcess<ProcessBeforeProduces=<SplitterProducesForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated>,
+  ThisCase: FinalizedProcess<SubprocessConsumes=<SplitterProducesForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated>,
 > {
   pub split_process_before: ProcessBefore,
   pub case_index: StepIndex,
@@ -37,7 +36,7 @@ impl<
   SplitterProducesForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
   SplitterProducesForNextCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
   ThisCase: FinalizedProcess<
-    ProcessBeforeProduces=<SplitterProducesForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
+    SubprocessConsumes=<SplitterProducesForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
   >,
 >
 FinalizedCaseOfFlowingSplitProcess<
@@ -49,7 +48,7 @@ FinalizedCaseOfFlowingSplitProcess<
 >
 {
   pub fn case_end<
-    NextCase: FinalizedProcess<ProcessBeforeProduces=<SplitterProducesForNextCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated>,
+    NextCase: FinalizedProcess<SubprocessConsumes=<SplitterProducesForNextCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated>,
   >(
     self,
     _assumed_tag: NextTag,
@@ -73,7 +72,7 @@ FinalizedCaseOfFlowingSplitProcess<
   }
 
   pub fn case_via<
-    NextCase: FlowingProcess<ProcessBeforeProduces=<SplitterProducesForNextCase as
+    NextCase: FlowingProcess<SubprocessConsumes=<SplitterProducesForNextCase as
     Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated>,
     Indices: Sync,
   >(
@@ -105,7 +104,7 @@ impl<
   SplitterProducesForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
   SplitterProducesForOtherCases: Send + Sync,
   ProcessBefore: FlowingSplitProcess<Coproduct<(ThisTag, SplitterProducesForThisCase), SplitterProducesForOtherCases>>,
-  ThisCase: FinalizedProcess<ProcessBeforeProduces=<SplitterProducesForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated>,
+  ThisCase: FinalizedProcess<SubprocessConsumes=<SplitterProducesForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated>,
 > FlowingSplitProcess<SplitterProducesForOtherCases>
 for FinalizedCaseOfFlowingSplitProcess<
   ThisTag,
@@ -224,7 +223,7 @@ impl<
   ThisTag: Send + Sync,
   SplitterProducesForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
   ProcessBefore: FlowingSplitProcess<Coproduct<(ThisTag, SplitterProducesForThisCase), CNil>>,
-  ThisCase: FinalizedProcess<ProcessBeforeProduces=<SplitterProducesForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated>,
+  ThisCase: FinalizedProcess<SubprocessConsumes=<SplitterProducesForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated>,
 > FlowingProcess
 for FinalizedCaseOfFlowingSplitProcess<ThisTag, SplitterProducesForThisCase, CNil, ProcessBefore, ThisCase>
 {
@@ -290,12 +289,13 @@ for FinalizedCaseOfFlowingSplitProcess<ThisTag, SplitterProducesForThisCase, CNi
                                                                                  IntermediateRunResult<Self::Produces> {
     let process_before_output = self.run_split_subprocess(subprocess_consumes).await?;
     match process_before_output {
-      IntermediateFinalizedSplitOutcome::GoToCase {
-        process_before_split_produced, splitter_produces_to_other_cases
+      IntermediateFlowingSplitOutcome::Continue(a) => Ok(IntermediateRunOutcome::Continue(a)),
+      IntermediateFlowingSplitOutcome::GoToCase {
+        process_before_split_produced: _, splitter_produces_to_other_cases
       } => { match splitter_produces_to_other_cases {} }
-      IntermediateFinalizedSplitOutcome::Yield(a, b, c) => Ok(IntermediateRunOutcome::Yield(a, b, c)),
-      IntermediateFinalizedSplitOutcome::Finish(a) => Ok(IntermediateRunOutcome::Finish(a)),
-      IntermediateFinalizedSplitOutcome::RetryUserInput(a) => Ok(IntermediateRunOutcome::RetryUserInput(a)),
+      IntermediateFlowingSplitOutcome::Yield(a, b, c) => Ok(IntermediateRunOutcome::Yield(a, b, c)),
+      IntermediateFlowingSplitOutcome::Finish(a) => Ok(IntermediateRunOutcome::Finish(a)),
+      IntermediateFlowingSplitOutcome::RetryUserInput(a) => Ok(IntermediateRunOutcome::RetryUserInput(a)),
     }
   }
 
