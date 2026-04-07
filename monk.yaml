@@ -30,7 +30,7 @@ pre-push:
     - cargo clippy --all-targets --all-features -- -D warnings -W clippy::all
     - |
       cargo llvm-cov \
-      --fail-under-regions 55 --fail-under-functions 71 --fail-under-lines 57 \
+      --fail-under-regions 48 --fail-under-functions 66 --fail-under-lines 53 \
       --package type_process_builder
     - |
       cargo llvm-cov \

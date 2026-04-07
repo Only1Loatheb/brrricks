@@ -56,6 +56,7 @@ pub trait FlowingProcess: Sized + Sync {
   ) -> impl FlowingProcess<
     ProcessBeforeProduces = Self::Produces,
     Produces = <OperationProduces as Concat<Self::Produces>>::Concatenated,
+    SubprocessConsumes = Self::SubprocessConsumes,
   >
   where
     for<'a> &'a Self::Produces: CloneJust<OperationConsumes, ProcessBeforeProducesToLastStepConsumesIndices>,
@@ -85,6 +86,7 @@ pub trait FlowingProcess: Sized + Sync {
   ) -> impl FlowingProcess<
     ProcessBeforeProduces = Self::Produces,
     Produces = <FormProduces as Concat<Self::Produces>>::Concatenated,
+    SubprocessConsumes = Self::SubprocessConsumes,
   >
   where
     for<'a> &'a Self::Produces: CloneJust<CreateFormConsumes, ProcessBeforeProducesToCreateFormConsumesIndices>,
@@ -187,7 +189,7 @@ pub trait FlowingProcess: Sized + Sync {
   >(
     self,
     step: FinalStep,
-  ) -> impl FinalizedProcess<ProcessBeforeProduces = Self::Produces>
+  ) -> impl FinalizedProcess<ProcessBeforeProduces = Self::Produces, SubprocessConsumes = Self::SubprocessConsumes>
   where
     Self::Produces: TransformTo<FinalConsumes, ProcessBeforeProducesToLastStepConsumesIndices>,
   {
