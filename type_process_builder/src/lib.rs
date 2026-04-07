@@ -142,14 +142,14 @@ mod tests {
     }
   }
 
-  struct SelectCase2;
-  impl Splitter for SelectCase2 {
+  pub struct InnerCase1;
+  pub struct InnerCase2;
+  struct InnerSelectCase2;
+  impl Splitter for InnerSelectCase2 {
     type Consumes = HNil;
-    type Produces =
-      Coprod![(Case1, HList![Split1Param, CommonSplitParam]), (Case2, HList![Split2Param, CommonSplitParam])];
-
+    type Produces = Coprod![(InnerCase1, HNil), (InnerCase2, HNil)];
     async fn handle(&self, _consumes: Self::Consumes) -> anyhow::Result<Self::Produces> {
-      Ok(Self::Produces::inject((Case2, hlist!(Split2Param, CommonSplitParam))))
+      Ok(Self::Produces::inject((InnerCase2, HNil)))
     }
   }
 
@@ -262,7 +262,7 @@ mod tests {
 
   struct FinalNoConsumes;
   impl Final for FinalNoConsumes {
-    type Consumes = HList![];
+    type Consumes = HNil;
 
     async fn handle(&self, _consumes: Self::Consumes) -> anyhow::Result<Message> {
       Ok(Message("Empty good bye".into()))
@@ -350,7 +350,32 @@ mod tests {
   }
 
   #[tokio::test]
+  async fn test_yield_first_case_of_finalized_split_process_split() {
+    let process = ExtractMsisdnOperatorAndShortcodeString
+      .split(SelectCase1)
+      .case_end(Case1, |x| x.end(FinalNoConsumes))
+      .case_end(Case2, |x| {
+        x.split(InnerSelectCase2)
+          .case_end(InnerCase1, |x| x.end(FinalNoConsumes))
+          .case_end(InnerCase2, |x| x.end(FinalNoConsumes))
+      })
+      .build("", 0);
+    let messages = vec!["*123#", "Empty good bye"];
+    test_process_produces_messages(process, messages).await;
+  }
+
+  #[tokio::test]
   async fn test_flowing_case_of_finalized_split_process() {
+    struct SelectCase2;
+    impl Splitter for SelectCase2 {
+      type Consumes = HNil;
+      type Produces =
+        Coprod![(Case1, HList![Split1Param, CommonSplitParam]), (Case2, HList![Split2Param, CommonSplitParam])];
+
+      async fn handle(&self, _consumes: Self::Consumes) -> anyhow::Result<Self::Produces> {
+        Ok(Self::Produces::inject((Case2, hlist!(Split2Param, CommonSplitParam))))
+      }
+    }
     let process = ExtractMsisdnOperatorAndShortcodeString
       .split(SelectCase2)
       .case_end(Case1, |x| x.end(FinalNoConsumes))

@@ -118,6 +118,7 @@ pub trait FlowingProcess: Sized + Sync {
     ProcessBeforeSplitProduces = Self::Produces,
     SplitterProducesForFirstCase = SplitterProducesForFirstCase,
     SplitterTagForFirstCase = Tag,
+    SubprocessConsumes = Self::SubprocessConsumes,
   >
   where
     for<'a> &'a Self::Produces: CloneJust<SplitterStepConsumes, ProcessBeforeProducesToSplitterStepConsumesIndices>,
@@ -159,6 +160,7 @@ pub trait FlowingProcess: Sized + Sync {
     ProcessBeforeSplitProduces = Self::Produces,
     SplitterProducesForFirstCase = SplitterProducesForFirstCase,
     SplitterTagForFirstCase = Tag,
+    SubprocessConsumes = Self::SubprocessConsumes,
   >
   where
     for<'a> &'a Self::Produces: CloneJust<CreateFormConsumes, ProcessBeforeProducesToCreateFormConsumesIndices>,
