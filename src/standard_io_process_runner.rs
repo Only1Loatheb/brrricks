@@ -16,7 +16,7 @@ pub(crate) async fn standard_io_process_runner(demo_process: RunnableProcess<imp
     let mut input = String::new();
     io::stdin().read_line(&mut input)?;
     let user_input = input.trim().to_owned();
-    println!("{previous_run_produced:?}");
+
     match demo_process
       .resume_run(previous_run_produced.clone(), previous_run_yielded_at.clone(), user_input, failed_attempts.clone())
       .await
