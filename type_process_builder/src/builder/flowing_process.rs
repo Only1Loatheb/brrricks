@@ -24,6 +24,7 @@ use std::future::Future;
 pub trait FlowingProcess: Sized + Sync {
   type ProcessBeforeProduces: ParamList;
   type Produces: ParamList;
+  type SubprocessConsumes: ParamList;
   // add a dependent type for split process to pass values produced by the splitter step to this specific branch.
 
   fn resume_run(
@@ -39,6 +40,11 @@ pub trait FlowingProcess: Sized + Sync {
     process_before_produces: Self::ProcessBeforeProduces,
   ) -> impl Future<Output = IntermediateRunResult<Self::Produces>> + Send;
 
+  fn run_subprocess(
+    &self,
+    subprocess_consumes: Self::SubprocessConsumes,
+  ) -> impl Future<Output = IntermediateRunResult<Self::Produces>> + Send;
+
   fn then<
     OperationConsumes: ParamList,
     OperationProduces: ParamList + Concat<Self::Produces>,
@@ -50,6 +56,7 @@ pub trait FlowingProcess: Sized + Sync {
   ) -> impl FlowingProcess<
     ProcessBeforeProduces = Self::Produces,
     Produces = <OperationProduces as Concat<Self::Produces>>::Concatenated,
+    SubprocessConsumes = Self::SubprocessConsumes,
   >
   where
     for<'a> &'a Self::Produces: CloneJust<OperationConsumes, ProcessBeforeProducesToLastStepConsumesIndices>,
@@ -79,6 +86,7 @@ pub trait FlowingProcess: Sized + Sync {
   ) -> impl FlowingProcess<
     ProcessBeforeProduces = Self::Produces,
     Produces = <FormProduces as Concat<Self::Produces>>::Concatenated,
+    SubprocessConsumes = Self::SubprocessConsumes,
   >
   where
     for<'a> &'a Self::Produces: CloneJust<CreateFormConsumes, ProcessBeforeProducesToCreateFormConsumesIndices>,
@@ -181,7 +189,7 @@ pub trait FlowingProcess: Sized + Sync {
   >(
     self,
     step: FinalStep,
-  ) -> impl FinalizedProcess<ProcessBeforeProduces = Self::Produces>
+  ) -> impl FinalizedProcess<ProcessBeforeProduces = Self::Produces, SubprocessConsumes = Self::SubprocessConsumes>
   where
     Self::Produces: TransformTo<FinalConsumes, ProcessBeforeProducesToLastStepConsumesIndices>,
   {

@@ -7,6 +7,7 @@ use serde_value::Value;
 impl<Produces: ParamList, EntryStep: Entry<Value, Produces = Produces>> FlowingProcess for EntryStep {
   type ProcessBeforeProduces = HNil;
   type Produces = EntryStep::Produces;
+  type SubprocessConsumes = HNil;
 
   async fn resume_run(
     &self,
@@ -20,7 +21,11 @@ impl<Produces: ParamList, EntryStep: Entry<Value, Produces = Produces>> FlowingP
   }
 
   async fn continue_run(&self, _: Self::ProcessBeforeProduces) -> IntermediateRunResult<Self::Produces> {
-    unreachable!("We never continue run first step")
+    unreachable!("We never continue from entry step")
+  }
+
+  async fn run_subprocess(&self, _: Self::SubprocessConsumes) -> IntermediateRunResult<Self::Produces> {
+    unreachable!("Entry step never starts subprocess")
   }
 
   fn enumerate_steps(&mut self, last_used_index: StepIndex) -> StepIndex {

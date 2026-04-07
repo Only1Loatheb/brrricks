@@ -31,6 +31,7 @@ where
 {
   type ProcessBeforeProduces = ProcessBefore::Produces;
   type Produces = <LastStepProduces as Concat<ProcessBefore::Produces>>::Concatenated;
+  type SubprocessConsumes = ProcessBefore::SubprocessConsumes;
 
   async fn resume_run(
     &self,
@@ -63,6 +64,19 @@ where
     let last_step_consumes = (&process_before_produces).clone_just();
     let last_step_output = self.last_step.handle(last_step_consumes).await?;
     Ok(IntermediateRunOutcome::Continue(last_step_output.concat(process_before_produces)))
+  }
+
+  async fn run_subprocess(
+    &self,
+    subprocess_consumes: Self::SubprocessConsumes,
+  ) -> IntermediateRunResult<Self::Produces> {
+    let process_before_output = self.process_before.run_subprocess(subprocess_consumes).await?;
+    match process_before_output {
+      IntermediateRunOutcome::Continue(process_before_produces) => self.continue_run(process_before_produces).await,
+      IntermediateRunOutcome::Yield(a, b, c) => Ok(IntermediateRunOutcome::Yield(a, b, c)),
+      IntermediateRunOutcome::Finish(a) => Ok(IntermediateRunOutcome::Finish(a)),
+      IntermediateRunOutcome::RetryUserInput(a) => Ok(IntermediateRunOutcome::RetryUserInput(a)),
+    }
   }
 
   fn enumerate_steps(&mut self, last_used_index: StepIndex) -> StepIndex {

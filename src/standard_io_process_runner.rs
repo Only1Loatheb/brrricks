@@ -3,9 +3,7 @@ use std::io::Write;
 use type_process_builder::builder::{FinalizedProcess, PreviousRunYieldedAt, RunOutcome, RunnableProcess, StepIndex};
 use type_process_builder::step::FailedInputValidationAttempts;
 
-pub(crate) async fn standard_io_process_runner<ProcessBeforeProduces>(
-  demo_process: RunnableProcess<impl FinalizedProcess<ProcessBeforeProduces = ProcessBeforeProduces>>,
-) -> io::Result<()> {
+pub(crate) async fn standard_io_process_runner(demo_process: RunnableProcess<impl FinalizedProcess>) -> io::Result<()> {
   let mut previous_run_produced = Vec::new();
   let mut previous_run_yielded_at = PreviousRunYieldedAt(StepIndex::MIN);
   let mut failed_attempts = FailedInputValidationAttempts(0);

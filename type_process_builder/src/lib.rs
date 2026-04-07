@@ -338,7 +338,6 @@ mod tests {
     test_process_produces_messages(process, messages).await;
   }
 
-  #[ignore]
   #[tokio::test]
   async fn test_yield_first_case_of_finalized_split_process() {
     let process = ExtractMsisdnOperatorAndShortcodeString

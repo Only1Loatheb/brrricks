@@ -17,6 +17,7 @@ pub trait FlowingSplitProcess<SplitterProducesForOtherCases>: Sized + Sync {
   type ProcessBeforeSplitProduces: ParamList;
   type SplitterProducesForThisCase: ParamList + Concat<Self::ProcessBeforeSplitProduces>;
   type EveryFlowingCaseProduces: ParamList; // already includes ProcessBeforeSplitProduces;
+  type SubprocessConsumes: ParamList;
 
   fn resume_run(
     &self,
@@ -44,6 +45,17 @@ pub trait FlowingSplitProcess<SplitterProducesForOtherCases>: Sized + Sync {
       Self::SplitterProducesForThisCase,
       SplitterProducesForOtherCases,
     >,
+  ) -> impl Future<
+    Output = IntermediateFlowingSplitResult<
+      Self::ProcessBeforeSplitProduces,
+      SplitterProducesForOtherCases,
+      Self::EveryFlowingCaseProduces,
+    >,
+  > + Send;
+
+  fn run_split_subprocess(
+    &self,
+    subprocess_consumes: Self::SubprocessConsumes,
   ) -> impl Future<
     Output = IntermediateFlowingSplitResult<
       Self::ProcessBeforeSplitProduces,
