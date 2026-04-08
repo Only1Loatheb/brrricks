@@ -24,14 +24,7 @@ pub struct FormFlowingProcess<
 
 impl<
   ProcessBefore: FlowingProcess,
-  CreateFormConsumes: ParamList,
-  ValidateInputConsumes: ParamList,
-  LastStepProduces: ParamList + Concat<ProcessBefore::Produces>,
-  FormStep: Form<
-      CreateFormConsumes = CreateFormConsumes,
-      ValidateInputConsumes = ValidateInputConsumes,
-      Produces = LastStepProduces,
-    >,
+  FormStep: Form,
   ProcessBeforeProducesToCreateFormConsumesIndices: Sync,
   ProcessBeforeProducesToValidateInputConsumesIndices: Sync,
 > FlowingProcess
@@ -42,13 +35,14 @@ impl<
     ProcessBeforeProducesToValidateInputConsumesIndices,
   >
 where
-  for<'a> &'a <ProcessBefore as FlowingProcess>::Produces:
-    CloneJust<CreateFormConsumes, ProcessBeforeProducesToCreateFormConsumesIndices>,
-  for<'a> &'a <ProcessBefore as FlowingProcess>::Produces:
-    CloneJust<ValidateInputConsumes, ProcessBeforeProducesToValidateInputConsumesIndices>,
+  FormStep::Produces: Concat<ProcessBefore::Produces>,
+  for<'a> &'a ProcessBefore::Produces:
+    CloneJust<FormStep::CreateFormConsumes, ProcessBeforeProducesToCreateFormConsumesIndices>,
+  for<'a> &'a ProcessBefore::Produces:
+    CloneJust<FormStep::ValidateInputConsumes, ProcessBeforeProducesToValidateInputConsumesIndices>,
 {
   type ProcessBeforeProduces = ProcessBefore::Produces;
-  type Produces = <LastStepProduces as Concat<ProcessBefore::Produces>>::Concatenated;
+  type Produces = <FormStep::Produces as Concat<ProcessBefore::Produces>>::Concatenated;
   type SubprocessConsumes = ProcessBefore::SubprocessConsumes;
 
   async fn resume_run(

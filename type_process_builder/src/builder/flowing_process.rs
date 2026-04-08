@@ -45,21 +45,17 @@ pub trait FlowingProcess: Sized + Sync {
     subprocess_consumes: Self::SubprocessConsumes,
   ) -> impl Future<Output = IntermediateRunResult<Self::Produces>> + Send;
 
-  fn then<
-    OperationConsumes: ParamList,
-    OperationProduces: ParamList + Concat<Self::Produces>,
-    OperationStep: Operation<Consumes = OperationConsumes, Produces = OperationProduces>,
-    ProcessBeforeProducesToLastStepConsumesIndices: Sync,
-  >(
+  fn then<OperationStep: Operation, ProcessBeforeProducesToLastStepConsumesIndices: Sync>(
     self,
     step: OperationStep,
   ) -> impl FlowingProcess<
     ProcessBeforeProduces = Self::Produces,
-    Produces = <OperationProduces as Concat<Self::Produces>>::Concatenated,
+    Produces = <OperationStep::Produces as Concat<Self::Produces>>::Concatenated,
     SubprocessConsumes = Self::SubprocessConsumes,
   >
   where
-    for<'a> &'a Self::Produces: CloneJust<OperationConsumes, ProcessBeforeProducesToLastStepConsumesIndices>,
+    OperationStep::Produces: ParamList + Concat<Self::Produces>,
+    for<'a> &'a Self::Produces: CloneJust<OperationStep::Consumes, ProcessBeforeProducesToLastStepConsumesIndices>,
   {
     OperationFlowingProcess {
       process_before: self,
@@ -70,14 +66,7 @@ pub trait FlowingProcess: Sized + Sync {
   }
 
   fn show<
-    CreateFormConsumes: ParamList,
-    ValidateInputConsumes: ParamList,
-    FormProduces: ParamList + Concat<Self::Produces>,
-    FormStep: Form<
-        CreateFormConsumes = CreateFormConsumes,
-        ValidateInputConsumes = ValidateInputConsumes,
-        Produces = FormProduces,
-      >,
+    FormStep: Form,
     ProcessBeforeProducesToCreateFormConsumesIndices: Sync,
     ProcessBeforeProducesToValidateInputConsumesIndices: Sync,
   >(
@@ -85,12 +74,15 @@ pub trait FlowingProcess: Sized + Sync {
     step: FormStep,
   ) -> impl FlowingProcess<
     ProcessBeforeProduces = Self::Produces,
-    Produces = <FormProduces as Concat<Self::Produces>>::Concatenated,
+    Produces = <FormStep::Produces as Concat<Self::Produces>>::Concatenated,
     SubprocessConsumes = Self::SubprocessConsumes,
   >
   where
-    for<'a> &'a Self::Produces: CloneJust<CreateFormConsumes, ProcessBeforeProducesToCreateFormConsumesIndices>,
-    for<'a> &'a Self::Produces: CloneJust<ValidateInputConsumes, ProcessBeforeProducesToValidateInputConsumesIndices>,
+    FormStep::Produces: ParamList + Concat<Self::Produces>,
+    for<'a> &'a Self::Produces:
+      CloneJust<FormStep::CreateFormConsumes, ProcessBeforeProducesToCreateFormConsumesIndices>,
+    for<'a> &'a Self::Produces:
+      CloneJust<FormStep::ValidateInputConsumes, ProcessBeforeProducesToValidateInputConsumesIndices>,
   {
     FormFlowingProcess {
       process_before: self,
@@ -102,13 +94,9 @@ pub trait FlowingProcess: Sized + Sync {
 
   fn split<
     Tag: Send + Sync,
-    SplitterStepConsumes: ParamList,
     SplitterProducesForFirstCase: ParamList + Concat<Self::Produces>,
     SplitterProducesForOtherCases: Send + Sync,
-    SplitterStep: Splitter<
-        Consumes = SplitterStepConsumes,
-        Produces = Coproduct<(Tag, SplitterProducesForFirstCase), SplitterProducesForOtherCases>,
-      >,
+    SplitterStep: Splitter<Produces = Coproduct<(Tag, SplitterProducesForFirstCase), SplitterProducesForOtherCases>>,
     ProcessBeforeProducesToSplitterStepConsumesIndices: Sync,
   >(
     self,
@@ -121,12 +109,11 @@ pub trait FlowingProcess: Sized + Sync {
     SubprocessConsumes = Self::SubprocessConsumes,
   >
   where
-    for<'a> &'a Self::Produces: CloneJust<SplitterStepConsumes, ProcessBeforeProducesToSplitterStepConsumesIndices>,
+    for<'a> &'a Self::Produces: CloneJust<SplitterStep::Consumes, ProcessBeforeProducesToSplitterStepConsumesIndices>,
   {
     SplitProcessSplitter::<
       Tag,
       Self,
-      SplitterStepConsumes,
       SplitterProducesForFirstCase,
       SplitterProducesForOtherCases,
       SplitterStep,
@@ -141,15 +128,9 @@ pub trait FlowingProcess: Sized + Sync {
 
   fn show_split<
     Tag: Send + Sync,
-    CreateFormConsumes: ParamList,
-    ValidateInputConsumes: ParamList,
     SplitterProducesForFirstCase: ParamList + Concat<Self::Produces>,
     SplitterProducesForOtherCases: Send + Sync,
-    SplitterStep: FormSplitter<
-        CreateFormConsumes = CreateFormConsumes,
-        ValidateInputConsumes = ValidateInputConsumes,
-        Produces = Coproduct<(Tag, SplitterProducesForFirstCase), SplitterProducesForOtherCases>,
-      >,
+    SplitterStep: FormSplitter<Produces = Coproduct<(Tag, SplitterProducesForFirstCase), SplitterProducesForOtherCases>>,
     ProcessBeforeProducesToCreateFormConsumesIndices: Sync,
     ProcessBeforeProducesToValidateInputConsumesIndices: Sync,
   >(
@@ -163,14 +144,14 @@ pub trait FlowingProcess: Sized + Sync {
     SubprocessConsumes = Self::SubprocessConsumes,
   >
   where
-    for<'a> &'a Self::Produces: CloneJust<CreateFormConsumes, ProcessBeforeProducesToCreateFormConsumesIndices>,
-    for<'a> &'a Self::Produces: CloneJust<ValidateInputConsumes, ProcessBeforeProducesToValidateInputConsumesIndices>,
+    for<'a> &'a Self::Produces:
+      CloneJust<SplitterStep::CreateFormConsumes, ProcessBeforeProducesToCreateFormConsumesIndices>,
+    for<'a> &'a Self::Produces:
+      CloneJust<SplitterStep::ValidateInputConsumes, ProcessBeforeProducesToValidateInputConsumesIndices>,
   {
     SplitProcessFormSplitter::<
       Tag,
       Self,
-      CreateFormConsumes,
-      ValidateInputConsumes,
       SplitterProducesForFirstCase,
       SplitterProducesForOtherCases,
       SplitterStep,
@@ -184,16 +165,12 @@ pub trait FlowingProcess: Sized + Sync {
     }
   }
 
-  fn end<
-    FinalConsumes: ParamList,
-    FinalStep: Final<Consumes = FinalConsumes>,
-    ProcessBeforeProducesToLastStepConsumesIndices: Sync,
-  >(
+  fn end<FinalStep: Final, ProcessBeforeProducesToLastStepConsumesIndices: Sync>(
     self,
     step: FinalStep,
   ) -> impl FinalizedProcess<ProcessBeforeProduces = Self::Produces, SubprocessConsumes = Self::SubprocessConsumes>
   where
-    Self::Produces: TransformTo<FinalConsumes, ProcessBeforeProducesToLastStepConsumesIndices>,
+    Self::Produces: TransformTo<FinalStep::Consumes, ProcessBeforeProducesToLastStepConsumesIndices>,
   {
     FlowingFinalizedProcess { process_before: self, final_step: step, phantom_data: Default::default() }
   }

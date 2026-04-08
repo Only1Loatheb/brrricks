@@ -98,8 +98,7 @@ impl<
   SplitterProducesForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
   SplitterProducesForOtherCases: Send + Sync,
   ProcessBefore: FinalizedSplitProcess<Coproduct<(ThisTag, SplitterProducesForThisCase), SplitterProducesForOtherCases>>,
-  ThisCase: FinalizedProcess<SubprocessConsumes=<SplitterProducesForThisCase as
-  Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated>,
+  ThisCase: FinalizedProcess<SubprocessConsumes=<SplitterProducesForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated>,
 > FinalizedSplitProcess<SplitterProducesForOtherCases>
 for NextCaseOfFinalizedSplitProcess<
   ThisTag,

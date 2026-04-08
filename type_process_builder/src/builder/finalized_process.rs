@@ -40,8 +40,7 @@ pub trait FinalizedProcess: Sized + Sync {
 
 pub struct FlowingFinalizedProcess<
   ProcessBefore: FlowingProcess,
-  FinalConsumes: ParamList,
-  FinalStep: Final<Consumes = FinalConsumes>,
+  FinalStep: Final,
   ProcessBeforeProducesTransformToFinalConsumesIndices,
 > {
   pub process_before: ProcessBefore,
@@ -49,20 +48,11 @@ pub struct FlowingFinalizedProcess<
   pub phantom_data: PhantomData<ProcessBeforeProducesTransformToFinalConsumesIndices>,
 }
 
-impl<
-  ProcessBefore: FlowingProcess,
-  FinalConsumes: ParamList,
-  FinalStep: Final<Consumes = FinalConsumes>,
-  ProcessBeforeProducesTransformToFinalConsumesIndices: Sync,
-> FinalizedProcess
-  for FlowingFinalizedProcess<
-    ProcessBefore,
-    FinalConsumes,
-    FinalStep,
-    ProcessBeforeProducesTransformToFinalConsumesIndices,
-  >
+impl<ProcessBefore: FlowingProcess, FinalStep: Final, ProcessBeforeProducesTransformToFinalConsumesIndices: Sync>
+  FinalizedProcess
+  for FlowingFinalizedProcess<ProcessBefore, FinalStep, ProcessBeforeProducesTransformToFinalConsumesIndices>
 where
-  ProcessBefore::Produces: TransformTo<FinalConsumes, ProcessBeforeProducesTransformToFinalConsumesIndices>,
+  ProcessBefore::Produces: TransformTo<FinalStep::Consumes, ProcessBeforeProducesTransformToFinalConsumesIndices>,
 {
   type ProcessBeforeProduces = ProcessBefore::Produces;
   type SubprocessConsumes = ProcessBefore::SubprocessConsumes;

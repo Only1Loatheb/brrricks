@@ -18,19 +18,16 @@ pub struct OperationFlowingProcess<
   pub phantom_data: PhantomData<ProcessBeforeProducesToLastStepConsumesIndices>,
 }
 
-impl<
-  ProcessBefore: FlowingProcess,
-  LastStepConsumes: ParamList,
-  LastStepProduces: ParamList + Concat<ProcessBefore::Produces>,
-  OperationStep: Operation<Consumes = LastStepConsumes, Produces = LastStepProduces>,
-  ProcessBeforeProducesToLastStepConsumesIndices: Sync,
-> FlowingProcess
+impl<ProcessBefore: FlowingProcess, OperationStep: Operation, ProcessBeforeProducesToLastStepConsumesIndices: Sync>
+  FlowingProcess
   for OperationFlowingProcess<ProcessBefore, OperationStep, ProcessBeforeProducesToLastStepConsumesIndices>
 where
-  for<'a> &'a ProcessBefore::Produces: CloneJust<LastStepConsumes, ProcessBeforeProducesToLastStepConsumesIndices>,
+  OperationStep::Produces: ParamList + Concat<ProcessBefore::Produces>,
+  for<'a> &'a ProcessBefore::Produces:
+    CloneJust<OperationStep::Consumes, ProcessBeforeProducesToLastStepConsumesIndices>,
 {
   type ProcessBeforeProduces = ProcessBefore::Produces;
-  type Produces = <LastStepProduces as Concat<ProcessBefore::Produces>>::Concatenated;
+  type Produces = <OperationStep::Produces as Concat<ProcessBefore::Produces>>::Concatenated;
   type SubprocessConsumes = ProcessBefore::SubprocessConsumes;
 
   async fn resume_run(

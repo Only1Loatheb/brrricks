@@ -23,25 +23,23 @@ pub struct FirstCaseOfFinalizedSplitProcess<
 }
 
 impl<
-  ThisTag: Send + Sync,
   NextTag: Send + Sync,
   SplitterProducesForOtherCases: Send + Sync,
-  ProcessBefore: SplitProcess<
-    Coproduct<(NextTag, SplitterProducesForNextCase), SplitterProducesForOtherCases>,
-    SplitterProducesForFirstCase=SplitterProducesForThisCase,
-    SplitterTagForFirstCase=ThisTag,
-  >,
-  SplitterProducesForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
+  ProcessBefore: SplitProcess<Coproduct<(NextTag, SplitterProducesForNextCase), SplitterProducesForOtherCases>>,
   SplitterProducesForNextCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
-  ThisCase: FinalizedProcess<SubprocessConsumes=<SplitterProducesForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated>,
+  ThisCase: FinalizedProcess<
+    SubprocessConsumes = <ProcessBefore::SplitterProducesForFirstCase as Concat<
+      ProcessBefore::ProcessBeforeSplitProduces,
+    >>::Concatenated,
+  >,
 >
-FirstCaseOfFinalizedSplitProcess<
-  ThisTag,
-  SplitterProducesForThisCase,
-  Coproduct<(NextTag, SplitterProducesForNextCase), SplitterProducesForOtherCases>,
-  ProcessBefore,
-  ThisCase,
->
+  FirstCaseOfFinalizedSplitProcess<
+    ProcessBefore::SplitterTagForFirstCase,
+    ProcessBefore::SplitterProducesForFirstCase,
+    Coproduct<(NextTag, SplitterProducesForNextCase), SplitterProducesForOtherCases>,
+    ProcessBefore,
+    ThisCase,
+  >
 {
   pub fn case_end<
     NextCase: FinalizedProcess<
@@ -84,30 +82,34 @@ FirstCaseOfFinalizedSplitProcess<
     FlowingCaseOfFinalizedSplitProcess {
       split_process_before: self,
       case_index: WILL_BE_RENUMBERED,
-      this_case: create_case(subprocess::<<SplitterProducesForNextCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated>()),
+      this_case: create_case(subprocess::<
+        <SplitterProducesForNextCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
+      >()),
       phantom_data: Default::default(),
     }
   }
 }
 
 impl<
-  ThisTag: Send + Sync,
-  SplitterProducesForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
   SplitterProducesForOtherCases: Send + Sync,
-  ProcessBefore: SplitProcess<SplitterProducesForOtherCases, SplitterProducesForFirstCase=SplitterProducesForThisCase>,
-  ThisCase: FinalizedProcess<SubprocessConsumes=<SplitterProducesForThisCase as Concat<<ProcessBefore>::ProcessBeforeSplitProduces>>::Concatenated>,
+  ProcessBefore: SplitProcess<SplitterProducesForOtherCases>,
+  ThisCase: FinalizedProcess<
+    SubprocessConsumes = <ProcessBefore::SplitterProducesForFirstCase as Concat<
+      <ProcessBefore>::ProcessBeforeSplitProduces,
+    >>::Concatenated,
+  >,
 > FinalizedSplitProcess<SplitterProducesForOtherCases>
-for FirstCaseOfFinalizedSplitProcess<
-  ThisTag,
-  SplitterProducesForThisCase,
-  SplitterProducesForOtherCases,
-  ProcessBefore,
-  ThisCase,
->
+  for FirstCaseOfFinalizedSplitProcess<
+    ProcessBefore::SplitterTagForFirstCase,
+    ProcessBefore::SplitterProducesForFirstCase,
+    SplitterProducesForOtherCases,
+    ProcessBefore,
+    ThisCase,
+  >
 {
   type ProcessBeforeSplitProduces = ProcessBefore::ProcessBeforeSplitProduces;
-  type SplitterProducesForThisCase = SplitterProducesForThisCase;
-  type SplitterTagForThisCase = ThisTag;
+  type SplitterProducesForThisCase = ProcessBefore::SplitterProducesForFirstCase;
+  type SplitterTagForThisCase = ProcessBefore::SplitterTagForFirstCase;
   type SubprocessConsumes = ProcessBefore::SubprocessConsumes;
 
   async fn resume_run(
@@ -126,19 +128,19 @@ for FirstCaseOfFinalizedSplitProcess<
         IntermediateFinalizedSplitOutcome::GoToCase {
           process_before_split_produced,
           splitter_produces_to_other_cases,
-        } =>
-          self.continue_run(process_before_split_produced, splitter_produces_to_other_cases).await,
+        } => self.continue_run(process_before_split_produced, splitter_produces_to_other_cases).await,
         IntermediateFinalizedSplitOutcome::Yield(a, b, c) => Ok(IntermediateFinalizedSplitOutcome::Yield(a, b, c)),
         IntermediateFinalizedSplitOutcome::Finish(a) => Ok(IntermediateFinalizedSplitOutcome::Finish(a)),
-        IntermediateFinalizedSplitOutcome::RetryUserInput(a) => Ok(IntermediateFinalizedSplitOutcome::RetryUserInput(a)),
+        IntermediateFinalizedSplitOutcome::RetryUserInput(a) => {
+          Ok(IntermediateFinalizedSplitOutcome::RetryUserInput(a))
+        },
       }
     } else {
-      match self.this_case.resume_run(
-        previous_run_produced,
-        previous_run_yielded_at,
-        user_input,
-        failed_input_validation_attempts,
-      ).await? {
+      match self
+        .this_case
+        .resume_run(previous_run_produced, previous_run_yielded_at, user_input, failed_input_validation_attempts)
+        .await?
+      {
         RunOutcome::Yield(a, b, c) => Ok(IntermediateFinalizedSplitOutcome::Yield(a, b, c)),
         RunOutcome::Finish(a) => Ok(IntermediateFinalizedSplitOutcome::Finish(a)),
         RunOutcome::RetryUserInput(a) => Ok(IntermediateFinalizedSplitOutcome::RetryUserInput(a)),
@@ -162,7 +164,7 @@ for FirstCaseOfFinalizedSplitProcess<
           RunOutcome::Finish(a) => Ok(IntermediateFinalizedSplitOutcome::Finish(a)),
           RunOutcome::RetryUserInput(a) => Ok(IntermediateFinalizedSplitOutcome::RetryUserInput(a)),
         }
-      }
+      },
       Coproduct::Inr(splitter_produces_to_other_cases) => Ok(IntermediateFinalizedSplitOutcome::GoToCase {
         process_before_split_produced,
         splitter_produces_to_other_cases,
@@ -170,7 +172,10 @@ for FirstCaseOfFinalizedSplitProcess<
     }
   }
 
-  async fn run_split_subprocess(&self, subprocess_consumes: Self::SubprocessConsumes,) -> IntermediateFinalizedSplitResult<Self::ProcessBeforeSplitProduces, SplitterProducesForOtherCases> {
+  async fn run_split_subprocess(
+    &self,
+    subprocess_consumes: Self::SubprocessConsumes,
+  ) -> IntermediateFinalizedSplitResult<Self::ProcessBeforeSplitProduces, SplitterProducesForOtherCases> {
     let process_before_output = self.split_process_before.run_subprocess(subprocess_consumes).await?;
     match process_before_output {
       IntermediateFinalizedSplitOutcome::GoToCase {
@@ -191,7 +196,7 @@ for FirstCaseOfFinalizedSplitProcess<
 
   fn all_param_uids(&self, acc: &mut Vec<ParamUID>) {
     self.split_process_before.all_param_uids(acc);
-    SplitterProducesForThisCase::all_param_uids(acc);
+    ProcessBefore::SplitterProducesForFirstCase::all_param_uids(acc);
     self.this_case.all_param_uids(acc);
   }
 }

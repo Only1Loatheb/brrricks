@@ -11,15 +11,9 @@ use std::marker::PhantomData;
 pub struct SplitProcessFormSplitter<
   Tag: Send + Sync,
   ProcessBefore: FlowingProcess,
-  CreateFormConsumes: ParamList,
-  ValidateInputConsumes: ParamList,
   SplitterProducesForFirstCase: ParamList,
   SplitterProducesForOtherCases: Send + Sync,
-  SplitterStep: FormSplitter<
-      CreateFormConsumes = CreateFormConsumes,
-      ValidateInputConsumes = ValidateInputConsumes,
-      Produces = Coproduct<(Tag, SplitterProducesForFirstCase), SplitterProducesForOtherCases>,
-    >,
+  SplitterStep: FormSplitter<Produces = Coproduct<(Tag, SplitterProducesForFirstCase), SplitterProducesForOtherCases>>,
   ProcessBeforeProducesToCreateFormConsumesIndices,
   ProcessBeforeProducesToValidateInputConsumesIndices,
 > {
@@ -35,23 +29,15 @@ pub struct SplitProcessFormSplitter<
 impl<
   Tag: Send + Sync,
   ProcessBefore: FlowingProcess,
-  CreateFormConsumes: ParamList,
-  ValidateInputConsumes: ParamList,
   SplitterProducesForFirstCase: ParamList + Concat<ProcessBefore::Produces>,
   SplitterProducesForOtherCases: Send + Sync,
-  SplitterStep: FormSplitter<
-      CreateFormConsumes = CreateFormConsumes,
-      ValidateInputConsumes = ValidateInputConsumes,
-      Produces = Coproduct<(Tag, SplitterProducesForFirstCase), SplitterProducesForOtherCases>,
-    >,
+  SplitterStep: FormSplitter<Produces = Coproduct<(Tag, SplitterProducesForFirstCase), SplitterProducesForOtherCases>>,
   ProcessBeforeProducesToCreateFormConsumesIndices: Sync,
   ProcessBeforeProducesToValidateInputConsumesIndices: Sync,
 > SplitProcess<SplitterProducesForOtherCases>
   for SplitProcessFormSplitter<
     Tag,
     ProcessBefore,
-    CreateFormConsumes,
-    ValidateInputConsumes,
     SplitterProducesForFirstCase,
     SplitterProducesForOtherCases,
     SplitterStep,
@@ -59,9 +45,10 @@ impl<
     ProcessBeforeProducesToValidateInputConsumesIndices,
   >
 where
-  for<'a> &'a ProcessBefore::Produces: CloneJust<CreateFormConsumes, ProcessBeforeProducesToCreateFormConsumesIndices>,
   for<'a> &'a ProcessBefore::Produces:
-    CloneJust<ValidateInputConsumes, ProcessBeforeProducesToValidateInputConsumesIndices>,
+    CloneJust<SplitterStep::CreateFormConsumes, ProcessBeforeProducesToCreateFormConsumesIndices>,
+  for<'a> &'a ProcessBefore::Produces:
+    CloneJust<SplitterStep::ValidateInputConsumes, ProcessBeforeProducesToValidateInputConsumesIndices>,
 {
   type ProcessBeforeSplitProduces = ProcessBefore::Produces;
   type SplitterProducesForFirstCase = SplitterProducesForFirstCase;

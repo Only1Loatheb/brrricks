@@ -11,13 +11,9 @@ use std::marker::PhantomData;
 pub struct SplitProcessSplitter<
   Tag: Send + Sync,
   ProcessBefore: FlowingProcess,
-  SplitterStepConsumes: ParamList,
   SplitterProducesForFirstCase: ParamList,
   SplitterProducesForOtherCases,
-  SplitterStep: Splitter<
-      Consumes = SplitterStepConsumes,
-      Produces = Coproduct<(Tag, SplitterProducesForFirstCase), SplitterProducesForOtherCases>,
-    >,
+  SplitterStep: Splitter<Produces = Coproduct<(Tag, SplitterProducesForFirstCase), SplitterProducesForOtherCases>>,
   ProcessBeforeProducesToSplitterStepConsumesIndices,
 > {
   pub process_before: ProcessBefore,
@@ -29,19 +25,14 @@ pub struct SplitProcessSplitter<
 impl<
   Tag: Send + Sync,
   ProcessBefore: FlowingProcess,
-  SplitterStepConsumes: ParamList,
   SplitterProducesForFirstCase: ParamList + Concat<ProcessBefore::Produces>,
   SplitterProducesForOtherCases: Send + Sync,
-  SplitterStep: Splitter<
-      Consumes = SplitterStepConsumes,
-      Produces = Coproduct<(Tag, SplitterProducesForFirstCase), SplitterProducesForOtherCases>,
-    >,
+  SplitterStep: Splitter<Produces = Coproduct<(Tag, SplitterProducesForFirstCase), SplitterProducesForOtherCases>>,
   ProcessBeforeProducesToSplitterStepConsumesIndices: Sync,
 > SplitProcess<SplitterProducesForOtherCases>
   for SplitProcessSplitter<
     Tag,
     ProcessBefore,
-    SplitterStepConsumes,
     SplitterProducesForFirstCase,
     SplitterProducesForOtherCases,
     SplitterStep,
@@ -49,7 +40,7 @@ impl<
   >
 where
   for<'a> &'a ProcessBefore::Produces:
-    CloneJust<SplitterStepConsumes, ProcessBeforeProducesToSplitterStepConsumesIndices>,
+    CloneJust<SplitterStep::Consumes, ProcessBeforeProducesToSplitterStepConsumesIndices>,
 {
   type ProcessBeforeSplitProduces = ProcessBefore::Produces;
   type SplitterProducesForFirstCase = SplitterProducesForFirstCase;
