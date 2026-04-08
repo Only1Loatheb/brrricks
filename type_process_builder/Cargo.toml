@@ -16,3 +16,6 @@ typenum = { version = "1.0" }
 
 [dev-dependencies]
 tokio = { version = "1.0", features = ["macros", "rt"] }
+
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(coverage,coverage_nightly)'] }

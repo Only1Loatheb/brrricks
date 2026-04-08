@@ -1,3 +1,4 @@
+#![cfg_attr(coverage_nightly, feature(coverage_attribute))]
 #[allow(clippy::result_unit_err)]
 pub mod builder;
 pub mod param_list;
@@ -81,6 +82,7 @@ mod tests {
   impl Entry<Value> for ExtractMsisdnOperatorAndShortcodeString {
     type Produces = HList![EntryParam];
 
+    #[cfg_attr(coverage_nightly, coverage(off))]
     async fn handle(
       &self,
       mut consumes: SessionContext,
@@ -126,6 +128,17 @@ mod tests {
 
     async fn handle(&self, _consumes: Self::Consumes) -> anyhow::Result<Self::Produces> {
       Ok(Self::Produces::inject((Case1, hlist!(Split1Param, CommonSplitParam))))
+    }
+  }
+
+  struct SelectCase2;
+  impl Splitter for SelectCase2 {
+    type Consumes = HNil;
+    type Produces =
+      Coprod![(Case1, HList![Split1Param, CommonSplitParam]), (Case2, HList![Split2Param, CommonSplitParam])];
+
+    async fn handle(&self, _consumes: Self::Consumes) -> anyhow::Result<Self::Produces> {
+      Ok(Self::Produces::inject((Case2, hlist!(Split2Param, CommonSplitParam))))
     }
   }
 
@@ -339,7 +352,7 @@ mod tests {
   #[tokio::test]
   async fn test_yield_first_case_of_finalized_split_process_split() {
     let process = ExtractMsisdnOperatorAndShortcodeString
-      .split(SelectCase1)
+      .split(SelectCase2)
       .case_end(Case1, |x| x.end(FinalNoConsumes))
       .case_end(Case2, |x| {
         x.split(InnerSelectCase2)
@@ -353,16 +366,6 @@ mod tests {
 
   #[tokio::test]
   async fn test_flowing_case_of_finalized_split_process() {
-    struct SelectCase2;
-    impl Splitter for SelectCase2 {
-      type Consumes = HNil;
-      type Produces =
-        Coprod![(Case1, HList![Split1Param, CommonSplitParam]), (Case2, HList![Split2Param, CommonSplitParam])];
-
-      async fn handle(&self, _consumes: Self::Consumes) -> anyhow::Result<Self::Produces> {
-        Ok(Self::Produces::inject((Case2, hlist!(Split2Param, CommonSplitParam))))
-      }
-    }
     let process = ExtractMsisdnOperatorAndShortcodeString
       .split(SelectCase2)
       .case_end(Case1, |x| x.end(FinalNoConsumes))

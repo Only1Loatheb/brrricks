@@ -20,10 +20,12 @@ impl<Produces: ParamList, EntryStep: Entry<Value, Produces = Produces>> FlowingP
     Ok(IntermediateRunOutcome::Continue(result))
   }
 
+  #[cfg_attr(coverage_nightly, coverage(off))]
   async fn continue_run(&self, _: Self::ProcessBeforeProduces) -> IntermediateRunResult<Self::Produces> {
     unreachable!("We never continue from entry step")
   }
 
+  #[cfg_attr(coverage_nightly, coverage(off))]
   async fn run_subprocess(&self, _: Self::SubprocessConsumes) -> IntermediateRunResult<Self::Produces> {
     unreachable!("Entry step never starts subprocess")
   }

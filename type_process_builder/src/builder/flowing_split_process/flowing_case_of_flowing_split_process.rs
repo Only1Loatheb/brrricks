@@ -329,8 +329,9 @@ where
   ///   .case_via(Case2, |x| x.show(FormA))
   ///   .end(FinalA);
   /// ```
+  #[cfg_attr(coverage_nightly, coverage(off))]
   async fn continue_run(&self, _process_before_produces: Self::ProcessBeforeProduces) -> IntermediateRunResult<Self::Produces> {
-        unreachable!("continue_run from last case is unreachable. The process is always continued from SplitProcess")
+    unreachable!("continue_run from last case is unreachable. The process is always continued from SplitProcess")
   }
 
   async fn run_subprocess(&self, subprocess_consumes: Self::SubprocessConsumes) -> IntermediateRunResult<Self::Produces> {
