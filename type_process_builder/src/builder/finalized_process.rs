@@ -10,6 +10,7 @@ use std::future::Future;
 use std::marker::PhantomData;
 
 pub trait FinalizedProcess: Sized + Sync {
+  // Please specify all associated types at the impl FinalizedProcess side for inference to work.
   type ProcessBeforeProduces: ParamList;
   type SubprocessConsumes: ParamList;
 

@@ -22,10 +22,10 @@ use std::future::Future;
 /// or replaceing [Concat] with [intersect::Intersect] in the implementation.
 /// Don't do that. The params should be immutable to avoid the need to overwrite them with every session context save.
 pub trait FlowingProcess: Sized + Sync {
+  // Please specify all associated types at the impl FlowingProcess side for inference to work.
   type ProcessBeforeProduces: ParamList;
   type Produces: ParamList;
   type SubprocessConsumes: ParamList;
-  // add a dependent type for split process to pass values produced by the splitter step to this specific branch.
 
   fn resume_run(
     &self,

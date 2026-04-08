@@ -14,6 +14,7 @@ use std::future::Future;
 /// If we allow that the user can produce common params in [crate::step::Splitter] without defining additional step.
 /// The process builder API will be more ergonomic, but the implementation will be more involved.
 pub trait FlowingSplitProcess<SplitterProducesForOtherCases>: Sized + Sync {
+  // Please specify all associated types at the impl FlowingSplitProcess side for inference to work.
   type ProcessBeforeSplitProduces: ParamList;
   type SplitterProducesForThisCase: ParamList + Concat<Self::ProcessBeforeSplitProduces>;
   type EveryFlowingCaseProduces: ParamList; // already includes ProcessBeforeSplitProduces;

@@ -1,12 +1,12 @@
 # Brrricks
-       
+
 ## Concepts
 
 **Step** is a unit of execution. Each step belongs to one of the
 [following archetypes](type_process_builder/src/step.rs): `Entry`, `Operation`, `Form`, `Splitter`, `FormSplitter`, or `Final`.
 
-**Process** is a composition of steps with a defined execution order, including conditional branches and 
-early termination paths. 
+**Process** is a composition of steps with a defined execution order, including conditional branches and
+early termination paths.
 
 **Parameter** (param) is a value passed between steps and persisted across user interactions within the same session.
 
@@ -22,6 +22,7 @@ Process implemented with this library has the following invariants enforced at *
 ## Example
 
 The following flowchart illustrates an example process:
+
 ```mermaid
 flowchart TD
     ShortcodeStringEntry --> SelectAmountSource{{SelectAmountSource}}
@@ -146,6 +147,7 @@ async fn main() -> std::io::Result<()> {
 <!-- EXAMPLE_END -->
 
 To run the example process in your terminal, execute the following command:
+
 ```console
 cargo run
 ```

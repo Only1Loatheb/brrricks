@@ -17,6 +17,7 @@ use std::future::Future;
 /// but sometimes the need arises to have a select form with one option that is different from input form.
 /// We at least remove an illegal state of unfinalized finalized split process.
 pub trait SplitProcess<SplitterProducesForOtherCases: Send + Sync>: Sized + Sync {
+  // Please specify all associated types at the impl SplitProcess side for inference to work.
   type ProcessBeforeSplitProduces: ParamList;
   type SplitterProducesForFirstCase: ParamList + Concat<Self::ProcessBeforeSplitProduces>;
   type SplitterTagForFirstCase: Send + Sync;
