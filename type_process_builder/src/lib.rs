@@ -22,23 +22,10 @@ mod tests {
   use frunk_core::{Coprod, HList, hlist};
   use serde::{Deserialize, Serialize};
   use serde_value::Value;
-  use std::ops::Not;
   use typenum::*;
 
   #[derive(Clone, Debug, Deserialize, Serialize)]
-  struct Msisdn(u64);
-  impl Msisdn {
-    fn from_string(string: String) -> Option<Msisdn> {
-      string
-        .split_at_checked(string.len().checked_sub(10)?)
-        .and_then(|(_prefix, suffix)| {
-          // deny optional '+' https://doc.rust-lang.org/std/primitive.u64.html#method.from_str
-          let _: () = suffix.starts_with('+').not().then_some(())?;
-          suffix.parse::<u64>().ok()
-        })
-        .map(|x| Msisdn(x))
-    }
-  }
+  struct Msisdn(pub u64);
 
   #[derive(Clone, Debug, Deserialize, Serialize)]
   enum Operator {
@@ -102,10 +89,10 @@ mod tests {
       let operator = consumes.pop().ok_or_else(|| anyhow!("Admin error or error on frontend."))?.1;
       let msisdn_value = consumes.pop().ok_or_else(|| anyhow!("Admin error or error on frontend."))?.1;
       let msisdn = match msisdn_value {
-        Value::String(string) => Msisdn::from_string(string).ok_or_else(|| anyhow!("Admin error on frontend.")),
+        Value::String(string) => string.parse::<u64>().map_err(|_| anyhow!("Admin error on frontend.")),
         _ => Err(anyhow!("Admin error on frontend.")),
       }?;
-      Ok(hlist!(EntryParam(msisdn, Operator::deserialize(operator)?, ShortcodeString(shortcode_string))))
+      Ok(hlist!(EntryParam(Msisdn(msisdn), Operator::deserialize(operator)?, ShortcodeString(shortcode_string))))
     }
   }
 
