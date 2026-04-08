@@ -6,11 +6,10 @@ pub struct Message(pub String);
 use crate::builder::ParamUID;
 use crate::param_list::ParamList;
 use frunk_core::coproduct::Coproduct;
-use serde::de::DeserializeOwned;
 use serde_value::Value;
 use std::future::Future;
 
-pub trait Entry<RawConsume: DeserializeOwned>: Sync {
+pub trait Entry: Sync {
   type Produces: ParamList;
   fn handle(
     &self,

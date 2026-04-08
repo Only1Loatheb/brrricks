@@ -2,9 +2,8 @@ use crate::builder::*;
 use crate::param_list::ParamList;
 use crate::step::{Entry, FailedInputValidationAttempts};
 use frunk_core::hlist::HNil;
-use serde_value::Value;
 
-impl<Produces: ParamList, EntryStep: Entry<Value, Produces = Produces>> FlowingProcess for EntryStep {
+impl<EntryStep: Entry> FlowingProcess for EntryStep {
   type ProcessBeforeProduces = HNil;
   type Produces = EntryStep::Produces;
   type SubprocessConsumes = HNil;
@@ -16,7 +15,7 @@ impl<Produces: ParamList, EntryStep: Entry<Value, Produces = Produces>> FlowingP
     user_input: String,
     _failed_input_validation_attempts: FailedInputValidationAttempts,
   ) -> IntermediateRunResult<Self::Produces> {
-    let result: Produces = EntryStep::handle(self, previous_run_produced, user_input).await?;
+    let result: EntryStep::Produces = EntryStep::handle(self, previous_run_produced, user_input).await?;
     Ok(IntermediateRunOutcome::Continue(result))
   }
 

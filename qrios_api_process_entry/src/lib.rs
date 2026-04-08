@@ -42,7 +42,7 @@ impl ParamValue for DialedSessionEntryParam {
 }
 
 pub struct DialedSessionEntry;
-impl Entry<Value> for DialedSessionEntry {
+impl Entry for DialedSessionEntry {
   type Produces = HList![DialedSessionEntryParam];
 
   async fn handle(

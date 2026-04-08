@@ -79,7 +79,7 @@ mod tests {
   }
 
   struct ExtractMsisdnOperatorAndShortcodeString;
-  impl Entry<Value> for ExtractMsisdnOperatorAndShortcodeString {
+  impl Entry for ExtractMsisdnOperatorAndShortcodeString {
     type Produces = HList![EntryParam];
 
     #[cfg_attr(coverage_nightly, coverage(off))]

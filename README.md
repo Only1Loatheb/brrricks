@@ -61,7 +61,7 @@ impl ParamValue for Amount {
 }
 
 struct ShortcodeStringEntry;
-impl Entry<Value> for ShortcodeStringEntry {
+impl Entry for ShortcodeStringEntry {
   type Produces = HList![ShortcodeString];
 
   async fn handle(
