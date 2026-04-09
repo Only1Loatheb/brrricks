@@ -196,34 +196,39 @@ sequenceDiagram
   init: {
     'flowchart': {
       'defaultRenderer': 'tidy-tree'
+    },
+    'themeVariables': {
+      'edgeLabelBackground': '#000000'
     }
   }
 }%%
 flowchart TD
+    classDef default fill:transparent;
     classDef hidden display: none;
+    classDef orangeNodeEdge stroke:orange;
     Start:::hidden
     FinalizedSplitProcessSubgraph:::hidden
     subgraph FinalizedSplitProcessSubgraph
-        FinalizedSplitProcess[FinalizedSplitProcess]
-        finalized_split_cases_final{{exhaustive?}}
+        FinalizedSplitProcess(Finalized Split Process)
+        finalized_split_cases_final{are split cases<br>exhausted?}:::orangeNodeEdge
     end
     FlowingSplitProcessSubgraph:::hidden
     subgraph FlowingSplitProcessSubgraph
-        FlowingSplitProcess[FlowingSplitProcess]
-        flowing_split_cases{{exhaustive?}}
+        FlowingSplitProcess(Flowing Split Process)
+        flowing_split_cases{are split cases<br>exhausted?}:::orangeNodeEdge
     end
-    FinalizedProcess -- " build " --> RunnableProcess
-    Start -- " Entry Step " --> FlowingProcess
-    FlowingProcess -- " Operation Step or FlowingProcess " --> FlowingProcess
-    FlowingProcess -- " Final Step or FinalizedProcess " --> FinalizedProcess
-    FlowingProcess -- " Split Step " --> FinalizedSplitProcess
-    FinalizedSplitProcess -- " FinalizedProcess " --> finalized_split_cases_final
-    finalized_split_cases_final -- " cases left " --> FinalizedSplitProcess
-    finalized_split_cases_final -- " all cases covered " --> FinalizedProcess
-    FinalizedSplitProcess -- " FlowingProcess " --> FlowingSplitProcess
-    FlowingSplitProcess -- " FinalizedProcess or FlowingProcess " --> flowing_split_cases
-    flowing_split_cases -- " cases left " --> FlowingSplitProcess
-    flowing_split_cases -- " all cases covered " --> FlowingProcess
+    FinalizedProcess(Finalized Process) -- " build " --> RunnableProcess(Runnable Process)
+    Start -- " Entry Step " --> FlowingProcess(Flowing Process)
+    FlowingProcess -- " Operation Step<br>or Form Step " --> FlowingProcess
+    FlowingProcess -- " Final Step" --> FinalizedProcess
+    FlowingProcess -- " Splitter Step<br>or Form Splitter Step " --> FinalizedSplitProcess
+    FinalizedSplitProcess -- " Finalized Process " --> finalized_split_cases_final
+    finalized_split_cases_final -- " unhandled cases left " --> FinalizedSplitProcess
+    finalized_split_cases_final -- " all cases addressed " --> FinalizedProcess
+    FinalizedSplitProcess -- " Flowing Process " --> FlowingSplitProcess
+    FlowingSplitProcess -- " Finalized Process<br>or Flowing Process " --> flowing_split_cases
+    flowing_split_cases -- " unhandled cases left " --> FlowingSplitProcess
+    flowing_split_cases -- " all cases addressed " --> FlowingProcess
     Start ~~~ FlowingSplitProcess
     click FlowingSplitProcess "https://github.com/Only1Loatheb/brrricks/blob/master/type_process_builder/src/builder/flowing_split_process.rs"
     click FlowingProcess "https://github.com/Only1Loatheb/brrricks/blob/master/type_process_builder/src/builder/flowing_process.rs"

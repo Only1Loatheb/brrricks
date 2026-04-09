@@ -161,11 +161,11 @@ mod tests {
     type Produces = Coprod![
       (Case1, HList![Split1Param, CommonSplitParam]),
       (Case2, HList![Split2Param, CommonSplitParam]),
-      (Case3, HNil),
+      (Case3, HList![CommonSplitParam]),
     ];
 
     async fn handle(&self, _consumes: Self::Consumes) -> anyhow::Result<Self::Produces> {
-      Ok(Self::Produces::inject((Case3, HNil)))
+      Ok(Self::Produces::inject((Case3, hlist![CommonSplitParam])))
     }
   }
 
@@ -387,6 +387,24 @@ mod tests {
       .end(FinalConsumeCase2Param)
       .build("", 0);
     let messages = vec!["*123#", "Empty good bye"];
+    test_process_produces_messages(process, messages).await;
+  }
+
+  #[tokio::test]
+  async fn test_flowing_split_with_nested_split_and_mixed_cases() {
+    let process = ExtractMsisdnOperatorAndShortcodeString
+      .split(SelectCase3)
+      .case_via(Case1, |x| x.show(OneInputRetryForm))
+      .case_end(Case2, |x| x.end(FinalNoConsumes))
+      .case_via(Case3, |x| {
+        x.split(InnerSelectCase2)
+          .case_end(InnerCase1, |x| x.end(FinalNoConsumes))
+          .case_via(InnerCase2, |x| x.show(NoOpForm))
+          .then(ProduceCaseParam2)
+      })
+      .end(SayGoodByAndConsumeCommonParams)
+      .build("", 0);
+    let messages = vec!["*123#", "Straight to trash", "20", "Good bye"];
     test_process_produces_messages(process, messages).await;
   }
 
