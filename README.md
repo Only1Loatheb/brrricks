@@ -1,5 +1,7 @@
 # Brrricks
 
+Type-safe process modelling library
+
 ## Concepts
 
 **Step** is a unit of execution. Each step belongs to one of the
