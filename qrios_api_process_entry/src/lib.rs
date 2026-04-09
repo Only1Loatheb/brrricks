@@ -19,7 +19,7 @@ impl Msisdn {
         let _: () = suffix.starts_with('+').not().then_some(())?;
         suffix.parse::<u64>().ok()
       })
-      .map(|x| Msisdn(x))
+      .map(Msisdn)
   }
 }
 

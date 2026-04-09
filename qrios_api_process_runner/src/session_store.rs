@@ -92,7 +92,7 @@ pub async fn get_session_context(
   pool: &PgPool,
   sql: &GetSessionContextQuery,
   session_id: i64,
-  ordered_all_unique_param_uids: &Vec<ParamUID>,
+  ordered_all_unique_param_uids: &[ParamUID],
 ) -> Result<(PreviousRunYieldedAt, FailedInputValidationAttempts, Vec<(u32, Value)>), sqlx::Error> {
   let row = sqlx::query(&sql.0).bind(session_id).fetch_one(pool).await?;
 
@@ -102,7 +102,7 @@ pub async fn get_session_context(
   let mut session_context = Vec::with_capacity(ordered_all_unique_param_uids.len());
   for idx_and_param_uid in ordered_all_unique_param_uids.iter().enumerate() {
     if let Ok(value) = row.try_get::<sqlx::types::Json<Value>, _>(idx_and_param_uid.0 + 2) {
-      session_context.push((idx_and_param_uid.1.clone(), value.0));
+      session_context.push((*idx_and_param_uid.1, value.0));
     }
   }
 

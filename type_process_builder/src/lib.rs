@@ -28,6 +28,7 @@ mod tests {
   #[derive(Clone, Debug, Deserialize, Serialize)]
   struct Msisdn(pub u64);
 
+  #[allow(clippy::upper_case_acronyms)]
   #[derive(Clone, Debug, Deserialize, Serialize)]
   enum Operator {
     MTN,

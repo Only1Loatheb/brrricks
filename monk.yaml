@@ -18,7 +18,7 @@ pre-push:
     - cargo check --workspace --all-targets
     - cargo fmt --package bricks type_process_builder qrios_api_process_runner qrios_api_process_entry
     - cargo fix --workspace --all-targets --all-features --allow-dirty
-    - cargo clippy --fix --allow-dirty --all-targets --all-features
+    - cargo clippy --workspace --fix --allow-dirty --all-targets --all-features
     - |
       if [ -z "$(git status --porcelain)" ]; then
         echo "All changes in files known to git are committed"
@@ -27,7 +27,7 @@ pre-push:
         git add -A && git commit --amend --no-edit
         exit 1
       fi
-    - cargo clippy --all-targets --all-features -- -D warnings -W clippy::all
+    - cargo clippy --workspace --all-targets --all-features -- -D warnings -W clippy::all
     - |
       cargo +nightly llvm-cov --package type_process_builder --no-clean \
       --fail-under-regions 51 --fail-under-functions 73 --fail-under-lines 56

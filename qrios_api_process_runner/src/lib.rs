@@ -106,7 +106,7 @@ impl<Process: FinalizedProcess + Sync> qrios_api_axum_server::apis::developers_a
           session_id,
           current_run_yielded_at,
           FailedInputValidationAttempts(0),
-          &*new_params_to_store,
+          &new_params_to_store,
         )
         .await
         .map_err(|_| ())?;
@@ -168,7 +168,7 @@ impl<Process: FinalizedProcess + Sync> qrios_api_axum_server::apis::developers_a
           &self.process,
           current_run_yielded_at,
           FailedInputValidationAttempts(0),
-          &*session_context,
+          &session_context,
         )
         .await
         .map_err(|_| ())?;
@@ -245,12 +245,10 @@ mod tests {
         &UssdSessionEventNewSession {
           app_id: "val".into(),
           client_id: "val".into(),
-          input: UssdSessionEventNewSessionSessionInput::Dial {
-            0: NewSessionSessionInputDial {
-              shortcode_string: "*425*001*123#".to_string(),
-              type_: NewSessionSessionInputDialType::Dial,
-            },
-          },
+          input: UssdSessionEventNewSessionSessionInput::Dial(NewSessionSessionInputDial {
+            shortcode_string: "*425*001*123#".to_string(),
+            type_: NewSessionSessionInputDialType::Dial,
+          }),
           msisdn: "2341234567890".into(),
           operator: UssdSessionEventNewSessionOperator::Mtn,
           session_id: "val".into(),
