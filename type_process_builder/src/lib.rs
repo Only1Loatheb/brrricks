@@ -16,7 +16,7 @@ pub mod documentation_diagrams {}
 mod tests {
   use crate::builder::*;
   use crate::param_list::ParamValue;
-  use crate::step::{Entry, FailedInputValidationAttempts, Final, InputValidation, Operation, Splitter};
+  use crate::step::{Entry, FailedInputValidationAttempts, Final, FormSplitter, InputValidation, Operation, Splitter};
   use crate::step::{Form, Message};
   use anyhow::anyhow;
   use frunk_core::hlist::HNil;
@@ -283,11 +283,38 @@ mod tests {
     vec![(0, Value::String("2340000000000".into())), (1, Value::String("MTN".into()))]
   }
 
+  struct TestFormSplitter;
+
+  impl FormSplitter for TestFormSplitter {
+    type CreateFormConsumes = HNil;
+    type ValidateInputConsumes = HNil;
+
+    type Produces = Coprod![(Case1, HList![Split1Param]), (Case2, HList![Split2Param])];
+
+    async fn create_form(&self, _consumes: Self::CreateFormConsumes) -> anyhow::Result<Message> {
+      Ok(Message("choose case".into()))
+    }
+
+    async fn handle_input(
+      &self,
+      _consumes: Self::ValidateInputConsumes,
+      user_input: String,
+      failed: FailedInputValidationAttempts,
+    ) -> anyhow::Result<InputValidation<Self::Produces>> {
+      match (user_input.as_str(), failed.0) {
+        ("retry", 0) => Ok(InputValidation::Retry(Message("retry again".into()))),
+        ("finish", _) => Ok(InputValidation::Finish(Message("finished early".into()))),
+        ("1", _) => Ok(InputValidation::Successful(Self::Produces::inject((Case1, hlist![Split1Param])))),
+        _ => Ok(InputValidation::Successful(Self::Produces::inject((Case2, hlist![Split2Param])))),
+      }
+    }
+  }
+
   #[tokio::test]
   async fn test_end() {
     let process = ExtractMsisdnOperatorAndShortcodeString.end(FinalNoConsumes).build("", 0);
     let messages = vec!["*123#", "Empty good bye"];
-    test_process_produces_messages(&process, messages).await;
+    test_process_messages(&process, messages).await;
   }
 
   #[tokio::test]
@@ -299,14 +326,14 @@ mod tests {
       .end(SayGoodByAndConsumeCommonParams)
       .build("", 0);
     let messages = vec!["*123#", "Good bye"];
-    test_process_produces_messages(&process, messages).await;
+    test_process_messages(&process, messages).await;
   }
 
   #[tokio::test]
   async fn test_end_emitted_in_form_step() {
     let process = ExtractMsisdnOperatorAndShortcodeString.show(FinishAfterInput).end(FinalNoConsumes).build("", 0);
     let messages = vec!["*123#", "Last number in the process", "10", "Always finnish"];
-    test_process_produces_messages(&process, messages.clone()).await;
+    test_process_messages(&process, messages.clone()).await;
 
     #[cfg_attr(coverage_nightly, coverage(off))]
     async fn test_return_error_on_param_missing_from_init_value(
@@ -325,7 +352,7 @@ mod tests {
         .await;
       assert!(run_outcome.is_err_and(|x| format!("{x}") == "Admin error or error on frontend."))
     }
-    test_return_error_on_param_missing_from_init_value(&process, messages.clone()).await;
+    test_return_error_on_param_missing_from_init_value(&process, vec!["*123#"]).await;
 
     #[cfg_attr(coverage_nightly, coverage(off))]
     async fn test_return_error_on_param_missing_from_context(
@@ -365,14 +392,14 @@ mod tests {
         },
       }
     }
-    test_return_error_on_param_missing_from_context(&process, messages).await;
+    test_return_error_on_param_missing_from_context(&process, vec!["*123#", "Last number in the process"]).await;
   }
 
   #[tokio::test]
   async fn test_retry_emitted_in_form_step() {
     let process = ExtractMsisdnOperatorAndShortcodeString.show(OneInputRetryForm).end(FinalNoConsumes).build("", 0);
     let messages = vec!["*123#", "This will be discarded", "10", "This will be accepted", "20", "Empty good bye"];
-    test_process_produces_messages(&process, messages).await;
+    test_process_messages(&process, messages).await;
   }
 
   #[tokio::test]
@@ -384,7 +411,7 @@ mod tests {
       .end(SayGoodByAndConsumeCommonParams)
       .build("", 0);
     let messages = vec!["*123#", "Enter a number", "a number", "Good bye"];
-    test_process_produces_messages(&process, messages).await;
+    test_process_messages(&process, messages).await;
   }
 
   #[tokio::test]
@@ -395,7 +422,7 @@ mod tests {
       .case_end(Case2, |x| x.end(FinalNoConsumes))
       .build("", 0);
     let messages = vec!["*123#", "Empty good bye"];
-    test_process_produces_messages(&process, messages).await;
+    test_process_messages(&process, messages).await;
   }
 
   #[tokio::test]
@@ -406,7 +433,7 @@ mod tests {
       .case_end(Case2, |x| x.end(FinalNoConsumes))
       .build("", 0);
     let messages = vec!["*123#", "Straight to trash", "10", "Empty good bye"];
-    test_process_produces_messages(&process, messages).await;
+    test_process_messages(&process, messages).await;
   }
 
   #[tokio::test]
@@ -421,7 +448,7 @@ mod tests {
       })
       .build("", 0);
     let messages = vec!["*123#", "Empty good bye"];
-    test_process_produces_messages(&process, messages).await;
+    test_process_messages(&process, messages).await;
   }
 
   #[tokio::test]
@@ -433,7 +460,7 @@ mod tests {
       .end(FinalConsumeCase2Param)
       .build("", 0);
     let messages = vec!["*123#", "I ate Case2Param"];
-    test_process_produces_messages(&process, messages).await;
+    test_process_messages(&process, messages).await;
   }
 
   #[tokio::test]
@@ -446,7 +473,7 @@ mod tests {
       .end(FinalConsumeCase2Param)
       .build("", 0);
     let messages = vec!["*123#", "Empty good bye"];
-    test_process_produces_messages(&process, messages).await;
+    test_process_messages(&process, messages).await;
   }
 
   #[tokio::test]
@@ -463,11 +490,53 @@ mod tests {
       })
       .end(SayGoodByAndConsumeCommonParams)
       .build("", 0);
-    let messages = vec!["*123#", "Straight to trash", "20", "Good bye"];
-    test_process_produces_messages(&process, messages).await;
+    test_process_messages(&process, vec!["*123#", "Straight to trash", "20", "Good bye"]).await;
   }
 
-  async fn test_process_produces_messages(process: &RunnableProcess<impl FinalizedProcess>, messages: Vec<&str>) {
+  #[tokio::test]
+  async fn test_split_process_form_splitter() {
+    let process = ExtractMsisdnOperatorAndShortcodeString
+      .show_split(TestFormSplitter)
+      .case_via(Case1, |x| x.show(NoOpForm))
+      .case_end(Case2, |x| x.end(FinalNoConsumes))
+      .end(FinalNoConsumes)
+      .build("", 0);
+
+    test_process_messages(&process, vec!["*123#", "choose case", "1", "Straight to trash", "10", "Empty good bye"])
+      .await;
+    test_process_messages(
+      &process,
+      vec!["*123#", "choose case", "retry", "retry again", "1", "Straight to trash", "10", "Empty good bye"],
+    )
+    .await;
+    test_process_messages(&process, vec!["*123#", "choose case", "finish", "finished early"]).await;
+  }
+
+  #[tokio::test]
+  async fn test_form_splitter_passthrough_with_multi_step_process_before() {
+    let process = ExtractMsisdnOperatorAndShortcodeString
+      .show(OneInputRetryForm)
+      .then(ProduceCaseParam1)
+      .show(FinishAfterInput)
+      .show_split(TestFormSplitter)
+      .case_end(Case1, |x| x.end(FinalNoConsumes))
+      .case_end(Case2, |x| x.end(FinalNoConsumes))
+      .build("", 0);
+
+    let messages = vec![
+      "*123#",
+      "This will be discarded",
+      "10",
+      "This will be accepted",
+      "20",
+      "Last number in the process",
+      "30",
+      "Always finnish",
+    ];
+    test_process_messages(&process, messages).await;
+  }
+
+  async fn test_process_messages(process: &RunnableProcess<impl FinalizedProcess>, messages: Vec<&str>) {
     let mut previous_run_produced = session_init_value();
     let mut previous_run_yielded_at = PreviousRunYieldedAt(StepIndex::MIN);
     let mut failed_attempts = FailedInputValidationAttempts(0);
