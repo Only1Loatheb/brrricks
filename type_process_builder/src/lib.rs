@@ -287,7 +287,7 @@ mod tests {
   async fn test_end() {
     let process = ExtractMsisdnOperatorAndShortcodeString.end(FinalNoConsumes).build("", 0);
     let messages = vec!["*123#", "Empty good bye"];
-    test_process_produces_messages(process, messages).await;
+    test_process_produces_messages(&process, messages).await;
   }
 
   #[tokio::test]
@@ -299,21 +299,80 @@ mod tests {
       .end(SayGoodByAndConsumeCommonParams)
       .build("", 0);
     let messages = vec!["*123#", "Good bye"];
-    test_process_produces_messages(process, messages).await;
+    test_process_produces_messages(&process, messages).await;
   }
 
   #[tokio::test]
   async fn test_end_emitted_in_form_step() {
     let process = ExtractMsisdnOperatorAndShortcodeString.show(FinishAfterInput).end(FinalNoConsumes).build("", 0);
     let messages = vec!["*123#", "Last number in the process", "10", "Always finnish"];
-    test_process_produces_messages(process, messages).await;
+    test_process_produces_messages(&process, messages.clone()).await;
+
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    async fn test_return_error_on_param_missing_from_init_value(
+      process: &RunnableProcess<impl FinalizedProcess>,
+      messages: Vec<&str>,
+    ) {
+      let mut init_value = session_init_value();
+      init_value.pop();
+      let run_outcome = process
+        .resume_run(
+          init_value,
+          PreviousRunYieldedAt(StepIndex::MIN),
+          messages[0].into(),
+          FailedInputValidationAttempts(0),
+        )
+        .await;
+      assert!(run_outcome.is_err_and(|x| format!("{x}") == "Admin error or error on frontend."))
+    }
+    test_return_error_on_param_missing_from_init_value(&process, messages.clone()).await;
+
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    async fn test_return_error_on_param_missing_from_context(
+      process: &RunnableProcess<impl FinalizedProcess>,
+      messages: Vec<&str>,
+    ) {
+      let mut messages_index = 0;
+      let run_outcome = process
+        .resume_run(
+          session_init_value(),
+          PreviousRunYieldedAt(StepIndex::MIN),
+          messages[messages_index].into(),
+          FailedInputValidationAttempts(0),
+        )
+        .await
+        .expect("Test failed");
+      messages_index += 1;
+      match run_outcome {
+        RunOutcome::Yield(msg, mut value, yielded_at) => {
+          assert_eq!(msg.0, messages[messages_index]);
+          value.pop();
+          let run_outcome = process
+            .resume_run(
+              value,
+              PreviousRunYieldedAt(yielded_at.0),
+              messages[messages_index].into(),
+              FailedInputValidationAttempts(0),
+            )
+            .await;
+          assert!(run_outcome.is_err_and(|x| format!("{x}") == "Missing key: 0"))
+        },
+        RunOutcome::RetryUserInput(msg) => {
+          assert_eq!(msg.0, messages[messages_index])
+        },
+        RunOutcome::Finish(msg) => {
+          assert_eq!(msg.0, messages[messages_index])
+        },
+      }
+    }
+    test_return_error_on_param_missing_from_context(&process, messages).await;
   }
 
   #[tokio::test]
   async fn test_retry_emitted_in_form_step() {
     let process = ExtractMsisdnOperatorAndShortcodeString.show(OneInputRetryForm).end(FinalNoConsumes).build("", 0);
     let messages = vec!["*123#", "This will be discarded", "10", "This will be accepted", "20", "Empty good bye"];
-    test_process_produces_messages(process, messages).await;
+    test_process_produces_messages(&process, messages).await;
   }
 
   #[tokio::test]
@@ -325,7 +384,7 @@ mod tests {
       .end(SayGoodByAndConsumeCommonParams)
       .build("", 0);
     let messages = vec!["*123#", "Enter a number", "a number", "Good bye"];
-    test_process_produces_messages(process, messages).await;
+    test_process_produces_messages(&process, messages).await;
   }
 
   #[tokio::test]
@@ -336,7 +395,7 @@ mod tests {
       .case_end(Case2, |x| x.end(FinalNoConsumes))
       .build("", 0);
     let messages = vec!["*123#", "Empty good bye"];
-    test_process_produces_messages(process, messages).await;
+    test_process_produces_messages(&process, messages).await;
   }
 
   #[tokio::test]
@@ -347,7 +406,7 @@ mod tests {
       .case_end(Case2, |x| x.end(FinalNoConsumes))
       .build("", 0);
     let messages = vec!["*123#", "Straight to trash", "10", "Empty good bye"];
-    test_process_produces_messages(process, messages).await;
+    test_process_produces_messages(&process, messages).await;
   }
 
   #[tokio::test]
@@ -362,7 +421,7 @@ mod tests {
       })
       .build("", 0);
     let messages = vec!["*123#", "Empty good bye"];
-    test_process_produces_messages(process, messages).await;
+    test_process_produces_messages(&process, messages).await;
   }
 
   #[tokio::test]
@@ -374,7 +433,7 @@ mod tests {
       .end(FinalConsumeCase2Param)
       .build("", 0);
     let messages = vec!["*123#", "I ate Case2Param"];
-    test_process_produces_messages(process, messages).await;
+    test_process_produces_messages(&process, messages).await;
   }
 
   #[tokio::test]
@@ -387,7 +446,7 @@ mod tests {
       .end(FinalConsumeCase2Param)
       .build("", 0);
     let messages = vec!["*123#", "Empty good bye"];
-    test_process_produces_messages(process, messages).await;
+    test_process_produces_messages(&process, messages).await;
   }
 
   #[tokio::test]
@@ -405,10 +464,10 @@ mod tests {
       .end(SayGoodByAndConsumeCommonParams)
       .build("", 0);
     let messages = vec!["*123#", "Straight to trash", "20", "Good bye"];
-    test_process_produces_messages(process, messages).await;
+    test_process_produces_messages(&process, messages).await;
   }
 
-  async fn test_process_produces_messages(process: RunnableProcess<impl FinalizedProcess>, messages: Vec<&str>) {
+  async fn test_process_produces_messages(process: &RunnableProcess<impl FinalizedProcess>, messages: Vec<&str>) {
     let mut previous_run_produced = session_init_value();
     let mut previous_run_yielded_at = PreviousRunYieldedAt(StepIndex::MIN);
     let mut failed_attempts = FailedInputValidationAttempts(0);
