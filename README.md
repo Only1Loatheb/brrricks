@@ -49,9 +49,7 @@ use type_process_builder::step::{Entry, FailedInputValidationAttempts, Final, Fo
 use typenum::*;
 
 #[derive(Clone, Deserialize, Serialize)]
-struct ShortcodeString {
-  shortcode_string: String,
-}
+struct ShortcodeString(String);
 impl ParamValue for ShortcodeString {
   type UID = U0;
 }
@@ -71,7 +69,7 @@ impl Entry for ShortcodeStringEntry {
     _consumes: Vec<(ParamUID, Value)>,
     shortcode_string: String,
   ) -> anyhow::Result<HList![ShortcodeString]> {
-    Ok(hlist!(ShortcodeString { shortcode_string }))
+    Ok(hlist!(ShortcodeString(shortcode_string)))
   }
 }
 

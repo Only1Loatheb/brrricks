@@ -284,7 +284,6 @@ mod tests {
   }
 
   struct TestFormSplitter;
-
   impl FormSplitter for TestFormSplitter {
     type CreateFormConsumes = HNil;
     type ValidateInputConsumes = HNil;
@@ -332,8 +331,7 @@ mod tests {
   #[tokio::test]
   async fn test_end_emitted_in_form_step() {
     let process = ExtractMsisdnOperatorAndShortcodeString.show(FinishAfterInput).end(FinalNoConsumes).build("", 0);
-    let messages = vec!["*123#", "Last number in the process", "10", "Always finnish"];
-    test_process_messages(&process, messages.clone()).await;
+    test_process_messages(&process, vec!["*123#", "Last number in the process", "10", "Always finnish"]).await;
 
     #[cfg_attr(coverage_nightly, coverage(off))]
     async fn test_return_error_on_param_missing_from_init_value(
@@ -490,7 +488,8 @@ mod tests {
       })
       .end(SayGoodByAndConsumeCommonParams)
       .build("", 0);
-    test_process_messages(&process, vec!["*123#", "Straight to trash", "20", "Good bye"]).await;
+    let messages = vec!["*123#", "Straight to trash", "20", "Good bye"];
+    test_process_messages(&process, messages).await;
   }
 
   #[tokio::test]
