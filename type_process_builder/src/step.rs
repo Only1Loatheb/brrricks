@@ -14,7 +14,7 @@ pub trait Entry: Sync {
   fn handle(
     &self,
     consumes: Vec<(ParamUID, Value)>,
-    shortcode_string: String,
+    initial_input: String,
   ) -> impl Future<Output = anyhow::Result<Self::Produces>> + Send;
 }
 

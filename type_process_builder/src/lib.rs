@@ -84,18 +84,14 @@ mod tests {
     type Produces = HList![EntryParam];
 
     #[cfg_attr(coverage_nightly, coverage(off))]
-    async fn handle(
-      &self,
-      mut consumes: SessionContext,
-      shortcode_string: String,
-    ) -> anyhow::Result<HList![EntryParam]> {
+    async fn handle(&self, mut consumes: SessionContext, initial_input: String) -> anyhow::Result<HList![EntryParam]> {
       let operator = consumes.pop().ok_or_else(|| anyhow!("Admin error or error on frontend."))?.1;
       let msisdn_value = consumes.pop().ok_or_else(|| anyhow!("Admin error or error on frontend."))?.1;
       let msisdn = match msisdn_value {
         Value::String(string) => string.parse::<u64>().map_err(|_| anyhow!("Admin error on frontend.")),
         _ => Err(anyhow!("Admin error on frontend.")),
       }?;
-      Ok(hlist!(EntryParam(Msisdn(msisdn), Operator::deserialize(operator)?, ShortcodeString(shortcode_string))))
+      Ok(hlist!(EntryParam(Msisdn(msisdn), Operator::deserialize(operator)?, ShortcodeString(initial_input))))
     }
   }
 
