@@ -7,14 +7,15 @@ edition = "2024"
 docs = ["dep:simple-mermaid"]
 
 [dependencies]
-serde = { version = "1.0", features = ["derive"] }
+serde = "1.0"
 anyhow = "1.0" # should be this error
 frunk_core = "0.4"
 serde-value = "0.7" # generic over format, but might be not quite the blazingly fast approach
 simple-mermaid = { version = "0.2.0", optional = true }
-typenum = { version = "1.0" }
+typenum = "1.0"
 
 [dev-dependencies]
+serde = { version = "1.0", features = ["derive"] }
 tokio = { version = "1.0", features = ["macros", "rt"] }
 
 [lints.rust]
