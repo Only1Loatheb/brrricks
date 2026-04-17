@@ -1139,322 +1139,6 @@ pub mod types {
         #[serde(rename = "type")]
         pub type_: ::std::string::String,
     }
-    ///`NewSession`
-    ///
-    /// <details><summary>JSON schema</summary>
-    ///
-    /// ```json
-    ///{
-    ///  "oneOf": [
-    ///    {
-    ///      "$ref": "#/components/schemas/NewSession.SessionInput.Dial"
-    ///    },
-    ///    {
-    ///      "$ref": "#/components/schemas/NewSession.SessionInput.Push"
-    ///    },
-    ///    {
-    ///      "$ref": "#/components/schemas/NewSession.SessionInput.Redirect"
-    ///    }
-    ///  ]
-    ///}
-    /// ```
-    /// </details>
-    #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
-    #[serde(untagged)]
-    pub enum NewSession {
-        Dial(NewSessionSessionInputDial),
-        Push(NewSessionSessionInputPush),
-        Redirect(NewSessionSessionInputRedirect),
-    }
-    impl ::std::convert::From<NewSessionSessionInputDial> for NewSession {
-        fn from(value: NewSessionSessionInputDial) -> Self {
-            Self::Dial(value)
-        }
-    }
-    impl ::std::convert::From<NewSessionSessionInputPush> for NewSession {
-        fn from(value: NewSessionSessionInputPush) -> Self {
-            Self::Push(value)
-        }
-    }
-    impl ::std::convert::From<NewSessionSessionInputRedirect> for NewSession {
-        fn from(value: NewSessionSessionInputRedirect) -> Self {
-            Self::Redirect(value)
-        }
-    }
-    ///Input provided when the user dials into the session (dials the shortcode string)
-    ///
-    /// <details><summary>JSON schema</summary>
-    ///
-    /// ```json
-    ///{
-    ///  "description": "Input provided when the user dials into the session (dials the shortcode string)",
-    ///  "type": "object",
-    ///  "required": [
-    ///    "shortcodeString",
-    ///    "type"
-    ///  ],
-    ///  "properties": {
-    ///    "shortcodeString": {
-    ///      "description": "Shortcode string dialed by the user",
-    ///      "examples": [
-    ///        "*425*001*123#"
-    ///      ],
-    ///      "type": "string"
-    ///    },
-    ///    "type": {
-    ///      "examples": [
-    ///        "Dial"
-    ///      ],
-    ///      "type": "string",
-    ///      "enum": [
-    ///        "Dial"
-    ///      ]
-    ///    }
-    ///  }
-    ///}
-    /// ```
-    /// </details>
-    #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
-    pub struct NewSessionSessionInputDial {
-        ///Shortcode string dialed by the user
-        #[serde(rename = "shortcodeString")]
-        pub shortcode_string: ::std::string::String,
-        #[serde(rename = "type")]
-        pub type_: NewSessionSessionInputDialType,
-    }
-    ///`NewSessionSessionInputDialType`
-    ///
-    /// <details><summary>JSON schema</summary>
-    ///
-    /// ```json
-    ///{
-    ///  "examples": [
-    ///    "Dial"
-    ///  ],
-    ///  "type": "string",
-    ///  "enum": [
-    ///    "Dial"
-    ///  ]
-    ///}
-    /// ```
-    /// </details>
-    #[derive(
-        ::serde::Deserialize,
-        ::serde::Serialize,
-        Clone,
-        Copy,
-        Debug,
-        Eq,
-        Hash,
-        Ord,
-        PartialEq,
-        PartialOrd
-    )]
-    pub enum NewSessionSessionInputDialType {
-        Dial,
-    }
-    impl ::std::fmt::Display for NewSessionSessionInputDialType {
-        fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-            match *self {
-                Self::Dial => f.write_str("Dial"),
-            }
-        }
-    }
-    impl ::std::str::FromStr for NewSessionSessionInputDialType {
-        type Err = self::error::ConversionError;
-        fn from_str(
-            value: &str,
-        ) -> ::std::result::Result<Self, self::error::ConversionError> {
-            match value {
-                "Dial" => Ok(Self::Dial),
-                _ => Err("invalid value".into()),
-            }
-        }
-    }
-    impl ::std::convert::TryFrom<&str> for NewSessionSessionInputDialType {
-        type Error = self::error::ConversionError;
-        fn try_from(
-            value: &str,
-        ) -> ::std::result::Result<Self, self::error::ConversionError> {
-            value.parse()
-        }
-    }
-    impl ::std::convert::TryFrom<&::std::string::String>
-    for NewSessionSessionInputDialType {
-        type Error = self::error::ConversionError;
-        fn try_from(
-            value: &::std::string::String,
-        ) -> ::std::result::Result<Self, self::error::ConversionError> {
-            value.parse()
-        }
-    }
-    impl ::std::convert::TryFrom<::std::string::String>
-    for NewSessionSessionInputDialType {
-        type Error = self::error::ConversionError;
-        fn try_from(
-            value: ::std::string::String,
-        ) -> ::std::result::Result<Self, self::error::ConversionError> {
-            value.parse()
-        }
-    }
-    ///Input provided when session is begun by a push message sent to a user.
-    ///
-    /// <details><summary>JSON schema</summary>
-    ///
-    /// ```json
-    ///{
-    ///  "description": "Input provided when session is begun by a push message sent to a user.",
-    ///  "type": "object",
-    ///  "required": [
-    ///    "contextData",
-    ///    "type"
-    ///  ],
-    ///  "properties": {
-    ///    "contextData": {
-    ///      "description": "Context regarding the push message.",
-    ///      "type": "string"
-    ///    },
-    ///    "type": {
-    ///      "examples": [
-    ///        "Push"
-    ///      ],
-    ///      "type": "string",
-    ///      "enum": [
-    ///        "Push"
-    ///      ]
-    ///    }
-    ///  }
-    ///}
-    /// ```
-    /// </details>
-    #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
-    pub struct NewSessionSessionInputPush {
-        ///Context regarding the push message.
-        #[serde(rename = "contextData")]
-        pub context_data: ::std::string::String,
-        #[serde(rename = "type")]
-        pub type_: NewSessionSessionInputPushType,
-    }
-    ///`NewSessionSessionInputPushType`
-    ///
-    /// <details><summary>JSON schema</summary>
-    ///
-    /// ```json
-    ///{
-    ///  "examples": [
-    ///    "Push"
-    ///  ],
-    ///  "type": "string",
-    ///  "enum": [
-    ///    "Push"
-    ///  ]
-    ///}
-    /// ```
-    /// </details>
-    #[derive(
-        ::serde::Deserialize,
-        ::serde::Serialize,
-        Clone,
-        Copy,
-        Debug,
-        Eq,
-        Hash,
-        Ord,
-        PartialEq,
-        PartialOrd
-    )]
-    pub enum NewSessionSessionInputPushType {
-        Push,
-    }
-    impl ::std::fmt::Display for NewSessionSessionInputPushType {
-        fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-            match *self {
-                Self::Push => f.write_str("Push"),
-            }
-        }
-    }
-    impl ::std::str::FromStr for NewSessionSessionInputPushType {
-        type Err = self::error::ConversionError;
-        fn from_str(
-            value: &str,
-        ) -> ::std::result::Result<Self, self::error::ConversionError> {
-            match value {
-                "Push" => Ok(Self::Push),
-                _ => Err("invalid value".into()),
-            }
-        }
-    }
-    impl ::std::convert::TryFrom<&str> for NewSessionSessionInputPushType {
-        type Error = self::error::ConversionError;
-        fn try_from(
-            value: &str,
-        ) -> ::std::result::Result<Self, self::error::ConversionError> {
-            value.parse()
-        }
-    }
-    impl ::std::convert::TryFrom<&::std::string::String>
-    for NewSessionSessionInputPushType {
-        type Error = self::error::ConversionError;
-        fn try_from(
-            value: &::std::string::String,
-        ) -> ::std::result::Result<Self, self::error::ConversionError> {
-            value.parse()
-        }
-    }
-    impl ::std::convert::TryFrom<::std::string::String>
-    for NewSessionSessionInputPushType {
-        type Error = self::error::ConversionError;
-        fn try_from(
-            value: ::std::string::String,
-        ) -> ::std::result::Result<Self, self::error::ConversionError> {
-            value.parse()
-        }
-    }
-    ///Input provided when session is redirected from different USSD application.
-    ///
-    /// <details><summary>JSON schema</summary>
-    ///
-    /// ```json
-    ///{
-    ///  "description": "Input provided when session is redirected from different USSD application.",
-    ///  "type": "object",
-    ///  "required": [
-    ///    "type"
-    ///  ],
-    ///  "properties": {
-    ///    "process": {
-    ///      "$ref": "#/components/schemas/UssdApp.Process"
-    ///    },
-    ///    "processId": {
-    ///      "deprecated": true,
-    ///      "type": "string"
-    ///    },
-    ///    "type": {
-    ///      "examples": [
-    ///        "Redirect"
-    ///      ],
-    ///      "type": "string",
-    ///      "enum": [
-    ///        "Redirect"
-    ///      ]
-    ///    }
-    ///  }
-    ///}
-    /// ```
-    /// </details>
-    #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
-    pub struct NewSessionSessionInputRedirect {
-        #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
-        pub process: ::std::option::Option<UssdAppProcess>,
-        #[serde(
-            rename = "processId",
-            default,
-            skip_serializing_if = "::std::option::Option::is_none"
-        )]
-        pub process_id: ::std::option::Option<::std::string::String>,
-        #[serde(rename = "type")]
-        pub type_: NewSessionSessionInputRedirectType,
-    }
     ///Parameters of the process. Keys should be considered as process param names and their values as process param values.
     ///
     /// <details><summary>JSON schema</summary>
@@ -1501,81 +1185,6 @@ pub mod types {
             >,
         ) -> Self {
             Self(value)
-        }
-    }
-    ///`NewSessionSessionInputRedirectType`
-    ///
-    /// <details><summary>JSON schema</summary>
-    ///
-    /// ```json
-    ///{
-    ///  "examples": [
-    ///    "Redirect"
-    ///  ],
-    ///  "type": "string",
-    ///  "enum": [
-    ///    "Redirect"
-    ///  ]
-    ///}
-    /// ```
-    /// </details>
-    #[derive(
-        ::serde::Deserialize,
-        ::serde::Serialize,
-        Clone,
-        Copy,
-        Debug,
-        Eq,
-        Hash,
-        Ord,
-        PartialEq,
-        PartialOrd
-    )]
-    pub enum NewSessionSessionInputRedirectType {
-        Redirect,
-    }
-    impl ::std::fmt::Display for NewSessionSessionInputRedirectType {
-        fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-            match *self {
-                Self::Redirect => f.write_str("Redirect"),
-            }
-        }
-    }
-    impl ::std::str::FromStr for NewSessionSessionInputRedirectType {
-        type Err = self::error::ConversionError;
-        fn from_str(
-            value: &str,
-        ) -> ::std::result::Result<Self, self::error::ConversionError> {
-            match value {
-                "Redirect" => Ok(Self::Redirect),
-                _ => Err("invalid value".into()),
-            }
-        }
-    }
-    impl ::std::convert::TryFrom<&str> for NewSessionSessionInputRedirectType {
-        type Error = self::error::ConversionError;
-        fn try_from(
-            value: &str,
-        ) -> ::std::result::Result<Self, self::error::ConversionError> {
-            value.parse()
-        }
-    }
-    impl ::std::convert::TryFrom<&::std::string::String>
-    for NewSessionSessionInputRedirectType {
-        type Error = self::error::ConversionError;
-        fn try_from(
-            value: &::std::string::String,
-        ) -> ::std::result::Result<Self, self::error::ConversionError> {
-            value.parse()
-        }
-    }
-    impl ::std::convert::TryFrom<::std::string::String>
-    for NewSessionSessionInputRedirectType {
-        type Error = self::error::ConversionError;
-        fn try_from(
-            value: ::std::string::String,
-        ) -> ::std::result::Result<Self, self::error::ConversionError> {
-            value.parse()
         }
     }
     ///Developer's USSD App returns USSD process result as a map of params
@@ -3052,51 +2661,117 @@ pub mod types {
             value.parse()
         }
     }
-    ///Input provided when starting the session.
+    ///`UssdSessionEventNewSessionSessionInput`
     ///
     /// <details><summary>JSON schema</summary>
     ///
     /// ```json
     ///{
-    ///  "description": "Input provided when starting the session.",
     ///  "oneOf": [
     ///    {
-    ///      "$ref": "#/components/schemas/NewSession.SessionInput.Dial"
+    ///      "description": "Input provided when the user dials into the session (dials the shortcode string)",
+    ///      "type": "object",
+    ///      "required": [
+    ///        "shortcodeString",
+    ///        "type"
+    ///      ],
+    ///      "properties": {
+    ///        "shortcodeString": {
+    ///          "description": "Shortcode string dialed by the user",
+    ///          "examples": [
+    ///            "*425*001*123#"
+    ///          ],
+    ///          "type": "string"
+    ///        },
+    ///        "type": {
+    ///          "examples": [
+    ///            "Dial"
+    ///          ],
+    ///          "type": "string",
+    ///          "enum": [
+    ///            "Dial"
+    ///          ]
+    ///        }
+    ///      }
     ///    },
     ///    {
-    ///      "$ref": "#/components/schemas/NewSession.SessionInput.Push"
+    ///      "description": "Input provided when session is begun by a push message sent to a user.",
+    ///      "type": "object",
+    ///      "required": [
+    ///        "contextData",
+    ///        "type"
+    ///      ],
+    ///      "properties": {
+    ///        "contextData": {
+    ///          "description": "Context regarding the push message.",
+    ///          "type": "string"
+    ///        },
+    ///        "type": {
+    ///          "examples": [
+    ///            "Push"
+    ///          ],
+    ///          "type": "string",
+    ///          "enum": [
+    ///            "Push"
+    ///          ]
+    ///        }
+    ///      }
     ///    },
     ///    {
-    ///      "$ref": "#/components/schemas/NewSession.SessionInput.Redirect"
+    ///      "description": "Input provided when session is redirected from different USSD application.",
+    ///      "type": "object",
+    ///      "required": [
+    ///        "type"
+    ///      ],
+    ///      "properties": {
+    ///        "process": {
+    ///          "$ref": "#/components/schemas/UssdApp.Process"
+    ///        },
+    ///        "processId": {
+    ///          "deprecated": true,
+    ///          "type": "string"
+    ///        },
+    ///        "type": {
+    ///          "examples": [
+    ///            "Redirect"
+    ///          ],
+    ///          "type": "string",
+    ///          "enum": [
+    ///            "Redirect"
+    ///          ]
+    ///        }
+    ///      }
     ///    }
     ///  ]
     ///}
     /// ```
     /// </details>
     #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
-    #[serde(untagged)]
+    #[serde(tag = "type")]
     pub enum UssdSessionEventNewSessionSessionInput {
-        Dial(NewSessionSessionInputDial),
-        Push(NewSessionSessionInputPush),
-        Redirect(NewSessionSessionInputRedirect),
-    }
-    impl ::std::convert::From<NewSessionSessionInputDial>
-    for UssdSessionEventNewSessionSessionInput {
-        fn from(value: NewSessionSessionInputDial) -> Self {
-            Self::Dial(value)
-        }
-    }
-    impl ::std::convert::From<NewSessionSessionInputPush>
-    for UssdSessionEventNewSessionSessionInput {
-        fn from(value: NewSessionSessionInputPush) -> Self {
-            Self::Push(value)
-        }
-    }
-    impl ::std::convert::From<NewSessionSessionInputRedirect>
-    for UssdSessionEventNewSessionSessionInput {
-        fn from(value: NewSessionSessionInputRedirect) -> Self {
-            Self::Redirect(value)
-        }
+        ///Input provided when the user dials into the session (dials the shortcode string)
+        Dial {
+            ///Shortcode string dialed by the user
+            #[serde(rename = "shortcodeString")]
+            shortcode_string: ::std::string::String,
+        },
+        ///Input provided when session is begun by a push message sent to a user.
+        Push {
+            ///Context regarding the push message.
+            #[serde(rename = "contextData")]
+            context_data: ::std::string::String,
+        },
+        ///Input provided when session is redirected from different USSD application.
+        Redirect {
+            #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+            process: ::std::option::Option<UssdAppProcess>,
+            #[serde(
+                rename = "processId",
+                default,
+                skip_serializing_if = "::std::option::Option::is_none"
+            )]
+            process_id: ::std::option::Option<::std::string::String>,
+        },
     }
     ///`UssdView`
     ///

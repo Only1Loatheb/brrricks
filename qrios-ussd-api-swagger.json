@@ -1182,93 +1182,6 @@
         },
         "description": "Cannot determine if merchant payment operation succeed or not"
       },
-      "NewSession": {
-        "discriminator": {
-          "propertyName": "type",
-          "mapping": {
-            "Dial": "#/components/schemas/NewSession.SessionInput.Dial",
-            "Push": "#/components/schemas/NewSession.SessionInput.Push",
-            "Redirect": "#/components/schemas/NewSession.SessionInput.Redirect"
-          }
-        },
-        "oneOf": [
-          {
-            "$ref": "#/components/schemas/NewSession.SessionInput.Dial"
-          },
-          {
-            "$ref": "#/components/schemas/NewSession.SessionInput.Push"
-          },
-          {
-            "$ref": "#/components/schemas/NewSession.SessionInput.Redirect"
-          }
-        ]
-      },
-      "NewSession.SessionInput.Dial": {
-        "required": [
-          "shortcodeString",
-          "type"
-        ],
-        "type": "object",
-        "properties": {
-          "type": {
-            "type": "string",
-            "example": "Dial",
-            "enum": [
-              "Dial"
-            ]
-          },
-          "shortcodeString": {
-            "type": "string",
-            "description": "Shortcode string dialed by the user",
-            "example": "*425*001*123#"
-          }
-        },
-        "description": "Input provided when the user dials into the session (dials the shortcode string)"
-      },
-      "NewSession.SessionInput.Push": {
-        "required": [
-          "contextData",
-          "type"
-        ],
-        "type": "object",
-        "properties": {
-          "type": {
-            "type": "string",
-            "example": "Push",
-            "enum": [
-              "Push"
-            ]
-          },
-          "contextData": {
-            "type": "string",
-            "description": "Context regarding the push message."
-          }
-        },
-        "description": "Input provided when session is begun by a push message sent to a user."
-      },
-      "NewSession.SessionInput.Redirect": {
-        "required": [
-          "type"
-        ],
-        "type": "object",
-        "properties": {
-          "type": {
-            "type": "string",
-            "example": "Redirect",
-            "enum": [
-              "Redirect"
-            ]
-          },
-          "processId": {
-            "type": "string",
-            "deprecated": true
-          },
-          "process": {
-            "$ref": "#/components/schemas/UssdApp.Process"
-          }
-        },
-        "description": "Input provided when session is redirected from different USSD application."
-      },
       "NewSession.SessionInput.Redirect.Params": {
         "type": "object",
         "additionalProperties": {
@@ -1715,24 +1628,72 @@
         "description": "The event sent when the USSD session starts (user initiates the session)."
       },
       "UssdSessionEvent.NewSession.SessionInput": {
-        "description": "Input provided when starting the session.",
-        "discriminator": {
-          "propertyName": "type",
-          "mapping": {
-            "Dial": "#/components/schemas/NewSession.SessionInput.Dial",
-            "Push": "#/components/schemas/NewSession.SessionInput.Push",
-            "Redirect": "#/components/schemas/NewSession.SessionInput.Redirect"
-          }
-        },
         "oneOf": [
           {
-            "$ref": "#/components/schemas/NewSession.SessionInput.Dial"
+            "required": [
+              "shortcodeString",
+              "type"
+            ],
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "example": "Dial",
+                "enum": [
+                  "Dial"
+                ]
+              },
+              "shortcodeString": {
+                "type": "string",
+                "description": "Shortcode string dialed by the user",
+                "example": "*425*001*123#"
+              }
+            },
+            "description": "Input provided when the user dials into the session (dials the shortcode string)"
           },
           {
-            "$ref": "#/components/schemas/NewSession.SessionInput.Push"
+            "required": [
+              "contextData",
+              "type"
+            ],
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "example": "Push",
+                "enum": [
+                  "Push"
+                ]
+              },
+              "contextData": {
+                "type": "string",
+                "description": "Context regarding the push message."
+              }
+            },
+            "description": "Input provided when session is begun by a push message sent to a user."
           },
           {
-            "$ref": "#/components/schemas/NewSession.SessionInput.Redirect"
+            "required": [
+              "type"
+            ],
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "example": "Redirect",
+                "enum": [
+                  "Redirect"
+                ]
+              },
+              "processId": {
+                "type": "string",
+                "deprecated": true
+              },
+              "process": {
+                "$ref": "#/components/schemas/UssdApp.Process"
+              }
+            },
+            "description": "Input provided when session is redirected from different USSD application."
           }
         ]
       },

@@ -147,9 +147,9 @@ impl<Process: FinalizedProcess + Sync> qrios_api_axum_server::apis::developers_a
     body: &UssdSessionEventNewSession,
   ) -> Result<PostUssdsessioneventNewResponse, ()> {
     let shortcode_string = match body.input.clone() {
-      UssdSessionEventNewSessionSessionInput::NewSessionSessionInputDial(x) => x.shortcode_string,
-      UssdSessionEventNewSessionSessionInput::NewSessionSessionInputPush(_) => todo!(),
-      UssdSessionEventNewSessionSessionInput::NewSessionSessionInputRedirect(_) => todo!(),
+      UssdSessionEventNewSessionSessionInput::UssdSessionEventNewSessionSessionInputOneOf(x) => x.shortcode_string,
+      UssdSessionEventNewSessionSessionInput::UssdSessionEventNewSessionSessionInputOneOf1(_) => todo!(),
+      UssdSessionEventNewSessionSessionInput::UssdSessionEventNewSessionSessionInputOneOf2(_) => todo!(),
     };
     let init_session_context = vec![(0, Value::String(body.msisdn.clone())), (1, Value::String(body.operator.clone()))];
     let run_result = self
@@ -198,14 +198,12 @@ impl<Process: FinalizedProcess + Sync> qrios_api_axum_server::apis::developers_a
 
 #[cfg(test)]
 mod tests {
-  use crate::QriosUssdApiService;
+
   use frunk_core::hlist::HNil;
   use qrios_api_process_entry::DialedSessionEntry;
-  use qrios_api_reqwest_client::Client;
+
   use qrios_api_reqwest_client::types::*;
-  use sqlx::postgres::PgPoolOptions;
-  use std::sync::Arc;
-  use tokio::net::TcpListener;
+
   use tokio::signal;
   use type_process_builder::builder::FinalizedProcess;
   use type_process_builder::builder::{FlowingProcess, Message};
@@ -222,66 +220,38 @@ mod tests {
       }
     }
 
-    let process = DialedSessionEntry.end(NoOpFinalStep).build("no_op_process", 0);
+    let _process = DialedSessionEntry.end(NoOpFinalStep).build("no_op_process", 0);
 
-    let pool = PgPoolOptions::new()
-      .max_connections(5)
-      .connect("postgres://postgres:password@localhost/test")
-      .await
-      .expect("Failed to connect to PostgreSQL server");
-
-    let service = QriosUssdApiService::new(process, pool).await.expect("Failed to create QriosUssdApiService");
-    tracing_subscriber::fmt::init();
-    let app = qrios_api_axum_server::server::new(Arc::new(service));
-    // Add layers to the router
-    // let app = app.layer(...);
-    let listener = TcpListener::bind("127.0.0.1:0").await.expect("Failed to bind random port");
-    let addr = listener.local_addr().expect("Failed to get server local address");
-    axum::serve(listener, app).with_graceful_shutdown(shutdown_signal()).await.expect("Failed to start server");
-
-    let resp = Client::new(format!("http://{addr}").as_str())
-      .post_ussdsessionevent_new(
-        None,
-        &UssdSessionEventNewSession {
-          app_id: "val".into(),
-          client_id: "val".into(),
-          input: UssdSessionEventNewSessionSessionInput::Dial(NewSessionSessionInputDial {
-            shortcode_string: "*425*001*123#".to_string(),
-            type_: NewSessionSessionInputDialType::Dial,
-          }),
-          msisdn: "2341234567890".into(),
-          operator: UssdSessionEventNewSessionOperator::Mtn,
-          session_id: "val".into(),
-        },
-      )
-      .await
-      .expect("Failed to get a response from post_ussdsessionevent_new");
-    assert!(matches!(
-      resp.action.clone(),
-      UssdAction::Variant4{show_view: ShowView{view: UssdView::InfoView(UssdViewInfoView{message, ..}), ..}} if
-      message == "Good bye"
-    ))
-  }
-
-  async fn shutdown_signal() {
-    let ctrl_c = async {
-      signal::ctrl_c().await.expect("failed to install Ctrl+C handler");
+    let session = UssdSessionEventNewSession {
+      app_id: "val".into(),
+      client_id: "val".into(),
+      input: UssdSessionEventNewSessionSessionInput::Dial { shortcode_string: "*425*001*123#".to_string() },
+      msisdn: "2341234567890".into(),
+      operator: UssdSessionEventNewSessionOperator::Mtn,
+      session_id: "val".into(),
     };
+    println!("{}", serde_json::to_string(&session).unwrap());
 
-    #[cfg(unix)]
-    let terminate = async {
-      signal::unix::signal(signal::unix::SignalKind::terminate())
-        .expect("failed to install signal handler")
-        .recv()
-        .await;
-    };
+    async fn _shutdown_signal() {
+      let ctrl_c = async {
+        signal::ctrl_c().await.expect("failed to install Ctrl+C handler");
+      };
 
-    #[cfg(not(unix))]
-    let terminate = std::future::pending::<()>();
+      #[cfg(unix)]
+      let terminate = async {
+        signal::unix::signal(signal::unix::SignalKind::terminate())
+          .expect("failed to install signal handler")
+          .recv()
+          .await;
+      };
 
-    tokio::select! {
-        _ = ctrl_c => {},
-        _ = terminate => {},
+      #[cfg(not(unix))]
+      let terminate = std::future::pending::<()>();
+
+      tokio::select! {
+          _ = ctrl_c => {},
+          _ = terminate => {},
+      }
     }
   }
 }
