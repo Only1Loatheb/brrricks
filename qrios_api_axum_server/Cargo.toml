@@ -1,6 +1,6 @@
 [package]
 name = "qrios_api_axum_server"
-version = "1.6.0"
+version = "1.6.1"
 authors = ["OpenAPI Generator team and contributors"]
 description = "This API is *not* exposed by Qrios, but it should be implemented by the developer. Qrios will call this API on developer's side to provide information about USSD sessions and the developer should answer with information regarding what should happen next in the aforementioned sessions."
 edition = "2024"

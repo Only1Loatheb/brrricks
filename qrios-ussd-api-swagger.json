@@ -3,7 +3,7 @@
   "info": {
     "title": "QRIOS USSD API documentation",
     "description": "This API is *not* exposed by Qrios, but it should be implemented by the developer. Qrios will call this API on developer's side to provide information about USSD sessions and the developer should answer with information regarding what should happen next in the aforementioned sessions.",
-    "version": "1.6.0"
+    "version": "1.6.1"
   },
   "servers": [
     {
@@ -1182,6 +1182,27 @@
         },
         "description": "Cannot determine if merchant payment operation succeed or not"
       },
+      "NewSession": {
+        "discriminator": {
+          "propertyName": "type",
+          "mapping": {
+            "Dial": "#/components/schemas/NewSession.SessionInput.Dial",
+            "Push": "#/components/schemas/NewSession.SessionInput.Push",
+            "Redirect": "#/components/schemas/NewSession.SessionInput.Redirect"
+          }
+        },
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/NewSession.SessionInput.Dial"
+          },
+          {
+            "$ref": "#/components/schemas/NewSession.SessionInput.Push"
+          },
+          {
+            "$ref": "#/components/schemas/NewSession.SessionInput.Redirect"
+          }
+        ]
+      },
       "NewSession.SessionInput.Dial": {
         "required": [
           "shortcodeString",
@@ -1695,39 +1716,23 @@
       },
       "UssdSessionEvent.NewSession.SessionInput": {
         "description": "Input provided when starting the session.",
+        "discriminator": {
+          "propertyName": "type",
+          "mapping": {
+            "Dial": "#/components/schemas/NewSession.SessionInput.Dial",
+            "Push": "#/components/schemas/NewSession.SessionInput.Push",
+            "Redirect": "#/components/schemas/NewSession.SessionInput.Redirect"
+          }
+        },
         "oneOf": [
           {
-            "required": [
-              "Dial"
-            ],
-            "type": "object",
-            "properties": {
-              "Dial": {
-                "$ref": "#/components/schemas/NewSession.SessionInput.Dial"
-              }
-            }
+            "$ref": "#/components/schemas/NewSession.SessionInput.Dial"
           },
           {
-            "required": [
-              "Push"
-            ],
-            "type": "object",
-            "properties": {
-              "Push": {
-                "$ref": "#/components/schemas/NewSession.SessionInput.Push"
-              }
-            }
+            "$ref": "#/components/schemas/NewSession.SessionInput.Push"
           },
           {
-            "required": [
-              "Redirect"
-            ],
-            "type": "object",
-            "properties": {
-              "Redirect": {
-                "$ref": "#/components/schemas/NewSession.SessionInput.Redirect"
-              }
-            }
+            "$ref": "#/components/schemas/NewSession.SessionInput.Redirect"
           }
         ]
       },

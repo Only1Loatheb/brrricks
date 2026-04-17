@@ -3060,6 +3060,71 @@ impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<MerchantPaym
 
 
 
+#[derive(Debug, Clone, PartialEq, serde::Deserialize)]
+#[serde(tag = "type")]
+#[allow(non_camel_case_types, clippy::large_enum_variant)]
+pub enum NewSession {
+    #[serde(alias = "Dial")]
+    NewSessionSessionInputDial(models::NewSessionSessionInputDial),
+    #[serde(alias = "Push")]
+    NewSessionSessionInputPush(models::NewSessionSessionInputPush),
+    #[serde(alias = "Redirect")]
+    NewSessionSessionInputRedirect(models::NewSessionSessionInputRedirect),
+}
+
+impl validator::Validate for NewSession
+{
+    fn validate(&self) -> std::result::Result<(), validator::ValidationErrors> {
+        match self {
+            Self::NewSessionSessionInputDial(v) => v.validate(),
+            Self::NewSessionSessionInputPush(v) => v.validate(),
+            Self::NewSessionSessionInputRedirect(v) => v.validate(),
+        }
+    }
+}
+
+/// Converts Query Parameters representation (style=form, explode=false) to a NewSession value
+/// as specified in https://swagger.io/docs/specification/serialization/
+/// Should be implemented in a serde deserializer
+impl std::str::FromStr for NewSession {
+    type Err = serde_json::Error;
+
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        serde_json::from_str(s)
+    }
+}
+
+impl serde::Serialize for NewSession {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+        where S: serde::Serializer {
+            match self {
+                Self::NewSessionSessionInputDial(x) => x.serialize(serializer),
+                Self::NewSessionSessionInputPush(x) => x.serialize(serializer),
+                Self::NewSessionSessionInputRedirect(x) => x.serialize(serializer),
+            }
+    }
+}
+
+impl From<models::NewSessionSessionInputDial> for NewSession {
+    fn from(value: models::NewSessionSessionInputDial) -> Self {
+        Self::NewSessionSessionInputDial(value)
+    }
+}
+impl From<models::NewSessionSessionInputPush> for NewSession {
+    fn from(value: models::NewSessionSessionInputPush) -> Self {
+        Self::NewSessionSessionInputPush(value)
+    }
+}
+impl From<models::NewSessionSessionInputRedirect> for NewSession {
+    fn from(value: models::NewSessionSessionInputRedirect) -> Self {
+        Self::NewSessionSessionInputRedirect(value)
+    }
+}
+
+
+
+
+
 /// Input provided when the user dials into the session (dials the shortcode string)
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, validator::Validate)]
 #[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
@@ -6356,22 +6421,25 @@ impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<UssdSessionE
 
 
 /// Input provided when starting the session.
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
-#[serde(untagged)]
+#[derive(Debug, Clone, PartialEq, serde::Deserialize)]
+#[serde(tag = "type")]
 #[allow(non_camel_case_types, clippy::large_enum_variant)]
 pub enum UssdSessionEventNewSessionSessionInput {
-    UssdSessionEventNewSessionSessionInputOneOf(models::UssdSessionEventNewSessionSessionInputOneOf),
-    UssdSessionEventNewSessionSessionInputOneOf1(models::UssdSessionEventNewSessionSessionInputOneOf1),
-    UssdSessionEventNewSessionSessionInputOneOf2(models::UssdSessionEventNewSessionSessionInputOneOf2),
+    #[serde(alias = "Dial")]
+    NewSessionSessionInputDial(models::NewSessionSessionInputDial),
+    #[serde(alias = "Push")]
+    NewSessionSessionInputPush(models::NewSessionSessionInputPush),
+    #[serde(alias = "Redirect")]
+    NewSessionSessionInputRedirect(models::NewSessionSessionInputRedirect),
 }
 
 impl validator::Validate for UssdSessionEventNewSessionSessionInput
 {
     fn validate(&self) -> std::result::Result<(), validator::ValidationErrors> {
         match self {
-            Self::UssdSessionEventNewSessionSessionInputOneOf(v) => v.validate(),
-            Self::UssdSessionEventNewSessionSessionInputOneOf1(v) => v.validate(),
-            Self::UssdSessionEventNewSessionSessionInputOneOf2(v) => v.validate(),
+            Self::NewSessionSessionInputDial(v) => v.validate(),
+            Self::NewSessionSessionInputPush(v) => v.validate(),
+            Self::NewSessionSessionInputRedirect(v) => v.validate(),
         }
     }
 }
@@ -6387,366 +6455,34 @@ impl std::str::FromStr for UssdSessionEventNewSessionSessionInput {
     }
 }
 
-
-impl From<models::UssdSessionEventNewSessionSessionInputOneOf> for UssdSessionEventNewSessionSessionInput {
-    fn from(value: models::UssdSessionEventNewSessionSessionInputOneOf) -> Self {
-        Self::UssdSessionEventNewSessionSessionInputOneOf(value)
-    }
-}
-impl From<models::UssdSessionEventNewSessionSessionInputOneOf1> for UssdSessionEventNewSessionSessionInput {
-    fn from(value: models::UssdSessionEventNewSessionSessionInputOneOf1) -> Self {
-        Self::UssdSessionEventNewSessionSessionInputOneOf1(value)
-    }
-}
-impl From<models::UssdSessionEventNewSessionSessionInputOneOf2> for UssdSessionEventNewSessionSessionInput {
-    fn from(value: models::UssdSessionEventNewSessionSessionInputOneOf2) -> Self {
-        Self::UssdSessionEventNewSessionSessionInputOneOf2(value)
-    }
-}
-
-
-
-
-
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, validator::Validate)]
-#[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
-pub struct UssdSessionEventNewSessionSessionInputOneOf {
-    #[serde(rename = "Dial")]
-          #[validate(nested)]
-    pub dial: models::NewSessionSessionInputDial,
-
-}
-
-
-
-impl UssdSessionEventNewSessionSessionInputOneOf {
-    #[allow(clippy::new_without_default, clippy::too_many_arguments)]
-    pub fn new(dial: models::NewSessionSessionInputDial, ) -> UssdSessionEventNewSessionSessionInputOneOf {
-        UssdSessionEventNewSessionSessionInputOneOf {
- dial,
-        }
-    }
-}
-
-/// Converts the UssdSessionEventNewSessionSessionInputOneOf value to the Query Parameters representation (style=form, explode=false)
-/// specified in https://swagger.io/docs/specification/serialization/
-/// Should be implemented in a serde serializer
-impl std::fmt::Display for UssdSessionEventNewSessionSessionInputOneOf {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let params: Vec<Option<String>> = vec![
-            // Skipping Dial in query parameter serialization
-
-        ];
-
-        write!(f, "{}", params.into_iter().flatten().collect::<Vec<_>>().join(","))
-    }
-}
-
-/// Converts Query Parameters representation (style=form, explode=false) to a UssdSessionEventNewSessionSessionInputOneOf value
-/// as specified in https://swagger.io/docs/specification/serialization/
-/// Should be implemented in a serde deserializer
-impl std::str::FromStr for UssdSessionEventNewSessionSessionInputOneOf {
-    type Err = String;
-
-    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-        /// An intermediate representation of the struct to use for parsing.
-        #[derive(Default)]
-        #[allow(dead_code)]
-        struct IntermediateRep {
-            pub dial: Vec<models::NewSessionSessionInputDial>,
-        }
-
-        let mut intermediate_rep = IntermediateRep::default();
-
-        // Parse into intermediate representation
-        let mut string_iter = s.split(',');
-        let mut key_result = string_iter.next();
-
-        while key_result.is_some() {
-            let val = match string_iter.next() {
-                Some(x) => x,
-                None => return std::result::Result::Err("Missing value while parsing UssdSessionEventNewSessionSessionInputOneOf".to_string())
-            };
-
-            if let Some(key) = key_result {
-                #[allow(clippy::match_single_binding)]
-                match key {
-                    #[allow(clippy::redundant_clone)]
-                    "Dial" => intermediate_rep.dial.push(<models::NewSessionSessionInputDial as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
-                    _ => return std::result::Result::Err("Unexpected key while parsing UssdSessionEventNewSessionSessionInputOneOf".to_string())
-                }
+impl serde::Serialize for UssdSessionEventNewSessionSessionInput {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+        where S: serde::Serializer {
+            match self {
+                Self::NewSessionSessionInputDial(x) => x.serialize(serializer),
+                Self::NewSessionSessionInputPush(x) => x.serialize(serializer),
+                Self::NewSessionSessionInputRedirect(x) => x.serialize(serializer),
             }
-
-            // Get the next key
-            key_result = string_iter.next();
-        }
-
-        // Use the intermediate representation to return the struct
-        std::result::Result::Ok(UssdSessionEventNewSessionSessionInputOneOf {
-            dial: intermediate_rep.dial.into_iter().next().ok_or_else(|| "Dial missing in UssdSessionEventNewSessionSessionInputOneOf".to_string())?,
-        })
     }
 }
 
-// Methods for converting between header::IntoHeaderValue<UssdSessionEventNewSessionSessionInputOneOf> and HeaderValue
-
-#[cfg(feature = "server")]
-impl std::convert::TryFrom<header::IntoHeaderValue<UssdSessionEventNewSessionSessionInputOneOf>> for HeaderValue {
-    type Error = String;
-
-    fn try_from(hdr_value: header::IntoHeaderValue<UssdSessionEventNewSessionSessionInputOneOf>) -> std::result::Result<Self, Self::Error> {
-        let hdr_value = hdr_value.to_string();
-        match HeaderValue::from_str(&hdr_value) {
-             std::result::Result::Ok(value) => std::result::Result::Ok(value),
-             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Invalid header value for UssdSessionEventNewSessionSessionInputOneOf - value: {hdr_value} is invalid {e}"#))
-        }
+impl From<models::NewSessionSessionInputDial> for UssdSessionEventNewSessionSessionInput {
+    fn from(value: models::NewSessionSessionInputDial) -> Self {
+        Self::NewSessionSessionInputDial(value)
     }
 }
-
-#[cfg(feature = "server")]
-impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<UssdSessionEventNewSessionSessionInputOneOf> {
-    type Error = String;
-
-    fn try_from(hdr_value: HeaderValue) -> std::result::Result<Self, Self::Error> {
-        match hdr_value.to_str() {
-             std::result::Result::Ok(value) => {
-                    match <UssdSessionEventNewSessionSessionInputOneOf as std::str::FromStr>::from_str(value) {
-                        std::result::Result::Ok(value) => std::result::Result::Ok(header::IntoHeaderValue(value)),
-                        std::result::Result::Err(err) => std::result::Result::Err(format!(r#"Unable to convert header value '{value}' into UssdSessionEventNewSessionSessionInputOneOf - {err}"#))
-                    }
-             },
-             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Unable to convert header: {hdr_value:?} to string: {e}"#))
-        }
+impl From<models::NewSessionSessionInputPush> for UssdSessionEventNewSessionSessionInput {
+    fn from(value: models::NewSessionSessionInputPush) -> Self {
+        Self::NewSessionSessionInputPush(value)
+    }
+}
+impl From<models::NewSessionSessionInputRedirect> for UssdSessionEventNewSessionSessionInput {
+    fn from(value: models::NewSessionSessionInputRedirect) -> Self {
+        Self::NewSessionSessionInputRedirect(value)
     }
 }
 
 
-
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, validator::Validate)]
-#[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
-pub struct UssdSessionEventNewSessionSessionInputOneOf1 {
-    #[serde(rename = "Push")]
-          #[validate(nested)]
-    pub push: models::NewSessionSessionInputPush,
-
-}
-
-
-
-impl UssdSessionEventNewSessionSessionInputOneOf1 {
-    #[allow(clippy::new_without_default, clippy::too_many_arguments)]
-    pub fn new(push: models::NewSessionSessionInputPush, ) -> UssdSessionEventNewSessionSessionInputOneOf1 {
-        UssdSessionEventNewSessionSessionInputOneOf1 {
- push,
-        }
-    }
-}
-
-/// Converts the UssdSessionEventNewSessionSessionInputOneOf1 value to the Query Parameters representation (style=form, explode=false)
-/// specified in https://swagger.io/docs/specification/serialization/
-/// Should be implemented in a serde serializer
-impl std::fmt::Display for UssdSessionEventNewSessionSessionInputOneOf1 {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let params: Vec<Option<String>> = vec![
-            // Skipping Push in query parameter serialization
-
-        ];
-
-        write!(f, "{}", params.into_iter().flatten().collect::<Vec<_>>().join(","))
-    }
-}
-
-/// Converts Query Parameters representation (style=form, explode=false) to a UssdSessionEventNewSessionSessionInputOneOf1 value
-/// as specified in https://swagger.io/docs/specification/serialization/
-/// Should be implemented in a serde deserializer
-impl std::str::FromStr for UssdSessionEventNewSessionSessionInputOneOf1 {
-    type Err = String;
-
-    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-        /// An intermediate representation of the struct to use for parsing.
-        #[derive(Default)]
-        #[allow(dead_code)]
-        struct IntermediateRep {
-            pub push: Vec<models::NewSessionSessionInputPush>,
-        }
-
-        let mut intermediate_rep = IntermediateRep::default();
-
-        // Parse into intermediate representation
-        let mut string_iter = s.split(',');
-        let mut key_result = string_iter.next();
-
-        while key_result.is_some() {
-            let val = match string_iter.next() {
-                Some(x) => x,
-                None => return std::result::Result::Err("Missing value while parsing UssdSessionEventNewSessionSessionInputOneOf1".to_string())
-            };
-
-            if let Some(key) = key_result {
-                #[allow(clippy::match_single_binding)]
-                match key {
-                    #[allow(clippy::redundant_clone)]
-                    "Push" => intermediate_rep.push.push(<models::NewSessionSessionInputPush as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
-                    _ => return std::result::Result::Err("Unexpected key while parsing UssdSessionEventNewSessionSessionInputOneOf1".to_string())
-                }
-            }
-
-            // Get the next key
-            key_result = string_iter.next();
-        }
-
-        // Use the intermediate representation to return the struct
-        std::result::Result::Ok(UssdSessionEventNewSessionSessionInputOneOf1 {
-            push: intermediate_rep.push.into_iter().next().ok_or_else(|| "Push missing in UssdSessionEventNewSessionSessionInputOneOf1".to_string())?,
-        })
-    }
-}
-
-// Methods for converting between header::IntoHeaderValue<UssdSessionEventNewSessionSessionInputOneOf1> and HeaderValue
-
-#[cfg(feature = "server")]
-impl std::convert::TryFrom<header::IntoHeaderValue<UssdSessionEventNewSessionSessionInputOneOf1>> for HeaderValue {
-    type Error = String;
-
-    fn try_from(hdr_value: header::IntoHeaderValue<UssdSessionEventNewSessionSessionInputOneOf1>) -> std::result::Result<Self, Self::Error> {
-        let hdr_value = hdr_value.to_string();
-        match HeaderValue::from_str(&hdr_value) {
-             std::result::Result::Ok(value) => std::result::Result::Ok(value),
-             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Invalid header value for UssdSessionEventNewSessionSessionInputOneOf1 - value: {hdr_value} is invalid {e}"#))
-        }
-    }
-}
-
-#[cfg(feature = "server")]
-impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<UssdSessionEventNewSessionSessionInputOneOf1> {
-    type Error = String;
-
-    fn try_from(hdr_value: HeaderValue) -> std::result::Result<Self, Self::Error> {
-        match hdr_value.to_str() {
-             std::result::Result::Ok(value) => {
-                    match <UssdSessionEventNewSessionSessionInputOneOf1 as std::str::FromStr>::from_str(value) {
-                        std::result::Result::Ok(value) => std::result::Result::Ok(header::IntoHeaderValue(value)),
-                        std::result::Result::Err(err) => std::result::Result::Err(format!(r#"Unable to convert header value '{value}' into UssdSessionEventNewSessionSessionInputOneOf1 - {err}"#))
-                    }
-             },
-             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Unable to convert header: {hdr_value:?} to string: {e}"#))
-        }
-    }
-}
-
-
-
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, validator::Validate)]
-#[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
-pub struct UssdSessionEventNewSessionSessionInputOneOf2 {
-    #[serde(rename = "Redirect")]
-          #[validate(nested)]
-    pub redirect: models::NewSessionSessionInputRedirect,
-
-}
-
-
-
-impl UssdSessionEventNewSessionSessionInputOneOf2 {
-    #[allow(clippy::new_without_default, clippy::too_many_arguments)]
-    pub fn new(redirect: models::NewSessionSessionInputRedirect, ) -> UssdSessionEventNewSessionSessionInputOneOf2 {
-        UssdSessionEventNewSessionSessionInputOneOf2 {
- redirect,
-        }
-    }
-}
-
-/// Converts the UssdSessionEventNewSessionSessionInputOneOf2 value to the Query Parameters representation (style=form, explode=false)
-/// specified in https://swagger.io/docs/specification/serialization/
-/// Should be implemented in a serde serializer
-impl std::fmt::Display for UssdSessionEventNewSessionSessionInputOneOf2 {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let params: Vec<Option<String>> = vec![
-            // Skipping Redirect in query parameter serialization
-
-        ];
-
-        write!(f, "{}", params.into_iter().flatten().collect::<Vec<_>>().join(","))
-    }
-}
-
-/// Converts Query Parameters representation (style=form, explode=false) to a UssdSessionEventNewSessionSessionInputOneOf2 value
-/// as specified in https://swagger.io/docs/specification/serialization/
-/// Should be implemented in a serde deserializer
-impl std::str::FromStr for UssdSessionEventNewSessionSessionInputOneOf2 {
-    type Err = String;
-
-    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-        /// An intermediate representation of the struct to use for parsing.
-        #[derive(Default)]
-        #[allow(dead_code)]
-        struct IntermediateRep {
-            pub redirect: Vec<models::NewSessionSessionInputRedirect>,
-        }
-
-        let mut intermediate_rep = IntermediateRep::default();
-
-        // Parse into intermediate representation
-        let mut string_iter = s.split(',');
-        let mut key_result = string_iter.next();
-
-        while key_result.is_some() {
-            let val = match string_iter.next() {
-                Some(x) => x,
-                None => return std::result::Result::Err("Missing value while parsing UssdSessionEventNewSessionSessionInputOneOf2".to_string())
-            };
-
-            if let Some(key) = key_result {
-                #[allow(clippy::match_single_binding)]
-                match key {
-                    #[allow(clippy::redundant_clone)]
-                    "Redirect" => intermediate_rep.redirect.push(<models::NewSessionSessionInputRedirect as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
-                    _ => return std::result::Result::Err("Unexpected key while parsing UssdSessionEventNewSessionSessionInputOneOf2".to_string())
-                }
-            }
-
-            // Get the next key
-            key_result = string_iter.next();
-        }
-
-        // Use the intermediate representation to return the struct
-        std::result::Result::Ok(UssdSessionEventNewSessionSessionInputOneOf2 {
-            redirect: intermediate_rep.redirect.into_iter().next().ok_or_else(|| "Redirect missing in UssdSessionEventNewSessionSessionInputOneOf2".to_string())?,
-        })
-    }
-}
-
-// Methods for converting between header::IntoHeaderValue<UssdSessionEventNewSessionSessionInputOneOf2> and HeaderValue
-
-#[cfg(feature = "server")]
-impl std::convert::TryFrom<header::IntoHeaderValue<UssdSessionEventNewSessionSessionInputOneOf2>> for HeaderValue {
-    type Error = String;
-
-    fn try_from(hdr_value: header::IntoHeaderValue<UssdSessionEventNewSessionSessionInputOneOf2>) -> std::result::Result<Self, Self::Error> {
-        let hdr_value = hdr_value.to_string();
-        match HeaderValue::from_str(&hdr_value) {
-             std::result::Result::Ok(value) => std::result::Result::Ok(value),
-             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Invalid header value for UssdSessionEventNewSessionSessionInputOneOf2 - value: {hdr_value} is invalid {e}"#))
-        }
-    }
-}
-
-#[cfg(feature = "server")]
-impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<UssdSessionEventNewSessionSessionInputOneOf2> {
-    type Error = String;
-
-    fn try_from(hdr_value: HeaderValue) -> std::result::Result<Self, Self::Error> {
-        match hdr_value.to_str() {
-             std::result::Result::Ok(value) => {
-                    match <UssdSessionEventNewSessionSessionInputOneOf2 as std::str::FromStr>::from_str(value) {
-                        std::result::Result::Ok(value) => std::result::Result::Ok(header::IntoHeaderValue(value)),
-                        std::result::Result::Err(err) => std::result::Result::Err(format!(r#"Unable to convert header value '{value}' into UssdSessionEventNewSessionSessionInputOneOf2 - {err}"#))
-                    }
-             },
-             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Unable to convert header: {hdr_value:?} to string: {e}"#))
-        }
-    }
-}
 
 
 

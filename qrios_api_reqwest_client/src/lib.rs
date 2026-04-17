@@ -1139,6 +1139,48 @@ pub mod types {
         #[serde(rename = "type")]
         pub type_: ::std::string::String,
     }
+    ///`NewSession`
+    ///
+    /// <details><summary>JSON schema</summary>
+    ///
+    /// ```json
+    ///{
+    ///  "oneOf": [
+    ///    {
+    ///      "$ref": "#/components/schemas/NewSession.SessionInput.Dial"
+    ///    },
+    ///    {
+    ///      "$ref": "#/components/schemas/NewSession.SessionInput.Push"
+    ///    },
+    ///    {
+    ///      "$ref": "#/components/schemas/NewSession.SessionInput.Redirect"
+    ///    }
+    ///  ]
+    ///}
+    /// ```
+    /// </details>
+    #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+    #[serde(untagged)]
+    pub enum NewSession {
+        Dial(NewSessionSessionInputDial),
+        Push(NewSessionSessionInputPush),
+        Redirect(NewSessionSessionInputRedirect),
+    }
+    impl ::std::convert::From<NewSessionSessionInputDial> for NewSession {
+        fn from(value: NewSessionSessionInputDial) -> Self {
+            Self::Dial(value)
+        }
+    }
+    impl ::std::convert::From<NewSessionSessionInputPush> for NewSession {
+        fn from(value: NewSessionSessionInputPush) -> Self {
+            Self::Push(value)
+        }
+    }
+    impl ::std::convert::From<NewSessionSessionInputRedirect> for NewSession {
+        fn from(value: NewSessionSessionInputRedirect) -> Self {
+            Self::Redirect(value)
+        }
+    }
     ///Input provided when the user dials into the session (dials the shortcode string)
     ///
     /// <details><summary>JSON schema</summary>
@@ -3019,43 +3061,20 @@ pub mod types {
     ///  "description": "Input provided when starting the session.",
     ///  "oneOf": [
     ///    {
-    ///      "type": "object",
-    ///      "required": [
-    ///        "Dial"
-    ///      ],
-    ///      "properties": {
-    ///        "Dial": {
-    ///          "$ref": "#/components/schemas/NewSession.SessionInput.Dial"
-    ///        }
-    ///      }
+    ///      "$ref": "#/components/schemas/NewSession.SessionInput.Dial"
     ///    },
     ///    {
-    ///      "type": "object",
-    ///      "required": [
-    ///        "Push"
-    ///      ],
-    ///      "properties": {
-    ///        "Push": {
-    ///          "$ref": "#/components/schemas/NewSession.SessionInput.Push"
-    ///        }
-    ///      }
+    ///      "$ref": "#/components/schemas/NewSession.SessionInput.Push"
     ///    },
     ///    {
-    ///      "type": "object",
-    ///      "required": [
-    ///        "Redirect"
-    ///      ],
-    ///      "properties": {
-    ///        "Redirect": {
-    ///          "$ref": "#/components/schemas/NewSession.SessionInput.Redirect"
-    ///        }
-    ///      }
+    ///      "$ref": "#/components/schemas/NewSession.SessionInput.Redirect"
     ///    }
     ///  ]
     ///}
     /// ```
     /// </details>
     #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+    #[serde(untagged)]
     pub enum UssdSessionEventNewSessionSessionInput {
         Dial(NewSessionSessionInputDial),
         Push(NewSessionSessionInputPush),
@@ -3741,7 +3760,7 @@ The session will continue when this message is sent.*/
 
 This API is *not* exposed by Qrios, but it should be implemented by the developer. Qrios will call this API on developer's side to provide information about USSD sessions and the developer should answer with information regarding what should happen next in the aforementioned sessions.
 
-Version: 1.6.0*/
+Version: 1.6.1*/
 pub struct Client {
     pub(crate) baseurl: String,
     pub(crate) client: reqwest::Client,
@@ -3777,7 +3796,7 @@ impl Client {
 }
 impl ClientInfo<()> for Client {
     fn api_version() -> &'static str {
-        "1.6.0"
+        "1.6.1"
     }
     fn baseurl(&self) -> &str {
         self.baseurl.as_str()

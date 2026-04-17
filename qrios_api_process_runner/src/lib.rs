@@ -147,9 +147,9 @@ impl<Process: FinalizedProcess + Sync> qrios_api_axum_server::apis::developers_a
     body: &UssdSessionEventNewSession,
   ) -> Result<PostUssdsessioneventNewResponse, ()> {
     let shortcode_string = match body.input.clone() {
-      UssdSessionEventNewSessionSessionInput::UssdSessionEventNewSessionSessionInputOneOf(x) => x.dial.shortcode_string,
-      UssdSessionEventNewSessionSessionInput::UssdSessionEventNewSessionSessionInputOneOf1(_) => todo!(),
-      UssdSessionEventNewSessionSessionInput::UssdSessionEventNewSessionSessionInputOneOf2(_) => todo!(),
+      UssdSessionEventNewSessionSessionInput::NewSessionSessionInputDial(x) => x.shortcode_string,
+      UssdSessionEventNewSessionSessionInput::NewSessionSessionInputPush(_) => todo!(),
+      UssdSessionEventNewSessionSessionInput::NewSessionSessionInputRedirect(_) => todo!(),
     };
     let init_session_context = vec![(0, Value::String(body.msisdn.clone())), (1, Value::String(body.operator.clone()))];
     let run_result = self
