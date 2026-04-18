@@ -348,6 +348,7 @@ pub struct AbortSessionAbortReasonDuplicatedOperation {
           #[validate(custom(function = "check_xss_string"))]
     pub operation_id: String,
 
+    /// Note: inline enums are not fully supported by openapi-generator
     #[serde(rename = "type")]
           #[validate(custom(function = "check_xss_string"))]
     pub r_type: String,
@@ -474,6 +475,7 @@ impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<AbortSession
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, validator::Validate)]
 #[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
 pub struct AbortSessionAbortReasonInsufficientBalanceInVirtualPurse {
+    /// Note: inline enums are not fully supported by openapi-generator
     #[serde(rename = "type")]
           #[validate(custom(function = "check_xss_string"))]
     pub r_type: String,
@@ -591,6 +593,7 @@ impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<AbortSession
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, validator::Validate)]
 #[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
 pub struct AbortSessionAbortReasonInternalError {
+    /// Note: inline enums are not fully supported by openapi-generator
     #[serde(rename = "type")]
           #[validate(custom(function = "check_xss_string"))]
     pub r_type: String,
@@ -712,6 +715,7 @@ pub struct AbortSessionAbortReasonMissingPrivilege {
           #[validate(custom(function = "check_xss_string"))]
     pub privilege: String,
 
+    /// Note: inline enums are not fully supported by openapi-generator
     #[serde(rename = "type")]
           #[validate(custom(function = "check_xss_string"))]
     pub r_type: String,
@@ -838,6 +842,7 @@ impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<AbortSession
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, validator::Validate)]
 #[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
 pub struct AbortSessionAbortReasonUnexpectedUssdAppResponse {
+    /// Note: inline enums are not fully supported by openapi-generator
     #[serde(rename = "type")]
           #[validate(custom(function = "check_xss_string"))]
     pub r_type: String,
@@ -1191,6 +1196,7 @@ impl From<models::CloseSessionCloseReasonTimeout> for CloseSessionCloseReason {
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, validator::Validate)]
 #[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
 pub struct CloseSessionCloseReasonAbandon {
+    /// Note: inline enums are not fully supported by openapi-generator
     #[serde(rename = "type")]
           #[validate(custom(function = "check_xss_string"))]
     pub r_type: String,
@@ -1308,6 +1314,7 @@ impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<CloseSession
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, validator::Validate)]
 #[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
 pub struct CloseSessionCloseReasonEnd {
+    /// Note: inline enums are not fully supported by openapi-generator
     #[serde(rename = "type")]
           #[validate(custom(function = "check_xss_string"))]
     pub r_type: String,
@@ -1425,6 +1432,7 @@ impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<CloseSession
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, validator::Validate)]
 #[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
 pub struct CloseSessionCloseReasonTimeout {
+    /// Note: inline enums are not fully supported by openapi-generator
     #[serde(rename = "type")]
           #[validate(custom(function = "check_xss_string"))]
     pub r_type: String,
@@ -1709,53 +1717,147 @@ impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<ContinueSess
 
 
 
-/// Url of the Legacy USSD App
-#[derive(Debug, Clone, PartialEq, PartialOrd,  serde::Serialize, serde::Deserialize)]
+/// Developer's USSD App requests a redirect to some Legacy USSD App
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, validator::Validate)]
 #[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
-pub struct LegacyAppRedirectUri(pub String);
+pub struct LegacyAppRedirect {
+    /// Note: inline enums are not fully supported by openapi-generator
+    #[serde(default = "LegacyAppRedirect::_name_for_r_type")]
+    #[serde(serialize_with = "LegacyAppRedirect::_serialize_r_type")]
+    #[serde(rename = "type")]
+          #[validate(custom(function = "check_xss_string"))]
+    pub r_type: String,
 
-impl validator::Validate for LegacyAppRedirectUri {
-    fn validate(&self) -> std::result::Result<(), validator::ValidationErrors> {
+    /// Url of the Legacy USSD App
+    #[serde(rename = "uri")]
+          #[validate(custom(function = "check_xss_string"))]
+    pub uri: String,
 
-        std::result::Result::Ok(())
+}
+
+impl LegacyAppRedirect {
+    fn _name_for_r_type() -> String {
+        String::from("LegacyAppRedirect")
+    }
+
+    fn _serialize_r_type<S>(_: &String, s: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        s.serialize_str(&Self::_name_for_r_type())
     }
 }
 
-impl std::convert::From<String> for LegacyAppRedirectUri {
-    fn from(x: String) -> Self {
-        LegacyAppRedirectUri(x)
+
+impl LegacyAppRedirect {
+    #[allow(clippy::new_without_default, clippy::too_many_arguments)]
+    pub fn new(uri: String, ) -> LegacyAppRedirect {
+        LegacyAppRedirect {
+ r_type: Self::_name_for_r_type(),
+ uri,
+        }
     }
 }
 
-impl std::fmt::Display for LegacyAppRedirectUri {
+/// Converts the LegacyAppRedirect value to the Query Parameters representation (style=form, explode=false)
+/// specified in https://swagger.io/docs/specification/serialization/
+/// Should be implemented in a serde serializer
+impl std::fmt::Display for LegacyAppRedirect {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-       write!(f, "{}", self.0)
+        let params: Vec<Option<String>> = vec![
+
+            Some("type".to_string()),
+            Some(self.r_type.to_string()),
+
+
+            Some("uri".to_string()),
+            Some(self.uri.to_string()),
+
+        ];
+
+        write!(f, "{}", params.into_iter().flatten().collect::<Vec<_>>().join(","))
     }
 }
 
-impl std::str::FromStr for LegacyAppRedirectUri {
-    type Err = std::string::ParseError;
-    fn from_str(x: &str) -> std::result::Result<Self, Self::Err> {
-        std::result::Result::Ok(LegacyAppRedirectUri(x.to_string()))
+/// Converts Query Parameters representation (style=form, explode=false) to a LegacyAppRedirect value
+/// as specified in https://swagger.io/docs/specification/serialization/
+/// Should be implemented in a serde deserializer
+impl std::str::FromStr for LegacyAppRedirect {
+    type Err = String;
+
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        /// An intermediate representation of the struct to use for parsing.
+        #[derive(Default)]
+        #[allow(dead_code)]
+        struct IntermediateRep {
+            pub r_type: Vec<String>,
+            pub uri: Vec<String>,
+        }
+
+        let mut intermediate_rep = IntermediateRep::default();
+
+        // Parse into intermediate representation
+        let mut string_iter = s.split(',');
+        let mut key_result = string_iter.next();
+
+        while key_result.is_some() {
+            let val = match string_iter.next() {
+                Some(x) => x,
+                None => return std::result::Result::Err("Missing value while parsing LegacyAppRedirect".to_string())
+            };
+
+            if let Some(key) = key_result {
+                #[allow(clippy::match_single_binding)]
+                match key {
+                    #[allow(clippy::redundant_clone)]
+                    "type" => intermediate_rep.r_type.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
+                    #[allow(clippy::redundant_clone)]
+                    "uri" => intermediate_rep.uri.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
+                    _ => return std::result::Result::Err("Unexpected key while parsing LegacyAppRedirect".to_string())
+                }
+            }
+
+            // Get the next key
+            key_result = string_iter.next();
+        }
+
+        // Use the intermediate representation to return the struct
+        std::result::Result::Ok(LegacyAppRedirect {
+            r_type: intermediate_rep.r_type.into_iter().next().ok_or_else(|| "type missing in LegacyAppRedirect".to_string())?,
+            uri: intermediate_rep.uri.into_iter().next().ok_or_else(|| "uri missing in LegacyAppRedirect".to_string())?,
+        })
     }
 }
 
-impl std::convert::From<LegacyAppRedirectUri> for String {
-    fn from(x: LegacyAppRedirectUri) -> Self {
-        x.0
+// Methods for converting between header::IntoHeaderValue<LegacyAppRedirect> and HeaderValue
+
+#[cfg(feature = "server")]
+impl std::convert::TryFrom<header::IntoHeaderValue<LegacyAppRedirect>> for HeaderValue {
+    type Error = String;
+
+    fn try_from(hdr_value: header::IntoHeaderValue<LegacyAppRedirect>) -> std::result::Result<Self, Self::Error> {
+        let hdr_value = hdr_value.to_string();
+        match HeaderValue::from_str(&hdr_value) {
+             std::result::Result::Ok(value) => std::result::Result::Ok(value),
+             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Invalid header value for LegacyAppRedirect - value: {hdr_value} is invalid {e}"#))
+        }
     }
 }
 
-impl std::ops::Deref for LegacyAppRedirectUri {
-    type Target = String;
-    fn deref(&self) -> &String {
-        &self.0
-    }
-}
+#[cfg(feature = "server")]
+impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<LegacyAppRedirect> {
+    type Error = String;
 
-impl std::ops::DerefMut for LegacyAppRedirectUri {
-    fn deref_mut(&mut self) -> &mut String {
-        &mut self.0
+    fn try_from(hdr_value: HeaderValue) -> std::result::Result<Self, Self::Error> {
+        match hdr_value.to_str() {
+             std::result::Result::Ok(value) => {
+                    match <LegacyAppRedirect as std::str::FromStr>::from_str(value) {
+                        std::result::Result::Ok(value) => std::result::Result::Ok(header::IntoHeaderValue(value)),
+                        std::result::Result::Err(err) => std::result::Result::Err(format!(r#"Unable to convert header value '{value}' into LegacyAppRedirect - {err}"#))
+                    }
+             },
+             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Unable to convert header: {hdr_value:?} to string: {e}"#))
+        }
     }
 }
 
@@ -1876,6 +1978,7 @@ pub struct MerchantPaymentProcessExecutionModeWithBankResponseTimeout {
     #[serde(rename = "millis")]
     pub millis: i64,
 
+    /// Note: inline enums are not fully supported by openapi-generator
     #[serde(rename = "type")]
           #[validate(custom(function = "check_xss_string"))]
     pub r_type: String,
@@ -2002,6 +2105,7 @@ impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<MerchantPaym
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, validator::Validate)]
 #[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
 pub struct MerchantPaymentProcessExecutionModeWithoutWaitingForBank {
+    /// Note: inline enums are not fully supported by openapi-generator
     #[serde(rename = "type")]
           #[validate(custom(function = "check_xss_string"))]
     pub r_type: String,
@@ -2194,6 +2298,7 @@ pub struct MerchantPaymentProcessPaymentModeFixedAccount {
           #[validate(custom(function = "check_xss_string"))]
     pub bank: String,
 
+    /// Note: inline enums are not fully supported by openapi-generator
     #[serde(rename = "type")]
           #[validate(custom(function = "check_xss_string"))]
     pub r_type: String,
@@ -2334,6 +2439,7 @@ pub struct MerchantPaymentProcessPaymentModeFixedBank {
           #[validate(custom(function = "check_xss_string"))]
     pub bank: String,
 
+    /// Note: inline enums are not fully supported by openapi-generator
     #[serde(rename = "type")]
           #[validate(custom(function = "check_xss_string"))]
     pub r_type: String,
@@ -2460,6 +2566,7 @@ impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<MerchantPaym
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, validator::Validate)]
 #[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
 pub struct MerchantPaymentProcessPaymentModeFlexible {
+    /// Note: inline enums are not fully supported by openapi-generator
     #[serde(rename = "type")]
           #[validate(custom(function = "check_xss_string"))]
     pub r_type: String,
@@ -2646,6 +2753,7 @@ pub struct MerchantPaymentResultOperationStatusFailure {
           #[validate(nested)]
     pub cause: models::MerchantPaymentResultOperationStatusFailureCause,
 
+    /// Note: inline enums are not fully supported by openapi-generator
     #[serde(rename = "type")]
           #[validate(custom(function = "check_xss_string"))]
     pub r_type: String,
@@ -2830,6 +2938,7 @@ impl std::str::FromStr for MerchantPaymentResultOperationStatusFailureCause {
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, validator::Validate)]
 #[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
 pub struct MerchantPaymentResultOperationStatusSuccess {
+    /// Note: inline enums are not fully supported by openapi-generator
     #[serde(rename = "type")]
           #[validate(custom(function = "check_xss_string"))]
     pub r_type: String,
@@ -2947,6 +3056,7 @@ impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<MerchantPaym
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, validator::Validate)]
 #[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
 pub struct MerchantPaymentResultOperationStatusUnknown {
+    /// Note: inline enums are not fully supported by openapi-generator
     #[serde(rename = "type")]
           #[validate(custom(function = "check_xss_string"))]
     pub r_type: String,
@@ -3060,11 +3170,425 @@ impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<MerchantPaym
 
 
 
+/// Input provided when the user dials into the session (dials the shortcode string)
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, validator::Validate)]
+#[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
+pub struct NewSessionSessionInputDial {
+    /// Note: inline enums are not fully supported by openapi-generator
+    #[serde(rename = "type")]
+          #[validate(custom(function = "check_xss_string"))]
+    pub r_type: String,
+
+    /// Shortcode string dialed by the user
+    #[serde(rename = "shortcodeString")]
+          #[validate(custom(function = "check_xss_string"))]
+    pub shortcode_string: String,
+
+}
+
+
+
+impl NewSessionSessionInputDial {
+    #[allow(clippy::new_without_default, clippy::too_many_arguments)]
+    pub fn new(r_type: String, shortcode_string: String, ) -> NewSessionSessionInputDial {
+        NewSessionSessionInputDial {
+ r_type,
+ shortcode_string,
+        }
+    }
+}
+
+/// Converts the NewSessionSessionInputDial value to the Query Parameters representation (style=form, explode=false)
+/// specified in https://swagger.io/docs/specification/serialization/
+/// Should be implemented in a serde serializer
+impl std::fmt::Display for NewSessionSessionInputDial {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let params: Vec<Option<String>> = vec![
+
+            Some("type".to_string()),
+            Some(self.r_type.to_string()),
+
+
+            Some("shortcodeString".to_string()),
+            Some(self.shortcode_string.to_string()),
+
+        ];
+
+        write!(f, "{}", params.into_iter().flatten().collect::<Vec<_>>().join(","))
+    }
+}
+
+/// Converts Query Parameters representation (style=form, explode=false) to a NewSessionSessionInputDial value
+/// as specified in https://swagger.io/docs/specification/serialization/
+/// Should be implemented in a serde deserializer
+impl std::str::FromStr for NewSessionSessionInputDial {
+    type Err = String;
+
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        /// An intermediate representation of the struct to use for parsing.
+        #[derive(Default)]
+        #[allow(dead_code)]
+        struct IntermediateRep {
+            pub r_type: Vec<String>,
+            pub shortcode_string: Vec<String>,
+        }
+
+        let mut intermediate_rep = IntermediateRep::default();
+
+        // Parse into intermediate representation
+        let mut string_iter = s.split(',');
+        let mut key_result = string_iter.next();
+
+        while key_result.is_some() {
+            let val = match string_iter.next() {
+                Some(x) => x,
+                None => return std::result::Result::Err("Missing value while parsing NewSessionSessionInputDial".to_string())
+            };
+
+            if let Some(key) = key_result {
+                #[allow(clippy::match_single_binding)]
+                match key {
+                    #[allow(clippy::redundant_clone)]
+                    "type" => intermediate_rep.r_type.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
+                    #[allow(clippy::redundant_clone)]
+                    "shortcodeString" => intermediate_rep.shortcode_string.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
+                    _ => return std::result::Result::Err("Unexpected key while parsing NewSessionSessionInputDial".to_string())
+                }
+            }
+
+            // Get the next key
+            key_result = string_iter.next();
+        }
+
+        // Use the intermediate representation to return the struct
+        std::result::Result::Ok(NewSessionSessionInputDial {
+            r_type: intermediate_rep.r_type.into_iter().next().ok_or_else(|| "type missing in NewSessionSessionInputDial".to_string())?,
+            shortcode_string: intermediate_rep.shortcode_string.into_iter().next().ok_or_else(|| "shortcodeString missing in NewSessionSessionInputDial".to_string())?,
+        })
+    }
+}
+
+// Methods for converting between header::IntoHeaderValue<NewSessionSessionInputDial> and HeaderValue
+
+#[cfg(feature = "server")]
+impl std::convert::TryFrom<header::IntoHeaderValue<NewSessionSessionInputDial>> for HeaderValue {
+    type Error = String;
+
+    fn try_from(hdr_value: header::IntoHeaderValue<NewSessionSessionInputDial>) -> std::result::Result<Self, Self::Error> {
+        let hdr_value = hdr_value.to_string();
+        match HeaderValue::from_str(&hdr_value) {
+             std::result::Result::Ok(value) => std::result::Result::Ok(value),
+             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Invalid header value for NewSessionSessionInputDial - value: {hdr_value} is invalid {e}"#))
+        }
+    }
+}
+
+#[cfg(feature = "server")]
+impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<NewSessionSessionInputDial> {
+    type Error = String;
+
+    fn try_from(hdr_value: HeaderValue) -> std::result::Result<Self, Self::Error> {
+        match hdr_value.to_str() {
+             std::result::Result::Ok(value) => {
+                    match <NewSessionSessionInputDial as std::str::FromStr>::from_str(value) {
+                        std::result::Result::Ok(value) => std::result::Result::Ok(header::IntoHeaderValue(value)),
+                        std::result::Result::Err(err) => std::result::Result::Err(format!(r#"Unable to convert header value '{value}' into NewSessionSessionInputDial - {err}"#))
+                    }
+             },
+             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Unable to convert header: {hdr_value:?} to string: {e}"#))
+        }
+    }
+}
+
+
+
+/// Input provided when session is begun by a push message sent to a user.
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, validator::Validate)]
+#[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
+pub struct NewSessionSessionInputPush {
+    /// Note: inline enums are not fully supported by openapi-generator
+    #[serde(rename = "type")]
+          #[validate(custom(function = "check_xss_string"))]
+    pub r_type: String,
+
+    /// Context regarding the push message.
+    #[serde(rename = "contextData")]
+          #[validate(custom(function = "check_xss_string"))]
+    pub context_data: String,
+
+}
+
+
+
+impl NewSessionSessionInputPush {
+    #[allow(clippy::new_without_default, clippy::too_many_arguments)]
+    pub fn new(r_type: String, context_data: String, ) -> NewSessionSessionInputPush {
+        NewSessionSessionInputPush {
+ r_type,
+ context_data,
+        }
+    }
+}
+
+/// Converts the NewSessionSessionInputPush value to the Query Parameters representation (style=form, explode=false)
+/// specified in https://swagger.io/docs/specification/serialization/
+/// Should be implemented in a serde serializer
+impl std::fmt::Display for NewSessionSessionInputPush {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let params: Vec<Option<String>> = vec![
+
+            Some("type".to_string()),
+            Some(self.r_type.to_string()),
+
+
+            Some("contextData".to_string()),
+            Some(self.context_data.to_string()),
+
+        ];
+
+        write!(f, "{}", params.into_iter().flatten().collect::<Vec<_>>().join(","))
+    }
+}
+
+/// Converts Query Parameters representation (style=form, explode=false) to a NewSessionSessionInputPush value
+/// as specified in https://swagger.io/docs/specification/serialization/
+/// Should be implemented in a serde deserializer
+impl std::str::FromStr for NewSessionSessionInputPush {
+    type Err = String;
+
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        /// An intermediate representation of the struct to use for parsing.
+        #[derive(Default)]
+        #[allow(dead_code)]
+        struct IntermediateRep {
+            pub r_type: Vec<String>,
+            pub context_data: Vec<String>,
+        }
+
+        let mut intermediate_rep = IntermediateRep::default();
+
+        // Parse into intermediate representation
+        let mut string_iter = s.split(',');
+        let mut key_result = string_iter.next();
+
+        while key_result.is_some() {
+            let val = match string_iter.next() {
+                Some(x) => x,
+                None => return std::result::Result::Err("Missing value while parsing NewSessionSessionInputPush".to_string())
+            };
+
+            if let Some(key) = key_result {
+                #[allow(clippy::match_single_binding)]
+                match key {
+                    #[allow(clippy::redundant_clone)]
+                    "type" => intermediate_rep.r_type.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
+                    #[allow(clippy::redundant_clone)]
+                    "contextData" => intermediate_rep.context_data.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
+                    _ => return std::result::Result::Err("Unexpected key while parsing NewSessionSessionInputPush".to_string())
+                }
+            }
+
+            // Get the next key
+            key_result = string_iter.next();
+        }
+
+        // Use the intermediate representation to return the struct
+        std::result::Result::Ok(NewSessionSessionInputPush {
+            r_type: intermediate_rep.r_type.into_iter().next().ok_or_else(|| "type missing in NewSessionSessionInputPush".to_string())?,
+            context_data: intermediate_rep.context_data.into_iter().next().ok_or_else(|| "contextData missing in NewSessionSessionInputPush".to_string())?,
+        })
+    }
+}
+
+// Methods for converting between header::IntoHeaderValue<NewSessionSessionInputPush> and HeaderValue
+
+#[cfg(feature = "server")]
+impl std::convert::TryFrom<header::IntoHeaderValue<NewSessionSessionInputPush>> for HeaderValue {
+    type Error = String;
+
+    fn try_from(hdr_value: header::IntoHeaderValue<NewSessionSessionInputPush>) -> std::result::Result<Self, Self::Error> {
+        let hdr_value = hdr_value.to_string();
+        match HeaderValue::from_str(&hdr_value) {
+             std::result::Result::Ok(value) => std::result::Result::Ok(value),
+             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Invalid header value for NewSessionSessionInputPush - value: {hdr_value} is invalid {e}"#))
+        }
+    }
+}
+
+#[cfg(feature = "server")]
+impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<NewSessionSessionInputPush> {
+    type Error = String;
+
+    fn try_from(hdr_value: HeaderValue) -> std::result::Result<Self, Self::Error> {
+        match hdr_value.to_str() {
+             std::result::Result::Ok(value) => {
+                    match <NewSessionSessionInputPush as std::str::FromStr>::from_str(value) {
+                        std::result::Result::Ok(value) => std::result::Result::Ok(header::IntoHeaderValue(value)),
+                        std::result::Result::Err(err) => std::result::Result::Err(format!(r#"Unable to convert header value '{value}' into NewSessionSessionInputPush - {err}"#))
+                    }
+             },
+             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Unable to convert header: {hdr_value:?} to string: {e}"#))
+        }
+    }
+}
+
+
+
+/// Input provided when session is redirected from different USSD application.
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, validator::Validate)]
+#[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
+pub struct NewSessionSessionInputRedirect {
+    /// Note: inline enums are not fully supported by openapi-generator
+    #[serde(rename = "type")]
+          #[validate(custom(function = "check_xss_string"))]
+    pub r_type: String,
+
+    #[serde(rename = "processId")]
+          #[validate(custom(function = "check_xss_string"))]
+    #[serde(skip_serializing_if="Option::is_none")]
+    pub process_id: Option<String>,
+
+    #[serde(rename = "process")]
+          #[validate(nested)]
+    #[serde(skip_serializing_if="Option::is_none")]
+    pub process: Option<models::UssdAppProcess>,
+
+}
+
+
+
+impl NewSessionSessionInputRedirect {
+    #[allow(clippy::new_without_default, clippy::too_many_arguments)]
+    pub fn new(r_type: String, ) -> NewSessionSessionInputRedirect {
+        NewSessionSessionInputRedirect {
+ r_type,
+ process_id: None,
+ process: None,
+        }
+    }
+}
+
+/// Converts the NewSessionSessionInputRedirect value to the Query Parameters representation (style=form, explode=false)
+/// specified in https://swagger.io/docs/specification/serialization/
+/// Should be implemented in a serde serializer
+impl std::fmt::Display for NewSessionSessionInputRedirect {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let params: Vec<Option<String>> = vec![
+
+            Some("type".to_string()),
+            Some(self.r_type.to_string()),
+
+
+            self.process_id.as_ref().map(|process_id| {
+                [
+                    "processId".to_string(),
+                    process_id.to_string(),
+                ].join(",")
+            }),
+
+            // Skipping process in query parameter serialization
+
+        ];
+
+        write!(f, "{}", params.into_iter().flatten().collect::<Vec<_>>().join(","))
+    }
+}
+
+/// Converts Query Parameters representation (style=form, explode=false) to a NewSessionSessionInputRedirect value
+/// as specified in https://swagger.io/docs/specification/serialization/
+/// Should be implemented in a serde deserializer
+impl std::str::FromStr for NewSessionSessionInputRedirect {
+    type Err = String;
+
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        /// An intermediate representation of the struct to use for parsing.
+        #[derive(Default)]
+        #[allow(dead_code)]
+        struct IntermediateRep {
+            pub r_type: Vec<String>,
+            pub process_id: Vec<String>,
+            pub process: Vec<models::UssdAppProcess>,
+        }
+
+        let mut intermediate_rep = IntermediateRep::default();
+
+        // Parse into intermediate representation
+        let mut string_iter = s.split(',');
+        let mut key_result = string_iter.next();
+
+        while key_result.is_some() {
+            let val = match string_iter.next() {
+                Some(x) => x,
+                None => return std::result::Result::Err("Missing value while parsing NewSessionSessionInputRedirect".to_string())
+            };
+
+            if let Some(key) = key_result {
+                #[allow(clippy::match_single_binding)]
+                match key {
+                    #[allow(clippy::redundant_clone)]
+                    "type" => intermediate_rep.r_type.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
+                    #[allow(clippy::redundant_clone)]
+                    "processId" => intermediate_rep.process_id.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
+                    #[allow(clippy::redundant_clone)]
+                    "process" => intermediate_rep.process.push(<models::UssdAppProcess as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
+                    _ => return std::result::Result::Err("Unexpected key while parsing NewSessionSessionInputRedirect".to_string())
+                }
+            }
+
+            // Get the next key
+            key_result = string_iter.next();
+        }
+
+        // Use the intermediate representation to return the struct
+        std::result::Result::Ok(NewSessionSessionInputRedirect {
+            r_type: intermediate_rep.r_type.into_iter().next().ok_or_else(|| "type missing in NewSessionSessionInputRedirect".to_string())?,
+            process_id: intermediate_rep.process_id.into_iter().next(),
+            process: intermediate_rep.process.into_iter().next(),
+        })
+    }
+}
+
+// Methods for converting between header::IntoHeaderValue<NewSessionSessionInputRedirect> and HeaderValue
+
+#[cfg(feature = "server")]
+impl std::convert::TryFrom<header::IntoHeaderValue<NewSessionSessionInputRedirect>> for HeaderValue {
+    type Error = String;
+
+    fn try_from(hdr_value: header::IntoHeaderValue<NewSessionSessionInputRedirect>) -> std::result::Result<Self, Self::Error> {
+        let hdr_value = hdr_value.to_string();
+        match HeaderValue::from_str(&hdr_value) {
+             std::result::Result::Ok(value) => std::result::Result::Ok(value),
+             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Invalid header value for NewSessionSessionInputRedirect - value: {hdr_value} is invalid {e}"#))
+        }
+    }
+}
+
+#[cfg(feature = "server")]
+impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<NewSessionSessionInputRedirect> {
+    type Error = String;
+
+    fn try_from(hdr_value: HeaderValue) -> std::result::Result<Self, Self::Error> {
+        match hdr_value.to_str() {
+             std::result::Result::Ok(value) => {
+                    match <NewSessionSessionInputRedirect as std::str::FromStr>::from_str(value) {
+                        std::result::Result::Ok(value) => std::result::Result::Ok(header::IntoHeaderValue(value)),
+                        std::result::Result::Err(err) => std::result::Result::Err(format!(r#"Unable to convert header value '{value}' into NewSessionSessionInputRedirect - {err}"#))
+                    }
+             },
+             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Unable to convert header: {hdr_value:?} to string: {e}"#))
+        }
+    }
+}
+
+
+
 /// Developer's USSD App returns USSD process result as a map of params
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, validator::Validate)]
 #[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
 pub struct Redirect {
     /// Note: inline enums are not fully supported by openapi-generator
+    #[serde(default = "Redirect::_name_for_r_type")]
+    #[serde(serialize_with = "Redirect::_serialize_r_type")]
     #[serde(rename = "type")]
           #[validate(custom(function = "check_xss_string"))]
     pub r_type: String,
@@ -3081,13 +3605,25 @@ pub struct Redirect {
 
 }
 
+impl Redirect {
+    fn _name_for_r_type() -> String {
+        String::from("Redirect")
+    }
+
+    fn _serialize_r_type<S>(_: &String, s: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        s.serialize_str(&Self::_name_for_r_type())
+    }
+}
 
 
 impl Redirect {
     #[allow(clippy::new_without_default, clippy::too_many_arguments)]
-    pub fn new(r_type: String, destination_app_id: String, ) -> Redirect {
+    pub fn new(destination_app_id: String, ) -> Redirect {
         Redirect {
- r_type,
+ r_type: Self::_name_for_r_type(),
  destination_app_id,
  process: None,
         }
@@ -3213,8 +3749,25 @@ pub struct ReturnFromRedirect {
           #[validate(custom(function = "check_xss_map_string"))]
     pub result_params: std::collections::HashMap<String, String>,
 
+    #[serde(default = "ReturnFromRedirect::_name_for_r_type")]
+    #[serde(serialize_with = "ReturnFromRedirect::_serialize_r_type")]
+    #[serde(rename = "type")]
+    pub r_type: String,
+
 }
 
+impl ReturnFromRedirect {
+    fn _name_for_r_type() -> String {
+        String::from("ReturnFromRedirect")
+    }
+
+    fn _serialize_r_type<S>(_: &String, s: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        s.serialize_str(&Self::_name_for_r_type())
+    }
+}
 
 
 impl ReturnFromRedirect {
@@ -3222,6 +3775,7 @@ impl ReturnFromRedirect {
     pub fn new(result_params: std::collections::HashMap<String, String>, ) -> ReturnFromRedirect {
         ReturnFromRedirect {
  result_params,
+ r_type: Self::_name_for_r_type(),
         }
     }
 }
@@ -3233,6 +3787,10 @@ impl std::fmt::Display for ReturnFromRedirect {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let params: Vec<Option<String>> = vec![
             // Skipping resultParams in query parameter serialization
+
+
+            Some("type".to_string()),
+            Some(self.r_type.to_string()),
 
         ];
 
@@ -3252,6 +3810,7 @@ impl std::str::FromStr for ReturnFromRedirect {
         #[allow(dead_code)]
         struct IntermediateRep {
             pub result_params: Vec<std::collections::HashMap<String, String>>,
+            pub r_type: Vec<String>,
         }
 
         let mut intermediate_rep = IntermediateRep::default();
@@ -3270,6 +3829,8 @@ impl std::str::FromStr for ReturnFromRedirect {
                 #[allow(clippy::match_single_binding)]
                 match key {
                     "resultParams" => return std::result::Result::Err("Parsing a container in this style is not supported in ReturnFromRedirect".to_string()),
+                    #[allow(clippy::redundant_clone)]
+                    "type" => intermediate_rep.r_type.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
                     _ => return std::result::Result::Err("Unexpected key while parsing ReturnFromRedirect".to_string())
                 }
             }
@@ -3281,6 +3842,7 @@ impl std::str::FromStr for ReturnFromRedirect {
         // Use the intermediate representation to return the struct
         std::result::Result::Ok(ReturnFromRedirect {
             result_params: intermediate_rep.result_params.into_iter().next().ok_or_else(|| "resultParams missing in ReturnFromRedirect".to_string())?,
+            r_type: intermediate_rep.r_type.into_iter().next().ok_or_else(|| "type missing in ReturnFromRedirect".to_string())?,
         })
     }
 }
@@ -3324,6 +3886,8 @@ impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<ReturnFromRe
 #[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
 pub struct RunProcess {
     /// Note: inline enums are not fully supported by openapi-generator
+    #[serde(default = "RunProcess::_name_for_r_type")]
+    #[serde(serialize_with = "RunProcess::_serialize_r_type")]
     #[serde(rename = "type")]
           #[validate(custom(function = "check_xss_string"))]
     pub r_type: String,
@@ -3334,13 +3898,25 @@ pub struct RunProcess {
 
 }
 
+impl RunProcess {
+    fn _name_for_r_type() -> String {
+        String::from("RunProcess")
+    }
+
+    fn _serialize_r_type<S>(_: &String, s: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        s.serialize_str(&Self::_name_for_r_type())
+    }
+}
 
 
 impl RunProcess {
     #[allow(clippy::new_without_default, clippy::too_many_arguments)]
-    pub fn new(r_type: String, process: models::UssdProcess, ) -> RunProcess {
+    pub fn new(process: models::UssdProcess, ) -> RunProcess {
         RunProcess {
- r_type,
+ r_type: Self::_name_for_r_type(),
  process,
         }
     }
@@ -3453,6 +4029,8 @@ impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<RunProcess> 
 #[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
 pub struct ShowView {
     /// Note: inline enums are not fully supported by openapi-generator
+    #[serde(default = "ShowView::_name_for_r_type")]
+    #[serde(serialize_with = "ShowView::_serialize_r_type")]
     #[serde(rename = "type")]
           #[validate(custom(function = "check_xss_string"))]
     pub r_type: String,
@@ -3463,13 +4041,25 @@ pub struct ShowView {
 
 }
 
+impl ShowView {
+    fn _name_for_r_type() -> String {
+        String::from("ShowView")
+    }
+
+    fn _serialize_r_type<S>(_: &String, s: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        s.serialize_str(&Self::_name_for_r_type())
+    }
+}
 
 
 impl ShowView {
     #[allow(clippy::new_without_default, clippy::too_many_arguments)]
-    pub fn new(r_type: String, view: models::UssdView, ) -> ShowView {
+    pub fn new(view: models::UssdView, ) -> ShowView {
         ShowView {
- r_type,
+ r_type: Self::_name_for_r_type(),
  view,
         }
     }
@@ -3578,26 +4168,31 @@ impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<ShowView> {
 
 
 /// Action to be sent back to the user. It can either start a predefined process or show a view.
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
-#[serde(untagged)]
+#[derive(Debug, Clone, PartialEq, serde::Deserialize)]
+#[serde(tag = "type")]
 #[allow(non_camel_case_types, clippy::large_enum_variant)]
 pub enum UssdAction {
-    Object(crate::types::Object),
-    UssdActionOneOf(models::UssdActionOneOf),
-    Object1(crate::types::Object),
-    UssdActionOneOf1(models::UssdActionOneOf1),
-    UssdActionOneOf2(models::UssdActionOneOf2),
+    #[serde(alias = "LegacyAppRedirect")]
+    LegacyAppRedirect(models::LegacyAppRedirect),
+    #[serde(alias = "Redirect")]
+    Redirect(models::Redirect),
+    #[serde(alias = "ReturnFromRedirect")]
+    ReturnFromRedirect(models::ReturnFromRedirect),
+    #[serde(alias = "RunProcess")]
+    RunProcess(models::RunProcess),
+    #[serde(alias = "ShowView")]
+    ShowView(models::ShowView),
 }
 
 impl validator::Validate for UssdAction
 {
     fn validate(&self) -> std::result::Result<(), validator::ValidationErrors> {
         match self {
-            Self::Object(_) => std::result::Result::Ok(()),
-            Self::UssdActionOneOf(v) => v.validate(),
-            Self::Object1(_) => std::result::Result::Ok(()),
-            Self::UssdActionOneOf1(v) => v.validate(),
-            Self::UssdActionOneOf2(v) => v.validate(),
+            Self::LegacyAppRedirect(v) => v.validate(),
+            Self::Redirect(v) => v.validate(),
+            Self::ReturnFromRedirect(v) => v.validate(),
+            Self::RunProcess(v) => v.validate(),
+            Self::ShowView(v) => v.validate(),
         }
     }
 }
@@ -3613,388 +4208,72 @@ impl std::str::FromStr for UssdAction {
     }
 }
 
-
-impl From<models::UssdActionOneOf> for UssdAction {
-    fn from(value: models::UssdActionOneOf) -> Self {
-        Self::UssdActionOneOf(value)
-    }
-}
-impl From<models::UssdActionOneOf1> for UssdAction {
-    fn from(value: models::UssdActionOneOf1) -> Self {
-        Self::UssdActionOneOf1(value)
-    }
-}
-impl From<models::UssdActionOneOf2> for UssdAction {
-    fn from(value: models::UssdActionOneOf2) -> Self {
-        Self::UssdActionOneOf2(value)
-    }
-}
-
-
-
-
-
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, validator::Validate)]
-#[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
-pub struct UssdActionOneOf {
-    #[serde(rename = "Redirect")]
-          #[validate(nested)]
-    pub redirect: models::Redirect,
-
-}
-
-
-
-impl UssdActionOneOf {
-    #[allow(clippy::new_without_default, clippy::too_many_arguments)]
-    pub fn new(redirect: models::Redirect, ) -> UssdActionOneOf {
-        UssdActionOneOf {
- redirect,
-        }
-    }
-}
-
-/// Converts the UssdActionOneOf value to the Query Parameters representation (style=form, explode=false)
-/// specified in https://swagger.io/docs/specification/serialization/
-/// Should be implemented in a serde serializer
-impl std::fmt::Display for UssdActionOneOf {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let params: Vec<Option<String>> = vec![
-            // Skipping Redirect in query parameter serialization
-
-        ];
-
-        write!(f, "{}", params.into_iter().flatten().collect::<Vec<_>>().join(","))
-    }
-}
-
-/// Converts Query Parameters representation (style=form, explode=false) to a UssdActionOneOf value
-/// as specified in https://swagger.io/docs/specification/serialization/
-/// Should be implemented in a serde deserializer
-impl std::str::FromStr for UssdActionOneOf {
-    type Err = String;
-
-    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-        /// An intermediate representation of the struct to use for parsing.
-        #[derive(Default)]
-        #[allow(dead_code)]
-        struct IntermediateRep {
-            pub redirect: Vec<models::Redirect>,
-        }
-
-        let mut intermediate_rep = IntermediateRep::default();
-
-        // Parse into intermediate representation
-        let mut string_iter = s.split(',');
-        let mut key_result = string_iter.next();
-
-        while key_result.is_some() {
-            let val = match string_iter.next() {
-                Some(x) => x,
-                None => return std::result::Result::Err("Missing value while parsing UssdActionOneOf".to_string())
-            };
-
-            if let Some(key) = key_result {
-                #[allow(clippy::match_single_binding)]
-                match key {
-                    #[allow(clippy::redundant_clone)]
-                    "Redirect" => intermediate_rep.redirect.push(<models::Redirect as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
-                    _ => return std::result::Result::Err("Unexpected key while parsing UssdActionOneOf".to_string())
-                }
+impl serde::Serialize for UssdAction {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+        where S: serde::Serializer {
+            match self {
+                Self::LegacyAppRedirect(x) => x.serialize(serializer),
+                Self::Redirect(x) => x.serialize(serializer),
+                Self::ReturnFromRedirect(x) => x.serialize(serializer),
+                Self::RunProcess(x) => x.serialize(serializer),
+                Self::ShowView(x) => x.serialize(serializer),
             }
-
-            // Get the next key
-            key_result = string_iter.next();
-        }
-
-        // Use the intermediate representation to return the struct
-        std::result::Result::Ok(UssdActionOneOf {
-            redirect: intermediate_rep.redirect.into_iter().next().ok_or_else(|| "Redirect missing in UssdActionOneOf".to_string())?,
-        })
     }
 }
 
-// Methods for converting between header::IntoHeaderValue<UssdActionOneOf> and HeaderValue
-
-#[cfg(feature = "server")]
-impl std::convert::TryFrom<header::IntoHeaderValue<UssdActionOneOf>> for HeaderValue {
-    type Error = String;
-
-    fn try_from(hdr_value: header::IntoHeaderValue<UssdActionOneOf>) -> std::result::Result<Self, Self::Error> {
-        let hdr_value = hdr_value.to_string();
-        match HeaderValue::from_str(&hdr_value) {
-             std::result::Result::Ok(value) => std::result::Result::Ok(value),
-             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Invalid header value for UssdActionOneOf - value: {hdr_value} is invalid {e}"#))
-        }
+impl From<models::LegacyAppRedirect> for UssdAction {
+    fn from(value: models::LegacyAppRedirect) -> Self {
+        Self::LegacyAppRedirect(value)
     }
 }
-
-#[cfg(feature = "server")]
-impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<UssdActionOneOf> {
-    type Error = String;
-
-    fn try_from(hdr_value: HeaderValue) -> std::result::Result<Self, Self::Error> {
-        match hdr_value.to_str() {
-             std::result::Result::Ok(value) => {
-                    match <UssdActionOneOf as std::str::FromStr>::from_str(value) {
-                        std::result::Result::Ok(value) => std::result::Result::Ok(header::IntoHeaderValue(value)),
-                        std::result::Result::Err(err) => std::result::Result::Err(format!(r#"Unable to convert header value '{value}' into UssdActionOneOf - {err}"#))
-                    }
-             },
-             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Unable to convert header: {hdr_value:?} to string: {e}"#))
-        }
+impl From<models::Redirect> for UssdAction {
+    fn from(value: models::Redirect) -> Self {
+        Self::Redirect(value)
+    }
+}
+impl From<models::ReturnFromRedirect> for UssdAction {
+    fn from(value: models::ReturnFromRedirect) -> Self {
+        Self::ReturnFromRedirect(value)
+    }
+}
+impl From<models::RunProcess> for UssdAction {
+    fn from(value: models::RunProcess) -> Self {
+        Self::RunProcess(value)
+    }
+}
+impl From<models::ShowView> for UssdAction {
+    fn from(value: models::ShowView) -> Self {
+        Self::ShowView(value)
     }
 }
 
 
-
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, validator::Validate)]
-#[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
-pub struct UssdActionOneOf1 {
-    #[serde(rename = "RunProcess")]
-          #[validate(nested)]
-    pub run_process: models::RunProcess,
-
-}
-
-
-
-impl UssdActionOneOf1 {
-    #[allow(clippy::new_without_default, clippy::too_many_arguments)]
-    pub fn new(run_process: models::RunProcess, ) -> UssdActionOneOf1 {
-        UssdActionOneOf1 {
- run_process,
-        }
-    }
-}
-
-/// Converts the UssdActionOneOf1 value to the Query Parameters representation (style=form, explode=false)
-/// specified in https://swagger.io/docs/specification/serialization/
-/// Should be implemented in a serde serializer
-impl std::fmt::Display for UssdActionOneOf1 {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let params: Vec<Option<String>> = vec![
-            // Skipping RunProcess in query parameter serialization
-
-        ];
-
-        write!(f, "{}", params.into_iter().flatten().collect::<Vec<_>>().join(","))
-    }
-}
-
-/// Converts Query Parameters representation (style=form, explode=false) to a UssdActionOneOf1 value
-/// as specified in https://swagger.io/docs/specification/serialization/
-/// Should be implemented in a serde deserializer
-impl std::str::FromStr for UssdActionOneOf1 {
-    type Err = String;
-
-    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-        /// An intermediate representation of the struct to use for parsing.
-        #[derive(Default)]
-        #[allow(dead_code)]
-        struct IntermediateRep {
-            pub run_process: Vec<models::RunProcess>,
-        }
-
-        let mut intermediate_rep = IntermediateRep::default();
-
-        // Parse into intermediate representation
-        let mut string_iter = s.split(',');
-        let mut key_result = string_iter.next();
-
-        while key_result.is_some() {
-            let val = match string_iter.next() {
-                Some(x) => x,
-                None => return std::result::Result::Err("Missing value while parsing UssdActionOneOf1".to_string())
-            };
-
-            if let Some(key) = key_result {
-                #[allow(clippy::match_single_binding)]
-                match key {
-                    #[allow(clippy::redundant_clone)]
-                    "RunProcess" => intermediate_rep.run_process.push(<models::RunProcess as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
-                    _ => return std::result::Result::Err("Unexpected key while parsing UssdActionOneOf1".to_string())
-                }
-            }
-
-            // Get the next key
-            key_result = string_iter.next();
-        }
-
-        // Use the intermediate representation to return the struct
-        std::result::Result::Ok(UssdActionOneOf1 {
-            run_process: intermediate_rep.run_process.into_iter().next().ok_or_else(|| "RunProcess missing in UssdActionOneOf1".to_string())?,
-        })
-    }
-}
-
-// Methods for converting between header::IntoHeaderValue<UssdActionOneOf1> and HeaderValue
-
-#[cfg(feature = "server")]
-impl std::convert::TryFrom<header::IntoHeaderValue<UssdActionOneOf1>> for HeaderValue {
-    type Error = String;
-
-    fn try_from(hdr_value: header::IntoHeaderValue<UssdActionOneOf1>) -> std::result::Result<Self, Self::Error> {
-        let hdr_value = hdr_value.to_string();
-        match HeaderValue::from_str(&hdr_value) {
-             std::result::Result::Ok(value) => std::result::Result::Ok(value),
-             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Invalid header value for UssdActionOneOf1 - value: {hdr_value} is invalid {e}"#))
-        }
-    }
-}
-
-#[cfg(feature = "server")]
-impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<UssdActionOneOf1> {
-    type Error = String;
-
-    fn try_from(hdr_value: HeaderValue) -> std::result::Result<Self, Self::Error> {
-        match hdr_value.to_str() {
-             std::result::Result::Ok(value) => {
-                    match <UssdActionOneOf1 as std::str::FromStr>::from_str(value) {
-                        std::result::Result::Ok(value) => std::result::Result::Ok(header::IntoHeaderValue(value)),
-                        std::result::Result::Err(err) => std::result::Result::Err(format!(r#"Unable to convert header value '{value}' into UssdActionOneOf1 - {err}"#))
-                    }
-             },
-             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Unable to convert header: {hdr_value:?} to string: {e}"#))
-        }
-    }
-}
-
-
-
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, validator::Validate)]
-#[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
-pub struct UssdActionOneOf2 {
-    #[serde(rename = "ShowView")]
-          #[validate(nested)]
-    pub show_view: models::ShowView,
-
-}
-
-
-
-impl UssdActionOneOf2 {
-    #[allow(clippy::new_without_default, clippy::too_many_arguments)]
-    pub fn new(show_view: models::ShowView, ) -> UssdActionOneOf2 {
-        UssdActionOneOf2 {
- show_view,
-        }
-    }
-}
-
-/// Converts the UssdActionOneOf2 value to the Query Parameters representation (style=form, explode=false)
-/// specified in https://swagger.io/docs/specification/serialization/
-/// Should be implemented in a serde serializer
-impl std::fmt::Display for UssdActionOneOf2 {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let params: Vec<Option<String>> = vec![
-            // Skipping ShowView in query parameter serialization
-
-        ];
-
-        write!(f, "{}", params.into_iter().flatten().collect::<Vec<_>>().join(","))
-    }
-}
-
-/// Converts Query Parameters representation (style=form, explode=false) to a UssdActionOneOf2 value
-/// as specified in https://swagger.io/docs/specification/serialization/
-/// Should be implemented in a serde deserializer
-impl std::str::FromStr for UssdActionOneOf2 {
-    type Err = String;
-
-    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-        /// An intermediate representation of the struct to use for parsing.
-        #[derive(Default)]
-        #[allow(dead_code)]
-        struct IntermediateRep {
-            pub show_view: Vec<models::ShowView>,
-        }
-
-        let mut intermediate_rep = IntermediateRep::default();
-
-        // Parse into intermediate representation
-        let mut string_iter = s.split(',');
-        let mut key_result = string_iter.next();
-
-        while key_result.is_some() {
-            let val = match string_iter.next() {
-                Some(x) => x,
-                None => return std::result::Result::Err("Missing value while parsing UssdActionOneOf2".to_string())
-            };
-
-            if let Some(key) = key_result {
-                #[allow(clippy::match_single_binding)]
-                match key {
-                    #[allow(clippy::redundant_clone)]
-                    "ShowView" => intermediate_rep.show_view.push(<models::ShowView as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
-                    _ => return std::result::Result::Err("Unexpected key while parsing UssdActionOneOf2".to_string())
-                }
-            }
-
-            // Get the next key
-            key_result = string_iter.next();
-        }
-
-        // Use the intermediate representation to return the struct
-        std::result::Result::Ok(UssdActionOneOf2 {
-            show_view: intermediate_rep.show_view.into_iter().next().ok_or_else(|| "ShowView missing in UssdActionOneOf2".to_string())?,
-        })
-    }
-}
-
-// Methods for converting between header::IntoHeaderValue<UssdActionOneOf2> and HeaderValue
-
-#[cfg(feature = "server")]
-impl std::convert::TryFrom<header::IntoHeaderValue<UssdActionOneOf2>> for HeaderValue {
-    type Error = String;
-
-    fn try_from(hdr_value: header::IntoHeaderValue<UssdActionOneOf2>) -> std::result::Result<Self, Self::Error> {
-        let hdr_value = hdr_value.to_string();
-        match HeaderValue::from_str(&hdr_value) {
-             std::result::Result::Ok(value) => std::result::Result::Ok(value),
-             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Invalid header value for UssdActionOneOf2 - value: {hdr_value} is invalid {e}"#))
-        }
-    }
-}
-
-#[cfg(feature = "server")]
-impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<UssdActionOneOf2> {
-    type Error = String;
-
-    fn try_from(hdr_value: HeaderValue) -> std::result::Result<Self, Self::Error> {
-        match hdr_value.to_str() {
-             std::result::Result::Ok(value) => {
-                    match <UssdActionOneOf2 as std::str::FromStr>::from_str(value) {
-                        std::result::Result::Ok(value) => std::result::Result::Ok(header::IntoHeaderValue(value)),
-                        std::result::Result::Err(err) => std::result::Result::Err(format!(r#"Unable to convert header value '{value}' into UssdActionOneOf2 - {err}"#))
-                    }
-             },
-             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Unable to convert header: {hdr_value:?} to string: {e}"#))
-        }
-    }
-}
 
 
 
 /// Result of USSD action. Either input provided by the user or the result of a previously-initiated process.
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
-#[serde(untagged)]
+#[derive(Debug, Clone, PartialEq, serde::Deserialize)]
+#[serde(tag = "type")]
 #[allow(non_camel_case_types, clippy::large_enum_variant)]
 pub enum UssdActionResult {
-    UssdActionResultOneOf(models::UssdActionResultOneOf),
-    UssdActionResultOneOf1(models::UssdActionResultOneOf1),
-    UssdActionResultOneOf2(models::UssdActionResultOneOf2),
-    Object(crate::types::Object),
+    #[serde(alias = "EmbeddedProcessResult")]
+    UssdActionResultEmbeddedProcessResult(models::UssdActionResultEmbeddedProcessResult),
+    #[serde(alias = "InputResult")]
+    UssdActionResultInputResult(models::UssdActionResultInputResult),
+    #[serde(alias = "MerchantPaymentResult")]
+    UssdActionResultMerchantPaymentResult(models::UssdActionResultMerchantPaymentResult),
+    #[serde(alias = "ReturnFromRedirectResult")]
+    UssdActionResultReturnFromRedirectResult(models::UssdActionResultReturnFromRedirectResult),
 }
 
 impl validator::Validate for UssdActionResult
 {
     fn validate(&self) -> std::result::Result<(), validator::ValidationErrors> {
         match self {
-            Self::UssdActionResultOneOf(v) => v.validate(),
-            Self::UssdActionResultOneOf1(v) => v.validate(),
-            Self::UssdActionResultOneOf2(v) => v.validate(),
-            Self::Object(_) => std::result::Result::Ok(()),
+            Self::UssdActionResultEmbeddedProcessResult(v) => v.validate(),
+            Self::UssdActionResultInputResult(v) => v.validate(),
+            Self::UssdActionResultMerchantPaymentResult(v) => v.validate(),
+            Self::UssdActionResultReturnFromRedirectResult(v) => v.validate(),
         }
     }
 }
@@ -4010,25 +4289,36 @@ impl std::str::FromStr for UssdActionResult {
     }
 }
 
+impl serde::Serialize for UssdActionResult {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+        where S: serde::Serializer {
+            match self {
+                Self::UssdActionResultEmbeddedProcessResult(x) => x.serialize(serializer),
+                Self::UssdActionResultInputResult(x) => x.serialize(serializer),
+                Self::UssdActionResultMerchantPaymentResult(x) => x.serialize(serializer),
+                Self::UssdActionResultReturnFromRedirectResult(x) => x.serialize(serializer),
+            }
+    }
+}
 
-impl From<models::UssdActionResultOneOf> for UssdActionResult {
-    fn from(value: models::UssdActionResultOneOf) -> Self {
-        Self::UssdActionResultOneOf(value)
+impl From<models::UssdActionResultEmbeddedProcessResult> for UssdActionResult {
+    fn from(value: models::UssdActionResultEmbeddedProcessResult) -> Self {
+        Self::UssdActionResultEmbeddedProcessResult(value)
     }
 }
-impl From<models::UssdActionResultOneOf1> for UssdActionResult {
-    fn from(value: models::UssdActionResultOneOf1) -> Self {
-        Self::UssdActionResultOneOf1(value)
+impl From<models::UssdActionResultInputResult> for UssdActionResult {
+    fn from(value: models::UssdActionResultInputResult) -> Self {
+        Self::UssdActionResultInputResult(value)
     }
 }
-impl From<models::UssdActionResultOneOf2> for UssdActionResult {
-    fn from(value: models::UssdActionResultOneOf2) -> Self {
-        Self::UssdActionResultOneOf2(value)
+impl From<models::UssdActionResultMerchantPaymentResult> for UssdActionResult {
+    fn from(value: models::UssdActionResultMerchantPaymentResult) -> Self {
+        Self::UssdActionResultMerchantPaymentResult(value)
     }
 }
-impl From<crate::types::Object> for UssdActionResult {
-    fn from(value: crate::types::Object) -> Self {
-        Self::Object(value)
+impl From<models::UssdActionResultReturnFromRedirectResult> for UssdActionResult {
+    fn from(value: models::UssdActionResultReturnFromRedirectResult) -> Self {
+        Self::UssdActionResultReturnFromRedirectResult(value)
     }
 }
 
@@ -4440,348 +4730,6 @@ impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<UssdActionRe
 
 
 
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, validator::Validate)]
-#[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
-pub struct UssdActionResultOneOf {
-    #[serde(rename = "EmbeddedProcessResult")]
-          #[validate(nested)]
-    pub embedded_process_result: models::UssdActionResultEmbeddedProcessResult,
-
-}
-
-
-
-impl UssdActionResultOneOf {
-    #[allow(clippy::new_without_default, clippy::too_many_arguments)]
-    pub fn new(embedded_process_result: models::UssdActionResultEmbeddedProcessResult, ) -> UssdActionResultOneOf {
-        UssdActionResultOneOf {
- embedded_process_result,
-        }
-    }
-}
-
-/// Converts the UssdActionResultOneOf value to the Query Parameters representation (style=form, explode=false)
-/// specified in https://swagger.io/docs/specification/serialization/
-/// Should be implemented in a serde serializer
-impl std::fmt::Display for UssdActionResultOneOf {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let params: Vec<Option<String>> = vec![
-            // Skipping EmbeddedProcessResult in query parameter serialization
-
-        ];
-
-        write!(f, "{}", params.into_iter().flatten().collect::<Vec<_>>().join(","))
-    }
-}
-
-/// Converts Query Parameters representation (style=form, explode=false) to a UssdActionResultOneOf value
-/// as specified in https://swagger.io/docs/specification/serialization/
-/// Should be implemented in a serde deserializer
-impl std::str::FromStr for UssdActionResultOneOf {
-    type Err = String;
-
-    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-        /// An intermediate representation of the struct to use for parsing.
-        #[derive(Default)]
-        #[allow(dead_code)]
-        struct IntermediateRep {
-            pub embedded_process_result: Vec<models::UssdActionResultEmbeddedProcessResult>,
-        }
-
-        let mut intermediate_rep = IntermediateRep::default();
-
-        // Parse into intermediate representation
-        let mut string_iter = s.split(',');
-        let mut key_result = string_iter.next();
-
-        while key_result.is_some() {
-            let val = match string_iter.next() {
-                Some(x) => x,
-                None => return std::result::Result::Err("Missing value while parsing UssdActionResultOneOf".to_string())
-            };
-
-            if let Some(key) = key_result {
-                #[allow(clippy::match_single_binding)]
-                match key {
-                    #[allow(clippy::redundant_clone)]
-                    "EmbeddedProcessResult" => intermediate_rep.embedded_process_result.push(<models::UssdActionResultEmbeddedProcessResult as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
-                    _ => return std::result::Result::Err("Unexpected key while parsing UssdActionResultOneOf".to_string())
-                }
-            }
-
-            // Get the next key
-            key_result = string_iter.next();
-        }
-
-        // Use the intermediate representation to return the struct
-        std::result::Result::Ok(UssdActionResultOneOf {
-            embedded_process_result: intermediate_rep.embedded_process_result.into_iter().next().ok_or_else(|| "EmbeddedProcessResult missing in UssdActionResultOneOf".to_string())?,
-        })
-    }
-}
-
-// Methods for converting between header::IntoHeaderValue<UssdActionResultOneOf> and HeaderValue
-
-#[cfg(feature = "server")]
-impl std::convert::TryFrom<header::IntoHeaderValue<UssdActionResultOneOf>> for HeaderValue {
-    type Error = String;
-
-    fn try_from(hdr_value: header::IntoHeaderValue<UssdActionResultOneOf>) -> std::result::Result<Self, Self::Error> {
-        let hdr_value = hdr_value.to_string();
-        match HeaderValue::from_str(&hdr_value) {
-             std::result::Result::Ok(value) => std::result::Result::Ok(value),
-             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Invalid header value for UssdActionResultOneOf - value: {hdr_value} is invalid {e}"#))
-        }
-    }
-}
-
-#[cfg(feature = "server")]
-impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<UssdActionResultOneOf> {
-    type Error = String;
-
-    fn try_from(hdr_value: HeaderValue) -> std::result::Result<Self, Self::Error> {
-        match hdr_value.to_str() {
-             std::result::Result::Ok(value) => {
-                    match <UssdActionResultOneOf as std::str::FromStr>::from_str(value) {
-                        std::result::Result::Ok(value) => std::result::Result::Ok(header::IntoHeaderValue(value)),
-                        std::result::Result::Err(err) => std::result::Result::Err(format!(r#"Unable to convert header value '{value}' into UssdActionResultOneOf - {err}"#))
-                    }
-             },
-             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Unable to convert header: {hdr_value:?} to string: {e}"#))
-        }
-    }
-}
-
-
-
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, validator::Validate)]
-#[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
-pub struct UssdActionResultOneOf1 {
-    #[serde(rename = "InputResult")]
-          #[validate(nested)]
-    pub input_result: models::UssdActionResultInputResult,
-
-}
-
-
-
-impl UssdActionResultOneOf1 {
-    #[allow(clippy::new_without_default, clippy::too_many_arguments)]
-    pub fn new(input_result: models::UssdActionResultInputResult, ) -> UssdActionResultOneOf1 {
-        UssdActionResultOneOf1 {
- input_result,
-        }
-    }
-}
-
-/// Converts the UssdActionResultOneOf1 value to the Query Parameters representation (style=form, explode=false)
-/// specified in https://swagger.io/docs/specification/serialization/
-/// Should be implemented in a serde serializer
-impl std::fmt::Display for UssdActionResultOneOf1 {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let params: Vec<Option<String>> = vec![
-            // Skipping InputResult in query parameter serialization
-
-        ];
-
-        write!(f, "{}", params.into_iter().flatten().collect::<Vec<_>>().join(","))
-    }
-}
-
-/// Converts Query Parameters representation (style=form, explode=false) to a UssdActionResultOneOf1 value
-/// as specified in https://swagger.io/docs/specification/serialization/
-/// Should be implemented in a serde deserializer
-impl std::str::FromStr for UssdActionResultOneOf1 {
-    type Err = String;
-
-    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-        /// An intermediate representation of the struct to use for parsing.
-        #[derive(Default)]
-        #[allow(dead_code)]
-        struct IntermediateRep {
-            pub input_result: Vec<models::UssdActionResultInputResult>,
-        }
-
-        let mut intermediate_rep = IntermediateRep::default();
-
-        // Parse into intermediate representation
-        let mut string_iter = s.split(',');
-        let mut key_result = string_iter.next();
-
-        while key_result.is_some() {
-            let val = match string_iter.next() {
-                Some(x) => x,
-                None => return std::result::Result::Err("Missing value while parsing UssdActionResultOneOf1".to_string())
-            };
-
-            if let Some(key) = key_result {
-                #[allow(clippy::match_single_binding)]
-                match key {
-                    #[allow(clippy::redundant_clone)]
-                    "InputResult" => intermediate_rep.input_result.push(<models::UssdActionResultInputResult as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
-                    _ => return std::result::Result::Err("Unexpected key while parsing UssdActionResultOneOf1".to_string())
-                }
-            }
-
-            // Get the next key
-            key_result = string_iter.next();
-        }
-
-        // Use the intermediate representation to return the struct
-        std::result::Result::Ok(UssdActionResultOneOf1 {
-            input_result: intermediate_rep.input_result.into_iter().next().ok_or_else(|| "InputResult missing in UssdActionResultOneOf1".to_string())?,
-        })
-    }
-}
-
-// Methods for converting between header::IntoHeaderValue<UssdActionResultOneOf1> and HeaderValue
-
-#[cfg(feature = "server")]
-impl std::convert::TryFrom<header::IntoHeaderValue<UssdActionResultOneOf1>> for HeaderValue {
-    type Error = String;
-
-    fn try_from(hdr_value: header::IntoHeaderValue<UssdActionResultOneOf1>) -> std::result::Result<Self, Self::Error> {
-        let hdr_value = hdr_value.to_string();
-        match HeaderValue::from_str(&hdr_value) {
-             std::result::Result::Ok(value) => std::result::Result::Ok(value),
-             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Invalid header value for UssdActionResultOneOf1 - value: {hdr_value} is invalid {e}"#))
-        }
-    }
-}
-
-#[cfg(feature = "server")]
-impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<UssdActionResultOneOf1> {
-    type Error = String;
-
-    fn try_from(hdr_value: HeaderValue) -> std::result::Result<Self, Self::Error> {
-        match hdr_value.to_str() {
-             std::result::Result::Ok(value) => {
-                    match <UssdActionResultOneOf1 as std::str::FromStr>::from_str(value) {
-                        std::result::Result::Ok(value) => std::result::Result::Ok(header::IntoHeaderValue(value)),
-                        std::result::Result::Err(err) => std::result::Result::Err(format!(r#"Unable to convert header value '{value}' into UssdActionResultOneOf1 - {err}"#))
-                    }
-             },
-             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Unable to convert header: {hdr_value:?} to string: {e}"#))
-        }
-    }
-}
-
-
-
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, validator::Validate)]
-#[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
-pub struct UssdActionResultOneOf2 {
-    #[serde(rename = "MerchantPaymentResult")]
-          #[validate(nested)]
-    pub merchant_payment_result: models::UssdActionResultMerchantPaymentResult,
-
-}
-
-
-
-impl UssdActionResultOneOf2 {
-    #[allow(clippy::new_without_default, clippy::too_many_arguments)]
-    pub fn new(merchant_payment_result: models::UssdActionResultMerchantPaymentResult, ) -> UssdActionResultOneOf2 {
-        UssdActionResultOneOf2 {
- merchant_payment_result,
-        }
-    }
-}
-
-/// Converts the UssdActionResultOneOf2 value to the Query Parameters representation (style=form, explode=false)
-/// specified in https://swagger.io/docs/specification/serialization/
-/// Should be implemented in a serde serializer
-impl std::fmt::Display for UssdActionResultOneOf2 {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let params: Vec<Option<String>> = vec![
-            // Skipping MerchantPaymentResult in query parameter serialization
-
-        ];
-
-        write!(f, "{}", params.into_iter().flatten().collect::<Vec<_>>().join(","))
-    }
-}
-
-/// Converts Query Parameters representation (style=form, explode=false) to a UssdActionResultOneOf2 value
-/// as specified in https://swagger.io/docs/specification/serialization/
-/// Should be implemented in a serde deserializer
-impl std::str::FromStr for UssdActionResultOneOf2 {
-    type Err = String;
-
-    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-        /// An intermediate representation of the struct to use for parsing.
-        #[derive(Default)]
-        #[allow(dead_code)]
-        struct IntermediateRep {
-            pub merchant_payment_result: Vec<models::UssdActionResultMerchantPaymentResult>,
-        }
-
-        let mut intermediate_rep = IntermediateRep::default();
-
-        // Parse into intermediate representation
-        let mut string_iter = s.split(',');
-        let mut key_result = string_iter.next();
-
-        while key_result.is_some() {
-            let val = match string_iter.next() {
-                Some(x) => x,
-                None => return std::result::Result::Err("Missing value while parsing UssdActionResultOneOf2".to_string())
-            };
-
-            if let Some(key) = key_result {
-                #[allow(clippy::match_single_binding)]
-                match key {
-                    #[allow(clippy::redundant_clone)]
-                    "MerchantPaymentResult" => intermediate_rep.merchant_payment_result.push(<models::UssdActionResultMerchantPaymentResult as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
-                    _ => return std::result::Result::Err("Unexpected key while parsing UssdActionResultOneOf2".to_string())
-                }
-            }
-
-            // Get the next key
-            key_result = string_iter.next();
-        }
-
-        // Use the intermediate representation to return the struct
-        std::result::Result::Ok(UssdActionResultOneOf2 {
-            merchant_payment_result: intermediate_rep.merchant_payment_result.into_iter().next().ok_or_else(|| "MerchantPaymentResult missing in UssdActionResultOneOf2".to_string())?,
-        })
-    }
-}
-
-// Methods for converting between header::IntoHeaderValue<UssdActionResultOneOf2> and HeaderValue
-
-#[cfg(feature = "server")]
-impl std::convert::TryFrom<header::IntoHeaderValue<UssdActionResultOneOf2>> for HeaderValue {
-    type Error = String;
-
-    fn try_from(hdr_value: header::IntoHeaderValue<UssdActionResultOneOf2>) -> std::result::Result<Self, Self::Error> {
-        let hdr_value = hdr_value.to_string();
-        match HeaderValue::from_str(&hdr_value) {
-             std::result::Result::Ok(value) => std::result::Result::Ok(value),
-             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Invalid header value for UssdActionResultOneOf2 - value: {hdr_value} is invalid {e}"#))
-        }
-    }
-}
-
-#[cfg(feature = "server")]
-impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<UssdActionResultOneOf2> {
-    type Error = String;
-
-    fn try_from(hdr_value: HeaderValue) -> std::result::Result<Self, Self::Error> {
-        match hdr_value.to_str() {
-             std::result::Result::Ok(value) => {
-                    match <UssdActionResultOneOf2 as std::str::FromStr>::from_str(value) {
-                        std::result::Result::Ok(value) => std::result::Result::Ok(header::IntoHeaderValue(value)),
-                        std::result::Result::Err(err) => std::result::Result::Err(format!(r#"Unable to convert header value '{value}' into UssdActionResultOneOf2 - {err}"#))
-                    }
-             },
-             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Unable to convert header: {hdr_value:?} to string: {e}"#))
-        }
-    }
-}
-
-
-
 /// Result returned from the app, to which the session was previously redirected.
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, validator::Validate)]
 #[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
@@ -5041,20 +4989,22 @@ impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<UssdAppProce
 
 
 /// The process control is handed over to (flow continues within the process until the process continues or aborts).
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
-#[serde(untagged)]
+#[derive(Debug, Clone, PartialEq, serde::Deserialize)]
+#[serde(tag = "type")]
 #[allow(non_camel_case_types, clippy::large_enum_variant)]
 pub enum UssdProcess {
-    UssdProcessOneOf(models::UssdProcessOneOf),
-    UssdProcessOneOf1(models::UssdProcessOneOf1),
+    #[serde(alias = "EmbeddedProcess")]
+    UssdProcessEmbeddedProcess(models::UssdProcessEmbeddedProcess),
+    #[serde(alias = "MerchantPaymentProcess")]
+    UssdProcessMerchantPaymentProcess(models::UssdProcessMerchantPaymentProcess),
 }
 
 impl validator::Validate for UssdProcess
 {
     fn validate(&self) -> std::result::Result<(), validator::ValidationErrors> {
         match self {
-            Self::UssdProcessOneOf(v) => v.validate(),
-            Self::UssdProcessOneOf1(v) => v.validate(),
+            Self::UssdProcessEmbeddedProcess(v) => v.validate(),
+            Self::UssdProcessMerchantPaymentProcess(v) => v.validate(),
         }
     }
 }
@@ -5070,15 +5020,24 @@ impl std::str::FromStr for UssdProcess {
     }
 }
 
-
-impl From<models::UssdProcessOneOf> for UssdProcess {
-    fn from(value: models::UssdProcessOneOf) -> Self {
-        Self::UssdProcessOneOf(value)
+impl serde::Serialize for UssdProcess {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+        where S: serde::Serializer {
+            match self {
+                Self::UssdProcessEmbeddedProcess(x) => x.serialize(serializer),
+                Self::UssdProcessMerchantPaymentProcess(x) => x.serialize(serializer),
+            }
     }
 }
-impl From<models::UssdProcessOneOf1> for UssdProcess {
-    fn from(value: models::UssdProcessOneOf1) -> Self {
-        Self::UssdProcessOneOf1(value)
+
+impl From<models::UssdProcessEmbeddedProcess> for UssdProcess {
+    fn from(value: models::UssdProcessEmbeddedProcess) -> Self {
+        Self::UssdProcessEmbeddedProcess(value)
+    }
+}
+impl From<models::UssdProcessMerchantPaymentProcess> for UssdProcess {
+    fn from(value: models::UssdProcessMerchantPaymentProcess) -> Self {
+        Self::UssdProcessMerchantPaymentProcess(value)
     }
 }
 
@@ -5372,234 +5331,6 @@ impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<UssdProcessM
                     match <UssdProcessMerchantPaymentProcess as std::str::FromStr>::from_str(value) {
                         std::result::Result::Ok(value) => std::result::Result::Ok(header::IntoHeaderValue(value)),
                         std::result::Result::Err(err) => std::result::Result::Err(format!(r#"Unable to convert header value '{value}' into UssdProcessMerchantPaymentProcess - {err}"#))
-                    }
-             },
-             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Unable to convert header: {hdr_value:?} to string: {e}"#))
-        }
-    }
-}
-
-
-
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, validator::Validate)]
-#[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
-pub struct UssdProcessOneOf {
-    #[serde(rename = "EmbeddedProcess")]
-          #[validate(nested)]
-    pub embedded_process: models::UssdProcessEmbeddedProcess,
-
-}
-
-
-
-impl UssdProcessOneOf {
-    #[allow(clippy::new_without_default, clippy::too_many_arguments)]
-    pub fn new(embedded_process: models::UssdProcessEmbeddedProcess, ) -> UssdProcessOneOf {
-        UssdProcessOneOf {
- embedded_process,
-        }
-    }
-}
-
-/// Converts the UssdProcessOneOf value to the Query Parameters representation (style=form, explode=false)
-/// specified in https://swagger.io/docs/specification/serialization/
-/// Should be implemented in a serde serializer
-impl std::fmt::Display for UssdProcessOneOf {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let params: Vec<Option<String>> = vec![
-            // Skipping EmbeddedProcess in query parameter serialization
-
-        ];
-
-        write!(f, "{}", params.into_iter().flatten().collect::<Vec<_>>().join(","))
-    }
-}
-
-/// Converts Query Parameters representation (style=form, explode=false) to a UssdProcessOneOf value
-/// as specified in https://swagger.io/docs/specification/serialization/
-/// Should be implemented in a serde deserializer
-impl std::str::FromStr for UssdProcessOneOf {
-    type Err = String;
-
-    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-        /// An intermediate representation of the struct to use for parsing.
-        #[derive(Default)]
-        #[allow(dead_code)]
-        struct IntermediateRep {
-            pub embedded_process: Vec<models::UssdProcessEmbeddedProcess>,
-        }
-
-        let mut intermediate_rep = IntermediateRep::default();
-
-        // Parse into intermediate representation
-        let mut string_iter = s.split(',');
-        let mut key_result = string_iter.next();
-
-        while key_result.is_some() {
-            let val = match string_iter.next() {
-                Some(x) => x,
-                None => return std::result::Result::Err("Missing value while parsing UssdProcessOneOf".to_string())
-            };
-
-            if let Some(key) = key_result {
-                #[allow(clippy::match_single_binding)]
-                match key {
-                    #[allow(clippy::redundant_clone)]
-                    "EmbeddedProcess" => intermediate_rep.embedded_process.push(<models::UssdProcessEmbeddedProcess as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
-                    _ => return std::result::Result::Err("Unexpected key while parsing UssdProcessOneOf".to_string())
-                }
-            }
-
-            // Get the next key
-            key_result = string_iter.next();
-        }
-
-        // Use the intermediate representation to return the struct
-        std::result::Result::Ok(UssdProcessOneOf {
-            embedded_process: intermediate_rep.embedded_process.into_iter().next().ok_or_else(|| "EmbeddedProcess missing in UssdProcessOneOf".to_string())?,
-        })
-    }
-}
-
-// Methods for converting between header::IntoHeaderValue<UssdProcessOneOf> and HeaderValue
-
-#[cfg(feature = "server")]
-impl std::convert::TryFrom<header::IntoHeaderValue<UssdProcessOneOf>> for HeaderValue {
-    type Error = String;
-
-    fn try_from(hdr_value: header::IntoHeaderValue<UssdProcessOneOf>) -> std::result::Result<Self, Self::Error> {
-        let hdr_value = hdr_value.to_string();
-        match HeaderValue::from_str(&hdr_value) {
-             std::result::Result::Ok(value) => std::result::Result::Ok(value),
-             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Invalid header value for UssdProcessOneOf - value: {hdr_value} is invalid {e}"#))
-        }
-    }
-}
-
-#[cfg(feature = "server")]
-impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<UssdProcessOneOf> {
-    type Error = String;
-
-    fn try_from(hdr_value: HeaderValue) -> std::result::Result<Self, Self::Error> {
-        match hdr_value.to_str() {
-             std::result::Result::Ok(value) => {
-                    match <UssdProcessOneOf as std::str::FromStr>::from_str(value) {
-                        std::result::Result::Ok(value) => std::result::Result::Ok(header::IntoHeaderValue(value)),
-                        std::result::Result::Err(err) => std::result::Result::Err(format!(r#"Unable to convert header value '{value}' into UssdProcessOneOf - {err}"#))
-                    }
-             },
-             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Unable to convert header: {hdr_value:?} to string: {e}"#))
-        }
-    }
-}
-
-
-
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, validator::Validate)]
-#[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
-pub struct UssdProcessOneOf1 {
-    #[serde(rename = "MerchantPaymentProcess")]
-          #[validate(nested)]
-    pub merchant_payment_process: models::UssdProcessMerchantPaymentProcess,
-
-}
-
-
-
-impl UssdProcessOneOf1 {
-    #[allow(clippy::new_without_default, clippy::too_many_arguments)]
-    pub fn new(merchant_payment_process: models::UssdProcessMerchantPaymentProcess, ) -> UssdProcessOneOf1 {
-        UssdProcessOneOf1 {
- merchant_payment_process,
-        }
-    }
-}
-
-/// Converts the UssdProcessOneOf1 value to the Query Parameters representation (style=form, explode=false)
-/// specified in https://swagger.io/docs/specification/serialization/
-/// Should be implemented in a serde serializer
-impl std::fmt::Display for UssdProcessOneOf1 {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let params: Vec<Option<String>> = vec![
-            // Skipping MerchantPaymentProcess in query parameter serialization
-
-        ];
-
-        write!(f, "{}", params.into_iter().flatten().collect::<Vec<_>>().join(","))
-    }
-}
-
-/// Converts Query Parameters representation (style=form, explode=false) to a UssdProcessOneOf1 value
-/// as specified in https://swagger.io/docs/specification/serialization/
-/// Should be implemented in a serde deserializer
-impl std::str::FromStr for UssdProcessOneOf1 {
-    type Err = String;
-
-    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-        /// An intermediate representation of the struct to use for parsing.
-        #[derive(Default)]
-        #[allow(dead_code)]
-        struct IntermediateRep {
-            pub merchant_payment_process: Vec<models::UssdProcessMerchantPaymentProcess>,
-        }
-
-        let mut intermediate_rep = IntermediateRep::default();
-
-        // Parse into intermediate representation
-        let mut string_iter = s.split(',');
-        let mut key_result = string_iter.next();
-
-        while key_result.is_some() {
-            let val = match string_iter.next() {
-                Some(x) => x,
-                None => return std::result::Result::Err("Missing value while parsing UssdProcessOneOf1".to_string())
-            };
-
-            if let Some(key) = key_result {
-                #[allow(clippy::match_single_binding)]
-                match key {
-                    #[allow(clippy::redundant_clone)]
-                    "MerchantPaymentProcess" => intermediate_rep.merchant_payment_process.push(<models::UssdProcessMerchantPaymentProcess as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
-                    _ => return std::result::Result::Err("Unexpected key while parsing UssdProcessOneOf1".to_string())
-                }
-            }
-
-            // Get the next key
-            key_result = string_iter.next();
-        }
-
-        // Use the intermediate representation to return the struct
-        std::result::Result::Ok(UssdProcessOneOf1 {
-            merchant_payment_process: intermediate_rep.merchant_payment_process.into_iter().next().ok_or_else(|| "MerchantPaymentProcess missing in UssdProcessOneOf1".to_string())?,
-        })
-    }
-}
-
-// Methods for converting between header::IntoHeaderValue<UssdProcessOneOf1> and HeaderValue
-
-#[cfg(feature = "server")]
-impl std::convert::TryFrom<header::IntoHeaderValue<UssdProcessOneOf1>> for HeaderValue {
-    type Error = String;
-
-    fn try_from(hdr_value: header::IntoHeaderValue<UssdProcessOneOf1>) -> std::result::Result<Self, Self::Error> {
-        let hdr_value = hdr_value.to_string();
-        match HeaderValue::from_str(&hdr_value) {
-             std::result::Result::Ok(value) => std::result::Result::Ok(value),
-             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Invalid header value for UssdProcessOneOf1 - value: {hdr_value} is invalid {e}"#))
-        }
-    }
-}
-
-#[cfg(feature = "server")]
-impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<UssdProcessOneOf1> {
-    type Error = String;
-
-    fn try_from(hdr_value: HeaderValue) -> std::result::Result<Self, Self::Error> {
-        match hdr_value.to_str() {
-             std::result::Result::Ok(value) => {
-                    match <UssdProcessOneOf1 as std::str::FromStr>::from_str(value) {
-                        std::result::Result::Ok(value) => std::result::Result::Ok(header::IntoHeaderValue(value)),
-                        std::result::Result::Err(err) => std::result::Result::Err(format!(r#"Unable to convert header value '{value}' into UssdProcessOneOf1 - {err}"#))
                     }
              },
              std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Unable to convert header: {hdr_value:?} to string: {e}"#))
@@ -5943,22 +5674,26 @@ impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<UssdSessionE
 
 
 
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
-#[serde(untagged)]
+/// Input provided when starting the session.
+#[derive(Debug, Clone, PartialEq, serde::Deserialize)]
+#[serde(tag = "type")]
 #[allow(non_camel_case_types, clippy::large_enum_variant)]
 pub enum UssdSessionEventNewSessionSessionInput {
-    UssdSessionEventNewSessionSessionInputOneOf(models::UssdSessionEventNewSessionSessionInputOneOf),
-    UssdSessionEventNewSessionSessionInputOneOf1(models::UssdSessionEventNewSessionSessionInputOneOf1),
-    UssdSessionEventNewSessionSessionInputOneOf2(models::UssdSessionEventNewSessionSessionInputOneOf2),
+    #[serde(alias = "Dial")]
+    NewSessionSessionInputDial(models::NewSessionSessionInputDial),
+    #[serde(alias = "Push")]
+    NewSessionSessionInputPush(models::NewSessionSessionInputPush),
+    #[serde(alias = "Redirect")]
+    NewSessionSessionInputRedirect(models::NewSessionSessionInputRedirect),
 }
 
 impl validator::Validate for UssdSessionEventNewSessionSessionInput
 {
     fn validate(&self) -> std::result::Result<(), validator::ValidationErrors> {
         match self {
-            Self::UssdSessionEventNewSessionSessionInputOneOf(v) => v.validate(),
-            Self::UssdSessionEventNewSessionSessionInputOneOf1(v) => v.validate(),
-            Self::UssdSessionEventNewSessionSessionInputOneOf2(v) => v.validate(),
+            Self::NewSessionSessionInputDial(v) => v.validate(),
+            Self::NewSessionSessionInputPush(v) => v.validate(),
+            Self::NewSessionSessionInputRedirect(v) => v.validate(),
         }
     }
 }
@@ -5974,445 +5709,46 @@ impl std::str::FromStr for UssdSessionEventNewSessionSessionInput {
     }
 }
 
-
-impl From<models::UssdSessionEventNewSessionSessionInputOneOf> for UssdSessionEventNewSessionSessionInput {
-    fn from(value: models::UssdSessionEventNewSessionSessionInputOneOf) -> Self {
-        Self::UssdSessionEventNewSessionSessionInputOneOf(value)
-    }
-}
-impl From<models::UssdSessionEventNewSessionSessionInputOneOf1> for UssdSessionEventNewSessionSessionInput {
-    fn from(value: models::UssdSessionEventNewSessionSessionInputOneOf1) -> Self {
-        Self::UssdSessionEventNewSessionSessionInputOneOf1(value)
-    }
-}
-impl From<models::UssdSessionEventNewSessionSessionInputOneOf2> for UssdSessionEventNewSessionSessionInput {
-    fn from(value: models::UssdSessionEventNewSessionSessionInputOneOf2) -> Self {
-        Self::UssdSessionEventNewSessionSessionInputOneOf2(value)
-    }
-}
-
-
-
-
-
-/// Input provided when the user dials into the session (dials the shortcode string)
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, validator::Validate)]
-#[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
-pub struct UssdSessionEventNewSessionSessionInputOneOf {
-    /// Note: inline enums are not fully supported by openapi-generator
-    #[serde(rename = "type")]
-          #[validate(custom(function = "check_xss_string"))]
-    pub r_type: String,
-
-    /// Shortcode string dialed by the user
-    #[serde(rename = "shortcodeString")]
-          #[validate(custom(function = "check_xss_string"))]
-    pub shortcode_string: String,
-
-}
-
-
-
-impl UssdSessionEventNewSessionSessionInputOneOf {
-    #[allow(clippy::new_without_default, clippy::too_many_arguments)]
-    pub fn new(r_type: String, shortcode_string: String, ) -> UssdSessionEventNewSessionSessionInputOneOf {
-        UssdSessionEventNewSessionSessionInputOneOf {
- r_type,
- shortcode_string,
-        }
-    }
-}
-
-/// Converts the UssdSessionEventNewSessionSessionInputOneOf value to the Query Parameters representation (style=form, explode=false)
-/// specified in https://swagger.io/docs/specification/serialization/
-/// Should be implemented in a serde serializer
-impl std::fmt::Display for UssdSessionEventNewSessionSessionInputOneOf {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let params: Vec<Option<String>> = vec![
-
-            Some("type".to_string()),
-            Some(self.r_type.to_string()),
-
-
-            Some("shortcodeString".to_string()),
-            Some(self.shortcode_string.to_string()),
-
-        ];
-
-        write!(f, "{}", params.into_iter().flatten().collect::<Vec<_>>().join(","))
-    }
-}
-
-/// Converts Query Parameters representation (style=form, explode=false) to a UssdSessionEventNewSessionSessionInputOneOf value
-/// as specified in https://swagger.io/docs/specification/serialization/
-/// Should be implemented in a serde deserializer
-impl std::str::FromStr for UssdSessionEventNewSessionSessionInputOneOf {
-    type Err = String;
-
-    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-        /// An intermediate representation of the struct to use for parsing.
-        #[derive(Default)]
-        #[allow(dead_code)]
-        struct IntermediateRep {
-            pub r_type: Vec<String>,
-            pub shortcode_string: Vec<String>,
-        }
-
-        let mut intermediate_rep = IntermediateRep::default();
-
-        // Parse into intermediate representation
-        let mut string_iter = s.split(',');
-        let mut key_result = string_iter.next();
-
-        while key_result.is_some() {
-            let val = match string_iter.next() {
-                Some(x) => x,
-                None => return std::result::Result::Err("Missing value while parsing UssdSessionEventNewSessionSessionInputOneOf".to_string())
-            };
-
-            if let Some(key) = key_result {
-                #[allow(clippy::match_single_binding)]
-                match key {
-                    #[allow(clippy::redundant_clone)]
-                    "type" => intermediate_rep.r_type.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
-                    #[allow(clippy::redundant_clone)]
-                    "shortcodeString" => intermediate_rep.shortcode_string.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
-                    _ => return std::result::Result::Err("Unexpected key while parsing UssdSessionEventNewSessionSessionInputOneOf".to_string())
-                }
+impl serde::Serialize for UssdSessionEventNewSessionSessionInput {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+        where S: serde::Serializer {
+            match self {
+                Self::NewSessionSessionInputDial(x) => x.serialize(serializer),
+                Self::NewSessionSessionInputPush(x) => x.serialize(serializer),
+                Self::NewSessionSessionInputRedirect(x) => x.serialize(serializer),
             }
-
-            // Get the next key
-            key_result = string_iter.next();
-        }
-
-        // Use the intermediate representation to return the struct
-        std::result::Result::Ok(UssdSessionEventNewSessionSessionInputOneOf {
-            r_type: intermediate_rep.r_type.into_iter().next().ok_or_else(|| "type missing in UssdSessionEventNewSessionSessionInputOneOf".to_string())?,
-            shortcode_string: intermediate_rep.shortcode_string.into_iter().next().ok_or_else(|| "shortcodeString missing in UssdSessionEventNewSessionSessionInputOneOf".to_string())?,
-        })
     }
 }
 
-// Methods for converting between header::IntoHeaderValue<UssdSessionEventNewSessionSessionInputOneOf> and HeaderValue
-
-#[cfg(feature = "server")]
-impl std::convert::TryFrom<header::IntoHeaderValue<UssdSessionEventNewSessionSessionInputOneOf>> for HeaderValue {
-    type Error = String;
-
-    fn try_from(hdr_value: header::IntoHeaderValue<UssdSessionEventNewSessionSessionInputOneOf>) -> std::result::Result<Self, Self::Error> {
-        let hdr_value = hdr_value.to_string();
-        match HeaderValue::from_str(&hdr_value) {
-             std::result::Result::Ok(value) => std::result::Result::Ok(value),
-             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Invalid header value for UssdSessionEventNewSessionSessionInputOneOf - value: {hdr_value} is invalid {e}"#))
-        }
+impl From<models::NewSessionSessionInputDial> for UssdSessionEventNewSessionSessionInput {
+    fn from(value: models::NewSessionSessionInputDial) -> Self {
+        Self::NewSessionSessionInputDial(value)
     }
 }
-
-#[cfg(feature = "server")]
-impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<UssdSessionEventNewSessionSessionInputOneOf> {
-    type Error = String;
-
-    fn try_from(hdr_value: HeaderValue) -> std::result::Result<Self, Self::Error> {
-        match hdr_value.to_str() {
-             std::result::Result::Ok(value) => {
-                    match <UssdSessionEventNewSessionSessionInputOneOf as std::str::FromStr>::from_str(value) {
-                        std::result::Result::Ok(value) => std::result::Result::Ok(header::IntoHeaderValue(value)),
-                        std::result::Result::Err(err) => std::result::Result::Err(format!(r#"Unable to convert header value '{value}' into UssdSessionEventNewSessionSessionInputOneOf - {err}"#))
-                    }
-             },
-             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Unable to convert header: {hdr_value:?} to string: {e}"#))
-        }
+impl From<models::NewSessionSessionInputPush> for UssdSessionEventNewSessionSessionInput {
+    fn from(value: models::NewSessionSessionInputPush) -> Self {
+        Self::NewSessionSessionInputPush(value)
+    }
+}
+impl From<models::NewSessionSessionInputRedirect> for UssdSessionEventNewSessionSessionInput {
+    fn from(value: models::NewSessionSessionInputRedirect) -> Self {
+        Self::NewSessionSessionInputRedirect(value)
     }
 }
 
 
 
-/// Input provided when session is begun by a push message sent to a user.
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, validator::Validate)]
-#[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
-pub struct UssdSessionEventNewSessionSessionInputOneOf1 {
-    /// Note: inline enums are not fully supported by openapi-generator
-    #[serde(rename = "type")]
-          #[validate(custom(function = "check_xss_string"))]
-    pub r_type: String,
-
-    /// Context regarding the push message.
-    #[serde(rename = "contextData")]
-          #[validate(custom(function = "check_xss_string"))]
-    pub context_data: String,
-
-}
 
 
-
-impl UssdSessionEventNewSessionSessionInputOneOf1 {
-    #[allow(clippy::new_without_default, clippy::too_many_arguments)]
-    pub fn new(r_type: String, context_data: String, ) -> UssdSessionEventNewSessionSessionInputOneOf1 {
-        UssdSessionEventNewSessionSessionInputOneOf1 {
- r_type,
- context_data,
-        }
-    }
-}
-
-/// Converts the UssdSessionEventNewSessionSessionInputOneOf1 value to the Query Parameters representation (style=form, explode=false)
-/// specified in https://swagger.io/docs/specification/serialization/
-/// Should be implemented in a serde serializer
-impl std::fmt::Display for UssdSessionEventNewSessionSessionInputOneOf1 {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let params: Vec<Option<String>> = vec![
-
-            Some("type".to_string()),
-            Some(self.r_type.to_string()),
-
-
-            Some("contextData".to_string()),
-            Some(self.context_data.to_string()),
-
-        ];
-
-        write!(f, "{}", params.into_iter().flatten().collect::<Vec<_>>().join(","))
-    }
-}
-
-/// Converts Query Parameters representation (style=form, explode=false) to a UssdSessionEventNewSessionSessionInputOneOf1 value
-/// as specified in https://swagger.io/docs/specification/serialization/
-/// Should be implemented in a serde deserializer
-impl std::str::FromStr for UssdSessionEventNewSessionSessionInputOneOf1 {
-    type Err = String;
-
-    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-        /// An intermediate representation of the struct to use for parsing.
-        #[derive(Default)]
-        #[allow(dead_code)]
-        struct IntermediateRep {
-            pub r_type: Vec<String>,
-            pub context_data: Vec<String>,
-        }
-
-        let mut intermediate_rep = IntermediateRep::default();
-
-        // Parse into intermediate representation
-        let mut string_iter = s.split(',');
-        let mut key_result = string_iter.next();
-
-        while key_result.is_some() {
-            let val = match string_iter.next() {
-                Some(x) => x,
-                None => return std::result::Result::Err("Missing value while parsing UssdSessionEventNewSessionSessionInputOneOf1".to_string())
-            };
-
-            if let Some(key) = key_result {
-                #[allow(clippy::match_single_binding)]
-                match key {
-                    #[allow(clippy::redundant_clone)]
-                    "type" => intermediate_rep.r_type.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
-                    #[allow(clippy::redundant_clone)]
-                    "contextData" => intermediate_rep.context_data.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
-                    _ => return std::result::Result::Err("Unexpected key while parsing UssdSessionEventNewSessionSessionInputOneOf1".to_string())
-                }
-            }
-
-            // Get the next key
-            key_result = string_iter.next();
-        }
-
-        // Use the intermediate representation to return the struct
-        std::result::Result::Ok(UssdSessionEventNewSessionSessionInputOneOf1 {
-            r_type: intermediate_rep.r_type.into_iter().next().ok_or_else(|| "type missing in UssdSessionEventNewSessionSessionInputOneOf1".to_string())?,
-            context_data: intermediate_rep.context_data.into_iter().next().ok_or_else(|| "contextData missing in UssdSessionEventNewSessionSessionInputOneOf1".to_string())?,
-        })
-    }
-}
-
-// Methods for converting between header::IntoHeaderValue<UssdSessionEventNewSessionSessionInputOneOf1> and HeaderValue
-
-#[cfg(feature = "server")]
-impl std::convert::TryFrom<header::IntoHeaderValue<UssdSessionEventNewSessionSessionInputOneOf1>> for HeaderValue {
-    type Error = String;
-
-    fn try_from(hdr_value: header::IntoHeaderValue<UssdSessionEventNewSessionSessionInputOneOf1>) -> std::result::Result<Self, Self::Error> {
-        let hdr_value = hdr_value.to_string();
-        match HeaderValue::from_str(&hdr_value) {
-             std::result::Result::Ok(value) => std::result::Result::Ok(value),
-             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Invalid header value for UssdSessionEventNewSessionSessionInputOneOf1 - value: {hdr_value} is invalid {e}"#))
-        }
-    }
-}
-
-#[cfg(feature = "server")]
-impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<UssdSessionEventNewSessionSessionInputOneOf1> {
-    type Error = String;
-
-    fn try_from(hdr_value: HeaderValue) -> std::result::Result<Self, Self::Error> {
-        match hdr_value.to_str() {
-             std::result::Result::Ok(value) => {
-                    match <UssdSessionEventNewSessionSessionInputOneOf1 as std::str::FromStr>::from_str(value) {
-                        std::result::Result::Ok(value) => std::result::Result::Ok(header::IntoHeaderValue(value)),
-                        std::result::Result::Err(err) => std::result::Result::Err(format!(r#"Unable to convert header value '{value}' into UssdSessionEventNewSessionSessionInputOneOf1 - {err}"#))
-                    }
-             },
-             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Unable to convert header: {hdr_value:?} to string: {e}"#))
-        }
-    }
-}
-
-
-
-/// Input provided when session is redirected from different USSD application.
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, validator::Validate)]
-#[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
-pub struct UssdSessionEventNewSessionSessionInputOneOf2 {
-    /// Note: inline enums are not fully supported by openapi-generator
-    #[serde(rename = "type")]
-          #[validate(custom(function = "check_xss_string"))]
-    pub r_type: String,
-
-    #[serde(rename = "processId")]
-          #[validate(custom(function = "check_xss_string"))]
-    #[serde(skip_serializing_if="Option::is_none")]
-    pub process_id: Option<String>,
-
-    #[serde(rename = "process")]
-          #[validate(nested)]
-    #[serde(skip_serializing_if="Option::is_none")]
-    pub process: Option<models::UssdAppProcess>,
-
-}
-
-
-
-impl UssdSessionEventNewSessionSessionInputOneOf2 {
-    #[allow(clippy::new_without_default, clippy::too_many_arguments)]
-    pub fn new(r_type: String, ) -> UssdSessionEventNewSessionSessionInputOneOf2 {
-        UssdSessionEventNewSessionSessionInputOneOf2 {
- r_type,
- process_id: None,
- process: None,
-        }
-    }
-}
-
-/// Converts the UssdSessionEventNewSessionSessionInputOneOf2 value to the Query Parameters representation (style=form, explode=false)
-/// specified in https://swagger.io/docs/specification/serialization/
-/// Should be implemented in a serde serializer
-impl std::fmt::Display for UssdSessionEventNewSessionSessionInputOneOf2 {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let params: Vec<Option<String>> = vec![
-
-            Some("type".to_string()),
-            Some(self.r_type.to_string()),
-
-
-            self.process_id.as_ref().map(|process_id| {
-                [
-                    "processId".to_string(),
-                    process_id.to_string(),
-                ].join(",")
-            }),
-
-            // Skipping process in query parameter serialization
-
-        ];
-
-        write!(f, "{}", params.into_iter().flatten().collect::<Vec<_>>().join(","))
-    }
-}
-
-/// Converts Query Parameters representation (style=form, explode=false) to a UssdSessionEventNewSessionSessionInputOneOf2 value
-/// as specified in https://swagger.io/docs/specification/serialization/
-/// Should be implemented in a serde deserializer
-impl std::str::FromStr for UssdSessionEventNewSessionSessionInputOneOf2 {
-    type Err = String;
-
-    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-        /// An intermediate representation of the struct to use for parsing.
-        #[derive(Default)]
-        #[allow(dead_code)]
-        struct IntermediateRep {
-            pub r_type: Vec<String>,
-            pub process_id: Vec<String>,
-            pub process: Vec<models::UssdAppProcess>,
-        }
-
-        let mut intermediate_rep = IntermediateRep::default();
-
-        // Parse into intermediate representation
-        let mut string_iter = s.split(',');
-        let mut key_result = string_iter.next();
-
-        while key_result.is_some() {
-            let val = match string_iter.next() {
-                Some(x) => x,
-                None => return std::result::Result::Err("Missing value while parsing UssdSessionEventNewSessionSessionInputOneOf2".to_string())
-            };
-
-            if let Some(key) = key_result {
-                #[allow(clippy::match_single_binding)]
-                match key {
-                    #[allow(clippy::redundant_clone)]
-                    "type" => intermediate_rep.r_type.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
-                    #[allow(clippy::redundant_clone)]
-                    "processId" => intermediate_rep.process_id.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
-                    #[allow(clippy::redundant_clone)]
-                    "process" => intermediate_rep.process.push(<models::UssdAppProcess as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
-                    _ => return std::result::Result::Err("Unexpected key while parsing UssdSessionEventNewSessionSessionInputOneOf2".to_string())
-                }
-            }
-
-            // Get the next key
-            key_result = string_iter.next();
-        }
-
-        // Use the intermediate representation to return the struct
-        std::result::Result::Ok(UssdSessionEventNewSessionSessionInputOneOf2 {
-            r_type: intermediate_rep.r_type.into_iter().next().ok_or_else(|| "type missing in UssdSessionEventNewSessionSessionInputOneOf2".to_string())?,
-            process_id: intermediate_rep.process_id.into_iter().next(),
-            process: intermediate_rep.process.into_iter().next(),
-        })
-    }
-}
-
-// Methods for converting between header::IntoHeaderValue<UssdSessionEventNewSessionSessionInputOneOf2> and HeaderValue
-
-#[cfg(feature = "server")]
-impl std::convert::TryFrom<header::IntoHeaderValue<UssdSessionEventNewSessionSessionInputOneOf2>> for HeaderValue {
-    type Error = String;
-
-    fn try_from(hdr_value: header::IntoHeaderValue<UssdSessionEventNewSessionSessionInputOneOf2>) -> std::result::Result<Self, Self::Error> {
-        let hdr_value = hdr_value.to_string();
-        match HeaderValue::from_str(&hdr_value) {
-             std::result::Result::Ok(value) => std::result::Result::Ok(value),
-             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Invalid header value for UssdSessionEventNewSessionSessionInputOneOf2 - value: {hdr_value} is invalid {e}"#))
-        }
-    }
-}
-
-#[cfg(feature = "server")]
-impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<UssdSessionEventNewSessionSessionInputOneOf2> {
-    type Error = String;
-
-    fn try_from(hdr_value: HeaderValue) -> std::result::Result<Self, Self::Error> {
-        match hdr_value.to_str() {
-             std::result::Result::Ok(value) => {
-                    match <UssdSessionEventNewSessionSessionInputOneOf2 as std::str::FromStr>::from_str(value) {
-                        std::result::Result::Ok(value) => std::result::Result::Ok(header::IntoHeaderValue(value)),
-                        std::result::Result::Err(err) => std::result::Result::Err(format!(r#"Unable to convert header value '{value}' into UssdSessionEventNewSessionSessionInputOneOf2 - {err}"#))
-                    }
-             },
-             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Unable to convert header: {hdr_value:?} to string: {e}"#))
-        }
-    }
-}
-
-
-
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
-#[serde(untagged)]
+#[derive(Debug, Clone, PartialEq, serde::Deserialize)]
+#[serde(tag = "type")]
 #[allow(non_camel_case_types, clippy::large_enum_variant)]
 pub enum UssdView {
+    #[serde(alias = "ChooserView")]
     UssdViewChooserView(models::UssdViewChooserView),
+    #[serde(alias = "InfoView")]
     UssdViewInfoView(models::UssdViewInfoView),
+    #[serde(alias = "InputView")]
     UssdViewInputView(models::UssdViewInputView),
 }
 
@@ -6438,6 +5774,16 @@ impl std::str::FromStr for UssdView {
     }
 }
 
+impl serde::Serialize for UssdView {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+        where S: serde::Serializer {
+            match self {
+                Self::UssdViewChooserView(x) => x.serialize(serializer),
+                Self::UssdViewInfoView(x) => x.serialize(serializer),
+                Self::UssdViewInputView(x) => x.serialize(serializer),
+            }
+    }
+}
 
 impl From<models::UssdViewChooserView> for UssdView {
     fn from(value: models::UssdViewChooserView) -> Self {

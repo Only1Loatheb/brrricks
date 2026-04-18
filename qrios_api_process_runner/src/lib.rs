@@ -8,7 +8,6 @@ use qrios_api_axum_server::apis::developers_app_endpoints::{
   PostUssdsessioneventNewResponse,
 };
 use qrios_api_axum_server::models;
-use qrios_api_axum_server::models::UssdAction::UssdActionOneOf2;
 use qrios_api_axum_server::models::{
   AbortSession, CloseSession, ContinueSession, PostUssdsessioneventAbortHeaderParams,
   PostUssdsessioneventCloseHeaderParams, PostUssdsessioneventContinueHeaderParams, PostUssdsessioneventNewHeaderParams,
@@ -81,10 +80,10 @@ impl<Process: FinalizedProcess + Sync> qrios_api_axum_server::apis::developers_a
     body: &ContinueSession,
   ) -> Result<PostUssdsessioneventContinueResponse, ()> {
     let user_input = match body.result.clone() {
-      UssdActionResult::UssdActionResultOneOf(_) => todo!(),
-      UssdActionResult::UssdActionResultOneOf1(input_result) => input_result.input_result.value,
-      UssdActionResult::UssdActionResultOneOf2(_) => todo!(),
-      UssdActionResult::Object(_) => todo!(),
+      UssdActionResult::UssdActionResultEmbeddedProcessResult(_) => todo!(),
+      UssdActionResult::UssdActionResultInputResult(input_result) => input_result.value,
+      UssdActionResult::UssdActionResultMerchantPaymentResult(_) => todo!(),
+      UssdActionResult::UssdActionResultReturnFromRedirectResult(_) => todo!(),
     };
     let session_id = body.context_data.parse::<i64>().map_err(|_| ())?;
     let (previous_run_yielded_at, failed_input_validation_attempts, session_context) =
@@ -128,9 +127,7 @@ impl<Process: FinalizedProcess + Sync> qrios_api_axum_server::apis::developers_a
     .map(|ussd_view| {
       PostUssdsessioneventContinueResponse::Status200_SessionContinuationHasBeenSuccessfullyHandledByTheDeveloper(
         UssdSessionCommand {
-          action: UssdActionOneOf2(models::UssdActionOneOf2 {
-            show_view: ShowView { r_type: "ShowView".into(), view: ussd_view },
-          }),
+          action: models::UssdAction::ShowView(ShowView { r_type: "ShowView".into(), view: ussd_view }),
           context_data: session_id.to_string(),
           session_tag: None,
         },
@@ -147,9 +144,9 @@ impl<Process: FinalizedProcess + Sync> qrios_api_axum_server::apis::developers_a
     body: &UssdSessionEventNewSession,
   ) -> Result<PostUssdsessioneventNewResponse, ()> {
     let shortcode_string = match body.input.clone() {
-      UssdSessionEventNewSessionSessionInput::UssdSessionEventNewSessionSessionInputOneOf(x) => x.shortcode_string,
-      UssdSessionEventNewSessionSessionInput::UssdSessionEventNewSessionSessionInputOneOf1(_) => todo!(),
-      UssdSessionEventNewSessionSessionInput::UssdSessionEventNewSessionSessionInputOneOf2(_) => todo!(),
+      UssdSessionEventNewSessionSessionInput::NewSessionSessionInputDial(x) => x.shortcode_string,
+      UssdSessionEventNewSessionSessionInput::NewSessionSessionInputPush(_) => todo!(),
+      UssdSessionEventNewSessionSessionInput::NewSessionSessionInputRedirect(_) => todo!(),
     };
     let init_session_context = vec![(0, Value::String(body.msisdn.clone())), (1, Value::String(body.operator.clone()))];
     let run_result = self
@@ -185,9 +182,7 @@ impl<Process: FinalizedProcess + Sync> qrios_api_axum_server::apis::developers_a
     .map(|(id, ussd_view)| {
       PostUssdsessioneventNewResponse::Status200_SessionStartHasBeenSuccessfullyHandledByTheDeveloper(
         UssdSessionCommand {
-          action: UssdActionOneOf2(models::UssdActionOneOf2 {
-            show_view: ShowView { r_type: "ShowView".into(), view: ussd_view },
-          }),
+          action: models::UssdAction::ShowView(ShowView { r_type: "ShowView".into(), view: ussd_view }),
           context_data: id.to_string(),
           session_tag: None,
         },
@@ -198,7 +193,6 @@ impl<Process: FinalizedProcess + Sync> qrios_api_axum_server::apis::developers_a
 
 #[cfg(test)]
 mod tests {
-
   use frunk_core::hlist::HNil;
   use qrios_api_process_entry::DialedSessionEntry;
 
@@ -225,13 +219,28 @@ mod tests {
     let session = UssdSessionEventNewSession {
       app_id: "val".into(),
       client_id: "val".into(),
-      input: UssdSessionEventNewSessionSessionInput::Dial { shortcode_string: "*425*001*123#".to_string() },
+      input: UssdSessionEventNewSessionSessionInput::Dial(NewSessionSessionInputDial {
+        type_: NewSessionSessionInputDialType::Dial,
+        shortcode_string: "*425*001*123#".to_string(),
+      }),
       msisdn: "2341234567890".into(),
       operator: UssdSessionEventNewSessionOperator::Mtn,
       session_id: "val".into(),
     };
     println!("{}", serde_json::to_string(&session).unwrap());
 
+    let a = UssdSessionCommand {
+      action: UssdAction::ShowView(ShowView {
+        type_: ShowViewType::ShowView,
+        view: UssdView::InfoView(UssdViewInfoView {
+          message: "the message".into(),
+          type_: UssdViewInfoViewType::InfoView,
+        }),
+      }),
+      context_data: "cd".to_string(),
+      session_tag: None,
+    };
+    println!("{}", serde_json::to_string(&a).unwrap());
     async fn _shutdown_signal() {
       let ctrl_c = async {
         signal::ctrl_c().await.expect("failed to install Ctrl+C handler");

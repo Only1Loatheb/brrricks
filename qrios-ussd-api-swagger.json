@@ -3,7 +3,7 @@
   "info": {
     "title": "QRIOS USSD API documentation",
     "description": "This API is *not* exposed by Qrios, but it should be implemented by the developer. Qrios will call this API on developer's side to provide information about USSD sessions and the developer should answer with information regarding what should happen next in the aforementioned sessions.",
-    "version": "1.6.1"
+    "version": "1.6.2"
   },
   "servers": [
     {
@@ -789,7 +789,11 @@
             "type": "string"
           },
           "type": {
-            "type": "string"
+            "type": "string",
+            "example": "DuplicatedOperation",
+            "enum": [
+              "DuplicatedOperation"
+            ]
           }
         },
         "description": "USSD process abort reason - operation, eg. Merchant Payment, was previously invoked with given identifier."
@@ -801,7 +805,11 @@
         "type": "object",
         "properties": {
           "type": {
-            "type": "string"
+            "type": "string",
+            "example": "InsufficientBalanceInVirtualPurse",
+            "enum": [
+              "InsufficientBalanceInVirtualPurse"
+            ]
           }
         },
         "description": "USSD process abort reason - not enough funds to fulfil the request."
@@ -813,7 +821,11 @@
         "type": "object",
         "properties": {
           "type": {
-            "type": "string"
+            "type": "string",
+            "example": "InternalError",
+            "enum": [
+              "InternalError"
+            ]
           }
         },
         "description": "USSD process abort reason - there was some internal error in Qrios API."
@@ -829,7 +841,11 @@
             "type": "string"
           },
           "type": {
-            "type": "string"
+            "type": "string",
+            "example": "MissingPrivilege",
+            "enum": [
+              "MissingPrivilege"
+            ]
           }
         },
         "description": "USSD process abort reason - there are no required privileges to run a USSD operation."
@@ -841,7 +857,11 @@
         "type": "object",
         "properties": {
           "type": {
-            "type": "string"
+            "type": "string",
+            "example": "UnexpectedUssdAppResponse",
+            "enum": [
+              "UnexpectedUssdAppResponse"
+            ]
           }
         },
         "description": "USSD process abort reason - previous USSD app response was malformed or not expected."
@@ -907,7 +927,11 @@
         "type": "object",
         "properties": {
           "type": {
-            "type": "string"
+            "type": "string",
+            "example": "Abandon",
+            "enum": [
+              "Abandon"
+            ]
           }
         },
         "description": "Abandon - the user leaves the session (e.g. the user presses \"Cancel\" on the phone)."
@@ -919,7 +943,11 @@
         "type": "object",
         "properties": {
           "type": {
-            "type": "string"
+            "type": "string",
+            "example": "End",
+            "enum": [
+              "End"
+            ]
           }
         },
         "description": "End - the session ends naturally (e.g. the user can no longer input data)."
@@ -931,7 +959,11 @@
         "type": "object",
         "properties": {
           "type": {
-            "type": "string"
+            "type": "string",
+            "example": "Timeout",
+            "enum": [
+              "Timeout"
+            ]
           }
         },
         "description": "Timeout - the session is ended by the mobile operator (e.g. after two minutes)."
@@ -975,11 +1007,20 @@
           "uri"
         ],
         "type": "object",
-        "description": "Developer's USSD App requests a redirect to some Legacy USSD App"
-      },
-      "LegacyAppRedirect.Uri": {
-        "type": "string",
-        "description": "Url of the Legacy USSD App"
+        "description": "Developer's USSD App requests a redirect to some Legacy USSD App",
+        "properties": {
+          "type": {
+            "type": "string",
+            "example": "LegacyAppRedirect",
+            "enum": [
+              "LegacyAppRedirect"
+            ]
+          },
+          "uri": {
+            "type": "string",
+            "description": "Url of the Legacy USSD App"
+          }
+        }
       },
       "LegacyAppRedirect.UssdApiUrl": {
         "type": "string",
@@ -1020,7 +1061,11 @@
             "format": "int64"
           },
           "type": {
-            "type": "string"
+            "type": "string",
+            "example": "WithBankResponseTimeout",
+            "enum": [
+              "WithBankResponseTimeout"
+            ]
           }
         },
         "description": "Merchant payment process will use a timeout when finalizing."
@@ -1032,7 +1077,11 @@
         "type": "object",
         "properties": {
           "type": {
-            "type": "string"
+            "type": "string",
+            "example": "WithoutWaitingForBank",
+            "enum": [
+              "WithoutWaitingForBank"
+            ]
           }
         },
         "description": "Merchant payment process will not use a timeout when finalizing."
@@ -1075,7 +1124,11 @@
             "description": "Code of the bank which will be used in transaction. Bank codes can be obtained with Qrios API using `/merchants/accounts` endpoint."
           },
           "type": {
-            "type": "string"
+            "type": "string",
+            "example": "FixedAccount",
+            "enum": [
+              "FixedAccount"
+            ]
           }
         },
         "description": "Fixed account mode in merchant payment process, with account ID specified."
@@ -1092,7 +1145,11 @@
             "description": "Code of the bank which will be used in transaction. Bank codes can be obtained with Qrios API using `/merchants/accounts` endpoint."
           },
           "type": {
-            "type": "string"
+            "type": "string",
+            "example": "FixedBank",
+            "enum": [
+              "FixedBank"
+            ]
           }
         },
         "description": "Fixed bank mode in merchant payment process, with bank ID specified. The account from provided bank will then be selected within the process."
@@ -1104,7 +1161,11 @@
         "type": "object",
         "properties": {
           "type": {
-            "type": "string"
+            "type": "string",
+            "example": "Flexible",
+            "enum": [
+              "Flexible"
+            ]
           }
         },
         "description": "Flexible payment mode in merchant payment process. The account will then be selected within the process."
@@ -1141,7 +1202,11 @@
             "$ref": "#/components/schemas/MerchantPaymentResult.OperationStatus.Failure.Cause"
           },
           "type": {
-            "type": "string"
+            "type": "string",
+            "example": "Failure",
+            "enum": [
+              "Failure"
+            ]
           }
         },
         "description": "Merchant payment operation failed (there was no charge for sure)"
@@ -1165,7 +1230,11 @@
         "type": "object",
         "properties": {
           "type": {
-            "type": "string"
+            "type": "string",
+            "example": "Success",
+            "enum": [
+              "Success"
+            ]
           }
         },
         "description": "Merchant payment operation finished with success"
@@ -1177,10 +1246,80 @@
         "type": "object",
         "properties": {
           "type": {
-            "type": "string"
+            "type": "string",
+            "example": "Unknown",
+            "enum": [
+              "Unknown"
+            ]
           }
         },
         "description": "Cannot determine if merchant payment operation succeed or not"
+      },
+      "NewSession.SessionInput.Dial": {
+        "required": [
+          "shortcodeString",
+          "type"
+        ],
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "example": "Dial",
+            "enum": [
+              "Dial"
+            ]
+          },
+          "shortcodeString": {
+            "type": "string",
+            "description": "Shortcode string dialed by the user",
+            "example": "*425*001*123#"
+          }
+        },
+        "description": "Input provided when the user dials into the session (dials the shortcode string)"
+      },
+      "NewSession.SessionInput.Push": {
+        "required": [
+          "contextData",
+          "type"
+        ],
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "example": "Push",
+            "enum": [
+              "Push"
+            ]
+          },
+          "contextData": {
+            "type": "string",
+            "description": "Context regarding the push message."
+          }
+        },
+        "description": "Input provided when session is begun by a push message sent to a user."
+      },
+      "NewSession.SessionInput.Redirect": {
+        "required": [
+          "type"
+        ],
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "example": "Redirect",
+            "enum": [
+              "Redirect"
+            ]
+          },
+          "processId": {
+            "type": "string",
+            "deprecated": true
+          },
+          "process": {
+            "$ref": "#/components/schemas/UssdApp.Process"
+          }
+        },
+        "description": "Input provided when session is redirected from different USSD application."
       },
       "NewSession.SessionInput.Redirect.Params": {
         "type": "object",
@@ -1276,95 +1415,57 @@
       },
       "UssdAction": {
         "description": "Action to be sent back to the user. It can either start a predefined process or show a view.",
+        "discriminator": {
+          "propertyName": "type",
+          "mapping": {
+            "LegacyAppRedirect": "#/components/schemas/LegacyAppRedirect",
+            "Redirect": "#/components/schemas/Redirect",
+            "ReturnFromRedirect": "#/components/schemas/ReturnFromRedirect",
+            "RunProcess": "#/components/schemas/RunProcess",
+            "ShowView": "#/components/schemas/ShowView"
+          }
+        },
         "oneOf": [
           {
-            "required": [
-              "LegacyAppRedirect"
-            ],
-            "type": "object"
+            "$ref": "#/components/schemas/LegacyAppRedirect"
           },
           {
-            "required": [
-              "Redirect"
-            ],
-            "type": "object",
-            "properties": {
-              "Redirect": {
-                "$ref": "#/components/schemas/Redirect"
-              }
-            }
+            "$ref": "#/components/schemas/Redirect"
           },
           {
-            "required": [
-              "ReturnFromRedirect"
-            ],
-            "type": "object"
+            "$ref": "#/components/schemas/ReturnFromRedirect"
           },
           {
-            "required": [
-              "RunProcess"
-            ],
-            "type": "object",
-            "properties": {
-              "RunProcess": {
-                "$ref": "#/components/schemas/RunProcess"
-              }
-            }
+            "$ref": "#/components/schemas/RunProcess"
           },
           {
-            "required": [
-              "ShowView"
-            ],
-            "type": "object",
-            "properties": {
-              "ShowView": {
-                "$ref": "#/components/schemas/ShowView"
-              }
-            }
+            "$ref": "#/components/schemas/ShowView"
           }
         ]
       },
       "UssdActionResult": {
         "description": "Result of USSD action. Either input provided by the user or the result of a previously-initiated process.",
+        "discriminator": {
+          "propertyName": "type",
+          "mapping": {
+            "EmbeddedProcessResult": "#/components/schemas/UssdActionResult.EmbeddedProcessResult",
+            "InputResult": "#/components/schemas/UssdActionResult.InputResult",
+            "MerchantPaymentResult": "#/components/schemas/UssdActionResult.MerchantPaymentResult",
+            "ReturnFromRedirectResult": "#/components/schemas/UssdActionResult.ReturnFromRedirectResult"
+          }
+        },
         "oneOf": [
           {
-            "required": [
-              "EmbeddedProcessResult"
-            ],
-            "type": "object",
-            "properties": {
-              "EmbeddedProcessResult": {
-                "$ref": "#/components/schemas/UssdActionResult.EmbeddedProcessResult"
-              }
-            }
+            "$ref": "#/components/schemas/UssdActionResult.EmbeddedProcessResult"
           },
           {
-            "required": [
-              "InputResult"
-            ],
-            "type": "object",
-            "properties": {
-              "InputResult": {
-                "$ref": "#/components/schemas/UssdActionResult.InputResult"
-              }
-            }
+            "$ref": "#/components/schemas/UssdActionResult.InputResult"
           },
           {
-            "required": [
-              "MerchantPaymentResult"
-            ],
-            "type": "object",
-            "properties": {
-              "MerchantPaymentResult": {
-                "$ref": "#/components/schemas/UssdActionResult.MerchantPaymentResult"
-              }
-            }
+            "$ref": "#/components/schemas/UssdActionResult.MerchantPaymentResult"
           },
           {
-            "required": [
-              "ReturnFromRedirectResult"
-            ],
-            "type": "object"
+            "$ref": "#/components/schemas/UssdActionResult.ReturnFromRedirectResult"
           }
         ]
       },
@@ -1487,28 +1588,19 @@
       },
       "UssdProcess": {
         "description": "The process control is handed over to (flow continues within the process until the process continues or aborts).",
+        "discriminator": {
+          "propertyName": "type",
+          "mapping": {
+            "EmbeddedProcess": "#/components/schemas/UssdProcess.EmbeddedProcess",
+            "MerchantPaymentProcess": "#/components/schemas/UssdProcess.MerchantPaymentProcess"
+          }
+        },
         "oneOf": [
           {
-            "required": [
-              "EmbeddedProcess"
-            ],
-            "type": "object",
-            "properties": {
-              "EmbeddedProcess": {
-                "$ref": "#/components/schemas/UssdProcess.EmbeddedProcess"
-              }
-            }
+            "$ref": "#/components/schemas/UssdProcess.EmbeddedProcess"
           },
           {
-            "required": [
-              "MerchantPaymentProcess"
-            ],
-            "type": "object",
-            "properties": {
-              "MerchantPaymentProcess": {
-                "$ref": "#/components/schemas/UssdProcess.MerchantPaymentProcess"
-              }
-            }
+            "$ref": "#/components/schemas/UssdProcess.MerchantPaymentProcess"
           }
         ]
       },
@@ -1628,76 +1720,36 @@
         "description": "The event sent when the USSD session starts (user initiates the session)."
       },
       "UssdSessionEvent.NewSession.SessionInput": {
+        "description": "Input provided when starting the session.",
+        "discriminator": {
+          "propertyName": "type",
+          "mapping": {
+            "Dial": "#/components/schemas/NewSession.SessionInput.Dial",
+            "Push": "#/components/schemas/NewSession.SessionInput.Push",
+            "Redirect": "#/components/schemas/NewSession.SessionInput.Redirect"
+          }
+        },
         "oneOf": [
           {
-            "required": [
-              "shortcodeString",
-              "type"
-            ],
-            "type": "object",
-            "properties": {
-              "type": {
-                "type": "string",
-                "example": "Dial",
-                "enum": [
-                  "Dial"
-                ]
-              },
-              "shortcodeString": {
-                "type": "string",
-                "description": "Shortcode string dialed by the user",
-                "example": "*425*001*123#"
-              }
-            },
-            "description": "Input provided when the user dials into the session (dials the shortcode string)"
+            "$ref": "#/components/schemas/NewSession.SessionInput.Dial"
           },
           {
-            "required": [
-              "contextData",
-              "type"
-            ],
-            "type": "object",
-            "properties": {
-              "type": {
-                "type": "string",
-                "example": "Push",
-                "enum": [
-                  "Push"
-                ]
-              },
-              "contextData": {
-                "type": "string",
-                "description": "Context regarding the push message."
-              }
-            },
-            "description": "Input provided when session is begun by a push message sent to a user."
+            "$ref": "#/components/schemas/NewSession.SessionInput.Push"
           },
           {
-            "required": [
-              "type"
-            ],
-            "type": "object",
-            "properties": {
-              "type": {
-                "type": "string",
-                "example": "Redirect",
-                "enum": [
-                  "Redirect"
-                ]
-              },
-              "processId": {
-                "type": "string",
-                "deprecated": true
-              },
-              "process": {
-                "$ref": "#/components/schemas/UssdApp.Process"
-              }
-            },
-            "description": "Input provided when session is redirected from different USSD application."
+            "$ref": "#/components/schemas/NewSession.SessionInput.Redirect"
           }
         ]
       },
       "UssdView": {
+        "discriminator": {
+          "propertyName": "type",
+          "mapping": {
+            "ChooserView": "#/components/schemas/UssdView.ChooserView",
+            "InfoView": "#/components/schemas/UssdView.InfoView",
+            "InputView": "#/components/schemas/UssdView.InputView"
+          }
+        },
         "oneOf": [
           {
             "$ref": "#/components/schemas/UssdView.ChooserView"
