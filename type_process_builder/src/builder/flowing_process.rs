@@ -26,6 +26,7 @@ pub trait FlowingProcess: Sized + Sync {
   type ProcessBeforeProduces: ParamList;
   type Produces: ParamList;
   type SubprocessConsumes: ParamList;
+  type Messages: ProcessMessages;
 
   fn resume_run(
     &self,
@@ -33,17 +34,17 @@ pub trait FlowingProcess: Sized + Sync {
     previous_run_yielded_at: PreviousRunYieldedAt,
     user_input: String,
     failed_input_validation_attempts: FailedInputValidationAttempts,
-  ) -> impl Future<Output = IntermediateRunResult<Self::Produces>> + Send;
+  ) -> impl Future<Output = IntermediateRunResult<Self::Produces, Self::Messages>> + Send;
 
   fn continue_run(
     &self,
     process_before_produces: Self::ProcessBeforeProduces,
-  ) -> impl Future<Output = IntermediateRunResult<Self::Produces>> + Send;
+  ) -> impl Future<Output = IntermediateRunResult<Self::Produces, Self::Messages>> + Send;
 
   fn run_subprocess(
     &self,
     subprocess_consumes: Self::SubprocessConsumes,
-  ) -> impl Future<Output = IntermediateRunResult<Self::Produces>> + Send;
+  ) -> impl Future<Output = IntermediateRunResult<Self::Produces, Self::Messages>> + Send;
 
   fn then<OperationStep: Operation, ProcessBeforeProducesToLastStepConsumesIndices: Sync>(
     self,
@@ -52,6 +53,7 @@ pub trait FlowingProcess: Sized + Sync {
     ProcessBeforeProduces = Self::Produces,
     Produces = <OperationStep::Produces as Concat<Self::Produces>>::Concatenated,
     SubprocessConsumes = Self::SubprocessConsumes,
+    Messages = Self::Messages,
   >
   where
     OperationStep::Produces: ParamList + Concat<Self::Produces>,
@@ -66,7 +68,7 @@ pub trait FlowingProcess: Sized + Sync {
   }
 
   fn show<
-    FormStep: Form,
+    FormStep: Form<Messages = Self::Messages>,
     ProcessBeforeProducesToCreateFormConsumesIndices: Sync,
     ProcessBeforeProducesToValidateInputConsumesIndices: Sync,
   >(
@@ -76,6 +78,7 @@ pub trait FlowingProcess: Sized + Sync {
     ProcessBeforeProduces = Self::Produces,
     Produces = <FormStep::Produces as Concat<Self::Produces>>::Concatenated,
     SubprocessConsumes = Self::SubprocessConsumes,
+    Messages = Self::Messages,
   >
   where
     FormStep::Produces: ParamList + Concat<Self::Produces>,
@@ -107,6 +110,7 @@ pub trait FlowingProcess: Sized + Sync {
     SplitterProducesForFirstCase = SplitterProducesForFirstCase,
     SplitterTagForFirstCase = Tag,
     SubprocessConsumes = Self::SubprocessConsumes,
+    Messages = Self::Messages,
   >
   where
     for<'a> &'a Self::Produces: CloneJust<SplitterStep::Consumes, ProcessBeforeProducesToSplitterStepConsumesIndices>,
@@ -130,7 +134,10 @@ pub trait FlowingProcess: Sized + Sync {
     Tag: Send + Sync,
     SplitterProducesForFirstCase: ParamList + Concat<Self::Produces>,
     SplitterProducesForOtherCases: Send + Sync,
-    SplitterStep: FormSplitter<Produces = Coproduct<(Tag, SplitterProducesForFirstCase), SplitterProducesForOtherCases>>,
+    SplitterStep: FormSplitter<
+        Produces = Coproduct<(Tag, SplitterProducesForFirstCase), SplitterProducesForOtherCases>,
+        Messages = Self::Messages,
+      >,
     ProcessBeforeProducesToCreateFormConsumesIndices: Sync,
     ProcessBeforeProducesToValidateInputConsumesIndices: Sync,
   >(
@@ -142,6 +149,7 @@ pub trait FlowingProcess: Sized + Sync {
     SplitterProducesForFirstCase = SplitterProducesForFirstCase,
     SplitterTagForFirstCase = Tag,
     SubprocessConsumes = Self::SubprocessConsumes,
+    Messages = Self::Messages,
   >
   where
     for<'a> &'a Self::Produces:
@@ -165,10 +173,17 @@ pub trait FlowingProcess: Sized + Sync {
     }
   }
 
-  fn end<FinalStep: Final, ProcessBeforeProducesToLastStepConsumesIndices: Sync>(
+  fn end<
+    FinalStep: Final<FinalMessage = <Self::Messages as ProcessMessages>::FinalMessage>,
+    ProcessBeforeProducesToLastStepConsumesIndices: Sync,
+  >(
     self,
     step: FinalStep,
-  ) -> impl FinalizedProcess<ProcessBeforeProduces = Self::Produces, SubprocessConsumes = Self::SubprocessConsumes>
+  ) -> impl FinalizedProcess<
+    ProcessBeforeProduces = Self::Produces,
+    SubprocessConsumes = Self::SubprocessConsumes,
+    Messages = Self::Messages,
+  >
   where
     Self::Produces: TransformTo<FinalStep::Consumes, ProcessBeforeProducesToLastStepConsumesIndices>,
   {

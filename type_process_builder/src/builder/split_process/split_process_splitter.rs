@@ -46,6 +46,7 @@ where
   type SplitterProducesForFirstCase = SplitterProducesForFirstCase;
   type SplitterTagForFirstCase = Tag;
   type SubprocessConsumes = ProcessBefore::SubprocessConsumes;
+  type Messages = ProcessBefore::Messages;
 
   async fn resume_run(
     &self,
@@ -56,6 +57,7 @@ where
   ) -> IntermediateFinalizedSplitResult<
     Self::ProcessBeforeSplitProduces,
     Coproduct<Self::SplitterProducesForFirstCase, SplitterProducesForOtherCases>,
+    Self::Messages,
   > {
     if previous_run_yielded_at.0 < self.step_index {
       let process_before_output = self
@@ -82,6 +84,7 @@ where
   ) -> IntermediateFinalizedSplitResult<
     Self::ProcessBeforeSplitProduces,
     Coproduct<Self::SplitterProducesForFirstCase, SplitterProducesForOtherCases>,
+    Self::Messages,
   > {
     let splitter_step_consumes = (&process_before_split_produced).clone_just();
     let splitter_produces_to_other_cases = match self.splitter.handle(splitter_step_consumes).await? {
@@ -97,6 +100,7 @@ where
   ) -> IntermediateFinalizedSplitResult<
     Self::ProcessBeforeSplitProduces,
     Coproduct<Self::SplitterProducesForFirstCase, SplitterProducesForOtherCases>,
+    Self::Messages,
   > {
     let process_before_output = self.process_before.run_subprocess(subprocess_consumes).await?;
     match process_before_output {

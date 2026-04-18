@@ -1,6 +1,3 @@
-#[derive(serde::Deserialize, serde::Serialize, PartialEq, Debug, Eq, Clone, PartialOrd, Ord, Hash)]
-pub struct Message(pub String);
-
 // Should only pass params required in further part of the process, but I don't know what they are.
 // todo Make all the methods generic over Serializer
 use crate::builder::ParamUID;
@@ -9,8 +6,14 @@ use frunk_core::coproduct::Coproduct;
 use serde_value::Value;
 use std::future::Future;
 
+pub trait ProcessMessages: Send + Sync {
+  type FormMessage: Send + Sync;
+  type FinalMessage: Send + Sync;
+}
+
 pub trait Entry: Sync {
   type Produces: ParamList;
+  type Messages: ProcessMessages;
   fn handle(
     &self,
     consumes: Vec<(ParamUID, Value)>,
@@ -28,23 +31,27 @@ pub trait Operation: Sync {
 pub struct FailedInputValidationAttempts(pub u8);
 
 #[derive(Debug, PartialEq, Eq)]
-pub enum InputValidation<Produced> {
+pub enum InputValidation<Produced, Messages: ProcessMessages> {
   Successful(Produced),
-  Retry(Message),
-  Finish(Message),
+  Retry(Messages::FormMessage),
+  Finish(Messages::FinalMessage),
 }
 
 pub trait Form: Sync {
   type CreateFormConsumes: ParamList;
   type ValidateInputConsumes: ParamList;
   type Produces: ParamList;
-  fn create_form(&self, consumes: Self::CreateFormConsumes) -> impl Future<Output = anyhow::Result<Message>> + Send;
+  type Messages: ProcessMessages;
+  fn create_form(
+    &self,
+    consumes: Self::CreateFormConsumes,
+  ) -> impl Future<Output = anyhow::Result<<Self::Messages as ProcessMessages>::FormMessage>> + Send;
   fn handle_input(
     &self,
     consumes: Self::ValidateInputConsumes,
     user_input: String,
     failed_input_validation_attempts: FailedInputValidationAttempts,
-  ) -> impl Future<Output = anyhow::Result<InputValidation<Self::Produces>>> + Send;
+  ) -> impl Future<Output = anyhow::Result<InputValidation<Self::Produces, Self::Messages>>> + Send;
 }
 
 pub trait SplitterOutput: Send + Sync {}
@@ -54,7 +61,7 @@ impl<Tag: Send + Sync, ThisCase: ParamList, OtherCase: Send + Sync> SplitterOutp
 }
 
 /// Works with at least two cases.
-/// Just produce link form with a single link using Form step
+/// If you want single option form, just produce link form with a single link using Form step
 pub trait Splitter: Sync {
   type Consumes: ParamList;
   type Produces: SplitterOutput;
@@ -67,16 +74,21 @@ pub trait FormSplitter: Sync {
   type CreateFormConsumes: ParamList;
   type ValidateInputConsumes: ParamList;
   type Produces: SplitterOutput;
-  fn create_form(&self, consumes: Self::CreateFormConsumes) -> impl Future<Output = anyhow::Result<Message>> + Send;
+  type Messages: ProcessMessages;
+  fn create_form(
+    &self,
+    consumes: Self::CreateFormConsumes,
+  ) -> impl Future<Output = anyhow::Result<<Self::Messages as ProcessMessages>::FormMessage>> + Send;
   fn handle_input(
     &self,
     consumes: Self::ValidateInputConsumes,
     user_input: String,
     failed_input_validation_attempts: FailedInputValidationAttempts,
-  ) -> impl Future<Output = anyhow::Result<InputValidation<Self::Produces>>> + Send;
+  ) -> impl Future<Output = anyhow::Result<InputValidation<Self::Produces, Self::Messages>>> + Send;
 }
 
 pub trait Final: Sync {
   type Consumes: ParamList;
-  fn handle(&self, consumes: Self::Consumes) -> impl Future<Output = anyhow::Result<Message>> + Send;
+  type FinalMessage: Send + Sync;
+  fn handle(&self, consumes: Self::Consumes) -> impl Future<Output = anyhow::Result<Self::FinalMessage>> + Send;
 }

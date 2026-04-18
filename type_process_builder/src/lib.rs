@@ -16,8 +16,10 @@ pub mod documentation_diagrams {}
 mod tests {
   use crate::builder::*;
   use crate::param_list::ParamValue;
-  use crate::step::{Entry, FailedInputValidationAttempts, Final, FormSplitter, InputValidation, Operation, Splitter};
-  use crate::step::{Form, Message};
+  use crate::step::{
+    Entry, FailedInputValidationAttempts, Final, Form, FormSplitter, InputValidation, Operation, ProcessMessages,
+    Splitter,
+  };
   use anyhow::anyhow;
   use frunk_core::hlist::HNil;
   use frunk_core::{Coprod, HList, hlist};
@@ -79,9 +81,18 @@ mod tests {
     type UID = U6;
   }
 
+  pub struct Message(pub String);
+
+  struct Messages;
+  impl ProcessMessages for Messages {
+    type FormMessage = Message;
+    type FinalMessage = Message;
+  }
+
   struct ExtractMsisdnOperatorAndShortcodeString;
   impl Entry for ExtractMsisdnOperatorAndShortcodeString {
     type Produces = HList![EntryParam];
+    type Messages = Messages;
 
     #[cfg_attr(coverage_nightly, coverage(off))]
     async fn handle(&self, mut consumes: SessionContext, initial_input: String) -> anyhow::Result<HList![EntryParam]> {
@@ -145,6 +156,7 @@ mod tests {
   impl Splitter for InnerSelectCase2 {
     type Consumes = HNil;
     type Produces = Coprod![(InnerCase1, HNil), (InnerCase2, HNil)];
+
     async fn handle(&self, _consumes: Self::Consumes) -> anyhow::Result<Self::Produces> {
       Ok(Self::Produces::inject((InnerCase2, HNil)))
     }
@@ -168,6 +180,7 @@ mod tests {
   struct SayGoodByAndConsumeCommonParams;
   impl Final for SayGoodByAndConsumeCommonParams {
     type Consumes = HList![EntryParam, CommonSplitParam, CommonCaseParam];
+    type FinalMessage = Message;
 
     async fn handle(&self, _consumes: Self::Consumes) -> anyhow::Result<Message> {
       Ok(Message("Good bye".into()))
@@ -179,6 +192,7 @@ mod tests {
     type CreateFormConsumes = HList![Split1Param];
     type ValidateInputConsumes = HNil;
     type Produces = HList![CommonCaseParam];
+    type Messages = Messages;
 
     async fn create_form(&self, _consumes: Self::CreateFormConsumes) -> anyhow::Result<Message> {
       Ok(Message("Enter a number".into()))
@@ -189,7 +203,7 @@ mod tests {
       _consumes: Self::ValidateInputConsumes,
       _user_input: String,
       _failed_input_validation_attempts: FailedInputValidationAttempts,
-    ) -> anyhow::Result<InputValidation<Self::Produces>> {
+    ) -> anyhow::Result<InputValidation<Self::Produces, Messages>> {
       Ok(InputValidation::Successful(hlist![CommonCaseParam]))
     }
   }
@@ -199,6 +213,7 @@ mod tests {
     type CreateFormConsumes = HNil;
     type ValidateInputConsumes = HNil;
     type Produces = HNil;
+    type Messages = Messages;
 
     async fn create_form(&self, _consumes: Self::CreateFormConsumes) -> anyhow::Result<Message> {
       Ok(Message("Straight to trash".into()))
@@ -209,7 +224,7 @@ mod tests {
       _consumes: Self::ValidateInputConsumes,
       _user_input: String,
       _failed_input_validation_attempts: FailedInputValidationAttempts,
-    ) -> anyhow::Result<InputValidation<Self::Produces>> {
+    ) -> anyhow::Result<InputValidation<Self::Produces, Messages>> {
       Ok(InputValidation::Successful(HNil))
     }
   }
@@ -219,6 +234,7 @@ mod tests {
     type CreateFormConsumes = HNil;
     type ValidateInputConsumes = HNil;
     type Produces = HList![CommonCaseParam];
+    type Messages = Messages;
 
     async fn create_form(&self, _consumes: Self::CreateFormConsumes) -> anyhow::Result<Message> {
       Ok(Message("Last number in the process".into()))
@@ -229,7 +245,7 @@ mod tests {
       _consumes: Self::ValidateInputConsumes,
       _user_input: String,
       _failed_input_validation_attempts: FailedInputValidationAttempts,
-    ) -> anyhow::Result<InputValidation<Self::Produces>> {
+    ) -> anyhow::Result<InputValidation<Self::Produces, Messages>> {
       Ok(InputValidation::Finish(Message("Always finnish".into())))
     }
   }
@@ -239,6 +255,7 @@ mod tests {
     type CreateFormConsumes = HNil;
     type ValidateInputConsumes = HNil;
     type Produces = HList![CommonCaseParam];
+    type Messages = Messages;
 
     async fn create_form(&self, _consumes: Self::CreateFormConsumes) -> anyhow::Result<Message> {
       Ok(Message("This will be discarded".into()))
@@ -249,7 +266,7 @@ mod tests {
       _consumes: Self::ValidateInputConsumes,
       _user_input: String,
       failed_input_validation_attempts: FailedInputValidationAttempts,
-    ) -> anyhow::Result<InputValidation<Self::Produces>> {
+    ) -> anyhow::Result<InputValidation<Self::Produces, Messages>> {
       match failed_input_validation_attempts.0 {
         0 => Ok(InputValidation::Retry(Message("This will be accepted".into()))),
         _ => Ok(InputValidation::Successful(hlist![CommonCaseParam])),
@@ -260,6 +277,7 @@ mod tests {
   struct FinalNoConsumes;
   impl Final for FinalNoConsumes {
     type Consumes = HNil;
+    type FinalMessage = Message;
 
     async fn handle(&self, _consumes: Self::Consumes) -> anyhow::Result<Message> {
       Ok(Message("Empty good bye".into()))
@@ -269,6 +287,7 @@ mod tests {
   struct FinalConsumeCase2Param;
   impl Final for FinalConsumeCase2Param {
     type Consumes = HList![Case2Param];
+    type FinalMessage = Message;
 
     async fn handle(&self, _consumes: Self::Consumes) -> anyhow::Result<Message> {
       Ok(Message("I ate Case2Param".into()))
@@ -285,6 +304,7 @@ mod tests {
     type ValidateInputConsumes = HNil;
 
     type Produces = Coprod![(Case1, HList![Split1Param]), (Case2, HList![Split2Param])];
+    type Messages = Messages;
 
     async fn create_form(&self, _consumes: Self::CreateFormConsumes) -> anyhow::Result<Message> {
       Ok(Message("choose case".into()))
@@ -295,7 +315,7 @@ mod tests {
       _consumes: Self::ValidateInputConsumes,
       user_input: String,
       failed: FailedInputValidationAttempts,
-    ) -> anyhow::Result<InputValidation<Self::Produces>> {
+    ) -> anyhow::Result<InputValidation<Self::Produces, Messages>> {
       match (user_input.as_str(), failed.0) {
         ("retry", 0) => Ok(InputValidation::Retry(Message("retry again".into()))),
         ("finish", _) => Ok(InputValidation::Finish(Message("finished early".into()))),
@@ -331,7 +351,7 @@ mod tests {
 
     #[cfg_attr(coverage_nightly, coverage(off))]
     async fn test_return_error_on_param_missing_from_init_value(
-      process: &RunnableProcess<impl FinalizedProcess>,
+      process: &RunnableProcess<impl FinalizedProcess<Messages = Messages>>,
       messages: Vec<&str>,
     ) {
       let mut init_value = session_init_value();
@@ -350,7 +370,7 @@ mod tests {
 
     #[cfg_attr(coverage_nightly, coverage(off))]
     async fn test_return_error_on_param_missing_from_context(
-      process: &RunnableProcess<impl FinalizedProcess>,
+      process: &RunnableProcess<impl FinalizedProcess<Messages = Messages>>,
       messages: Vec<&str>,
     ) {
       let mut messages_index = 0;
@@ -531,7 +551,10 @@ mod tests {
     test_process_messages(&process, messages).await;
   }
 
-  async fn test_process_messages(process: &RunnableProcess<impl FinalizedProcess>, messages: Vec<&str>) {
+  async fn test_process_messages(
+    process: &RunnableProcess<impl FinalizedProcess<Messages = Messages>>,
+    messages: Vec<&str>,
+  ) {
     let mut previous_run_produced = session_init_value();
     let mut previous_run_yielded_at = PreviousRunYieldedAt(StepIndex::MIN);
     let mut failed_attempts = FailedInputValidationAttempts(0);

@@ -6,7 +6,7 @@ pub mod flowing_case_of_flowing_split_process;
 use crate::builder::{IntermediateFlowingSplitResult, ParamUID, PreviousRunYieldedAt, SessionContext, StepIndex};
 use crate::param_list::ParamList;
 use crate::param_list::concat::Concat;
-use crate::step::FailedInputValidationAttempts;
+use crate::step::{FailedInputValidationAttempts, ProcessMessages};
 use frunk_core::coproduct::Coproduct;
 use std::future::Future;
 
@@ -19,6 +19,7 @@ pub trait FlowingSplitProcess<SplitterProducesForOtherCases>: Sized + Sync {
   type SplitterProducesForThisCase: ParamList + Concat<Self::ProcessBeforeSplitProduces>;
   type EveryFlowingCaseProduces: ParamList; // already includes ProcessBeforeSplitProduces;
   type SubprocessConsumes: ParamList;
+  type Messages: ProcessMessages;
 
   fn resume_run(
     &self,
@@ -31,6 +32,7 @@ pub trait FlowingSplitProcess<SplitterProducesForOtherCases>: Sized + Sync {
       Self::ProcessBeforeSplitProduces,
       SplitterProducesForOtherCases,
       Self::EveryFlowingCaseProduces,
+      Self::Messages,
     >,
   > + Send;
 
@@ -51,6 +53,7 @@ pub trait FlowingSplitProcess<SplitterProducesForOtherCases>: Sized + Sync {
       Self::ProcessBeforeSplitProduces,
       SplitterProducesForOtherCases,
       Self::EveryFlowingCaseProduces,
+      Self::Messages,
     >,
   > + Send;
 
@@ -62,6 +65,7 @@ pub trait FlowingSplitProcess<SplitterProducesForOtherCases>: Sized + Sync {
       Self::ProcessBeforeSplitProduces,
       SplitterProducesForOtherCases,
       Self::EveryFlowingCaseProduces,
+      Self::Messages,
     >,
   > + Send;
 

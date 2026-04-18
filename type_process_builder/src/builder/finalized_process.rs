@@ -5,7 +5,7 @@ use crate::builder::{
 };
 use crate::param_list::ParamList;
 use crate::param_list::transform::TransformTo;
-use crate::step::{FailedInputValidationAttempts, Final};
+use crate::step::{FailedInputValidationAttempts, Final, ProcessMessages};
 use std::future::Future;
 use std::marker::PhantomData;
 
@@ -13,6 +13,7 @@ pub trait FinalizedProcess: Sized + Sync {
   // Please specify all associated types at the impl FinalizedProcess side for inference to work.
   type ProcessBeforeProduces: ParamList;
   type SubprocessConsumes: ParamList;
+  type Messages: ProcessMessages;
 
   fn resume_run(
     &self,
@@ -20,14 +21,17 @@ pub trait FinalizedProcess: Sized + Sync {
     previous_run_yielded_at: PreviousRunYieldedAt,
     user_input: String,
     failed_input_validation_attempts: FailedInputValidationAttempts,
-  ) -> impl Future<Output = RunResult> + Send;
+  ) -> impl Future<Output = RunResult<Self::Messages>> + Send;
 
   fn continue_run(
     &self,
     process_before_produces: Self::ProcessBeforeProduces,
-  ) -> impl Future<Output = RunResult> + Send;
+  ) -> impl Future<Output = RunResult<Self::Messages>> + Send;
 
-  fn run_subprocess(&self, subprocess_consumes: Self::SubprocessConsumes) -> impl Future<Output = RunResult> + Send;
+  fn run_subprocess(
+    &self,
+    subprocess_consumes: Self::SubprocessConsumes,
+  ) -> impl Future<Output = RunResult<Self::Messages>> + Send;
 
   fn build(self, name: &'static str, version: u32) -> RunnableProcess<Self> {
     RunnableProcess::new(self, name, version)
@@ -40,7 +44,7 @@ pub trait FinalizedProcess: Sized + Sync {
 
 pub struct FlowingFinalizedProcess<
   ProcessBefore: FlowingProcess,
-  FinalStep: Final,
+  FinalStep: Final<FinalMessage = <ProcessBefore::Messages as ProcessMessages>::FinalMessage>,
   ProcessBeforeProducesTransformToFinalConsumesIndices,
 > {
   pub process_before: ProcessBefore,
@@ -48,14 +52,18 @@ pub struct FlowingFinalizedProcess<
   pub phantom_data: PhantomData<ProcessBeforeProducesTransformToFinalConsumesIndices>,
 }
 
-impl<ProcessBefore: FlowingProcess, FinalStep: Final, ProcessBeforeProducesTransformToFinalConsumesIndices: Sync>
-  FinalizedProcess
+impl<
+  ProcessBefore: FlowingProcess,
+  FinalStep: Final<FinalMessage = <ProcessBefore::Messages as ProcessMessages>::FinalMessage>,
+  ProcessBeforeProducesTransformToFinalConsumesIndices: Sync,
+> FinalizedProcess
   for FlowingFinalizedProcess<ProcessBefore, FinalStep, ProcessBeforeProducesTransformToFinalConsumesIndices>
 where
   ProcessBefore::Produces: TransformTo<FinalStep::Consumes, ProcessBeforeProducesTransformToFinalConsumesIndices>,
 {
   type ProcessBeforeProduces = ProcessBefore::Produces;
   type SubprocessConsumes = ProcessBefore::SubprocessConsumes;
+  type Messages = ProcessBefore::Messages;
 
   async fn resume_run(
     // check where to resume when copying and pasting to finalized proces with finalized process instead of last case
@@ -64,7 +72,7 @@ where
     previous_run_yielded_at: PreviousRunYieldedAt,
     user_input: String,
     failed_input_validation_attempts: FailedInputValidationAttempts,
-  ) -> RunResult {
+  ) -> RunResult<Self::Messages> {
     let outcome = self
       .process_before
       .resume_run(previous_run_produced, previous_run_yielded_at, user_input, failed_input_validation_attempts)
@@ -77,11 +85,11 @@ where
     }
   }
 
-  async fn continue_run(&self, process_before_produces: Self::ProcessBeforeProduces) -> RunResult {
+  async fn continue_run(&self, process_before_produces: Self::ProcessBeforeProduces) -> RunResult<Self::Messages> {
     Ok(RunOutcome::Finish(self.final_step.handle(process_before_produces.transform()).await?))
   }
 
-  async fn run_subprocess(&self, subprocess_consumes: Self::SubprocessConsumes) -> RunResult {
+  async fn run_subprocess(&self, subprocess_consumes: Self::SubprocessConsumes) -> RunResult<Self::Messages> {
     let outcome = self.process_before.run_subprocess(subprocess_consumes).await?;
     match outcome {
       IntermediateRunOutcome::Continue(val) => self.continue_run(val).await,

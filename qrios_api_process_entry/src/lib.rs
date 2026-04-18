@@ -2,10 +2,11 @@ use anyhow::anyhow;
 use frunk_core::{HList, hlist};
 use serde::{Deserialize, Serialize};
 use serde_value::Value;
+use std::marker::PhantomData;
 use std::ops::Not;
 use type_process_builder::builder::ParamUID;
 use type_process_builder::param_list::ParamValue;
-use type_process_builder::step::Entry;
+use type_process_builder::step::{Entry, ProcessMessages};
 use typenum::U0;
 
 #[derive(PartialEq, Debug, Eq, Clone, Copy, PartialOrd, Ord, Hash, Serialize, Deserialize)]
@@ -41,9 +42,10 @@ impl ParamValue for DialedSessionEntryParam {
   type UID = U0;
 }
 
-pub struct DialedSessionEntry;
-impl Entry for DialedSessionEntry {
+pub struct DialedSessionEntry<Messages>(pub PhantomData<Messages>);
+impl<Messages: ProcessMessages> Entry for DialedSessionEntry<Messages> {
   type Produces = HList![DialedSessionEntryParam];
+  type Messages = Messages;
 
   async fn handle(
     &self,

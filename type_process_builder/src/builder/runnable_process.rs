@@ -21,7 +21,7 @@ impl<UnderlyingProcess: FinalizedProcess> RunnableProcess<UnderlyingProcess> {
     previous_run_yielded_at: PreviousRunYieldedAt,
     user_input: String,
     failed_input_validation_attempts: FailedInputValidationAttempts,
-  ) -> RunResult {
+  ) -> RunResult<UnderlyingProcess::Messages> {
     self
       .finalized_process
       .resume_run(previous_run_produced, previous_run_yielded_at, user_input, failed_input_validation_attempts)

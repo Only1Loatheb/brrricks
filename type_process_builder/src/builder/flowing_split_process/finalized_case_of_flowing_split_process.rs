@@ -37,6 +37,7 @@ impl<
   SplitterProducesForNextCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
   ThisCase: FinalizedProcess<
     SubprocessConsumes=<SplitterProducesForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
+    Messages=ProcessBefore::Messages,
   >,
 >
 FinalizedCaseOfFlowingSplitProcess<
@@ -48,11 +49,16 @@ FinalizedCaseOfFlowingSplitProcess<
 >
 {
   pub fn case_end<
-    NextCase: FinalizedProcess<SubprocessConsumes=<SplitterProducesForNextCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated>,
+    NextCase: FinalizedProcess<
+      SubprocessConsumes=<SplitterProducesForNextCase as
+      Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
+      Messages=ProcessBefore::Messages,
+    >,
   >(
     self,
     _assumed_tag: NextTag,
-    create_case: impl FnOnce(Subprocess<<SplitterProducesForNextCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated>) -> NextCase,
+    create_case: impl FnOnce(Subprocess<<SplitterProducesForNextCase as
+    Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated, ProcessBefore::Messages>) -> NextCase,
   ) -> FinalizedCaseOfFlowingSplitProcess<
     NextTag,
     SplitterProducesForNextCase,
@@ -66,19 +72,25 @@ FinalizedCaseOfFlowingSplitProcess<
       case_index: WILL_BE_RENUMBERED,
       this_case: create_case(subprocess::<
         <SplitterProducesForNextCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
+        ProcessBefore::Messages,
       >()),
       phantom_data: Default::default(),
     }
   }
 
   pub fn case_via<
-    NextCase: FlowingProcess<SubprocessConsumes=<SplitterProducesForNextCase as
-    Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated>,
+    NextCase: FlowingProcess<SubprocessConsumes=
+    <SplitterProducesForNextCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
+      Messages=ProcessBefore::Messages,
+    >,
     Indices: Sync,
   >(
     self,
     _assumed_tag: NextTag,
-    create_case: impl FnOnce(Subprocess<<SplitterProducesForNextCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated>) -> NextCase,
+    create_case: impl FnOnce(Subprocess<
+      <SplitterProducesForNextCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
+      ProcessBefore::Messages,
+    >) -> NextCase,
   ) -> FlowingCaseOfFlowingSplitProcess<
     NextTag,
     SplitterProducesForNextCase,
@@ -93,6 +105,7 @@ FinalizedCaseOfFlowingSplitProcess<
       case_index: WILL_BE_RENUMBERED,
       this_case: create_case(subprocess::<
         <SplitterProducesForNextCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
+        ProcessBefore::Messages
       >()),
       phantom_data: Default::default(),
     }
@@ -104,7 +117,10 @@ impl<
   SplitterProducesForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
   SplitterProducesForOtherCases: Send + Sync,
   ProcessBefore: FlowingSplitProcess<Coproduct<(ThisTag, SplitterProducesForThisCase), SplitterProducesForOtherCases>>,
-  ThisCase: FinalizedProcess<SubprocessConsumes=<SplitterProducesForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated>,
+  ThisCase: FinalizedProcess<
+    SubprocessConsumes=<SplitterProducesForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
+    Messages=ProcessBefore::Messages,
+  >,
 > FlowingSplitProcess<SplitterProducesForOtherCases>
 for FinalizedCaseOfFlowingSplitProcess<
   ThisTag,
@@ -118,6 +134,7 @@ for FinalizedCaseOfFlowingSplitProcess<
   type SplitterProducesForThisCase = SplitterProducesForThisCase;
   type EveryFlowingCaseProduces = ProcessBefore::EveryFlowingCaseProduces;
   type SubprocessConsumes = ProcessBefore::SubprocessConsumes;
+  type Messages = ProcessBefore::Messages;
 
   async fn resume_run(
     &self,
@@ -125,7 +142,8 @@ for FinalizedCaseOfFlowingSplitProcess<
     previous_run_yielded_at: PreviousRunYieldedAt,
     user_input: String,
     failed_input_validation_attempts: FailedInputValidationAttempts,
-  ) -> IntermediateFlowingSplitResult<Self::ProcessBeforeSplitProduces, SplitterProducesForOtherCases, Self::EveryFlowingCaseProduces> {
+  ) -> IntermediateFlowingSplitResult<Self::ProcessBeforeSplitProduces, SplitterProducesForOtherCases,
+    Self::EveryFlowingCaseProduces, Self::Messages> {
     if previous_run_yielded_at.0 < self.case_index {
       let process_before_output = self
         .split_process_before
@@ -168,7 +186,8 @@ for FinalizedCaseOfFlowingSplitProcess<
       Self::SplitterProducesForThisCase,
       SplitterProducesForOtherCases,
     >,
-  ) -> IntermediateFlowingSplitResult<Self::ProcessBeforeSplitProduces, SplitterProducesForOtherCases, Self::EveryFlowingCaseProduces> {
+  ) -> IntermediateFlowingSplitResult<Self::ProcessBeforeSplitProduces, SplitterProducesForOtherCases,
+    Self::EveryFlowingCaseProduces, Self::Messages> {
     match splitter_produces_for_this_case_or_other_cases_consumes {
       Coproduct::Inl(splitter_produces_for_this_case) => {
         let this_case_consumes = splitter_produces_for_this_case.concat(process_before_split_produced);
@@ -185,7 +204,8 @@ for FinalizedCaseOfFlowingSplitProcess<
     }
   }
 
-  async fn run_split_subprocess(&self, subprocess_consumes: Self::SubprocessConsumes,) -> IntermediateFlowingSplitResult<Self::ProcessBeforeSplitProduces, SplitterProducesForOtherCases, Self::EveryFlowingCaseProduces> {
+  async fn run_split_subprocess(&self, subprocess_consumes: Self::SubprocessConsumes) ->
+  IntermediateFlowingSplitResult<Self::ProcessBeforeSplitProduces, SplitterProducesForOtherCases, Self::EveryFlowingCaseProduces, Self::Messages> {
     let process_before_output = self.split_process_before.run_split_subprocess(subprocess_consumes).await?;
     match process_before_output {
       IntermediateFlowingSplitOutcome::Continue(a) => Ok(IntermediateFlowingSplitOutcome::Continue(a)),
@@ -223,13 +243,17 @@ impl<
   ThisTag: Send + Sync,
   SplitterProducesForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
   ProcessBefore: FlowingSplitProcess<Coproduct<(ThisTag, SplitterProducesForThisCase), CNil>>,
-  ThisCase: FinalizedProcess<SubprocessConsumes=<SplitterProducesForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated>,
+  ThisCase: FinalizedProcess<
+    SubprocessConsumes=<SplitterProducesForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
+    Messages = ProcessBefore::Messages,
+  >,
 > FlowingProcess
 for FinalizedCaseOfFlowingSplitProcess<ThisTag, SplitterProducesForThisCase, CNil, ProcessBefore, ThisCase>
 {
   type ProcessBeforeProduces = <SplitterProducesForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated;
   type Produces = ProcessBefore::EveryFlowingCaseProduces;
   type SubprocessConsumes = ProcessBefore::SubprocessConsumes;
+  type Messages = ProcessBefore::Messages;
 
   async fn resume_run(
     &self,
@@ -237,7 +261,7 @@ for FinalizedCaseOfFlowingSplitProcess<ThisTag, SplitterProducesForThisCase, CNi
     previous_run_yielded_at: PreviousRunYieldedAt,
     user_input: String,
     failed_input_validation_attempts: FailedInputValidationAttempts,
-  ) -> IntermediateRunResult<Self::Produces> {
+  ) -> IntermediateRunResult<Self::Produces, Self::Messages> {
     if previous_run_yielded_at.0 < self.case_index {
       let process_before_output = self
         .split_process_before
@@ -277,8 +301,9 @@ for FinalizedCaseOfFlowingSplitProcess<ThisTag, SplitterProducesForThisCase, CNi
     }
   }
 
-  async fn continue_run(&self, this_case_consumes: Self::ProcessBeforeProduces) -> IntermediateRunResult<Self::Produces> {
-    match self.this_case.run_subprocess(this_case_consumes).await? {// is it reasonable?
+  async fn continue_run(&self, this_case_consumes: Self::ProcessBeforeProduces) ->
+  IntermediateRunResult<Self::Produces, Self::Messages> {
+    match self.this_case.run_subprocess(this_case_consumes).await? { // is it reasonable?
       RunOutcome::Yield(a, b, c) => Ok(IntermediateRunOutcome::Yield(a, b, c)),
       RunOutcome::Finish(a) => Ok(IntermediateRunOutcome::Finish(a)),
       RunOutcome::RetryUserInput(a) => Ok(IntermediateRunOutcome::RetryUserInput(a)),
@@ -286,7 +311,7 @@ for FinalizedCaseOfFlowingSplitProcess<ThisTag, SplitterProducesForThisCase, CNi
   }
 
   async fn run_subprocess(&self, subprocess_consumes: Self::SubprocessConsumes) ->
-                                                                                 IntermediateRunResult<Self::Produces> {
+  IntermediateRunResult<Self::Produces, Self::Messages> {
     let process_before_output = self.run_split_subprocess(subprocess_consumes).await?;
     match process_before_output {
       IntermediateFlowingSplitOutcome::Continue(a) => Ok(IntermediateRunOutcome::Continue(a)),

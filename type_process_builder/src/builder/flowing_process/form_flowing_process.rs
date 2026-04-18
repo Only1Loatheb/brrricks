@@ -24,7 +24,7 @@ pub struct FormFlowingProcess<
 
 impl<
   ProcessBefore: FlowingProcess,
-  FormStep: Form,
+  FormStep: Form<Messages = ProcessBefore::Messages>,
   ProcessBeforeProducesToCreateFormConsumesIndices: Sync,
   ProcessBeforeProducesToValidateInputConsumesIndices: Sync,
 > FlowingProcess
@@ -44,6 +44,7 @@ where
   type ProcessBeforeProduces = ProcessBefore::Produces;
   type Produces = <FormStep::Produces as Concat<ProcessBefore::Produces>>::Concatenated;
   type SubprocessConsumes = ProcessBefore::SubprocessConsumes;
+  type Messages = ProcessBefore::Messages;
 
   async fn resume_run(
     &self,
@@ -51,7 +52,7 @@ where
     previous_run_yielded_at: PreviousRunYieldedAt,
     user_input: String,
     failed_input_validation_attempts: FailedInputValidationAttempts,
-  ) -> IntermediateRunResult<Self::Produces> {
+  ) -> IntermediateRunResult<Self::Produces, Self::Messages> {
     if previous_run_yielded_at.0 < self.step_index {
       let process_before_output = self
         .process_before
@@ -78,7 +79,7 @@ where
   async fn continue_run(
     &self,
     process_before_produces: Self::ProcessBeforeProduces,
-  ) -> IntermediateRunResult<Self::Produces> {
+  ) -> IntermediateRunResult<Self::Produces, Self::Messages> {
     let last_step_consumes = (&process_before_produces).clone_just();
     Ok(IntermediateRunOutcome::Yield(
       self.form_step.create_form(last_step_consumes).await?,
@@ -90,7 +91,7 @@ where
   async fn run_subprocess(
     &self,
     subprocess_consumes: Self::SubprocessConsumes,
-  ) -> IntermediateRunResult<Self::Produces> {
+  ) -> IntermediateRunResult<Self::Produces, Self::Messages> {
     let process_before_output = self.process_before.run_subprocess(subprocess_consumes).await?;
     match process_before_output {
       IntermediateRunOutcome::Continue(process_before_produces) => self.continue_run(process_before_produces).await,

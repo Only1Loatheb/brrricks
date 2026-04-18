@@ -1,9 +1,19 @@
 use std::io;
 use std::io::Write;
 use type_process_builder::builder::{FinalizedProcess, PreviousRunYieldedAt, RunOutcome, RunnableProcess, StepIndex};
-use type_process_builder::step::FailedInputValidationAttempts;
+use type_process_builder::step::{FailedInputValidationAttempts, ProcessMessages};
 
-pub(crate) async fn standard_io_process_runner(demo_process: RunnableProcess<impl FinalizedProcess>) -> io::Result<()> {
+pub(crate) struct Message(pub String);
+
+pub(crate) struct Messages;
+impl ProcessMessages for Messages {
+  type FormMessage = Message;
+  type FinalMessage = Message;
+}
+
+pub(crate) async fn standard_io_process_runner(
+  demo_process: RunnableProcess<impl FinalizedProcess<Messages = Messages>>,
+) -> io::Result<()> {
   let mut previous_run_produced = Vec::new();
   let mut previous_run_yielded_at = PreviousRunYieldedAt(StepIndex::MIN);
   let mut failed_attempts = FailedInputValidationAttempts(0);

@@ -9,9 +9,9 @@
   }
 }%%
 flowchart TD
-    classDef default fill:transparent;
+    classDef default fill: transparent;
     classDef hidden display: none;
-    classDef orangeNodeEdge stroke:orange;
+    classDef orangeNodeEdge stroke: orange;
     Start:::hidden
     FinalizedSplitProcessSubgraph:::hidden
     subgraph FinalizedSplitProcessSubgraph
@@ -26,7 +26,7 @@ flowchart TD
     FinalizedProcess(Finalized Process) -- " build " --> RunnableProcess(Runnable Process)
     Start -- " Entry Step " --> FlowingProcess(Flowing Process)
     FlowingProcess -- " Operation Step<br>or Form Step " --> FlowingProcess
-    FlowingProcess -- " Final Step" --> FinalizedProcess
+    FlowingProcess -- " Final Step " --> FinalizedProcess
     FlowingProcess -- " Splitter Step<br>or Form Splitter Step " --> FinalizedSplitProcess
     FinalizedSplitProcess -- " Finalized Process " --> finalized_split_cases_final
     finalized_split_cases_final -- " unhandled cases left " --> FinalizedSplitProcess

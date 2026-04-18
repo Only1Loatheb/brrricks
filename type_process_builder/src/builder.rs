@@ -6,7 +6,7 @@ pub mod runnable_process;
 pub mod split_process;
 
 pub use crate::param_list::*;
-pub use crate::step::Message;
+use crate::step::ProcessMessages;
 pub use finalized_process::*;
 pub use finalized_split_process::first_case_of_finalized_split_process::*;
 pub use finalized_split_process::next_case_of_finalized_split_process::*;
@@ -36,58 +36,71 @@ pub type ParamUID = u32;
 pub(crate) type SessionContext = Vec<(ParamUID, Value)>;
 
 #[derive(Debug, PartialEq, Eq)]
-pub enum IntermediateRunOutcome<Produced: ParamList> {
+pub enum IntermediateRunOutcome<Produced: ParamList, Messages: ProcessMessages> {
   Continue(Produced),
-  Yield(Message, SessionContext, CurrentRunYieldedAt),
-  Finish(Message),
-  RetryUserInput(Message),
+  Yield(Messages::FormMessage, SessionContext, CurrentRunYieldedAt),
+  Finish(Messages::FinalMessage),
+  RetryUserInput(Messages::FormMessage),
 }
 
-pub type IntermediateRunResult<T> = anyhow::Result<IntermediateRunOutcome<T>>;
+pub type IntermediateRunResult<Produced, Messages> = anyhow::Result<IntermediateRunOutcome<Produced, Messages>>;
 
 #[derive(Debug, PartialEq, Eq)]
-pub enum IntermediateFinalizedSplitOutcome<ProcessBeforeSplitProduced: ParamList, SplitterProducesForOtherCases> {
+pub enum IntermediateFinalizedSplitOutcome<
+  ProcessBeforeSplitProduced: ParamList,
+  SplitterProducesForOtherCases,
+  Messages: ProcessMessages,
+> {
   GoToCase {
     process_before_split_produced: ProcessBeforeSplitProduced,
     splitter_produces_to_other_cases: SplitterProducesForOtherCases,
   },
-  Yield(Message, SessionContext, CurrentRunYieldedAt),
-  Finish(Message),
-  RetryUserInput(Message),
+  Yield(Messages::FormMessage, SessionContext, CurrentRunYieldedAt),
+  Finish(Messages::FinalMessage),
+  RetryUserInput(Messages::FormMessage),
 }
 
-pub type IntermediateFinalizedSplitResult<ProcessBeforeSplitProduced, SplitterProducesForOtherCases> =
-  anyhow::Result<IntermediateFinalizedSplitOutcome<ProcessBeforeSplitProduced, SplitterProducesForOtherCases>>;
+pub type IntermediateFinalizedSplitResult<ProcessBeforeSplitProduced, SplitterProducesForOtherCases, Messages> =
+  anyhow::Result<
+    IntermediateFinalizedSplitOutcome<ProcessBeforeSplitProduced, SplitterProducesForOtherCases, Messages>,
+  >;
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum IntermediateFlowingSplitOutcome<
   ProcessBeforeSplitProduced: ParamList,
   SplitterProducesForOtherCases,
   FlowingCaseProduced: ParamList,
+  Messages: ProcessMessages,
 > {
   Continue(FlowingCaseProduced), // includes ProcessBeforeSplitProduced
   GoToCase {
     process_before_split_produced: ProcessBeforeSplitProduced,
     splitter_produces_to_other_cases: SplitterProducesForOtherCases,
   },
-  Yield(Message, SessionContext, CurrentRunYieldedAt),
-  Finish(Message),
-  RetryUserInput(Message),
+  Yield(Messages::FormMessage, SessionContext, CurrentRunYieldedAt),
+  Finish(Messages::FinalMessage),
+  RetryUserInput(Messages::FormMessage),
 }
 
 pub type IntermediateFlowingSplitResult<
   ProcessBeforeSplitProduced,
   SplitterProducesForOtherCases,
   FlowingCaseProduced,
+  Messages,
 > = anyhow::Result<
-  IntermediateFlowingSplitOutcome<ProcessBeforeSplitProduced, SplitterProducesForOtherCases, FlowingCaseProduced>,
+  IntermediateFlowingSplitOutcome<
+    ProcessBeforeSplitProduced,
+    SplitterProducesForOtherCases,
+    FlowingCaseProduced,
+    Messages,
+  >,
 >;
 
 #[derive(Debug, PartialEq, Eq)]
-pub enum RunOutcome {
-  Yield(Message, SessionContext, CurrentRunYieldedAt),
-  Finish(Message),
-  RetryUserInput(Message),
+pub enum RunOutcome<Messages: ProcessMessages> {
+  Yield(Messages::FormMessage, SessionContext, CurrentRunYieldedAt),
+  Finish(Messages::FinalMessage),
+  RetryUserInput(Messages::FormMessage),
 }
 
-pub type RunResult = anyhow::Result<RunOutcome>;
+pub type RunResult<Messages> = anyhow::Result<RunOutcome<Messages>>;

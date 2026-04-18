@@ -21,16 +21,24 @@ use std::ops::Not;
 use type_process_builder::builder::{
   FinalizedProcess, ParamUID, PreviousRunYieldedAt, RunOutcome, RunnableProcess, StepIndex,
 };
-use type_process_builder::step::FailedInputValidationAttempts;
+use type_process_builder::step::{FailedInputValidationAttempts, ProcessMessages};
 
-pub struct QriosUssdApiService<Process: FinalizedProcess> {
+pub struct Message(pub String);
+
+pub struct Messages;
+impl ProcessMessages for Messages {
+  type FormMessage = Message;
+  type FinalMessage = Message;
+}
+
+pub struct QriosUssdApiService<Process: FinalizedProcess<Messages = Messages>> {
   process: RunnableProcess<Process>,
   pool: PgPool,
   ordered_all_unique_param_uids: Vec<ParamUID>,
   get_session_context_query: GetSessionContextQuery,
 }
 
-impl<Process: FinalizedProcess> QriosUssdApiService<Process> {
+impl<Process: FinalizedProcess<Messages = Messages>> QriosUssdApiService<Process> {
   pub async fn new(process: RunnableProcess<Process>, pool: PgPool) -> Result<Self, sqlx::Error> {
     let ordered_all_unique_param_uids = process.ordered_all_unique_param_uids();
     create_session_context_table(&pool, &process, &ordered_all_unique_param_uids).await?;
@@ -39,12 +47,12 @@ impl<Process: FinalizedProcess> QriosUssdApiService<Process> {
   }
 }
 
-impl<Process: FinalizedProcess> ErrorHandler<()> for QriosUssdApiService<Process> {}
+impl<Process: FinalizedProcess<Messages = Messages>> ErrorHandler<()> for QriosUssdApiService<Process> {}
 
 #[allow(unused_variables)]
 #[async_trait]
-impl<Process: FinalizedProcess + Sync> qrios_api_axum_server::apis::developers_app_endpoints::DevelopersAppEndpoints
-  for QriosUssdApiService<Process>
+impl<Process: FinalizedProcess<Messages = Messages> + Sync>
+  qrios_api_axum_server::apis::developers_app_endpoints::DevelopersAppEndpoints for QriosUssdApiService<Process>
 {
   /// I guess we could delete by [AbortSession] session_id
   async fn post_ussdsessionevent_abort(
@@ -198,9 +206,10 @@ mod tests {
 
   use qrios_api_reqwest_client::types::*;
 
+  use crate::{Message, Messages};
   use tokio::signal;
   use type_process_builder::builder::FinalizedProcess;
-  use type_process_builder::builder::{FlowingProcess, Message};
+  use type_process_builder::builder::FlowingProcess;
   use type_process_builder::step::Final;
 
   #[ignore]
@@ -209,12 +218,13 @@ mod tests {
     struct NoOpFinalStep;
     impl Final for NoOpFinalStep {
       type Consumes = HNil;
+      type FinalMessage = Message;
       async fn handle(&self, _consumes: Self::Consumes) -> anyhow::Result<Message> {
         Ok(Message("Good bye".into()))
       }
     }
 
-    let _process = DialedSessionEntry.end(NoOpFinalStep).build("no_op_process", 0);
+    let _process = DialedSessionEntry::<Messages>(Default::default()).end(NoOpFinalStep).build("no_op_process", 0);
 
     let session = UssdSessionEventNewSession {
       app_id: "val".into(),

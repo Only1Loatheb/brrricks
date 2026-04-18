@@ -8,7 +8,7 @@ use crate::builder::{
   ParamUID, PreviousRunYieldedAt, SessionContext, StepIndex, WILL_BE_RENUMBERED,
 };
 use crate::param_list::concat::Concat;
-use crate::step::FailedInputValidationAttempts;
+use crate::step::{FailedInputValidationAttempts, ProcessMessages};
 use frunk_core::coproduct::Coproduct;
 use std::future::Future;
 
@@ -22,6 +22,7 @@ pub trait SplitProcess<SplitterProducesForOtherCases: Send + Sync>: Sized + Sync
   type SplitterProducesForFirstCase: ParamList + Concat<Self::ProcessBeforeSplitProduces>;
   type SplitterTagForFirstCase: Send + Sync;
   type SubprocessConsumes: ParamList;
+  type Messages: ProcessMessages;
 
   fn resume_run(
     &self,
@@ -33,6 +34,7 @@ pub trait SplitProcess<SplitterProducesForOtherCases: Send + Sync>: Sized + Sync
     Output = IntermediateFinalizedSplitResult<
       Self::ProcessBeforeSplitProduces,
       Coproduct<Self::SplitterProducesForFirstCase, SplitterProducesForOtherCases>,
+      Self::Messages,
     >,
   > + Send;
 
@@ -43,6 +45,7 @@ pub trait SplitProcess<SplitterProducesForOtherCases: Send + Sync>: Sized + Sync
     Output = IntermediateFinalizedSplitResult<
       Self::ProcessBeforeSplitProduces,
       Coproduct<Self::SplitterProducesForFirstCase, SplitterProducesForOtherCases>,
+      Self::Messages,
     >,
   > + Send;
 
@@ -53,14 +56,18 @@ pub trait SplitProcess<SplitterProducesForOtherCases: Send + Sync>: Sized + Sync
     Output = IntermediateFinalizedSplitResult<
       Self::ProcessBeforeSplitProduces,
       Coproduct<Self::SplitterProducesForFirstCase, SplitterProducesForOtherCases>,
+      Self::Messages,
     >,
   > + Send;
 
-  fn case_end<ThisCase: FinalizedProcess>(
+  fn case_end<ThisCase: FinalizedProcess<Messages = Self::Messages>>(
     self,
     _assumed_tag: Self::SplitterTagForFirstCase,
     create_case: impl FnOnce(
-      Subprocess<<Self::SplitterProducesForFirstCase as Concat<Self::ProcessBeforeSplitProduces>>::Concatenated>,
+      Subprocess<
+        <Self::SplitterProducesForFirstCase as Concat<Self::ProcessBeforeSplitProduces>>::Concatenated,
+        Self::Messages,
+      >,
     ) -> ThisCase,
   ) -> FirstCaseOfFinalizedSplitProcess<
     Self::SplitterTagForFirstCase,
@@ -77,18 +84,22 @@ pub trait SplitProcess<SplitterProducesForOtherCases: Send + Sync>: Sized + Sync
       case_index: WILL_BE_RENUMBERED,
       this_case: create_case(subprocess::<
         <Self::SplitterProducesForFirstCase as Concat<Self::ProcessBeforeSplitProduces>>::Concatenated,
+        Self::Messages,
       >()),
       phantom_data: Default::default(),
     }
   }
 
   fn case_via<
-    ThisCase: FlowingProcess<SubprocessConsumes=<Self::SplitterProducesForFirstCase as Concat<Self::ProcessBeforeSplitProduces>>::Concatenated>,
+    ThisCase: FlowingProcess<
+      SubprocessConsumes=<Self::SplitterProducesForFirstCase as Concat<Self::ProcessBeforeSplitProduces>>::Concatenated,
+      Messages = Self::Messages,
+    >,
   >(
     self,
     _assumed_tag: Self::SplitterTagForFirstCase,
     create_case: impl FnOnce(
-      Subprocess<<Self::SplitterProducesForFirstCase as Concat<Self::ProcessBeforeSplitProduces>>::Concatenated>,
+      Subprocess<<Self::SplitterProducesForFirstCase as Concat<Self::ProcessBeforeSplitProduces>>::Concatenated, Self::Messages,>,
     ) -> ThisCase,
   ) -> FirstCaseOfFlowingSplitProcess<
     Self::SplitterTagForFirstCase,
@@ -105,6 +116,7 @@ pub trait SplitProcess<SplitterProducesForOtherCases: Send + Sync>: Sized + Sync
       case_index: WILL_BE_RENUMBERED,
       this_case: create_case(subprocess::<
         <Self::SplitterProducesForFirstCase as Concat<Self::ProcessBeforeSplitProduces>>::Concatenated,
+        Self::Messages,
       >()),
       phantom_data: Default::default(),
     }

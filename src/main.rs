@@ -1,6 +1,6 @@
 mod standard_io_process_runner;
 
-use crate::standard_io_process_runner::standard_io_process_runner;
+use crate::standard_io_process_runner::{Message, Messages, standard_io_process_runner};
 use frunk_core::hlist::HNil;
 use frunk_core::{Coprod, HList, hlist, hlist_pat};
 use serde::{Deserialize, Serialize};
@@ -24,6 +24,7 @@ impl ParamValue for Amount {
 struct ShortcodeStringEntry;
 impl Entry for ShortcodeStringEntry {
   type Produces = HList![ShortcodeString];
+  type Messages = Messages;
 
   async fn handle(
     &self,
@@ -41,6 +42,7 @@ impl FormSplitter for SelectAmountSource {
   type CreateFormConsumes = HNil;
   type ValidateInputConsumes = HNil;
   type Produces = Coprod![(PredefinedAmount, HList![Amount]), (CustomAmount, HNil)];
+  type Messages = Messages;
 
   async fn create_form(&self, _consumes: Self::CreateFormConsumes) -> anyhow::Result<Message> {
     Ok(Message("Enter 1 for 100 or 2 for custom amount ".into()))
@@ -51,7 +53,7 @@ impl FormSplitter for SelectAmountSource {
     _consumes: Self::ValidateInputConsumes,
     user_input: String,
     _failed_input_validation_attempts: FailedInputValidationAttempts,
-  ) -> anyhow::Result<InputValidation<Self::Produces>> {
+  ) -> anyhow::Result<InputValidation<Self::Produces, Messages>> {
     Ok(match user_input.as_str() {
       "1" => InputValidation::Successful(Self::Produces::inject((PredefinedAmount, hlist!(Amount(100))))),
       "2" => InputValidation::Successful(Self::Produces::inject((CustomAmount, HNil))),
@@ -65,6 +67,7 @@ impl Form for AmountForm {
   type CreateFormConsumes = HNil;
   type ValidateInputConsumes = HNil;
   type Produces = HList![Amount];
+  type Messages = Messages;
 
   async fn create_form(&self, _consumes: Self::CreateFormConsumes) -> anyhow::Result<Message> {
     Ok(Message("Enter a number".into()))
@@ -75,7 +78,7 @@ impl Form for AmountForm {
     _consumes: Self::ValidateInputConsumes,
     user_input: String,
     _failed_input_validation_attempts: FailedInputValidationAttempts,
-  ) -> anyhow::Result<InputValidation<Self::Produces>> {
+  ) -> anyhow::Result<InputValidation<Self::Produces, Messages>> {
     match user_input.parse::<u32>() {
       Ok(value) => Ok(InputValidation::Successful(hlist![Amount(value)])),
       Err(_) => Ok(InputValidation::Retry(Message("Invalid number".into()))),
@@ -86,6 +89,7 @@ impl Form for AmountForm {
 struct DisplayAmount;
 impl Final for DisplayAmount {
   type Consumes = HList![ShortcodeString, Amount];
+  type FinalMessage = Message;
 
   async fn handle(&self, consumes: Self::Consumes) -> anyhow::Result<Message> {
     let hlist_pat!(_shortcode_string, amount) = consumes;
