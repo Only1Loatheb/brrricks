@@ -1,8 +1,8 @@
 [package]
 name = "qrios_api_axum_server"
-version = "1.6.3"
+version = "1.6.4"
 authors = ["OpenAPI Generator team and contributors"]
-description = "This API is *not* exposed by Qrios, but it should be implemented by the developer. Qrios will call this API on developer's side to provide information about USSD sessions and the developer should answer with information regarding what should happen next in the aforementioned sessions."
+description = "Swagger is modified so that the generated client and server matches the examples. Schemas like 'NewSession.SessionInput.Dial' have their 'NewSession.SessionInput.' prefix removed so that server generates correctly. When server generated from swagger with 'NewSession.SessionInput.' prefix parses a request the field named r_type inside Rust struct NewSessionSessionInputDial will not be filled automatically, because \"type\" json field is already consumed at the wrapper level."
 edition = "2024"
 
 [features]

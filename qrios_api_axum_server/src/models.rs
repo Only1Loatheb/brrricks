@@ -5410,164 +5410,6 @@ impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<Unknown> {
 
 
 
-/// Developer's USSD App returns USSD process result as a map of params
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, validator::Validate)]
-#[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
-pub struct UnsupportedRedirect {
-    /// Note: inline enums are not fully supported by openapi-generator
-    #[serde(default = "UnsupportedRedirect::_name_for_r_type")]
-    #[serde(serialize_with = "UnsupportedRedirect::_serialize_r_type")]
-    #[serde(rename = "type")]
-          #[validate(custom(function = "check_xss_string"))]
-    pub r_type: String,
-
-    /// Identifier of the USSD app created on Qrios platform.
-    #[serde(rename = "destinationAppId")]
-          #[validate(custom(function = "check_xss_string"))]
-    pub destination_app_id: String,
-
-    #[serde(rename = "process")]
-          #[validate(nested)]
-    #[serde(skip_serializing_if="Option::is_none")]
-    pub process: Option<models::UssdAppProcess>,
-
-}
-
-impl UnsupportedRedirect {
-    fn _name_for_r_type() -> String {
-        String::from("UnsupportedRedirect")
-    }
-
-    fn _serialize_r_type<S>(_: &String, s: S) -> Result<S::Ok, S::Error>
-    where
-        S: serde::Serializer,
-    {
-        s.serialize_str(&Self::_name_for_r_type())
-    }
-}
-
-
-impl UnsupportedRedirect {
-    #[allow(clippy::new_without_default, clippy::too_many_arguments)]
-    pub fn new(destination_app_id: String, ) -> UnsupportedRedirect {
-        UnsupportedRedirect {
- r_type: Self::_name_for_r_type(),
- destination_app_id,
- process: None,
-        }
-    }
-}
-
-/// Converts the UnsupportedRedirect value to the Query Parameters representation (style=form, explode=false)
-/// specified in https://swagger.io/docs/specification/serialization/
-/// Should be implemented in a serde serializer
-impl std::fmt::Display for UnsupportedRedirect {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let params: Vec<Option<String>> = vec![
-
-            Some("type".to_string()),
-            Some(self.r_type.to_string()),
-
-
-            Some("destinationAppId".to_string()),
-            Some(self.destination_app_id.to_string()),
-
-            // Skipping process in query parameter serialization
-
-        ];
-
-        write!(f, "{}", params.into_iter().flatten().collect::<Vec<_>>().join(","))
-    }
-}
-
-/// Converts Query Parameters representation (style=form, explode=false) to a UnsupportedRedirect value
-/// as specified in https://swagger.io/docs/specification/serialization/
-/// Should be implemented in a serde deserializer
-impl std::str::FromStr for UnsupportedRedirect {
-    type Err = String;
-
-    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-        /// An intermediate representation of the struct to use for parsing.
-        #[derive(Default)]
-        #[allow(dead_code)]
-        struct IntermediateRep {
-            pub r_type: Vec<String>,
-            pub destination_app_id: Vec<String>,
-            pub process: Vec<models::UssdAppProcess>,
-        }
-
-        let mut intermediate_rep = IntermediateRep::default();
-
-        // Parse into intermediate representation
-        let mut string_iter = s.split(',');
-        let mut key_result = string_iter.next();
-
-        while key_result.is_some() {
-            let val = match string_iter.next() {
-                Some(x) => x,
-                None => return std::result::Result::Err("Missing value while parsing UnsupportedRedirect".to_string())
-            };
-
-            if let Some(key) = key_result {
-                #[allow(clippy::match_single_binding)]
-                match key {
-                    #[allow(clippy::redundant_clone)]
-                    "type" => intermediate_rep.r_type.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
-                    #[allow(clippy::redundant_clone)]
-                    "destinationAppId" => intermediate_rep.destination_app_id.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
-                    #[allow(clippy::redundant_clone)]
-                    "process" => intermediate_rep.process.push(<models::UssdAppProcess as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
-                    _ => return std::result::Result::Err("Unexpected key while parsing UnsupportedRedirect".to_string())
-                }
-            }
-
-            // Get the next key
-            key_result = string_iter.next();
-        }
-
-        // Use the intermediate representation to return the struct
-        std::result::Result::Ok(UnsupportedRedirect {
-            r_type: intermediate_rep.r_type.into_iter().next().ok_or_else(|| "type missing in UnsupportedRedirect".to_string())?,
-            destination_app_id: intermediate_rep.destination_app_id.into_iter().next().ok_or_else(|| "destinationAppId missing in UnsupportedRedirect".to_string())?,
-            process: intermediate_rep.process.into_iter().next(),
-        })
-    }
-}
-
-// Methods for converting between header::IntoHeaderValue<UnsupportedRedirect> and HeaderValue
-
-#[cfg(feature = "server")]
-impl std::convert::TryFrom<header::IntoHeaderValue<UnsupportedRedirect>> for HeaderValue {
-    type Error = String;
-
-    fn try_from(hdr_value: header::IntoHeaderValue<UnsupportedRedirect>) -> std::result::Result<Self, Self::Error> {
-        let hdr_value = hdr_value.to_string();
-        match HeaderValue::from_str(&hdr_value) {
-             std::result::Result::Ok(value) => std::result::Result::Ok(value),
-             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Invalid header value for UnsupportedRedirect - value: {hdr_value} is invalid {e}"#))
-        }
-    }
-}
-
-#[cfg(feature = "server")]
-impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<UnsupportedRedirect> {
-    type Error = String;
-
-    fn try_from(hdr_value: HeaderValue) -> std::result::Result<Self, Self::Error> {
-        match hdr_value.to_str() {
-             std::result::Result::Ok(value) => {
-                    match <UnsupportedRedirect as std::str::FromStr>::from_str(value) {
-                        std::result::Result::Ok(value) => std::result::Result::Ok(header::IntoHeaderValue(value)),
-                        std::result::Result::Err(err) => std::result::Result::Err(format!(r#"Unable to convert header value '{value}' into UnsupportedRedirect - {err}"#))
-                    }
-             },
-             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Unable to convert header: {hdr_value:?} to string: {e}"#))
-        }
-    }
-}
-
-
-
 /// Action to be sent back to the user. It can either start a predefined process or show a view.
 #[derive(Debug, Clone, PartialEq, serde::Deserialize)]
 #[serde(tag = "type")]
@@ -5576,7 +5418,7 @@ pub enum UssdAction {
     #[serde(alias = "LegacyAppRedirect")]
     LegacyAppRedirect(models::LegacyAppRedirect),
     #[serde(alias = "Redirect")]
-    UnsupportedRedirect(models::UnsupportedRedirect),
+    UssdActionRedirect(models::UssdActionRedirect),
     #[serde(alias = "ReturnFromRedirect")]
     ReturnFromRedirect(models::ReturnFromRedirect),
     #[serde(alias = "RunProcess")]
@@ -5590,7 +5432,7 @@ impl validator::Validate for UssdAction
     fn validate(&self) -> std::result::Result<(), validator::ValidationErrors> {
         match self {
             Self::LegacyAppRedirect(v) => v.validate(),
-            Self::UnsupportedRedirect(v) => v.validate(),
+            Self::UssdActionRedirect(v) => v.validate(),
             Self::ReturnFromRedirect(v) => v.validate(),
             Self::RunProcess(v) => v.validate(),
             Self::ShowView(v) => v.validate(),
@@ -5614,7 +5456,7 @@ impl serde::Serialize for UssdAction {
         where S: serde::Serializer {
             match self {
                 Self::LegacyAppRedirect(x) => x.serialize(serializer),
-                Self::UnsupportedRedirect(x) => x.serialize(serializer),
+                Self::UssdActionRedirect(x) => x.serialize(serializer),
                 Self::ReturnFromRedirect(x) => x.serialize(serializer),
                 Self::RunProcess(x) => x.serialize(serializer),
                 Self::ShowView(x) => x.serialize(serializer),
@@ -5627,9 +5469,9 @@ impl From<models::LegacyAppRedirect> for UssdAction {
         Self::LegacyAppRedirect(value)
     }
 }
-impl From<models::UnsupportedRedirect> for UssdAction {
-    fn from(value: models::UnsupportedRedirect) -> Self {
-        Self::UnsupportedRedirect(value)
+impl From<models::UssdActionRedirect> for UssdAction {
+    fn from(value: models::UssdActionRedirect) -> Self {
+        Self::UssdActionRedirect(value)
     }
 }
 impl From<models::ReturnFromRedirect> for UssdAction {
@@ -5649,6 +5491,150 @@ impl From<models::ShowView> for UssdAction {
 }
 
 
+
+
+
+/// Developer's USSD App returns USSD process result as a map of params
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, validator::Validate)]
+#[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
+pub struct UssdActionRedirect {
+    /// Note: inline enums are not fully supported by openapi-generator
+    #[serde(rename = "type")]
+          #[validate(custom(function = "check_xss_string"))]
+    pub r_type: String,
+
+    /// Identifier of the USSD app created on Qrios platform.
+    #[serde(rename = "destinationAppId")]
+          #[validate(custom(function = "check_xss_string"))]
+    pub destination_app_id: String,
+
+    #[serde(rename = "process")]
+          #[validate(nested)]
+    #[serde(skip_serializing_if="Option::is_none")]
+    pub process: Option<models::UssdAppProcess>,
+
+}
+
+
+
+impl UssdActionRedirect {
+    #[allow(clippy::new_without_default, clippy::too_many_arguments)]
+    pub fn new(r_type: String, destination_app_id: String, ) -> UssdActionRedirect {
+        UssdActionRedirect {
+ r_type,
+ destination_app_id,
+ process: None,
+        }
+    }
+}
+
+/// Converts the UssdActionRedirect value to the Query Parameters representation (style=form, explode=false)
+/// specified in https://swagger.io/docs/specification/serialization/
+/// Should be implemented in a serde serializer
+impl std::fmt::Display for UssdActionRedirect {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let params: Vec<Option<String>> = vec![
+
+            Some("type".to_string()),
+            Some(self.r_type.to_string()),
+
+
+            Some("destinationAppId".to_string()),
+            Some(self.destination_app_id.to_string()),
+
+            // Skipping process in query parameter serialization
+
+        ];
+
+        write!(f, "{}", params.into_iter().flatten().collect::<Vec<_>>().join(","))
+    }
+}
+
+/// Converts Query Parameters representation (style=form, explode=false) to a UssdActionRedirect value
+/// as specified in https://swagger.io/docs/specification/serialization/
+/// Should be implemented in a serde deserializer
+impl std::str::FromStr for UssdActionRedirect {
+    type Err = String;
+
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        /// An intermediate representation of the struct to use for parsing.
+        #[derive(Default)]
+        #[allow(dead_code)]
+        struct IntermediateRep {
+            pub r_type: Vec<String>,
+            pub destination_app_id: Vec<String>,
+            pub process: Vec<models::UssdAppProcess>,
+        }
+
+        let mut intermediate_rep = IntermediateRep::default();
+
+        // Parse into intermediate representation
+        let mut string_iter = s.split(',');
+        let mut key_result = string_iter.next();
+
+        while key_result.is_some() {
+            let val = match string_iter.next() {
+                Some(x) => x,
+                None => return std::result::Result::Err("Missing value while parsing UssdActionRedirect".to_string())
+            };
+
+            if let Some(key) = key_result {
+                #[allow(clippy::match_single_binding)]
+                match key {
+                    #[allow(clippy::redundant_clone)]
+                    "type" => intermediate_rep.r_type.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
+                    #[allow(clippy::redundant_clone)]
+                    "destinationAppId" => intermediate_rep.destination_app_id.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
+                    #[allow(clippy::redundant_clone)]
+                    "process" => intermediate_rep.process.push(<models::UssdAppProcess as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
+                    _ => return std::result::Result::Err("Unexpected key while parsing UssdActionRedirect".to_string())
+                }
+            }
+
+            // Get the next key
+            key_result = string_iter.next();
+        }
+
+        // Use the intermediate representation to return the struct
+        std::result::Result::Ok(UssdActionRedirect {
+            r_type: intermediate_rep.r_type.into_iter().next().ok_or_else(|| "type missing in UssdActionRedirect".to_string())?,
+            destination_app_id: intermediate_rep.destination_app_id.into_iter().next().ok_or_else(|| "destinationAppId missing in UssdActionRedirect".to_string())?,
+            process: intermediate_rep.process.into_iter().next(),
+        })
+    }
+}
+
+// Methods for converting between header::IntoHeaderValue<UssdActionRedirect> and HeaderValue
+
+#[cfg(feature = "server")]
+impl std::convert::TryFrom<header::IntoHeaderValue<UssdActionRedirect>> for HeaderValue {
+    type Error = String;
+
+    fn try_from(hdr_value: header::IntoHeaderValue<UssdActionRedirect>) -> std::result::Result<Self, Self::Error> {
+        let hdr_value = hdr_value.to_string();
+        match HeaderValue::from_str(&hdr_value) {
+             std::result::Result::Ok(value) => std::result::Result::Ok(value),
+             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Invalid header value for UssdActionRedirect - value: {hdr_value} is invalid {e}"#))
+        }
+    }
+}
+
+#[cfg(feature = "server")]
+impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<UssdActionRedirect> {
+    type Error = String;
+
+    fn try_from(hdr_value: HeaderValue) -> std::result::Result<Self, Self::Error> {
+        match hdr_value.to_str() {
+             std::result::Result::Ok(value) => {
+                    match <UssdActionRedirect as std::str::FromStr>::from_str(value) {
+                        std::result::Result::Ok(value) => std::result::Result::Ok(header::IntoHeaderValue(value)),
+                        std::result::Result::Err(err) => std::result::Result::Err(format!(r#"Unable to convert header value '{value}' into UssdActionRedirect - {err}"#))
+                    }
+             },
+             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Unable to convert header: {hdr_value:?} to string: {e}"#))
+        }
+    }
+}
 
 
 

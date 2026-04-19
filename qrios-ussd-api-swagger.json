@@ -1,9 +1,9 @@
 {
   "openapi": "3.0.3",
   "info": {
+    "description": "Swagger is modified so that the generated client and server matches the examples. Schemas like 'NewSession.SessionInput.Dial' have their 'NewSession.SessionInput.' prefix removed so that server generates correctly. When server generated from swagger with 'NewSession.SessionInput.' prefix parses a request the field named r_type inside Rust struct NewSessionSessionInputDial will not be filled automatically, because \"type\" json field is already consumed at the wrapper level.",
     "title": "QRIOS USSD API documentation",
-    "description": "This API is *not* exposed by Qrios, but it should be implemented by the developer. Qrios will call this API on developer's side to provide information about USSD sessions and the developer should answer with information regarding what should happen next in the aforementioned sessions.",
-    "version": "1.6.3"
+    "version": "1.6.4"
   },
   "servers": [
     {
@@ -183,7 +183,7 @@
                             "receiver_msisdn": "2341001001001"
                           }
                         },
-                        "type": "UnsupportedRedirect"
+                        "type": "UssdAction.Redirect"
                       },
                       "contextData": "devCorrelationId:12345"
                     }
@@ -438,7 +438,7 @@
                             "receiver_msisdn": "2341001001001"
                           }
                         },
-                        "type": "UnsupportedRedirect"
+                        "type": "UssdAction.Redirect"
                       },
                       "contextData": "devCorrelationId:12345"
                     }
@@ -1328,7 +1328,7 @@
         },
         "description": "Parameters of the process. Keys should be considered as process param names and their values as process param values."
       },
-      "UnsupportedRedirect": {
+      "UssdAction.Redirect": {
         "required": [
           "destinationAppId",
           "type"
@@ -1419,7 +1419,7 @@
           "propertyName": "type",
           "mapping": {
             "LegacyAppRedirect": "#/components/schemas/LegacyAppRedirect",
-            "Redirect": "#/components/schemas/UnsupportedRedirect",
+            "Redirect": "#/components/schemas/UssdAction.Redirect",
             "ReturnFromRedirect": "#/components/schemas/ReturnFromRedirect",
             "RunProcess": "#/components/schemas/RunProcess",
             "ShowView": "#/components/schemas/ShowView"
@@ -1430,7 +1430,7 @@
             "$ref": "#/components/schemas/LegacyAppRedirect"
           },
           {
-            "$ref": "#/components/schemas/UnsupportedRedirect"
+            "$ref": "#/components/schemas/UssdAction.Redirect"
           },
           {
             "$ref": "#/components/schemas/ReturnFromRedirect"

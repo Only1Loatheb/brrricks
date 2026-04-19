@@ -3860,6 +3860,67 @@ The session will continue when this message is sent.*/
             value.parse()
         }
     }
+    ///Action to be sent back to the user. It can either start a predefined process or show a view.
+    ///
+    /// <details><summary>JSON schema</summary>
+    ///
+    /// ```json
+    ///{
+    ///  "description": "Action to be sent back to the user. It can either start a predefined process or show a view.",
+    ///  "oneOf": [
+    ///    {
+    ///      "$ref": "#/components/schemas/LegacyAppRedirect"
+    ///    },
+    ///    {
+    ///      "$ref": "#/components/schemas/UssdAction.Redirect"
+    ///    },
+    ///    {
+    ///      "$ref": "#/components/schemas/ReturnFromRedirect"
+    ///    },
+    ///    {
+    ///      "$ref": "#/components/schemas/RunProcess"
+    ///    },
+    ///    {
+    ///      "$ref": "#/components/schemas/ShowView"
+    ///    }
+    ///  ]
+    ///}
+    /// ```
+    /// </details>
+    #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+    #[serde(untagged)]
+    pub enum UssdAction {
+        LegacyAppRedirect(LegacyAppRedirect),
+        UssdActionRedirect(UssdActionRedirect),
+        ReturnFromRedirect(ReturnFromRedirect),
+        RunProcess(RunProcess),
+        ShowView(ShowView),
+    }
+    impl ::std::convert::From<LegacyAppRedirect> for UssdAction {
+        fn from(value: LegacyAppRedirect) -> Self {
+            Self::LegacyAppRedirect(value)
+        }
+    }
+    impl ::std::convert::From<UssdActionRedirect> for UssdAction {
+        fn from(value: UssdActionRedirect) -> Self {
+            Self::UssdActionRedirect(value)
+        }
+    }
+    impl ::std::convert::From<ReturnFromRedirect> for UssdAction {
+        fn from(value: ReturnFromRedirect) -> Self {
+            Self::ReturnFromRedirect(value)
+        }
+    }
+    impl ::std::convert::From<RunProcess> for UssdAction {
+        fn from(value: RunProcess) -> Self {
+            Self::RunProcess(value)
+        }
+    }
+    impl ::std::convert::From<ShowView> for UssdAction {
+        fn from(value: ShowView) -> Self {
+            Self::ShowView(value)
+        }
+    }
     ///Developer's USSD App returns USSD process result as a map of params
     ///
     /// <details><summary>JSON schema</summary>
@@ -3897,16 +3958,16 @@ The session will continue when this message is sent.*/
     /// ```
     /// </details>
     #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
-    pub struct UnsupportedRedirect {
+    pub struct UssdActionRedirect {
         ///Identifier of the USSD app created on Qrios platform.
         #[serde(rename = "destinationAppId")]
         pub destination_app_id: ::std::string::String,
         #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
         pub process: ::std::option::Option<UssdAppProcess>,
         #[serde(rename = "type")]
-        pub type_: UnsupportedRedirectType,
+        pub type_: UssdActionRedirectType,
     }
-    ///`UnsupportedRedirectType`
+    ///`UssdActionRedirectType`
     ///
     /// <details><summary>JSON schema</summary>
     ///
@@ -3934,17 +3995,17 @@ The session will continue when this message is sent.*/
         PartialEq,
         PartialOrd
     )]
-    pub enum UnsupportedRedirectType {
+    pub enum UssdActionRedirectType {
         Redirect,
     }
-    impl ::std::fmt::Display for UnsupportedRedirectType {
+    impl ::std::fmt::Display for UssdActionRedirectType {
         fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
             match *self {
                 Self::Redirect => f.write_str("Redirect"),
             }
         }
     }
-    impl ::std::str::FromStr for UnsupportedRedirectType {
+    impl ::std::str::FromStr for UssdActionRedirectType {
         type Err = self::error::ConversionError;
         fn from_str(
             value: &str,
@@ -3955,7 +4016,7 @@ The session will continue when this message is sent.*/
             }
         }
     }
-    impl ::std::convert::TryFrom<&str> for UnsupportedRedirectType {
+    impl ::std::convert::TryFrom<&str> for UssdActionRedirectType {
         type Error = self::error::ConversionError;
         fn try_from(
             value: &str,
@@ -3963,7 +4024,7 @@ The session will continue when this message is sent.*/
             value.parse()
         }
     }
-    impl ::std::convert::TryFrom<&::std::string::String> for UnsupportedRedirectType {
+    impl ::std::convert::TryFrom<&::std::string::String> for UssdActionRedirectType {
         type Error = self::error::ConversionError;
         fn try_from(
             value: &::std::string::String,
@@ -3971,73 +4032,12 @@ The session will continue when this message is sent.*/
             value.parse()
         }
     }
-    impl ::std::convert::TryFrom<::std::string::String> for UnsupportedRedirectType {
+    impl ::std::convert::TryFrom<::std::string::String> for UssdActionRedirectType {
         type Error = self::error::ConversionError;
         fn try_from(
             value: ::std::string::String,
         ) -> ::std::result::Result<Self, self::error::ConversionError> {
             value.parse()
-        }
-    }
-    ///Action to be sent back to the user. It can either start a predefined process or show a view.
-    ///
-    /// <details><summary>JSON schema</summary>
-    ///
-    /// ```json
-    ///{
-    ///  "description": "Action to be sent back to the user. It can either start a predefined process or show a view.",
-    ///  "oneOf": [
-    ///    {
-    ///      "$ref": "#/components/schemas/LegacyAppRedirect"
-    ///    },
-    ///    {
-    ///      "$ref": "#/components/schemas/UnsupportedRedirect"
-    ///    },
-    ///    {
-    ///      "$ref": "#/components/schemas/ReturnFromRedirect"
-    ///    },
-    ///    {
-    ///      "$ref": "#/components/schemas/RunProcess"
-    ///    },
-    ///    {
-    ///      "$ref": "#/components/schemas/ShowView"
-    ///    }
-    ///  ]
-    ///}
-    /// ```
-    /// </details>
-    #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
-    #[serde(untagged)]
-    pub enum UssdAction {
-        LegacyAppRedirect(LegacyAppRedirect),
-        UnsupportedRedirect(UnsupportedRedirect),
-        ReturnFromRedirect(ReturnFromRedirect),
-        RunProcess(RunProcess),
-        ShowView(ShowView),
-    }
-    impl ::std::convert::From<LegacyAppRedirect> for UssdAction {
-        fn from(value: LegacyAppRedirect) -> Self {
-            Self::LegacyAppRedirect(value)
-        }
-    }
-    impl ::std::convert::From<UnsupportedRedirect> for UssdAction {
-        fn from(value: UnsupportedRedirect) -> Self {
-            Self::UnsupportedRedirect(value)
-        }
-    }
-    impl ::std::convert::From<ReturnFromRedirect> for UssdAction {
-        fn from(value: ReturnFromRedirect) -> Self {
-            Self::ReturnFromRedirect(value)
-        }
-    }
-    impl ::std::convert::From<RunProcess> for UssdAction {
-        fn from(value: RunProcess) -> Self {
-            Self::RunProcess(value)
-        }
-    }
-    impl ::std::convert::From<ShowView> for UssdAction {
-        fn from(value: ShowView) -> Self {
-            Self::ShowView(value)
         }
     }
     ///Result of USSD action. Either input provided by the user or the result of a previously-initiated process.
@@ -4945,9 +4945,9 @@ The session will continue when this message is sent.*/
 #[derive(Clone, Debug)]
 /**Client for QRIOS USSD API documentation
 
-This API is *not* exposed by Qrios, but it should be implemented by the developer. Qrios will call this API on developer's side to provide information about USSD sessions and the developer should answer with information regarding what should happen next in the aforementioned sessions.
+Swagger is modified so that the generated client and server matches the examples. Schemas like 'NewSession.SessionInput.Dial' have their 'NewSession.SessionInput.' prefix removed so that server generates correctly. When server generated from swagger with 'NewSession.SessionInput.' prefix parses a request the field named r_type inside Rust struct NewSessionSessionInputDial will not be filled automatically, because "type" json field is already consumed at the wrapper level.
 
-Version: 1.6.3*/
+Version: 1.6.4*/
 pub struct Client {
     pub(crate) baseurl: String,
     pub(crate) client: reqwest::Client,
@@ -4983,7 +4983,7 @@ impl Client {
 }
 impl ClientInfo<()> for Client {
     fn api_version() -> &'static str {
-        "1.6.3"
+        "1.6.4"
     }
     fn baseurl(&self) -> &str {
         self.baseurl.as_str()
