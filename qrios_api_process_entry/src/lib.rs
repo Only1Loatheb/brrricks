@@ -43,6 +43,19 @@ impl ParamValue for DialedSessionEntryParam {
 }
 
 pub struct DialedSessionEntry<Messages>(pub PhantomData<Messages>);
+
+impl<Messages> Default for DialedSessionEntry<Messages> {
+  fn default() -> Self {
+    Self::new()
+  }
+}
+
+impl<Messages> DialedSessionEntry<Messages> {
+  pub fn new() -> Self {
+    DialedSessionEntry(PhantomData)
+  }
+}
+
 impl<Messages: ProcessMessages> Entry for DialedSessionEntry<Messages> {
   type Produces = HList![DialedSessionEntryParam];
   type Messages = Messages;

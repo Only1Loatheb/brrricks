@@ -224,7 +224,7 @@ mod tests {
       }
     }
 
-    let _process = DialedSessionEntry::<Messages>(Default::default()).end(NoOpFinalStep).build("no_op_process", 0);
+    let _process = DialedSessionEntry::<Messages>::new().end(NoOpFinalStep).build("no_op_process", 0);
 
     let session = UssdSessionEventNewSession {
       app_id: "val".into(),
