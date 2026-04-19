@@ -7,13 +7,7 @@ use qrios_api_axum_server::apis::developers_app_endpoints::{
   PostUssdsessioneventAbortResponse, PostUssdsessioneventCloseResponse, PostUssdsessioneventContinueResponse,
   PostUssdsessioneventNewResponse,
 };
-use qrios_api_axum_server::models;
-use qrios_api_axum_server::models::{
-  AbortSession, CloseSession, ContinueSession, PostUssdsessioneventAbortHeaderParams,
-  PostUssdsessioneventCloseHeaderParams, PostUssdsessioneventContinueHeaderParams, PostUssdsessioneventNewHeaderParams,
-  ShowView, UssdActionResult, UssdSessionCommand, UssdSessionEventNewSession, UssdSessionEventNewSessionSessionInput,
-  UssdView, UssdViewInfoView, UssdViewInputView,
-};
+use qrios_api_axum_server::models::*;
 use serde_value::Value;
 use sqlx::PgPool;
 use std::collections::HashSet;
@@ -88,10 +82,10 @@ impl<Process: FinalizedProcess<Messages = Messages> + Sync>
     body: &ContinueSession,
   ) -> Result<PostUssdsessioneventContinueResponse, ()> {
     let user_input = match body.result.clone() {
-      UssdActionResult::UssdActionResultEmbeddedProcessResult(_) => todo!(),
-      UssdActionResult::UssdActionResultInputResult(input_result) => input_result.value,
-      UssdActionResult::UssdActionResultMerchantPaymentResult(_) => todo!(),
-      UssdActionResult::UssdActionResultReturnFromRedirectResult(_) => todo!(),
+      UssdActionResult::EmbeddedProcessResult(_) => todo!(),
+      UssdActionResult::InputResult(input_result) => input_result.value,
+      UssdActionResult::MerchantPaymentResult(_) => todo!(),
+      UssdActionResult::ReturnFromRedirectResult(_) => todo!(),
     };
     let session_id = body.context_data.parse::<i64>().map_err(|_| ())?;
     let (previous_run_yielded_at, failed_input_validation_attempts, session_context) =
@@ -117,15 +111,15 @@ impl<Process: FinalizedProcess<Messages = Messages> + Sync>
         )
         .await
         .map_err(|_| ())?;
-        Ok(UssdView::UssdViewInputView(UssdViewInputView { message: message.0, r_type: "InputView".into() }))
+        Ok(UssdView::InputView(InputView { message: message.0, r_type: "InputView".into() }))
       },
       Ok(RunOutcome::RetryUserInput(message)) => {
         increment_failed_input_validation_attempts(&self.pool, &self.process, session_id).await.map_err(|_| ())?;
-        Ok(UssdView::UssdViewInputView(UssdViewInputView { message: message.0, r_type: "InputView".into() }))
+        Ok(UssdView::InputView(InputView { message: message.0, r_type: "InputView".into() }))
       },
       Ok(RunOutcome::Finish(message)) => {
         delete_session_context(&self.pool, &self.process, session_id).await.map_err(|_| ())?;
-        Ok(UssdView::UssdViewInfoView(UssdViewInfoView { message: message.0, r_type: "InfoView".into() }))
+        Ok(UssdView::InfoView(InfoView { message: message.0, r_type: "InfoView".into() }))
       },
       Err(_) => {
         delete_session_context(&self.pool, &self.process, session_id).await.map_err(|_| ())?;
@@ -135,7 +129,7 @@ impl<Process: FinalizedProcess<Messages = Messages> + Sync>
     .map(|ussd_view| {
       PostUssdsessioneventContinueResponse::Status200_SessionContinuationHasBeenSuccessfullyHandledByTheDeveloper(
         UssdSessionCommand {
-          action: models::UssdAction::ShowView(ShowView { r_type: "ShowView".into(), view: ussd_view }),
+          action: UssdAction::ShowView(ShowView { r_type: "ShowView".into(), view: ussd_view }),
           context_data: session_id.to_string(),
           session_tag: None,
         },
@@ -152,9 +146,9 @@ impl<Process: FinalizedProcess<Messages = Messages> + Sync>
     body: &UssdSessionEventNewSession,
   ) -> Result<PostUssdsessioneventNewResponse, ()> {
     let shortcode_string = match body.input.clone() {
-      UssdSessionEventNewSessionSessionInput::NewSessionSessionInputDial(x) => x.shortcode_string,
-      UssdSessionEventNewSessionSessionInput::NewSessionSessionInputPush(_) => todo!(),
-      UssdSessionEventNewSessionSessionInput::NewSessionSessionInputRedirect(_) => todo!(),
+      UssdSessionEventNewSessionSessionInput::Dial(x) => x.shortcode_string,
+      UssdSessionEventNewSessionSessionInput::Push(_) => todo!(),
+      UssdSessionEventNewSessionSessionInput::Redirect(_) => todo!(),
     };
     let init_session_context = vec![(0, Value::String(body.msisdn.clone())), (1, Value::String(body.operator.clone()))];
     let run_result = self
@@ -177,20 +171,20 @@ impl<Process: FinalizedProcess<Messages = Messages> + Sync>
         )
         .await
         .map_err(|_| ())?;
-        Ok((id, UssdView::UssdViewInputView(UssdViewInputView { message: message.0, r_type: "InputView".into() })))
+        Ok((id, UssdView::InputView(InputView { message: message.0, r_type: "InputView".into() })))
       },
       Ok(RunOutcome::RetryUserInput(message)) => {
         unreachable!("We haven't prompted user for input yet")
       },
       Ok(RunOutcome::Finish(message)) => {
-        Ok((i64::MAX, UssdView::UssdViewInfoView(UssdViewInfoView { message: message.0, r_type: "InfoView".into() })))
+        Ok((i64::MAX, UssdView::InfoView(InfoView { message: message.0, r_type: "InfoView".into() })))
       },
       Err(_) => Err(()),
     }
     .map(|(id, ussd_view)| {
       PostUssdsessioneventNewResponse::Status200_SessionStartHasBeenSuccessfullyHandledByTheDeveloper(
         UssdSessionCommand {
-          action: models::UssdAction::ShowView(ShowView { r_type: "ShowView".into(), view: ussd_view }),
+          action: UssdAction::ShowView(ShowView { r_type: "ShowView".into(), view: ussd_view }),
           context_data: id.to_string(),
           session_tag: None,
         },
@@ -229,8 +223,8 @@ mod tests {
     let session = UssdSessionEventNewSession {
       app_id: "val".into(),
       client_id: "val".into(),
-      input: UssdSessionEventNewSessionSessionInput::Dial(NewSessionSessionInputDial {
-        type_: NewSessionSessionInputDialType::Dial,
+      input: UssdSessionEventNewSessionSessionInput::Dial(Dial {
+        type_: DialType::Dial,
         shortcode_string: "*425*001*123#".to_string(),
       }),
       msisdn: "2341234567890".into(),
@@ -242,10 +236,7 @@ mod tests {
     let a = UssdSessionCommand {
       action: UssdAction::ShowView(ShowView {
         type_: ShowViewType::ShowView,
-        view: UssdView::InfoView(UssdViewInfoView {
-          message: "the message".into(),
-          type_: UssdViewInfoViewType::InfoView,
-        }),
+        view: UssdView::InfoView(InfoView { message: "the message".into(), type_: InfoViewType::InfoView }),
       }),
       context_data: "cd".to_string(),
       session_tag: None,

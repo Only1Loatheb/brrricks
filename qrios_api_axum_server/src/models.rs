@@ -100,6 +100,138 @@ pub fn check_xss_map<T>(v: &std::collections::HashMap<String, T>) -> std::result
 
 
 
+/// Abandon - the user leaves the session (e.g. the user presses \"Cancel\" on the phone).
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, validator::Validate)]
+#[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
+pub struct Abandon {
+    /// Note: inline enums are not fully supported by openapi-generator
+    #[serde(default = "Abandon::_name_for_r_type")]
+    #[serde(serialize_with = "Abandon::_serialize_r_type")]
+    #[serde(rename = "type")]
+          #[validate(custom(function = "check_xss_string"))]
+    pub r_type: String,
+
+}
+
+impl Abandon {
+    fn _name_for_r_type() -> String {
+        String::from("Abandon")
+    }
+
+    fn _serialize_r_type<S>(_: &String, s: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        s.serialize_str(&Self::_name_for_r_type())
+    }
+}
+
+
+impl Abandon {
+    #[allow(clippy::new_without_default, clippy::too_many_arguments)]
+    pub fn new() -> Abandon {
+        Abandon {
+ r_type: Self::_name_for_r_type(),
+        }
+    }
+}
+
+/// Converts the Abandon value to the Query Parameters representation (style=form, explode=false)
+/// specified in https://swagger.io/docs/specification/serialization/
+/// Should be implemented in a serde serializer
+impl std::fmt::Display for Abandon {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let params: Vec<Option<String>> = vec![
+
+            Some("type".to_string()),
+            Some(self.r_type.to_string()),
+
+        ];
+
+        write!(f, "{}", params.into_iter().flatten().collect::<Vec<_>>().join(","))
+    }
+}
+
+/// Converts Query Parameters representation (style=form, explode=false) to a Abandon value
+/// as specified in https://swagger.io/docs/specification/serialization/
+/// Should be implemented in a serde deserializer
+impl std::str::FromStr for Abandon {
+    type Err = String;
+
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        /// An intermediate representation of the struct to use for parsing.
+        #[derive(Default)]
+        #[allow(dead_code)]
+        struct IntermediateRep {
+            pub r_type: Vec<String>,
+        }
+
+        let mut intermediate_rep = IntermediateRep::default();
+
+        // Parse into intermediate representation
+        let mut string_iter = s.split(',');
+        let mut key_result = string_iter.next();
+
+        while key_result.is_some() {
+            let val = match string_iter.next() {
+                Some(x) => x,
+                None => return std::result::Result::Err("Missing value while parsing Abandon".to_string())
+            };
+
+            if let Some(key) = key_result {
+                #[allow(clippy::match_single_binding)]
+                match key {
+                    #[allow(clippy::redundant_clone)]
+                    "type" => intermediate_rep.r_type.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
+                    _ => return std::result::Result::Err("Unexpected key while parsing Abandon".to_string())
+                }
+            }
+
+            // Get the next key
+            key_result = string_iter.next();
+        }
+
+        // Use the intermediate representation to return the struct
+        std::result::Result::Ok(Abandon {
+            r_type: intermediate_rep.r_type.into_iter().next().ok_or_else(|| "type missing in Abandon".to_string())?,
+        })
+    }
+}
+
+// Methods for converting between header::IntoHeaderValue<Abandon> and HeaderValue
+
+#[cfg(feature = "server")]
+impl std::convert::TryFrom<header::IntoHeaderValue<Abandon>> for HeaderValue {
+    type Error = String;
+
+    fn try_from(hdr_value: header::IntoHeaderValue<Abandon>) -> std::result::Result<Self, Self::Error> {
+        let hdr_value = hdr_value.to_string();
+        match HeaderValue::from_str(&hdr_value) {
+             std::result::Result::Ok(value) => std::result::Result::Ok(value),
+             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Invalid header value for Abandon - value: {hdr_value} is invalid {e}"#))
+        }
+    }
+}
+
+#[cfg(feature = "server")]
+impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<Abandon> {
+    type Error = String;
+
+    fn try_from(hdr_value: HeaderValue) -> std::result::Result<Self, Self::Error> {
+        match hdr_value.to_str() {
+             std::result::Result::Ok(value) => {
+                    match <Abandon as std::str::FromStr>::from_str(value) {
+                        std::result::Result::Ok(value) => std::result::Result::Ok(header::IntoHeaderValue(value)),
+                        std::result::Result::Err(err) => std::result::Result::Err(format!(r#"Unable to convert header value '{value}' into Abandon - {err}"#))
+                    }
+             },
+             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Unable to convert header: {hdr_value:?} to string: {e}"#))
+        }
+    }
+}
+
+
+
 /// The event sent when the USSD session is aborted (internal error).
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, validator::Validate)]
 #[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
@@ -262,26 +394,26 @@ impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<AbortSession
 #[allow(non_camel_case_types, clippy::large_enum_variant)]
 pub enum AbortSessionAbortReason {
     #[serde(alias = "DuplicatedOperation")]
-    AbortSessionAbortReasonDuplicatedOperation(models::AbortSessionAbortReasonDuplicatedOperation),
+    DuplicatedOperation(models::DuplicatedOperation),
     #[serde(alias = "InsufficientBalanceInVirtualPurse")]
-    AbortSessionAbortReasonInsufficientBalanceInVirtualPurse(models::AbortSessionAbortReasonInsufficientBalanceInVirtualPurse),
+    InsufficientBalanceInVirtualPurse(models::InsufficientBalanceInVirtualPurse),
     #[serde(alias = "InternalError")]
-    AbortSessionAbortReasonInternalError(models::AbortSessionAbortReasonInternalError),
+    InternalError(models::InternalError),
     #[serde(alias = "MissingPrivilege")]
-    AbortSessionAbortReasonMissingPrivilege(models::AbortSessionAbortReasonMissingPrivilege),
+    MissingPrivilege(models::MissingPrivilege),
     #[serde(alias = "UnexpectedUssdAppResponse")]
-    AbortSessionAbortReasonUnexpectedUssdAppResponse(models::AbortSessionAbortReasonUnexpectedUssdAppResponse),
+    UnexpectedUssdAppResponse(models::UnexpectedUssdAppResponse),
 }
 
 impl validator::Validate for AbortSessionAbortReason
 {
     fn validate(&self) -> std::result::Result<(), validator::ValidationErrors> {
         match self {
-            Self::AbortSessionAbortReasonDuplicatedOperation(v) => v.validate(),
-            Self::AbortSessionAbortReasonInsufficientBalanceInVirtualPurse(v) => v.validate(),
-            Self::AbortSessionAbortReasonInternalError(v) => v.validate(),
-            Self::AbortSessionAbortReasonMissingPrivilege(v) => v.validate(),
-            Self::AbortSessionAbortReasonUnexpectedUssdAppResponse(v) => v.validate(),
+            Self::DuplicatedOperation(v) => v.validate(),
+            Self::InsufficientBalanceInVirtualPurse(v) => v.validate(),
+            Self::InternalError(v) => v.validate(),
+            Self::MissingPrivilege(v) => v.validate(),
+            Self::UnexpectedUssdAppResponse(v) => v.validate(),
         }
     }
 }
@@ -301,38 +433,38 @@ impl serde::Serialize for AbortSessionAbortReason {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
         where S: serde::Serializer {
             match self {
-                Self::AbortSessionAbortReasonDuplicatedOperation(x) => x.serialize(serializer),
-                Self::AbortSessionAbortReasonInsufficientBalanceInVirtualPurse(x) => x.serialize(serializer),
-                Self::AbortSessionAbortReasonInternalError(x) => x.serialize(serializer),
-                Self::AbortSessionAbortReasonMissingPrivilege(x) => x.serialize(serializer),
-                Self::AbortSessionAbortReasonUnexpectedUssdAppResponse(x) => x.serialize(serializer),
+                Self::DuplicatedOperation(x) => x.serialize(serializer),
+                Self::InsufficientBalanceInVirtualPurse(x) => x.serialize(serializer),
+                Self::InternalError(x) => x.serialize(serializer),
+                Self::MissingPrivilege(x) => x.serialize(serializer),
+                Self::UnexpectedUssdAppResponse(x) => x.serialize(serializer),
             }
     }
 }
 
-impl From<models::AbortSessionAbortReasonDuplicatedOperation> for AbortSessionAbortReason {
-    fn from(value: models::AbortSessionAbortReasonDuplicatedOperation) -> Self {
-        Self::AbortSessionAbortReasonDuplicatedOperation(value)
+impl From<models::DuplicatedOperation> for AbortSessionAbortReason {
+    fn from(value: models::DuplicatedOperation) -> Self {
+        Self::DuplicatedOperation(value)
     }
 }
-impl From<models::AbortSessionAbortReasonInsufficientBalanceInVirtualPurse> for AbortSessionAbortReason {
-    fn from(value: models::AbortSessionAbortReasonInsufficientBalanceInVirtualPurse) -> Self {
-        Self::AbortSessionAbortReasonInsufficientBalanceInVirtualPurse(value)
+impl From<models::InsufficientBalanceInVirtualPurse> for AbortSessionAbortReason {
+    fn from(value: models::InsufficientBalanceInVirtualPurse) -> Self {
+        Self::InsufficientBalanceInVirtualPurse(value)
     }
 }
-impl From<models::AbortSessionAbortReasonInternalError> for AbortSessionAbortReason {
-    fn from(value: models::AbortSessionAbortReasonInternalError) -> Self {
-        Self::AbortSessionAbortReasonInternalError(value)
+impl From<models::InternalError> for AbortSessionAbortReason {
+    fn from(value: models::InternalError) -> Self {
+        Self::InternalError(value)
     }
 }
-impl From<models::AbortSessionAbortReasonMissingPrivilege> for AbortSessionAbortReason {
-    fn from(value: models::AbortSessionAbortReasonMissingPrivilege) -> Self {
-        Self::AbortSessionAbortReasonMissingPrivilege(value)
+impl From<models::MissingPrivilege> for AbortSessionAbortReason {
+    fn from(value: models::MissingPrivilege) -> Self {
+        Self::MissingPrivilege(value)
     }
 }
-impl From<models::AbortSessionAbortReasonUnexpectedUssdAppResponse> for AbortSessionAbortReason {
-    fn from(value: models::AbortSessionAbortReasonUnexpectedUssdAppResponse) -> Self {
-        Self::AbortSessionAbortReasonUnexpectedUssdAppResponse(value)
+impl From<models::UnexpectedUssdAppResponse> for AbortSessionAbortReason {
+    fn from(value: models::UnexpectedUssdAppResponse) -> Self {
+        Self::UnexpectedUssdAppResponse(value)
     }
 }
 
@@ -340,42 +472,87 @@ impl From<models::AbortSessionAbortReasonUnexpectedUssdAppResponse> for AbortSes
 
 
 
-/// USSD process abort reason - operation, eg. Merchant Payment, was previously invoked with given identifier.
+/// A chooser (menu) view. User can choose one of the chooser items. If user picks invalid option (when user input does not match any of the available items), then the user will be asked to try again. It will be done internally by the USSD API without involving developer's app. It's guaranteed, that the user input sent in next request to the developer's app will match one of the provided items. The session will continue when this message is sent.
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, validator::Validate)]
 #[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
-pub struct AbortSessionAbortReasonDuplicatedOperation {
-    #[serde(rename = "operationId")]
+pub struct ChooserView {
+    /// Text that will be displayed before the chooser items
+    #[serde(rename = "title")]
           #[validate(custom(function = "check_xss_string"))]
-    pub operation_id: String,
+    pub title: String,
+
+    /// Chooser items, each will be presented to user in a new line. All items must have unique access keys.
+    #[serde(rename = "items")]
+    #[validate(
+            length(min = 1),
+          nested,
+    )]
+    #[serde(skip_serializing_if="Option::is_none")]
+    pub items: Option<Vec<models::UssdViewChooserViewItem>>,
+
+    /// Text, that separates each item's accessKey and label when the ChooserView is rendered
+    #[serde(rename = "separator")]
+    #[validate(
+            length(min = 1),
+          custom(function = "check_xss_string"),
+    )]
+    #[serde(skip_serializing_if="Option::is_none")]
+    pub separator: Option<String>,
 
     /// Note: inline enums are not fully supported by openapi-generator
+    #[serde(default = "ChooserView::_name_for_r_type")]
+    #[serde(serialize_with = "ChooserView::_serialize_r_type")]
     #[serde(rename = "type")]
           #[validate(custom(function = "check_xss_string"))]
     pub r_type: String,
 
 }
 
+impl ChooserView {
+    fn _name_for_r_type() -> String {
+        String::from("ChooserView")
+    }
+
+    fn _serialize_r_type<S>(_: &String, s: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        s.serialize_str(&Self::_name_for_r_type())
+    }
+}
 
 
-impl AbortSessionAbortReasonDuplicatedOperation {
+impl ChooserView {
     #[allow(clippy::new_without_default, clippy::too_many_arguments)]
-    pub fn new(operation_id: String, r_type: String, ) -> AbortSessionAbortReasonDuplicatedOperation {
-        AbortSessionAbortReasonDuplicatedOperation {
- operation_id,
- r_type,
+    pub fn new(title: String, ) -> ChooserView {
+        ChooserView {
+ title,
+ items: None,
+ separator: None,
+ r_type: Self::_name_for_r_type(),
         }
     }
 }
 
-/// Converts the AbortSessionAbortReasonDuplicatedOperation value to the Query Parameters representation (style=form, explode=false)
+/// Converts the ChooserView value to the Query Parameters representation (style=form, explode=false)
 /// specified in https://swagger.io/docs/specification/serialization/
 /// Should be implemented in a serde serializer
-impl std::fmt::Display for AbortSessionAbortReasonDuplicatedOperation {
+impl std::fmt::Display for ChooserView {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let params: Vec<Option<String>> = vec![
 
-            Some("operationId".to_string()),
-            Some(self.operation_id.to_string()),
+            Some("title".to_string()),
+            Some(self.title.to_string()),
+
+            // Skipping items in query parameter serialization
+
+
+            self.separator.as_ref().map(|separator| {
+                [
+                    "separator".to_string(),
+                    separator.to_string(),
+                ].join(",")
+            }),
 
 
             Some("type".to_string()),
@@ -387,10 +564,10 @@ impl std::fmt::Display for AbortSessionAbortReasonDuplicatedOperation {
     }
 }
 
-/// Converts Query Parameters representation (style=form, explode=false) to a AbortSessionAbortReasonDuplicatedOperation value
+/// Converts Query Parameters representation (style=form, explode=false) to a ChooserView value
 /// as specified in https://swagger.io/docs/specification/serialization/
 /// Should be implemented in a serde deserializer
-impl std::str::FromStr for AbortSessionAbortReasonDuplicatedOperation {
+impl std::str::FromStr for ChooserView {
     type Err = String;
 
     fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
@@ -398,7 +575,9 @@ impl std::str::FromStr for AbortSessionAbortReasonDuplicatedOperation {
         #[derive(Default)]
         #[allow(dead_code)]
         struct IntermediateRep {
-            pub operation_id: Vec<String>,
+            pub title: Vec<String>,
+            pub items: Vec<Vec<models::UssdViewChooserViewItem>>,
+            pub separator: Vec<String>,
             pub r_type: Vec<String>,
         }
 
@@ -411,17 +590,20 @@ impl std::str::FromStr for AbortSessionAbortReasonDuplicatedOperation {
         while key_result.is_some() {
             let val = match string_iter.next() {
                 Some(x) => x,
-                None => return std::result::Result::Err("Missing value while parsing AbortSessionAbortReasonDuplicatedOperation".to_string())
+                None => return std::result::Result::Err("Missing value while parsing ChooserView".to_string())
             };
 
             if let Some(key) = key_result {
                 #[allow(clippy::match_single_binding)]
                 match key {
                     #[allow(clippy::redundant_clone)]
-                    "operationId" => intermediate_rep.operation_id.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
+                    "title" => intermediate_rep.title.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
+                    "items" => return std::result::Result::Err("Parsing a container in this style is not supported in ChooserView".to_string()),
+                    #[allow(clippy::redundant_clone)]
+                    "separator" => intermediate_rep.separator.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
                     #[allow(clippy::redundant_clone)]
                     "type" => intermediate_rep.r_type.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
-                    _ => return std::result::Result::Err("Unexpected key while parsing AbortSessionAbortReasonDuplicatedOperation".to_string())
+                    _ => return std::result::Result::Err("Unexpected key while parsing ChooserView".to_string())
                 }
             }
 
@@ -430,523 +612,40 @@ impl std::str::FromStr for AbortSessionAbortReasonDuplicatedOperation {
         }
 
         // Use the intermediate representation to return the struct
-        std::result::Result::Ok(AbortSessionAbortReasonDuplicatedOperation {
-            operation_id: intermediate_rep.operation_id.into_iter().next().ok_or_else(|| "operationId missing in AbortSessionAbortReasonDuplicatedOperation".to_string())?,
-            r_type: intermediate_rep.r_type.into_iter().next().ok_or_else(|| "type missing in AbortSessionAbortReasonDuplicatedOperation".to_string())?,
+        std::result::Result::Ok(ChooserView {
+            title: intermediate_rep.title.into_iter().next().ok_or_else(|| "title missing in ChooserView".to_string())?,
+            items: intermediate_rep.items.into_iter().next(),
+            separator: intermediate_rep.separator.into_iter().next(),
+            r_type: intermediate_rep.r_type.into_iter().next().ok_or_else(|| "type missing in ChooserView".to_string())?,
         })
     }
 }
 
-// Methods for converting between header::IntoHeaderValue<AbortSessionAbortReasonDuplicatedOperation> and HeaderValue
+// Methods for converting between header::IntoHeaderValue<ChooserView> and HeaderValue
 
 #[cfg(feature = "server")]
-impl std::convert::TryFrom<header::IntoHeaderValue<AbortSessionAbortReasonDuplicatedOperation>> for HeaderValue {
+impl std::convert::TryFrom<header::IntoHeaderValue<ChooserView>> for HeaderValue {
     type Error = String;
 
-    fn try_from(hdr_value: header::IntoHeaderValue<AbortSessionAbortReasonDuplicatedOperation>) -> std::result::Result<Self, Self::Error> {
+    fn try_from(hdr_value: header::IntoHeaderValue<ChooserView>) -> std::result::Result<Self, Self::Error> {
         let hdr_value = hdr_value.to_string();
         match HeaderValue::from_str(&hdr_value) {
              std::result::Result::Ok(value) => std::result::Result::Ok(value),
-             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Invalid header value for AbortSessionAbortReasonDuplicatedOperation - value: {hdr_value} is invalid {e}"#))
+             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Invalid header value for ChooserView - value: {hdr_value} is invalid {e}"#))
         }
     }
 }
 
 #[cfg(feature = "server")]
-impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<AbortSessionAbortReasonDuplicatedOperation> {
+impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<ChooserView> {
     type Error = String;
 
     fn try_from(hdr_value: HeaderValue) -> std::result::Result<Self, Self::Error> {
         match hdr_value.to_str() {
              std::result::Result::Ok(value) => {
-                    match <AbortSessionAbortReasonDuplicatedOperation as std::str::FromStr>::from_str(value) {
+                    match <ChooserView as std::str::FromStr>::from_str(value) {
                         std::result::Result::Ok(value) => std::result::Result::Ok(header::IntoHeaderValue(value)),
-                        std::result::Result::Err(err) => std::result::Result::Err(format!(r#"Unable to convert header value '{value}' into AbortSessionAbortReasonDuplicatedOperation - {err}"#))
-                    }
-             },
-             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Unable to convert header: {hdr_value:?} to string: {e}"#))
-        }
-    }
-}
-
-
-
-/// USSD process abort reason - not enough funds to fulfil the request.
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, validator::Validate)]
-#[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
-pub struct AbortSessionAbortReasonInsufficientBalanceInVirtualPurse {
-    /// Note: inline enums are not fully supported by openapi-generator
-    #[serde(rename = "type")]
-          #[validate(custom(function = "check_xss_string"))]
-    pub r_type: String,
-
-}
-
-
-
-impl AbortSessionAbortReasonInsufficientBalanceInVirtualPurse {
-    #[allow(clippy::new_without_default, clippy::too_many_arguments)]
-    pub fn new(r_type: String, ) -> AbortSessionAbortReasonInsufficientBalanceInVirtualPurse {
-        AbortSessionAbortReasonInsufficientBalanceInVirtualPurse {
- r_type,
-        }
-    }
-}
-
-/// Converts the AbortSessionAbortReasonInsufficientBalanceInVirtualPurse value to the Query Parameters representation (style=form, explode=false)
-/// specified in https://swagger.io/docs/specification/serialization/
-/// Should be implemented in a serde serializer
-impl std::fmt::Display for AbortSessionAbortReasonInsufficientBalanceInVirtualPurse {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let params: Vec<Option<String>> = vec![
-
-            Some("type".to_string()),
-            Some(self.r_type.to_string()),
-
-        ];
-
-        write!(f, "{}", params.into_iter().flatten().collect::<Vec<_>>().join(","))
-    }
-}
-
-/// Converts Query Parameters representation (style=form, explode=false) to a AbortSessionAbortReasonInsufficientBalanceInVirtualPurse value
-/// as specified in https://swagger.io/docs/specification/serialization/
-/// Should be implemented in a serde deserializer
-impl std::str::FromStr for AbortSessionAbortReasonInsufficientBalanceInVirtualPurse {
-    type Err = String;
-
-    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-        /// An intermediate representation of the struct to use for parsing.
-        #[derive(Default)]
-        #[allow(dead_code)]
-        struct IntermediateRep {
-            pub r_type: Vec<String>,
-        }
-
-        let mut intermediate_rep = IntermediateRep::default();
-
-        // Parse into intermediate representation
-        let mut string_iter = s.split(',');
-        let mut key_result = string_iter.next();
-
-        while key_result.is_some() {
-            let val = match string_iter.next() {
-                Some(x) => x,
-                None => return std::result::Result::Err("Missing value while parsing AbortSessionAbortReasonInsufficientBalanceInVirtualPurse".to_string())
-            };
-
-            if let Some(key) = key_result {
-                #[allow(clippy::match_single_binding)]
-                match key {
-                    #[allow(clippy::redundant_clone)]
-                    "type" => intermediate_rep.r_type.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
-                    _ => return std::result::Result::Err("Unexpected key while parsing AbortSessionAbortReasonInsufficientBalanceInVirtualPurse".to_string())
-                }
-            }
-
-            // Get the next key
-            key_result = string_iter.next();
-        }
-
-        // Use the intermediate representation to return the struct
-        std::result::Result::Ok(AbortSessionAbortReasonInsufficientBalanceInVirtualPurse {
-            r_type: intermediate_rep.r_type.into_iter().next().ok_or_else(|| "type missing in AbortSessionAbortReasonInsufficientBalanceInVirtualPurse".to_string())?,
-        })
-    }
-}
-
-// Methods for converting between header::IntoHeaderValue<AbortSessionAbortReasonInsufficientBalanceInVirtualPurse> and HeaderValue
-
-#[cfg(feature = "server")]
-impl std::convert::TryFrom<header::IntoHeaderValue<AbortSessionAbortReasonInsufficientBalanceInVirtualPurse>> for HeaderValue {
-    type Error = String;
-
-    fn try_from(hdr_value: header::IntoHeaderValue<AbortSessionAbortReasonInsufficientBalanceInVirtualPurse>) -> std::result::Result<Self, Self::Error> {
-        let hdr_value = hdr_value.to_string();
-        match HeaderValue::from_str(&hdr_value) {
-             std::result::Result::Ok(value) => std::result::Result::Ok(value),
-             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Invalid header value for AbortSessionAbortReasonInsufficientBalanceInVirtualPurse - value: {hdr_value} is invalid {e}"#))
-        }
-    }
-}
-
-#[cfg(feature = "server")]
-impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<AbortSessionAbortReasonInsufficientBalanceInVirtualPurse> {
-    type Error = String;
-
-    fn try_from(hdr_value: HeaderValue) -> std::result::Result<Self, Self::Error> {
-        match hdr_value.to_str() {
-             std::result::Result::Ok(value) => {
-                    match <AbortSessionAbortReasonInsufficientBalanceInVirtualPurse as std::str::FromStr>::from_str(value) {
-                        std::result::Result::Ok(value) => std::result::Result::Ok(header::IntoHeaderValue(value)),
-                        std::result::Result::Err(err) => std::result::Result::Err(format!(r#"Unable to convert header value '{value}' into AbortSessionAbortReasonInsufficientBalanceInVirtualPurse - {err}"#))
-                    }
-             },
-             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Unable to convert header: {hdr_value:?} to string: {e}"#))
-        }
-    }
-}
-
-
-
-/// USSD process abort reason - there was some internal error in Qrios API.
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, validator::Validate)]
-#[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
-pub struct AbortSessionAbortReasonInternalError {
-    /// Note: inline enums are not fully supported by openapi-generator
-    #[serde(rename = "type")]
-          #[validate(custom(function = "check_xss_string"))]
-    pub r_type: String,
-
-}
-
-
-
-impl AbortSessionAbortReasonInternalError {
-    #[allow(clippy::new_without_default, clippy::too_many_arguments)]
-    pub fn new(r_type: String, ) -> AbortSessionAbortReasonInternalError {
-        AbortSessionAbortReasonInternalError {
- r_type,
-        }
-    }
-}
-
-/// Converts the AbortSessionAbortReasonInternalError value to the Query Parameters representation (style=form, explode=false)
-/// specified in https://swagger.io/docs/specification/serialization/
-/// Should be implemented in a serde serializer
-impl std::fmt::Display for AbortSessionAbortReasonInternalError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let params: Vec<Option<String>> = vec![
-
-            Some("type".to_string()),
-            Some(self.r_type.to_string()),
-
-        ];
-
-        write!(f, "{}", params.into_iter().flatten().collect::<Vec<_>>().join(","))
-    }
-}
-
-/// Converts Query Parameters representation (style=form, explode=false) to a AbortSessionAbortReasonInternalError value
-/// as specified in https://swagger.io/docs/specification/serialization/
-/// Should be implemented in a serde deserializer
-impl std::str::FromStr for AbortSessionAbortReasonInternalError {
-    type Err = String;
-
-    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-        /// An intermediate representation of the struct to use for parsing.
-        #[derive(Default)]
-        #[allow(dead_code)]
-        struct IntermediateRep {
-            pub r_type: Vec<String>,
-        }
-
-        let mut intermediate_rep = IntermediateRep::default();
-
-        // Parse into intermediate representation
-        let mut string_iter = s.split(',');
-        let mut key_result = string_iter.next();
-
-        while key_result.is_some() {
-            let val = match string_iter.next() {
-                Some(x) => x,
-                None => return std::result::Result::Err("Missing value while parsing AbortSessionAbortReasonInternalError".to_string())
-            };
-
-            if let Some(key) = key_result {
-                #[allow(clippy::match_single_binding)]
-                match key {
-                    #[allow(clippy::redundant_clone)]
-                    "type" => intermediate_rep.r_type.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
-                    _ => return std::result::Result::Err("Unexpected key while parsing AbortSessionAbortReasonInternalError".to_string())
-                }
-            }
-
-            // Get the next key
-            key_result = string_iter.next();
-        }
-
-        // Use the intermediate representation to return the struct
-        std::result::Result::Ok(AbortSessionAbortReasonInternalError {
-            r_type: intermediate_rep.r_type.into_iter().next().ok_or_else(|| "type missing in AbortSessionAbortReasonInternalError".to_string())?,
-        })
-    }
-}
-
-// Methods for converting between header::IntoHeaderValue<AbortSessionAbortReasonInternalError> and HeaderValue
-
-#[cfg(feature = "server")]
-impl std::convert::TryFrom<header::IntoHeaderValue<AbortSessionAbortReasonInternalError>> for HeaderValue {
-    type Error = String;
-
-    fn try_from(hdr_value: header::IntoHeaderValue<AbortSessionAbortReasonInternalError>) -> std::result::Result<Self, Self::Error> {
-        let hdr_value = hdr_value.to_string();
-        match HeaderValue::from_str(&hdr_value) {
-             std::result::Result::Ok(value) => std::result::Result::Ok(value),
-             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Invalid header value for AbortSessionAbortReasonInternalError - value: {hdr_value} is invalid {e}"#))
-        }
-    }
-}
-
-#[cfg(feature = "server")]
-impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<AbortSessionAbortReasonInternalError> {
-    type Error = String;
-
-    fn try_from(hdr_value: HeaderValue) -> std::result::Result<Self, Self::Error> {
-        match hdr_value.to_str() {
-             std::result::Result::Ok(value) => {
-                    match <AbortSessionAbortReasonInternalError as std::str::FromStr>::from_str(value) {
-                        std::result::Result::Ok(value) => std::result::Result::Ok(header::IntoHeaderValue(value)),
-                        std::result::Result::Err(err) => std::result::Result::Err(format!(r#"Unable to convert header value '{value}' into AbortSessionAbortReasonInternalError - {err}"#))
-                    }
-             },
-             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Unable to convert header: {hdr_value:?} to string: {e}"#))
-        }
-    }
-}
-
-
-
-/// USSD process abort reason - there are no required privileges to run a USSD operation.
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, validator::Validate)]
-#[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
-pub struct AbortSessionAbortReasonMissingPrivilege {
-    #[serde(rename = "privilege")]
-          #[validate(custom(function = "check_xss_string"))]
-    pub privilege: String,
-
-    /// Note: inline enums are not fully supported by openapi-generator
-    #[serde(rename = "type")]
-          #[validate(custom(function = "check_xss_string"))]
-    pub r_type: String,
-
-}
-
-
-
-impl AbortSessionAbortReasonMissingPrivilege {
-    #[allow(clippy::new_without_default, clippy::too_many_arguments)]
-    pub fn new(privilege: String, r_type: String, ) -> AbortSessionAbortReasonMissingPrivilege {
-        AbortSessionAbortReasonMissingPrivilege {
- privilege,
- r_type,
-        }
-    }
-}
-
-/// Converts the AbortSessionAbortReasonMissingPrivilege value to the Query Parameters representation (style=form, explode=false)
-/// specified in https://swagger.io/docs/specification/serialization/
-/// Should be implemented in a serde serializer
-impl std::fmt::Display for AbortSessionAbortReasonMissingPrivilege {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let params: Vec<Option<String>> = vec![
-
-            Some("privilege".to_string()),
-            Some(self.privilege.to_string()),
-
-
-            Some("type".to_string()),
-            Some(self.r_type.to_string()),
-
-        ];
-
-        write!(f, "{}", params.into_iter().flatten().collect::<Vec<_>>().join(","))
-    }
-}
-
-/// Converts Query Parameters representation (style=form, explode=false) to a AbortSessionAbortReasonMissingPrivilege value
-/// as specified in https://swagger.io/docs/specification/serialization/
-/// Should be implemented in a serde deserializer
-impl std::str::FromStr for AbortSessionAbortReasonMissingPrivilege {
-    type Err = String;
-
-    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-        /// An intermediate representation of the struct to use for parsing.
-        #[derive(Default)]
-        #[allow(dead_code)]
-        struct IntermediateRep {
-            pub privilege: Vec<String>,
-            pub r_type: Vec<String>,
-        }
-
-        let mut intermediate_rep = IntermediateRep::default();
-
-        // Parse into intermediate representation
-        let mut string_iter = s.split(',');
-        let mut key_result = string_iter.next();
-
-        while key_result.is_some() {
-            let val = match string_iter.next() {
-                Some(x) => x,
-                None => return std::result::Result::Err("Missing value while parsing AbortSessionAbortReasonMissingPrivilege".to_string())
-            };
-
-            if let Some(key) = key_result {
-                #[allow(clippy::match_single_binding)]
-                match key {
-                    #[allow(clippy::redundant_clone)]
-                    "privilege" => intermediate_rep.privilege.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
-                    #[allow(clippy::redundant_clone)]
-                    "type" => intermediate_rep.r_type.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
-                    _ => return std::result::Result::Err("Unexpected key while parsing AbortSessionAbortReasonMissingPrivilege".to_string())
-                }
-            }
-
-            // Get the next key
-            key_result = string_iter.next();
-        }
-
-        // Use the intermediate representation to return the struct
-        std::result::Result::Ok(AbortSessionAbortReasonMissingPrivilege {
-            privilege: intermediate_rep.privilege.into_iter().next().ok_or_else(|| "privilege missing in AbortSessionAbortReasonMissingPrivilege".to_string())?,
-            r_type: intermediate_rep.r_type.into_iter().next().ok_or_else(|| "type missing in AbortSessionAbortReasonMissingPrivilege".to_string())?,
-        })
-    }
-}
-
-// Methods for converting between header::IntoHeaderValue<AbortSessionAbortReasonMissingPrivilege> and HeaderValue
-
-#[cfg(feature = "server")]
-impl std::convert::TryFrom<header::IntoHeaderValue<AbortSessionAbortReasonMissingPrivilege>> for HeaderValue {
-    type Error = String;
-
-    fn try_from(hdr_value: header::IntoHeaderValue<AbortSessionAbortReasonMissingPrivilege>) -> std::result::Result<Self, Self::Error> {
-        let hdr_value = hdr_value.to_string();
-        match HeaderValue::from_str(&hdr_value) {
-             std::result::Result::Ok(value) => std::result::Result::Ok(value),
-             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Invalid header value for AbortSessionAbortReasonMissingPrivilege - value: {hdr_value} is invalid {e}"#))
-        }
-    }
-}
-
-#[cfg(feature = "server")]
-impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<AbortSessionAbortReasonMissingPrivilege> {
-    type Error = String;
-
-    fn try_from(hdr_value: HeaderValue) -> std::result::Result<Self, Self::Error> {
-        match hdr_value.to_str() {
-             std::result::Result::Ok(value) => {
-                    match <AbortSessionAbortReasonMissingPrivilege as std::str::FromStr>::from_str(value) {
-                        std::result::Result::Ok(value) => std::result::Result::Ok(header::IntoHeaderValue(value)),
-                        std::result::Result::Err(err) => std::result::Result::Err(format!(r#"Unable to convert header value '{value}' into AbortSessionAbortReasonMissingPrivilege - {err}"#))
-                    }
-             },
-             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Unable to convert header: {hdr_value:?} to string: {e}"#))
-        }
-    }
-}
-
-
-
-/// USSD process abort reason - previous USSD app response was malformed or not expected.
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, validator::Validate)]
-#[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
-pub struct AbortSessionAbortReasonUnexpectedUssdAppResponse {
-    /// Note: inline enums are not fully supported by openapi-generator
-    #[serde(rename = "type")]
-          #[validate(custom(function = "check_xss_string"))]
-    pub r_type: String,
-
-}
-
-
-
-impl AbortSessionAbortReasonUnexpectedUssdAppResponse {
-    #[allow(clippy::new_without_default, clippy::too_many_arguments)]
-    pub fn new(r_type: String, ) -> AbortSessionAbortReasonUnexpectedUssdAppResponse {
-        AbortSessionAbortReasonUnexpectedUssdAppResponse {
- r_type,
-        }
-    }
-}
-
-/// Converts the AbortSessionAbortReasonUnexpectedUssdAppResponse value to the Query Parameters representation (style=form, explode=false)
-/// specified in https://swagger.io/docs/specification/serialization/
-/// Should be implemented in a serde serializer
-impl std::fmt::Display for AbortSessionAbortReasonUnexpectedUssdAppResponse {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let params: Vec<Option<String>> = vec![
-
-            Some("type".to_string()),
-            Some(self.r_type.to_string()),
-
-        ];
-
-        write!(f, "{}", params.into_iter().flatten().collect::<Vec<_>>().join(","))
-    }
-}
-
-/// Converts Query Parameters representation (style=form, explode=false) to a AbortSessionAbortReasonUnexpectedUssdAppResponse value
-/// as specified in https://swagger.io/docs/specification/serialization/
-/// Should be implemented in a serde deserializer
-impl std::str::FromStr for AbortSessionAbortReasonUnexpectedUssdAppResponse {
-    type Err = String;
-
-    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-        /// An intermediate representation of the struct to use for parsing.
-        #[derive(Default)]
-        #[allow(dead_code)]
-        struct IntermediateRep {
-            pub r_type: Vec<String>,
-        }
-
-        let mut intermediate_rep = IntermediateRep::default();
-
-        // Parse into intermediate representation
-        let mut string_iter = s.split(',');
-        let mut key_result = string_iter.next();
-
-        while key_result.is_some() {
-            let val = match string_iter.next() {
-                Some(x) => x,
-                None => return std::result::Result::Err("Missing value while parsing AbortSessionAbortReasonUnexpectedUssdAppResponse".to_string())
-            };
-
-            if let Some(key) = key_result {
-                #[allow(clippy::match_single_binding)]
-                match key {
-                    #[allow(clippy::redundant_clone)]
-                    "type" => intermediate_rep.r_type.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
-                    _ => return std::result::Result::Err("Unexpected key while parsing AbortSessionAbortReasonUnexpectedUssdAppResponse".to_string())
-                }
-            }
-
-            // Get the next key
-            key_result = string_iter.next();
-        }
-
-        // Use the intermediate representation to return the struct
-        std::result::Result::Ok(AbortSessionAbortReasonUnexpectedUssdAppResponse {
-            r_type: intermediate_rep.r_type.into_iter().next().ok_or_else(|| "type missing in AbortSessionAbortReasonUnexpectedUssdAppResponse".to_string())?,
-        })
-    }
-}
-
-// Methods for converting between header::IntoHeaderValue<AbortSessionAbortReasonUnexpectedUssdAppResponse> and HeaderValue
-
-#[cfg(feature = "server")]
-impl std::convert::TryFrom<header::IntoHeaderValue<AbortSessionAbortReasonUnexpectedUssdAppResponse>> for HeaderValue {
-    type Error = String;
-
-    fn try_from(hdr_value: header::IntoHeaderValue<AbortSessionAbortReasonUnexpectedUssdAppResponse>) -> std::result::Result<Self, Self::Error> {
-        let hdr_value = hdr_value.to_string();
-        match HeaderValue::from_str(&hdr_value) {
-             std::result::Result::Ok(value) => std::result::Result::Ok(value),
-             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Invalid header value for AbortSessionAbortReasonUnexpectedUssdAppResponse - value: {hdr_value} is invalid {e}"#))
-        }
-    }
-}
-
-#[cfg(feature = "server")]
-impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<AbortSessionAbortReasonUnexpectedUssdAppResponse> {
-    type Error = String;
-
-    fn try_from(hdr_value: HeaderValue) -> std::result::Result<Self, Self::Error> {
-        match hdr_value.to_str() {
-             std::result::Result::Ok(value) => {
-                    match <AbortSessionAbortReasonUnexpectedUssdAppResponse as std::str::FromStr>::from_str(value) {
-                        std::result::Result::Ok(value) => std::result::Result::Ok(header::IntoHeaderValue(value)),
-                        std::result::Result::Err(err) => std::result::Result::Err(format!(r#"Unable to convert header value '{value}' into AbortSessionAbortReasonUnexpectedUssdAppResponse - {err}"#))
+                        std::result::Result::Err(err) => std::result::Result::Err(format!(r#"Unable to convert header value '{value}' into ChooserView - {err}"#))
                     }
              },
              std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Unable to convert header: {hdr_value:?} to string: {e}"#))
@@ -1132,20 +831,20 @@ impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<CloseSession
 #[allow(non_camel_case_types, clippy::large_enum_variant)]
 pub enum CloseSessionCloseReason {
     #[serde(alias = "Abandon")]
-    CloseSessionCloseReasonAbandon(models::CloseSessionCloseReasonAbandon),
+    Abandon(models::Abandon),
     #[serde(alias = "End")]
-    CloseSessionCloseReasonEnd(models::CloseSessionCloseReasonEnd),
+    End(models::End),
     #[serde(alias = "Timeout")]
-    CloseSessionCloseReasonTimeout(models::CloseSessionCloseReasonTimeout),
+    Timeout(models::Timeout),
 }
 
 impl validator::Validate for CloseSessionCloseReason
 {
     fn validate(&self) -> std::result::Result<(), validator::ValidationErrors> {
         match self {
-            Self::CloseSessionCloseReasonAbandon(v) => v.validate(),
-            Self::CloseSessionCloseReasonEnd(v) => v.validate(),
-            Self::CloseSessionCloseReasonTimeout(v) => v.validate(),
+            Self::Abandon(v) => v.validate(),
+            Self::End(v) => v.validate(),
+            Self::Timeout(v) => v.validate(),
         }
     }
 }
@@ -1165,384 +864,30 @@ impl serde::Serialize for CloseSessionCloseReason {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
         where S: serde::Serializer {
             match self {
-                Self::CloseSessionCloseReasonAbandon(x) => x.serialize(serializer),
-                Self::CloseSessionCloseReasonEnd(x) => x.serialize(serializer),
-                Self::CloseSessionCloseReasonTimeout(x) => x.serialize(serializer),
+                Self::Abandon(x) => x.serialize(serializer),
+                Self::End(x) => x.serialize(serializer),
+                Self::Timeout(x) => x.serialize(serializer),
             }
     }
 }
 
-impl From<models::CloseSessionCloseReasonAbandon> for CloseSessionCloseReason {
-    fn from(value: models::CloseSessionCloseReasonAbandon) -> Self {
-        Self::CloseSessionCloseReasonAbandon(value)
+impl From<models::Abandon> for CloseSessionCloseReason {
+    fn from(value: models::Abandon) -> Self {
+        Self::Abandon(value)
     }
 }
-impl From<models::CloseSessionCloseReasonEnd> for CloseSessionCloseReason {
-    fn from(value: models::CloseSessionCloseReasonEnd) -> Self {
-        Self::CloseSessionCloseReasonEnd(value)
+impl From<models::End> for CloseSessionCloseReason {
+    fn from(value: models::End) -> Self {
+        Self::End(value)
     }
 }
-impl From<models::CloseSessionCloseReasonTimeout> for CloseSessionCloseReason {
-    fn from(value: models::CloseSessionCloseReasonTimeout) -> Self {
-        Self::CloseSessionCloseReasonTimeout(value)
-    }
-}
-
-
-
-
-
-/// Abandon - the user leaves the session (e.g. the user presses \"Cancel\" on the phone).
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, validator::Validate)]
-#[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
-pub struct CloseSessionCloseReasonAbandon {
-    /// Note: inline enums are not fully supported by openapi-generator
-    #[serde(rename = "type")]
-          #[validate(custom(function = "check_xss_string"))]
-    pub r_type: String,
-
-}
-
-
-
-impl CloseSessionCloseReasonAbandon {
-    #[allow(clippy::new_without_default, clippy::too_many_arguments)]
-    pub fn new(r_type: String, ) -> CloseSessionCloseReasonAbandon {
-        CloseSessionCloseReasonAbandon {
- r_type,
-        }
-    }
-}
-
-/// Converts the CloseSessionCloseReasonAbandon value to the Query Parameters representation (style=form, explode=false)
-/// specified in https://swagger.io/docs/specification/serialization/
-/// Should be implemented in a serde serializer
-impl std::fmt::Display for CloseSessionCloseReasonAbandon {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let params: Vec<Option<String>> = vec![
-
-            Some("type".to_string()),
-            Some(self.r_type.to_string()),
-
-        ];
-
-        write!(f, "{}", params.into_iter().flatten().collect::<Vec<_>>().join(","))
-    }
-}
-
-/// Converts Query Parameters representation (style=form, explode=false) to a CloseSessionCloseReasonAbandon value
-/// as specified in https://swagger.io/docs/specification/serialization/
-/// Should be implemented in a serde deserializer
-impl std::str::FromStr for CloseSessionCloseReasonAbandon {
-    type Err = String;
-
-    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-        /// An intermediate representation of the struct to use for parsing.
-        #[derive(Default)]
-        #[allow(dead_code)]
-        struct IntermediateRep {
-            pub r_type: Vec<String>,
-        }
-
-        let mut intermediate_rep = IntermediateRep::default();
-
-        // Parse into intermediate representation
-        let mut string_iter = s.split(',');
-        let mut key_result = string_iter.next();
-
-        while key_result.is_some() {
-            let val = match string_iter.next() {
-                Some(x) => x,
-                None => return std::result::Result::Err("Missing value while parsing CloseSessionCloseReasonAbandon".to_string())
-            };
-
-            if let Some(key) = key_result {
-                #[allow(clippy::match_single_binding)]
-                match key {
-                    #[allow(clippy::redundant_clone)]
-                    "type" => intermediate_rep.r_type.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
-                    _ => return std::result::Result::Err("Unexpected key while parsing CloseSessionCloseReasonAbandon".to_string())
-                }
-            }
-
-            // Get the next key
-            key_result = string_iter.next();
-        }
-
-        // Use the intermediate representation to return the struct
-        std::result::Result::Ok(CloseSessionCloseReasonAbandon {
-            r_type: intermediate_rep.r_type.into_iter().next().ok_or_else(|| "type missing in CloseSessionCloseReasonAbandon".to_string())?,
-        })
-    }
-}
-
-// Methods for converting between header::IntoHeaderValue<CloseSessionCloseReasonAbandon> and HeaderValue
-
-#[cfg(feature = "server")]
-impl std::convert::TryFrom<header::IntoHeaderValue<CloseSessionCloseReasonAbandon>> for HeaderValue {
-    type Error = String;
-
-    fn try_from(hdr_value: header::IntoHeaderValue<CloseSessionCloseReasonAbandon>) -> std::result::Result<Self, Self::Error> {
-        let hdr_value = hdr_value.to_string();
-        match HeaderValue::from_str(&hdr_value) {
-             std::result::Result::Ok(value) => std::result::Result::Ok(value),
-             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Invalid header value for CloseSessionCloseReasonAbandon - value: {hdr_value} is invalid {e}"#))
-        }
-    }
-}
-
-#[cfg(feature = "server")]
-impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<CloseSessionCloseReasonAbandon> {
-    type Error = String;
-
-    fn try_from(hdr_value: HeaderValue) -> std::result::Result<Self, Self::Error> {
-        match hdr_value.to_str() {
-             std::result::Result::Ok(value) => {
-                    match <CloseSessionCloseReasonAbandon as std::str::FromStr>::from_str(value) {
-                        std::result::Result::Ok(value) => std::result::Result::Ok(header::IntoHeaderValue(value)),
-                        std::result::Result::Err(err) => std::result::Result::Err(format!(r#"Unable to convert header value '{value}' into CloseSessionCloseReasonAbandon - {err}"#))
-                    }
-             },
-             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Unable to convert header: {hdr_value:?} to string: {e}"#))
-        }
+impl From<models::Timeout> for CloseSessionCloseReason {
+    fn from(value: models::Timeout) -> Self {
+        Self::Timeout(value)
     }
 }
 
 
-
-/// End - the session ends naturally (e.g. the user can no longer input data).
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, validator::Validate)]
-#[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
-pub struct CloseSessionCloseReasonEnd {
-    /// Note: inline enums are not fully supported by openapi-generator
-    #[serde(rename = "type")]
-          #[validate(custom(function = "check_xss_string"))]
-    pub r_type: String,
-
-}
-
-
-
-impl CloseSessionCloseReasonEnd {
-    #[allow(clippy::new_without_default, clippy::too_many_arguments)]
-    pub fn new(r_type: String, ) -> CloseSessionCloseReasonEnd {
-        CloseSessionCloseReasonEnd {
- r_type,
-        }
-    }
-}
-
-/// Converts the CloseSessionCloseReasonEnd value to the Query Parameters representation (style=form, explode=false)
-/// specified in https://swagger.io/docs/specification/serialization/
-/// Should be implemented in a serde serializer
-impl std::fmt::Display for CloseSessionCloseReasonEnd {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let params: Vec<Option<String>> = vec![
-
-            Some("type".to_string()),
-            Some(self.r_type.to_string()),
-
-        ];
-
-        write!(f, "{}", params.into_iter().flatten().collect::<Vec<_>>().join(","))
-    }
-}
-
-/// Converts Query Parameters representation (style=form, explode=false) to a CloseSessionCloseReasonEnd value
-/// as specified in https://swagger.io/docs/specification/serialization/
-/// Should be implemented in a serde deserializer
-impl std::str::FromStr for CloseSessionCloseReasonEnd {
-    type Err = String;
-
-    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-        /// An intermediate representation of the struct to use for parsing.
-        #[derive(Default)]
-        #[allow(dead_code)]
-        struct IntermediateRep {
-            pub r_type: Vec<String>,
-        }
-
-        let mut intermediate_rep = IntermediateRep::default();
-
-        // Parse into intermediate representation
-        let mut string_iter = s.split(',');
-        let mut key_result = string_iter.next();
-
-        while key_result.is_some() {
-            let val = match string_iter.next() {
-                Some(x) => x,
-                None => return std::result::Result::Err("Missing value while parsing CloseSessionCloseReasonEnd".to_string())
-            };
-
-            if let Some(key) = key_result {
-                #[allow(clippy::match_single_binding)]
-                match key {
-                    #[allow(clippy::redundant_clone)]
-                    "type" => intermediate_rep.r_type.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
-                    _ => return std::result::Result::Err("Unexpected key while parsing CloseSessionCloseReasonEnd".to_string())
-                }
-            }
-
-            // Get the next key
-            key_result = string_iter.next();
-        }
-
-        // Use the intermediate representation to return the struct
-        std::result::Result::Ok(CloseSessionCloseReasonEnd {
-            r_type: intermediate_rep.r_type.into_iter().next().ok_or_else(|| "type missing in CloseSessionCloseReasonEnd".to_string())?,
-        })
-    }
-}
-
-// Methods for converting between header::IntoHeaderValue<CloseSessionCloseReasonEnd> and HeaderValue
-
-#[cfg(feature = "server")]
-impl std::convert::TryFrom<header::IntoHeaderValue<CloseSessionCloseReasonEnd>> for HeaderValue {
-    type Error = String;
-
-    fn try_from(hdr_value: header::IntoHeaderValue<CloseSessionCloseReasonEnd>) -> std::result::Result<Self, Self::Error> {
-        let hdr_value = hdr_value.to_string();
-        match HeaderValue::from_str(&hdr_value) {
-             std::result::Result::Ok(value) => std::result::Result::Ok(value),
-             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Invalid header value for CloseSessionCloseReasonEnd - value: {hdr_value} is invalid {e}"#))
-        }
-    }
-}
-
-#[cfg(feature = "server")]
-impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<CloseSessionCloseReasonEnd> {
-    type Error = String;
-
-    fn try_from(hdr_value: HeaderValue) -> std::result::Result<Self, Self::Error> {
-        match hdr_value.to_str() {
-             std::result::Result::Ok(value) => {
-                    match <CloseSessionCloseReasonEnd as std::str::FromStr>::from_str(value) {
-                        std::result::Result::Ok(value) => std::result::Result::Ok(header::IntoHeaderValue(value)),
-                        std::result::Result::Err(err) => std::result::Result::Err(format!(r#"Unable to convert header value '{value}' into CloseSessionCloseReasonEnd - {err}"#))
-                    }
-             },
-             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Unable to convert header: {hdr_value:?} to string: {e}"#))
-        }
-    }
-}
-
-
-
-/// Timeout - the session is ended by the mobile operator (e.g. after two minutes).
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, validator::Validate)]
-#[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
-pub struct CloseSessionCloseReasonTimeout {
-    /// Note: inline enums are not fully supported by openapi-generator
-    #[serde(rename = "type")]
-          #[validate(custom(function = "check_xss_string"))]
-    pub r_type: String,
-
-}
-
-
-
-impl CloseSessionCloseReasonTimeout {
-    #[allow(clippy::new_without_default, clippy::too_many_arguments)]
-    pub fn new(r_type: String, ) -> CloseSessionCloseReasonTimeout {
-        CloseSessionCloseReasonTimeout {
- r_type,
-        }
-    }
-}
-
-/// Converts the CloseSessionCloseReasonTimeout value to the Query Parameters representation (style=form, explode=false)
-/// specified in https://swagger.io/docs/specification/serialization/
-/// Should be implemented in a serde serializer
-impl std::fmt::Display for CloseSessionCloseReasonTimeout {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let params: Vec<Option<String>> = vec![
-
-            Some("type".to_string()),
-            Some(self.r_type.to_string()),
-
-        ];
-
-        write!(f, "{}", params.into_iter().flatten().collect::<Vec<_>>().join(","))
-    }
-}
-
-/// Converts Query Parameters representation (style=form, explode=false) to a CloseSessionCloseReasonTimeout value
-/// as specified in https://swagger.io/docs/specification/serialization/
-/// Should be implemented in a serde deserializer
-impl std::str::FromStr for CloseSessionCloseReasonTimeout {
-    type Err = String;
-
-    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-        /// An intermediate representation of the struct to use for parsing.
-        #[derive(Default)]
-        #[allow(dead_code)]
-        struct IntermediateRep {
-            pub r_type: Vec<String>,
-        }
-
-        let mut intermediate_rep = IntermediateRep::default();
-
-        // Parse into intermediate representation
-        let mut string_iter = s.split(',');
-        let mut key_result = string_iter.next();
-
-        while key_result.is_some() {
-            let val = match string_iter.next() {
-                Some(x) => x,
-                None => return std::result::Result::Err("Missing value while parsing CloseSessionCloseReasonTimeout".to_string())
-            };
-
-            if let Some(key) = key_result {
-                #[allow(clippy::match_single_binding)]
-                match key {
-                    #[allow(clippy::redundant_clone)]
-                    "type" => intermediate_rep.r_type.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
-                    _ => return std::result::Result::Err("Unexpected key while parsing CloseSessionCloseReasonTimeout".to_string())
-                }
-            }
-
-            // Get the next key
-            key_result = string_iter.next();
-        }
-
-        // Use the intermediate representation to return the struct
-        std::result::Result::Ok(CloseSessionCloseReasonTimeout {
-            r_type: intermediate_rep.r_type.into_iter().next().ok_or_else(|| "type missing in CloseSessionCloseReasonTimeout".to_string())?,
-        })
-    }
-}
-
-// Methods for converting between header::IntoHeaderValue<CloseSessionCloseReasonTimeout> and HeaderValue
-
-#[cfg(feature = "server")]
-impl std::convert::TryFrom<header::IntoHeaderValue<CloseSessionCloseReasonTimeout>> for HeaderValue {
-    type Error = String;
-
-    fn try_from(hdr_value: header::IntoHeaderValue<CloseSessionCloseReasonTimeout>) -> std::result::Result<Self, Self::Error> {
-        let hdr_value = hdr_value.to_string();
-        match HeaderValue::from_str(&hdr_value) {
-             std::result::Result::Ok(value) => std::result::Result::Ok(value),
-             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Invalid header value for CloseSessionCloseReasonTimeout - value: {hdr_value} is invalid {e}"#))
-        }
-    }
-}
-
-#[cfg(feature = "server")]
-impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<CloseSessionCloseReasonTimeout> {
-    type Error = String;
-
-    fn try_from(hdr_value: HeaderValue) -> std::result::Result<Self, Self::Error> {
-        match hdr_value.to_str() {
-             std::result::Result::Ok(value) => {
-                    match <CloseSessionCloseReasonTimeout as std::str::FromStr>::from_str(value) {
-                        std::result::Result::Ok(value) => std::result::Result::Ok(header::IntoHeaderValue(value)),
-                        std::result::Result::Err(err) => std::result::Result::Err(format!(r#"Unable to convert header value '{value}' into CloseSessionCloseReasonTimeout - {err}"#))
-                    }
-             },
-             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Unable to convert header: {hdr_value:?} to string: {e}"#))
-        }
-    }
-}
 
 
 
@@ -1708,6 +1053,2009 @@ impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<ContinueSess
                     match <ContinueSession as std::str::FromStr>::from_str(value) {
                         std::result::Result::Ok(value) => std::result::Result::Ok(header::IntoHeaderValue(value)),
                         std::result::Result::Err(err) => std::result::Result::Err(format!(r#"Unable to convert header value '{value}' into ContinueSession - {err}"#))
+                    }
+             },
+             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Unable to convert header: {hdr_value:?} to string: {e}"#))
+        }
+    }
+}
+
+
+
+/// Input provided when the user dials into the session (dials the shortcode string)
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, validator::Validate)]
+#[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
+pub struct Dial {
+    /// Note: inline enums are not fully supported by openapi-generator
+    #[serde(default = "Dial::_name_for_r_type")]
+    #[serde(serialize_with = "Dial::_serialize_r_type")]
+    #[serde(rename = "type")]
+          #[validate(custom(function = "check_xss_string"))]
+    pub r_type: String,
+
+    /// Shortcode string dialed by the user
+    #[serde(rename = "shortcodeString")]
+          #[validate(custom(function = "check_xss_string"))]
+    pub shortcode_string: String,
+
+}
+
+impl Dial {
+    fn _name_for_r_type() -> String {
+        String::from("Dial")
+    }
+
+    fn _serialize_r_type<S>(_: &String, s: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        s.serialize_str(&Self::_name_for_r_type())
+    }
+}
+
+
+impl Dial {
+    #[allow(clippy::new_without_default, clippy::too_many_arguments)]
+    pub fn new(shortcode_string: String, ) -> Dial {
+        Dial {
+ r_type: Self::_name_for_r_type(),
+ shortcode_string,
+        }
+    }
+}
+
+/// Converts the Dial value to the Query Parameters representation (style=form, explode=false)
+/// specified in https://swagger.io/docs/specification/serialization/
+/// Should be implemented in a serde serializer
+impl std::fmt::Display for Dial {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let params: Vec<Option<String>> = vec![
+
+            Some("type".to_string()),
+            Some(self.r_type.to_string()),
+
+
+            Some("shortcodeString".to_string()),
+            Some(self.shortcode_string.to_string()),
+
+        ];
+
+        write!(f, "{}", params.into_iter().flatten().collect::<Vec<_>>().join(","))
+    }
+}
+
+/// Converts Query Parameters representation (style=form, explode=false) to a Dial value
+/// as specified in https://swagger.io/docs/specification/serialization/
+/// Should be implemented in a serde deserializer
+impl std::str::FromStr for Dial {
+    type Err = String;
+
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        /// An intermediate representation of the struct to use for parsing.
+        #[derive(Default)]
+        #[allow(dead_code)]
+        struct IntermediateRep {
+            pub r_type: Vec<String>,
+            pub shortcode_string: Vec<String>,
+        }
+
+        let mut intermediate_rep = IntermediateRep::default();
+
+        // Parse into intermediate representation
+        let mut string_iter = s.split(',');
+        let mut key_result = string_iter.next();
+
+        while key_result.is_some() {
+            let val = match string_iter.next() {
+                Some(x) => x,
+                None => return std::result::Result::Err("Missing value while parsing Dial".to_string())
+            };
+
+            if let Some(key) = key_result {
+                #[allow(clippy::match_single_binding)]
+                match key {
+                    #[allow(clippy::redundant_clone)]
+                    "type" => intermediate_rep.r_type.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
+                    #[allow(clippy::redundant_clone)]
+                    "shortcodeString" => intermediate_rep.shortcode_string.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
+                    _ => return std::result::Result::Err("Unexpected key while parsing Dial".to_string())
+                }
+            }
+
+            // Get the next key
+            key_result = string_iter.next();
+        }
+
+        // Use the intermediate representation to return the struct
+        std::result::Result::Ok(Dial {
+            r_type: intermediate_rep.r_type.into_iter().next().ok_or_else(|| "type missing in Dial".to_string())?,
+            shortcode_string: intermediate_rep.shortcode_string.into_iter().next().ok_or_else(|| "shortcodeString missing in Dial".to_string())?,
+        })
+    }
+}
+
+// Methods for converting between header::IntoHeaderValue<Dial> and HeaderValue
+
+#[cfg(feature = "server")]
+impl std::convert::TryFrom<header::IntoHeaderValue<Dial>> for HeaderValue {
+    type Error = String;
+
+    fn try_from(hdr_value: header::IntoHeaderValue<Dial>) -> std::result::Result<Self, Self::Error> {
+        let hdr_value = hdr_value.to_string();
+        match HeaderValue::from_str(&hdr_value) {
+             std::result::Result::Ok(value) => std::result::Result::Ok(value),
+             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Invalid header value for Dial - value: {hdr_value} is invalid {e}"#))
+        }
+    }
+}
+
+#[cfg(feature = "server")]
+impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<Dial> {
+    type Error = String;
+
+    fn try_from(hdr_value: HeaderValue) -> std::result::Result<Self, Self::Error> {
+        match hdr_value.to_str() {
+             std::result::Result::Ok(value) => {
+                    match <Dial as std::str::FromStr>::from_str(value) {
+                        std::result::Result::Ok(value) => std::result::Result::Ok(header::IntoHeaderValue(value)),
+                        std::result::Result::Err(err) => std::result::Result::Err(format!(r#"Unable to convert header value '{value}' into Dial - {err}"#))
+                    }
+             },
+             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Unable to convert header: {hdr_value:?} to string: {e}"#))
+        }
+    }
+}
+
+
+
+/// USSD process abort reason - operation, eg. Merchant Payment, was previously invoked with given identifier.
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, validator::Validate)]
+#[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
+pub struct DuplicatedOperation {
+    #[serde(rename = "operationId")]
+          #[validate(custom(function = "check_xss_string"))]
+    pub operation_id: String,
+
+    /// Note: inline enums are not fully supported by openapi-generator
+    #[serde(default = "DuplicatedOperation::_name_for_r_type")]
+    #[serde(serialize_with = "DuplicatedOperation::_serialize_r_type")]
+    #[serde(rename = "type")]
+          #[validate(custom(function = "check_xss_string"))]
+    pub r_type: String,
+
+}
+
+impl DuplicatedOperation {
+    fn _name_for_r_type() -> String {
+        String::from("DuplicatedOperation")
+    }
+
+    fn _serialize_r_type<S>(_: &String, s: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        s.serialize_str(&Self::_name_for_r_type())
+    }
+}
+
+
+impl DuplicatedOperation {
+    #[allow(clippy::new_without_default, clippy::too_many_arguments)]
+    pub fn new(operation_id: String, ) -> DuplicatedOperation {
+        DuplicatedOperation {
+ operation_id,
+ r_type: Self::_name_for_r_type(),
+        }
+    }
+}
+
+/// Converts the DuplicatedOperation value to the Query Parameters representation (style=form, explode=false)
+/// specified in https://swagger.io/docs/specification/serialization/
+/// Should be implemented in a serde serializer
+impl std::fmt::Display for DuplicatedOperation {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let params: Vec<Option<String>> = vec![
+
+            Some("operationId".to_string()),
+            Some(self.operation_id.to_string()),
+
+
+            Some("type".to_string()),
+            Some(self.r_type.to_string()),
+
+        ];
+
+        write!(f, "{}", params.into_iter().flatten().collect::<Vec<_>>().join(","))
+    }
+}
+
+/// Converts Query Parameters representation (style=form, explode=false) to a DuplicatedOperation value
+/// as specified in https://swagger.io/docs/specification/serialization/
+/// Should be implemented in a serde deserializer
+impl std::str::FromStr for DuplicatedOperation {
+    type Err = String;
+
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        /// An intermediate representation of the struct to use for parsing.
+        #[derive(Default)]
+        #[allow(dead_code)]
+        struct IntermediateRep {
+            pub operation_id: Vec<String>,
+            pub r_type: Vec<String>,
+        }
+
+        let mut intermediate_rep = IntermediateRep::default();
+
+        // Parse into intermediate representation
+        let mut string_iter = s.split(',');
+        let mut key_result = string_iter.next();
+
+        while key_result.is_some() {
+            let val = match string_iter.next() {
+                Some(x) => x,
+                None => return std::result::Result::Err("Missing value while parsing DuplicatedOperation".to_string())
+            };
+
+            if let Some(key) = key_result {
+                #[allow(clippy::match_single_binding)]
+                match key {
+                    #[allow(clippy::redundant_clone)]
+                    "operationId" => intermediate_rep.operation_id.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
+                    #[allow(clippy::redundant_clone)]
+                    "type" => intermediate_rep.r_type.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
+                    _ => return std::result::Result::Err("Unexpected key while parsing DuplicatedOperation".to_string())
+                }
+            }
+
+            // Get the next key
+            key_result = string_iter.next();
+        }
+
+        // Use the intermediate representation to return the struct
+        std::result::Result::Ok(DuplicatedOperation {
+            operation_id: intermediate_rep.operation_id.into_iter().next().ok_or_else(|| "operationId missing in DuplicatedOperation".to_string())?,
+            r_type: intermediate_rep.r_type.into_iter().next().ok_or_else(|| "type missing in DuplicatedOperation".to_string())?,
+        })
+    }
+}
+
+// Methods for converting between header::IntoHeaderValue<DuplicatedOperation> and HeaderValue
+
+#[cfg(feature = "server")]
+impl std::convert::TryFrom<header::IntoHeaderValue<DuplicatedOperation>> for HeaderValue {
+    type Error = String;
+
+    fn try_from(hdr_value: header::IntoHeaderValue<DuplicatedOperation>) -> std::result::Result<Self, Self::Error> {
+        let hdr_value = hdr_value.to_string();
+        match HeaderValue::from_str(&hdr_value) {
+             std::result::Result::Ok(value) => std::result::Result::Ok(value),
+             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Invalid header value for DuplicatedOperation - value: {hdr_value} is invalid {e}"#))
+        }
+    }
+}
+
+#[cfg(feature = "server")]
+impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<DuplicatedOperation> {
+    type Error = String;
+
+    fn try_from(hdr_value: HeaderValue) -> std::result::Result<Self, Self::Error> {
+        match hdr_value.to_str() {
+             std::result::Result::Ok(value) => {
+                    match <DuplicatedOperation as std::str::FromStr>::from_str(value) {
+                        std::result::Result::Ok(value) => std::result::Result::Ok(header::IntoHeaderValue(value)),
+                        std::result::Result::Err(err) => std::result::Result::Err(format!(r#"Unable to convert header value '{value}' into DuplicatedOperation - {err}"#))
+                    }
+             },
+             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Unable to convert header: {hdr_value:?} to string: {e}"#))
+        }
+    }
+}
+
+
+
+/// Initiate an embedded process. This action causes the Qrios system to hand over control to an external application. The user may be prompted to provide credentials during the embedded process. After the embedded process is complete, the ussdSessionEvent/continue API endpoint is called to deliver the result and return control of the session to the developer application.
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, validator::Validate)]
+#[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
+pub struct EmbeddedProcess {
+    /// embedded process id
+    #[serde(rename = "processId")]
+          #[validate(custom(function = "check_xss_string"))]
+    pub process_id: String,
+
+    #[serde(rename = "params")]
+          #[validate(custom(function = "check_xss_map_string"))]
+    pub params: std::collections::HashMap<String, String>,
+
+    #[serde(default = "EmbeddedProcess::_name_for_r_type")]
+    #[serde(serialize_with = "EmbeddedProcess::_serialize_r_type")]
+    #[serde(rename = "type")]
+    pub r_type: String,
+
+}
+
+impl EmbeddedProcess {
+    fn _name_for_r_type() -> String {
+        String::from("EmbeddedProcess")
+    }
+
+    fn _serialize_r_type<S>(_: &String, s: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        s.serialize_str(&Self::_name_for_r_type())
+    }
+}
+
+
+impl EmbeddedProcess {
+    #[allow(clippy::new_without_default, clippy::too_many_arguments)]
+    pub fn new(process_id: String, params: std::collections::HashMap<String, String>, ) -> EmbeddedProcess {
+        EmbeddedProcess {
+ process_id,
+ params,
+ r_type: Self::_name_for_r_type(),
+        }
+    }
+}
+
+/// Converts the EmbeddedProcess value to the Query Parameters representation (style=form, explode=false)
+/// specified in https://swagger.io/docs/specification/serialization/
+/// Should be implemented in a serde serializer
+impl std::fmt::Display for EmbeddedProcess {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let params: Vec<Option<String>> = vec![
+
+            Some("processId".to_string()),
+            Some(self.process_id.to_string()),
+
+            // Skipping params in query parameter serialization
+
+
+            Some("type".to_string()),
+            Some(self.r_type.to_string()),
+
+        ];
+
+        write!(f, "{}", params.into_iter().flatten().collect::<Vec<_>>().join(","))
+    }
+}
+
+/// Converts Query Parameters representation (style=form, explode=false) to a EmbeddedProcess value
+/// as specified in https://swagger.io/docs/specification/serialization/
+/// Should be implemented in a serde deserializer
+impl std::str::FromStr for EmbeddedProcess {
+    type Err = String;
+
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        /// An intermediate representation of the struct to use for parsing.
+        #[derive(Default)]
+        #[allow(dead_code)]
+        struct IntermediateRep {
+            pub process_id: Vec<String>,
+            pub params: Vec<std::collections::HashMap<String, String>>,
+            pub r_type: Vec<String>,
+        }
+
+        let mut intermediate_rep = IntermediateRep::default();
+
+        // Parse into intermediate representation
+        let mut string_iter = s.split(',');
+        let mut key_result = string_iter.next();
+
+        while key_result.is_some() {
+            let val = match string_iter.next() {
+                Some(x) => x,
+                None => return std::result::Result::Err("Missing value while parsing EmbeddedProcess".to_string())
+            };
+
+            if let Some(key) = key_result {
+                #[allow(clippy::match_single_binding)]
+                match key {
+                    #[allow(clippy::redundant_clone)]
+                    "processId" => intermediate_rep.process_id.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
+                    "params" => return std::result::Result::Err("Parsing a container in this style is not supported in EmbeddedProcess".to_string()),
+                    #[allow(clippy::redundant_clone)]
+                    "type" => intermediate_rep.r_type.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
+                    _ => return std::result::Result::Err("Unexpected key while parsing EmbeddedProcess".to_string())
+                }
+            }
+
+            // Get the next key
+            key_result = string_iter.next();
+        }
+
+        // Use the intermediate representation to return the struct
+        std::result::Result::Ok(EmbeddedProcess {
+            process_id: intermediate_rep.process_id.into_iter().next().ok_or_else(|| "processId missing in EmbeddedProcess".to_string())?,
+            params: intermediate_rep.params.into_iter().next().ok_or_else(|| "params missing in EmbeddedProcess".to_string())?,
+            r_type: intermediate_rep.r_type.into_iter().next().ok_or_else(|| "type missing in EmbeddedProcess".to_string())?,
+        })
+    }
+}
+
+// Methods for converting between header::IntoHeaderValue<EmbeddedProcess> and HeaderValue
+
+#[cfg(feature = "server")]
+impl std::convert::TryFrom<header::IntoHeaderValue<EmbeddedProcess>> for HeaderValue {
+    type Error = String;
+
+    fn try_from(hdr_value: header::IntoHeaderValue<EmbeddedProcess>) -> std::result::Result<Self, Self::Error> {
+        let hdr_value = hdr_value.to_string();
+        match HeaderValue::from_str(&hdr_value) {
+             std::result::Result::Ok(value) => std::result::Result::Ok(value),
+             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Invalid header value for EmbeddedProcess - value: {hdr_value} is invalid {e}"#))
+        }
+    }
+}
+
+#[cfg(feature = "server")]
+impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<EmbeddedProcess> {
+    type Error = String;
+
+    fn try_from(hdr_value: HeaderValue) -> std::result::Result<Self, Self::Error> {
+        match hdr_value.to_str() {
+             std::result::Result::Ok(value) => {
+                    match <EmbeddedProcess as std::str::FromStr>::from_str(value) {
+                        std::result::Result::Ok(value) => std::result::Result::Ok(header::IntoHeaderValue(value)),
+                        std::result::Result::Err(err) => std::result::Result::Err(format!(r#"Unable to convert header value '{value}' into EmbeddedProcess - {err}"#))
+                    }
+             },
+             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Unable to convert header: {hdr_value:?} to string: {e}"#))
+        }
+    }
+}
+
+
+
+/// Returns control of the session back to the developer and passes the result of embedded process execution.
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, validator::Validate)]
+#[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
+pub struct EmbeddedProcessResult {
+    /// Note: inline enums are not fully supported by openapi-generator
+    #[serde(default = "EmbeddedProcessResult::_name_for_r_type")]
+    #[serde(serialize_with = "EmbeddedProcessResult::_serialize_r_type")]
+    #[serde(rename = "type")]
+          #[validate(custom(function = "check_xss_string"))]
+    pub r_type: String,
+
+    /// Result of the `embedded process`. Keys should be considered as result parameter names and their values as result parameter values.
+    #[serde(rename = "resultParams")]
+          #[validate(custom(function = "check_xss_map_string"))]
+    pub result_params: std::collections::HashMap<String, String>,
+
+}
+
+impl EmbeddedProcessResult {
+    fn _name_for_r_type() -> String {
+        String::from("EmbeddedProcessResult")
+    }
+
+    fn _serialize_r_type<S>(_: &String, s: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        s.serialize_str(&Self::_name_for_r_type())
+    }
+}
+
+
+impl EmbeddedProcessResult {
+    #[allow(clippy::new_without_default, clippy::too_many_arguments)]
+    pub fn new(result_params: std::collections::HashMap<String, String>, ) -> EmbeddedProcessResult {
+        EmbeddedProcessResult {
+ r_type: Self::_name_for_r_type(),
+ result_params,
+        }
+    }
+}
+
+/// Converts the EmbeddedProcessResult value to the Query Parameters representation (style=form, explode=false)
+/// specified in https://swagger.io/docs/specification/serialization/
+/// Should be implemented in a serde serializer
+impl std::fmt::Display for EmbeddedProcessResult {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let params: Vec<Option<String>> = vec![
+
+            Some("type".to_string()),
+            Some(self.r_type.to_string()),
+
+            // Skipping resultParams in query parameter serialization
+
+        ];
+
+        write!(f, "{}", params.into_iter().flatten().collect::<Vec<_>>().join(","))
+    }
+}
+
+/// Converts Query Parameters representation (style=form, explode=false) to a EmbeddedProcessResult value
+/// as specified in https://swagger.io/docs/specification/serialization/
+/// Should be implemented in a serde deserializer
+impl std::str::FromStr for EmbeddedProcessResult {
+    type Err = String;
+
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        /// An intermediate representation of the struct to use for parsing.
+        #[derive(Default)]
+        #[allow(dead_code)]
+        struct IntermediateRep {
+            pub r_type: Vec<String>,
+            pub result_params: Vec<std::collections::HashMap<String, String>>,
+        }
+
+        let mut intermediate_rep = IntermediateRep::default();
+
+        // Parse into intermediate representation
+        let mut string_iter = s.split(',');
+        let mut key_result = string_iter.next();
+
+        while key_result.is_some() {
+            let val = match string_iter.next() {
+                Some(x) => x,
+                None => return std::result::Result::Err("Missing value while parsing EmbeddedProcessResult".to_string())
+            };
+
+            if let Some(key) = key_result {
+                #[allow(clippy::match_single_binding)]
+                match key {
+                    #[allow(clippy::redundant_clone)]
+                    "type" => intermediate_rep.r_type.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
+                    "resultParams" => return std::result::Result::Err("Parsing a container in this style is not supported in EmbeddedProcessResult".to_string()),
+                    _ => return std::result::Result::Err("Unexpected key while parsing EmbeddedProcessResult".to_string())
+                }
+            }
+
+            // Get the next key
+            key_result = string_iter.next();
+        }
+
+        // Use the intermediate representation to return the struct
+        std::result::Result::Ok(EmbeddedProcessResult {
+            r_type: intermediate_rep.r_type.into_iter().next().ok_or_else(|| "type missing in EmbeddedProcessResult".to_string())?,
+            result_params: intermediate_rep.result_params.into_iter().next().ok_or_else(|| "resultParams missing in EmbeddedProcessResult".to_string())?,
+        })
+    }
+}
+
+// Methods for converting between header::IntoHeaderValue<EmbeddedProcessResult> and HeaderValue
+
+#[cfg(feature = "server")]
+impl std::convert::TryFrom<header::IntoHeaderValue<EmbeddedProcessResult>> for HeaderValue {
+    type Error = String;
+
+    fn try_from(hdr_value: header::IntoHeaderValue<EmbeddedProcessResult>) -> std::result::Result<Self, Self::Error> {
+        let hdr_value = hdr_value.to_string();
+        match HeaderValue::from_str(&hdr_value) {
+             std::result::Result::Ok(value) => std::result::Result::Ok(value),
+             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Invalid header value for EmbeddedProcessResult - value: {hdr_value} is invalid {e}"#))
+        }
+    }
+}
+
+#[cfg(feature = "server")]
+impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<EmbeddedProcessResult> {
+    type Error = String;
+
+    fn try_from(hdr_value: HeaderValue) -> std::result::Result<Self, Self::Error> {
+        match hdr_value.to_str() {
+             std::result::Result::Ok(value) => {
+                    match <EmbeddedProcessResult as std::str::FromStr>::from_str(value) {
+                        std::result::Result::Ok(value) => std::result::Result::Ok(header::IntoHeaderValue(value)),
+                        std::result::Result::Err(err) => std::result::Result::Err(format!(r#"Unable to convert header value '{value}' into EmbeddedProcessResult - {err}"#))
+                    }
+             },
+             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Unable to convert header: {hdr_value:?} to string: {e}"#))
+        }
+    }
+}
+
+
+
+/// End - the session ends naturally (e.g. the user can no longer input data).
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, validator::Validate)]
+#[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
+pub struct End {
+    /// Note: inline enums are not fully supported by openapi-generator
+    #[serde(default = "End::_name_for_r_type")]
+    #[serde(serialize_with = "End::_serialize_r_type")]
+    #[serde(rename = "type")]
+          #[validate(custom(function = "check_xss_string"))]
+    pub r_type: String,
+
+}
+
+impl End {
+    fn _name_for_r_type() -> String {
+        String::from("End")
+    }
+
+    fn _serialize_r_type<S>(_: &String, s: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        s.serialize_str(&Self::_name_for_r_type())
+    }
+}
+
+
+impl End {
+    #[allow(clippy::new_without_default, clippy::too_many_arguments)]
+    pub fn new() -> End {
+        End {
+ r_type: Self::_name_for_r_type(),
+        }
+    }
+}
+
+/// Converts the End value to the Query Parameters representation (style=form, explode=false)
+/// specified in https://swagger.io/docs/specification/serialization/
+/// Should be implemented in a serde serializer
+impl std::fmt::Display for End {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let params: Vec<Option<String>> = vec![
+
+            Some("type".to_string()),
+            Some(self.r_type.to_string()),
+
+        ];
+
+        write!(f, "{}", params.into_iter().flatten().collect::<Vec<_>>().join(","))
+    }
+}
+
+/// Converts Query Parameters representation (style=form, explode=false) to a End value
+/// as specified in https://swagger.io/docs/specification/serialization/
+/// Should be implemented in a serde deserializer
+impl std::str::FromStr for End {
+    type Err = String;
+
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        /// An intermediate representation of the struct to use for parsing.
+        #[derive(Default)]
+        #[allow(dead_code)]
+        struct IntermediateRep {
+            pub r_type: Vec<String>,
+        }
+
+        let mut intermediate_rep = IntermediateRep::default();
+
+        // Parse into intermediate representation
+        let mut string_iter = s.split(',');
+        let mut key_result = string_iter.next();
+
+        while key_result.is_some() {
+            let val = match string_iter.next() {
+                Some(x) => x,
+                None => return std::result::Result::Err("Missing value while parsing End".to_string())
+            };
+
+            if let Some(key) = key_result {
+                #[allow(clippy::match_single_binding)]
+                match key {
+                    #[allow(clippy::redundant_clone)]
+                    "type" => intermediate_rep.r_type.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
+                    _ => return std::result::Result::Err("Unexpected key while parsing End".to_string())
+                }
+            }
+
+            // Get the next key
+            key_result = string_iter.next();
+        }
+
+        // Use the intermediate representation to return the struct
+        std::result::Result::Ok(End {
+            r_type: intermediate_rep.r_type.into_iter().next().ok_or_else(|| "type missing in End".to_string())?,
+        })
+    }
+}
+
+// Methods for converting between header::IntoHeaderValue<End> and HeaderValue
+
+#[cfg(feature = "server")]
+impl std::convert::TryFrom<header::IntoHeaderValue<End>> for HeaderValue {
+    type Error = String;
+
+    fn try_from(hdr_value: header::IntoHeaderValue<End>) -> std::result::Result<Self, Self::Error> {
+        let hdr_value = hdr_value.to_string();
+        match HeaderValue::from_str(&hdr_value) {
+             std::result::Result::Ok(value) => std::result::Result::Ok(value),
+             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Invalid header value for End - value: {hdr_value} is invalid {e}"#))
+        }
+    }
+}
+
+#[cfg(feature = "server")]
+impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<End> {
+    type Error = String;
+
+    fn try_from(hdr_value: HeaderValue) -> std::result::Result<Self, Self::Error> {
+        match hdr_value.to_str() {
+             std::result::Result::Ok(value) => {
+                    match <End as std::str::FromStr>::from_str(value) {
+                        std::result::Result::Ok(value) => std::result::Result::Ok(header::IntoHeaderValue(value)),
+                        std::result::Result::Err(err) => std::result::Result::Err(format!(r#"Unable to convert header value '{value}' into End - {err}"#))
+                    }
+             },
+             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Unable to convert header: {hdr_value:?} to string: {e}"#))
+        }
+    }
+}
+
+
+
+/// Merchant payment operation failed (there was no charge for sure)
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, validator::Validate)]
+#[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
+pub struct Failure {
+    #[serde(rename = "cause")]
+          #[validate(nested)]
+    pub cause: models::MerchantPaymentResultOperationStatusFailureCause,
+
+    /// Note: inline enums are not fully supported by openapi-generator
+    #[serde(default = "Failure::_name_for_r_type")]
+    #[serde(serialize_with = "Failure::_serialize_r_type")]
+    #[serde(rename = "type")]
+          #[validate(custom(function = "check_xss_string"))]
+    pub r_type: String,
+
+}
+
+impl Failure {
+    fn _name_for_r_type() -> String {
+        String::from("Failure")
+    }
+
+    fn _serialize_r_type<S>(_: &String, s: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        s.serialize_str(&Self::_name_for_r_type())
+    }
+}
+
+
+impl Failure {
+    #[allow(clippy::new_without_default, clippy::too_many_arguments)]
+    pub fn new(cause: models::MerchantPaymentResultOperationStatusFailureCause, ) -> Failure {
+        Failure {
+ cause,
+ r_type: Self::_name_for_r_type(),
+        }
+    }
+}
+
+/// Converts the Failure value to the Query Parameters representation (style=form, explode=false)
+/// specified in https://swagger.io/docs/specification/serialization/
+/// Should be implemented in a serde serializer
+impl std::fmt::Display for Failure {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let params: Vec<Option<String>> = vec![
+            // Skipping cause in query parameter serialization
+
+
+            Some("type".to_string()),
+            Some(self.r_type.to_string()),
+
+        ];
+
+        write!(f, "{}", params.into_iter().flatten().collect::<Vec<_>>().join(","))
+    }
+}
+
+/// Converts Query Parameters representation (style=form, explode=false) to a Failure value
+/// as specified in https://swagger.io/docs/specification/serialization/
+/// Should be implemented in a serde deserializer
+impl std::str::FromStr for Failure {
+    type Err = String;
+
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        /// An intermediate representation of the struct to use for parsing.
+        #[derive(Default)]
+        #[allow(dead_code)]
+        struct IntermediateRep {
+            pub cause: Vec<models::MerchantPaymentResultOperationStatusFailureCause>,
+            pub r_type: Vec<String>,
+        }
+
+        let mut intermediate_rep = IntermediateRep::default();
+
+        // Parse into intermediate representation
+        let mut string_iter = s.split(',');
+        let mut key_result = string_iter.next();
+
+        while key_result.is_some() {
+            let val = match string_iter.next() {
+                Some(x) => x,
+                None => return std::result::Result::Err("Missing value while parsing Failure".to_string())
+            };
+
+            if let Some(key) = key_result {
+                #[allow(clippy::match_single_binding)]
+                match key {
+                    #[allow(clippy::redundant_clone)]
+                    "cause" => intermediate_rep.cause.push(<models::MerchantPaymentResultOperationStatusFailureCause as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
+                    #[allow(clippy::redundant_clone)]
+                    "type" => intermediate_rep.r_type.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
+                    _ => return std::result::Result::Err("Unexpected key while parsing Failure".to_string())
+                }
+            }
+
+            // Get the next key
+            key_result = string_iter.next();
+        }
+
+        // Use the intermediate representation to return the struct
+        std::result::Result::Ok(Failure {
+            cause: intermediate_rep.cause.into_iter().next().ok_or_else(|| "cause missing in Failure".to_string())?,
+            r_type: intermediate_rep.r_type.into_iter().next().ok_or_else(|| "type missing in Failure".to_string())?,
+        })
+    }
+}
+
+// Methods for converting between header::IntoHeaderValue<Failure> and HeaderValue
+
+#[cfg(feature = "server")]
+impl std::convert::TryFrom<header::IntoHeaderValue<Failure>> for HeaderValue {
+    type Error = String;
+
+    fn try_from(hdr_value: header::IntoHeaderValue<Failure>) -> std::result::Result<Self, Self::Error> {
+        let hdr_value = hdr_value.to_string();
+        match HeaderValue::from_str(&hdr_value) {
+             std::result::Result::Ok(value) => std::result::Result::Ok(value),
+             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Invalid header value for Failure - value: {hdr_value} is invalid {e}"#))
+        }
+    }
+}
+
+#[cfg(feature = "server")]
+impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<Failure> {
+    type Error = String;
+
+    fn try_from(hdr_value: HeaderValue) -> std::result::Result<Self, Self::Error> {
+        match hdr_value.to_str() {
+             std::result::Result::Ok(value) => {
+                    match <Failure as std::str::FromStr>::from_str(value) {
+                        std::result::Result::Ok(value) => std::result::Result::Ok(header::IntoHeaderValue(value)),
+                        std::result::Result::Err(err) => std::result::Result::Err(format!(r#"Unable to convert header value '{value}' into Failure - {err}"#))
+                    }
+             },
+             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Unable to convert header: {hdr_value:?} to string: {e}"#))
+        }
+    }
+}
+
+
+
+/// Fixed account mode in merchant payment process, with account ID specified.
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, validator::Validate)]
+#[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
+pub struct FixedAccount {
+    /// Number of the account which will be used in transaction. Account numbers can be obtained with Qrios API using `/merchants/accounts` endpoint.
+    #[serde(rename = "accountNumber")]
+          #[validate(custom(function = "check_xss_string"))]
+    pub account_number: String,
+
+    /// Code of the bank which will be used in transaction. Bank codes can be obtained with Qrios API using `/merchants/accounts` endpoint.
+    #[serde(rename = "bank")]
+          #[validate(custom(function = "check_xss_string"))]
+    pub bank: String,
+
+    /// Note: inline enums are not fully supported by openapi-generator
+    #[serde(default = "FixedAccount::_name_for_r_type")]
+    #[serde(serialize_with = "FixedAccount::_serialize_r_type")]
+    #[serde(rename = "type")]
+          #[validate(custom(function = "check_xss_string"))]
+    pub r_type: String,
+
+}
+
+impl FixedAccount {
+    fn _name_for_r_type() -> String {
+        String::from("FixedAccount")
+    }
+
+    fn _serialize_r_type<S>(_: &String, s: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        s.serialize_str(&Self::_name_for_r_type())
+    }
+}
+
+
+impl FixedAccount {
+    #[allow(clippy::new_without_default, clippy::too_many_arguments)]
+    pub fn new(account_number: String, bank: String, ) -> FixedAccount {
+        FixedAccount {
+ account_number,
+ bank,
+ r_type: Self::_name_for_r_type(),
+        }
+    }
+}
+
+/// Converts the FixedAccount value to the Query Parameters representation (style=form, explode=false)
+/// specified in https://swagger.io/docs/specification/serialization/
+/// Should be implemented in a serde serializer
+impl std::fmt::Display for FixedAccount {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let params: Vec<Option<String>> = vec![
+
+            Some("accountNumber".to_string()),
+            Some(self.account_number.to_string()),
+
+
+            Some("bank".to_string()),
+            Some(self.bank.to_string()),
+
+
+            Some("type".to_string()),
+            Some(self.r_type.to_string()),
+
+        ];
+
+        write!(f, "{}", params.into_iter().flatten().collect::<Vec<_>>().join(","))
+    }
+}
+
+/// Converts Query Parameters representation (style=form, explode=false) to a FixedAccount value
+/// as specified in https://swagger.io/docs/specification/serialization/
+/// Should be implemented in a serde deserializer
+impl std::str::FromStr for FixedAccount {
+    type Err = String;
+
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        /// An intermediate representation of the struct to use for parsing.
+        #[derive(Default)]
+        #[allow(dead_code)]
+        struct IntermediateRep {
+            pub account_number: Vec<String>,
+            pub bank: Vec<String>,
+            pub r_type: Vec<String>,
+        }
+
+        let mut intermediate_rep = IntermediateRep::default();
+
+        // Parse into intermediate representation
+        let mut string_iter = s.split(',');
+        let mut key_result = string_iter.next();
+
+        while key_result.is_some() {
+            let val = match string_iter.next() {
+                Some(x) => x,
+                None => return std::result::Result::Err("Missing value while parsing FixedAccount".to_string())
+            };
+
+            if let Some(key) = key_result {
+                #[allow(clippy::match_single_binding)]
+                match key {
+                    #[allow(clippy::redundant_clone)]
+                    "accountNumber" => intermediate_rep.account_number.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
+                    #[allow(clippy::redundant_clone)]
+                    "bank" => intermediate_rep.bank.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
+                    #[allow(clippy::redundant_clone)]
+                    "type" => intermediate_rep.r_type.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
+                    _ => return std::result::Result::Err("Unexpected key while parsing FixedAccount".to_string())
+                }
+            }
+
+            // Get the next key
+            key_result = string_iter.next();
+        }
+
+        // Use the intermediate representation to return the struct
+        std::result::Result::Ok(FixedAccount {
+            account_number: intermediate_rep.account_number.into_iter().next().ok_or_else(|| "accountNumber missing in FixedAccount".to_string())?,
+            bank: intermediate_rep.bank.into_iter().next().ok_or_else(|| "bank missing in FixedAccount".to_string())?,
+            r_type: intermediate_rep.r_type.into_iter().next().ok_or_else(|| "type missing in FixedAccount".to_string())?,
+        })
+    }
+}
+
+// Methods for converting between header::IntoHeaderValue<FixedAccount> and HeaderValue
+
+#[cfg(feature = "server")]
+impl std::convert::TryFrom<header::IntoHeaderValue<FixedAccount>> for HeaderValue {
+    type Error = String;
+
+    fn try_from(hdr_value: header::IntoHeaderValue<FixedAccount>) -> std::result::Result<Self, Self::Error> {
+        let hdr_value = hdr_value.to_string();
+        match HeaderValue::from_str(&hdr_value) {
+             std::result::Result::Ok(value) => std::result::Result::Ok(value),
+             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Invalid header value for FixedAccount - value: {hdr_value} is invalid {e}"#))
+        }
+    }
+}
+
+#[cfg(feature = "server")]
+impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<FixedAccount> {
+    type Error = String;
+
+    fn try_from(hdr_value: HeaderValue) -> std::result::Result<Self, Self::Error> {
+        match hdr_value.to_str() {
+             std::result::Result::Ok(value) => {
+                    match <FixedAccount as std::str::FromStr>::from_str(value) {
+                        std::result::Result::Ok(value) => std::result::Result::Ok(header::IntoHeaderValue(value)),
+                        std::result::Result::Err(err) => std::result::Result::Err(format!(r#"Unable to convert header value '{value}' into FixedAccount - {err}"#))
+                    }
+             },
+             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Unable to convert header: {hdr_value:?} to string: {e}"#))
+        }
+    }
+}
+
+
+
+/// Fixed bank mode in merchant payment process, with bank ID specified. The account from provided bank will then be selected within the process.
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, validator::Validate)]
+#[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
+pub struct FixedBank {
+    /// Code of the bank which will be used in transaction. Bank codes can be obtained with Qrios API using `/merchants/accounts` endpoint.
+    #[serde(rename = "bank")]
+          #[validate(custom(function = "check_xss_string"))]
+    pub bank: String,
+
+    /// Note: inline enums are not fully supported by openapi-generator
+    #[serde(default = "FixedBank::_name_for_r_type")]
+    #[serde(serialize_with = "FixedBank::_serialize_r_type")]
+    #[serde(rename = "type")]
+          #[validate(custom(function = "check_xss_string"))]
+    pub r_type: String,
+
+}
+
+impl FixedBank {
+    fn _name_for_r_type() -> String {
+        String::from("FixedBank")
+    }
+
+    fn _serialize_r_type<S>(_: &String, s: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        s.serialize_str(&Self::_name_for_r_type())
+    }
+}
+
+
+impl FixedBank {
+    #[allow(clippy::new_without_default, clippy::too_many_arguments)]
+    pub fn new(bank: String, ) -> FixedBank {
+        FixedBank {
+ bank,
+ r_type: Self::_name_for_r_type(),
+        }
+    }
+}
+
+/// Converts the FixedBank value to the Query Parameters representation (style=form, explode=false)
+/// specified in https://swagger.io/docs/specification/serialization/
+/// Should be implemented in a serde serializer
+impl std::fmt::Display for FixedBank {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let params: Vec<Option<String>> = vec![
+
+            Some("bank".to_string()),
+            Some(self.bank.to_string()),
+
+
+            Some("type".to_string()),
+            Some(self.r_type.to_string()),
+
+        ];
+
+        write!(f, "{}", params.into_iter().flatten().collect::<Vec<_>>().join(","))
+    }
+}
+
+/// Converts Query Parameters representation (style=form, explode=false) to a FixedBank value
+/// as specified in https://swagger.io/docs/specification/serialization/
+/// Should be implemented in a serde deserializer
+impl std::str::FromStr for FixedBank {
+    type Err = String;
+
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        /// An intermediate representation of the struct to use for parsing.
+        #[derive(Default)]
+        #[allow(dead_code)]
+        struct IntermediateRep {
+            pub bank: Vec<String>,
+            pub r_type: Vec<String>,
+        }
+
+        let mut intermediate_rep = IntermediateRep::default();
+
+        // Parse into intermediate representation
+        let mut string_iter = s.split(',');
+        let mut key_result = string_iter.next();
+
+        while key_result.is_some() {
+            let val = match string_iter.next() {
+                Some(x) => x,
+                None => return std::result::Result::Err("Missing value while parsing FixedBank".to_string())
+            };
+
+            if let Some(key) = key_result {
+                #[allow(clippy::match_single_binding)]
+                match key {
+                    #[allow(clippy::redundant_clone)]
+                    "bank" => intermediate_rep.bank.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
+                    #[allow(clippy::redundant_clone)]
+                    "type" => intermediate_rep.r_type.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
+                    _ => return std::result::Result::Err("Unexpected key while parsing FixedBank".to_string())
+                }
+            }
+
+            // Get the next key
+            key_result = string_iter.next();
+        }
+
+        // Use the intermediate representation to return the struct
+        std::result::Result::Ok(FixedBank {
+            bank: intermediate_rep.bank.into_iter().next().ok_or_else(|| "bank missing in FixedBank".to_string())?,
+            r_type: intermediate_rep.r_type.into_iter().next().ok_or_else(|| "type missing in FixedBank".to_string())?,
+        })
+    }
+}
+
+// Methods for converting between header::IntoHeaderValue<FixedBank> and HeaderValue
+
+#[cfg(feature = "server")]
+impl std::convert::TryFrom<header::IntoHeaderValue<FixedBank>> for HeaderValue {
+    type Error = String;
+
+    fn try_from(hdr_value: header::IntoHeaderValue<FixedBank>) -> std::result::Result<Self, Self::Error> {
+        let hdr_value = hdr_value.to_string();
+        match HeaderValue::from_str(&hdr_value) {
+             std::result::Result::Ok(value) => std::result::Result::Ok(value),
+             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Invalid header value for FixedBank - value: {hdr_value} is invalid {e}"#))
+        }
+    }
+}
+
+#[cfg(feature = "server")]
+impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<FixedBank> {
+    type Error = String;
+
+    fn try_from(hdr_value: HeaderValue) -> std::result::Result<Self, Self::Error> {
+        match hdr_value.to_str() {
+             std::result::Result::Ok(value) => {
+                    match <FixedBank as std::str::FromStr>::from_str(value) {
+                        std::result::Result::Ok(value) => std::result::Result::Ok(header::IntoHeaderValue(value)),
+                        std::result::Result::Err(err) => std::result::Result::Err(format!(r#"Unable to convert header value '{value}' into FixedBank - {err}"#))
+                    }
+             },
+             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Unable to convert header: {hdr_value:?} to string: {e}"#))
+        }
+    }
+}
+
+
+
+/// Flexible payment mode in merchant payment process. The account will then be selected within the process.
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, validator::Validate)]
+#[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
+pub struct Flexible {
+    /// Note: inline enums are not fully supported by openapi-generator
+    #[serde(default = "Flexible::_name_for_r_type")]
+    #[serde(serialize_with = "Flexible::_serialize_r_type")]
+    #[serde(rename = "type")]
+          #[validate(custom(function = "check_xss_string"))]
+    pub r_type: String,
+
+}
+
+impl Flexible {
+    fn _name_for_r_type() -> String {
+        String::from("Flexible")
+    }
+
+    fn _serialize_r_type<S>(_: &String, s: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        s.serialize_str(&Self::_name_for_r_type())
+    }
+}
+
+
+impl Flexible {
+    #[allow(clippy::new_without_default, clippy::too_many_arguments)]
+    pub fn new() -> Flexible {
+        Flexible {
+ r_type: Self::_name_for_r_type(),
+        }
+    }
+}
+
+/// Converts the Flexible value to the Query Parameters representation (style=form, explode=false)
+/// specified in https://swagger.io/docs/specification/serialization/
+/// Should be implemented in a serde serializer
+impl std::fmt::Display for Flexible {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let params: Vec<Option<String>> = vec![
+
+            Some("type".to_string()),
+            Some(self.r_type.to_string()),
+
+        ];
+
+        write!(f, "{}", params.into_iter().flatten().collect::<Vec<_>>().join(","))
+    }
+}
+
+/// Converts Query Parameters representation (style=form, explode=false) to a Flexible value
+/// as specified in https://swagger.io/docs/specification/serialization/
+/// Should be implemented in a serde deserializer
+impl std::str::FromStr for Flexible {
+    type Err = String;
+
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        /// An intermediate representation of the struct to use for parsing.
+        #[derive(Default)]
+        #[allow(dead_code)]
+        struct IntermediateRep {
+            pub r_type: Vec<String>,
+        }
+
+        let mut intermediate_rep = IntermediateRep::default();
+
+        // Parse into intermediate representation
+        let mut string_iter = s.split(',');
+        let mut key_result = string_iter.next();
+
+        while key_result.is_some() {
+            let val = match string_iter.next() {
+                Some(x) => x,
+                None => return std::result::Result::Err("Missing value while parsing Flexible".to_string())
+            };
+
+            if let Some(key) = key_result {
+                #[allow(clippy::match_single_binding)]
+                match key {
+                    #[allow(clippy::redundant_clone)]
+                    "type" => intermediate_rep.r_type.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
+                    _ => return std::result::Result::Err("Unexpected key while parsing Flexible".to_string())
+                }
+            }
+
+            // Get the next key
+            key_result = string_iter.next();
+        }
+
+        // Use the intermediate representation to return the struct
+        std::result::Result::Ok(Flexible {
+            r_type: intermediate_rep.r_type.into_iter().next().ok_or_else(|| "type missing in Flexible".to_string())?,
+        })
+    }
+}
+
+// Methods for converting between header::IntoHeaderValue<Flexible> and HeaderValue
+
+#[cfg(feature = "server")]
+impl std::convert::TryFrom<header::IntoHeaderValue<Flexible>> for HeaderValue {
+    type Error = String;
+
+    fn try_from(hdr_value: header::IntoHeaderValue<Flexible>) -> std::result::Result<Self, Self::Error> {
+        let hdr_value = hdr_value.to_string();
+        match HeaderValue::from_str(&hdr_value) {
+             std::result::Result::Ok(value) => std::result::Result::Ok(value),
+             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Invalid header value for Flexible - value: {hdr_value} is invalid {e}"#))
+        }
+    }
+}
+
+#[cfg(feature = "server")]
+impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<Flexible> {
+    type Error = String;
+
+    fn try_from(hdr_value: HeaderValue) -> std::result::Result<Self, Self::Error> {
+        match hdr_value.to_str() {
+             std::result::Result::Ok(value) => {
+                    match <Flexible as std::str::FromStr>::from_str(value) {
+                        std::result::Result::Ok(value) => std::result::Result::Ok(header::IntoHeaderValue(value)),
+                        std::result::Result::Err(err) => std::result::Result::Err(format!(r#"Unable to convert header value '{value}' into Flexible - {err}"#))
+                    }
+             },
+             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Unable to convert header: {hdr_value:?} to string: {e}"#))
+        }
+    }
+}
+
+
+
+/// A text-only view; does not take any user input. The session will be closed when this message is sent.
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, validator::Validate)]
+#[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
+pub struct InfoView {
+    /// Final message that will be displayed to the user
+    #[serde(rename = "message")]
+          #[validate(custom(function = "check_xss_string"))]
+    pub message: String,
+
+    /// Note: inline enums are not fully supported by openapi-generator
+    #[serde(default = "InfoView::_name_for_r_type")]
+    #[serde(serialize_with = "InfoView::_serialize_r_type")]
+    #[serde(rename = "type")]
+          #[validate(custom(function = "check_xss_string"))]
+    pub r_type: String,
+
+}
+
+impl InfoView {
+    fn _name_for_r_type() -> String {
+        String::from("InfoView")
+    }
+
+    fn _serialize_r_type<S>(_: &String, s: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        s.serialize_str(&Self::_name_for_r_type())
+    }
+}
+
+
+impl InfoView {
+    #[allow(clippy::new_without_default, clippy::too_many_arguments)]
+    pub fn new(message: String, ) -> InfoView {
+        InfoView {
+ message,
+ r_type: Self::_name_for_r_type(),
+        }
+    }
+}
+
+/// Converts the InfoView value to the Query Parameters representation (style=form, explode=false)
+/// specified in https://swagger.io/docs/specification/serialization/
+/// Should be implemented in a serde serializer
+impl std::fmt::Display for InfoView {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let params: Vec<Option<String>> = vec![
+
+            Some("message".to_string()),
+            Some(self.message.to_string()),
+
+
+            Some("type".to_string()),
+            Some(self.r_type.to_string()),
+
+        ];
+
+        write!(f, "{}", params.into_iter().flatten().collect::<Vec<_>>().join(","))
+    }
+}
+
+/// Converts Query Parameters representation (style=form, explode=false) to a InfoView value
+/// as specified in https://swagger.io/docs/specification/serialization/
+/// Should be implemented in a serde deserializer
+impl std::str::FromStr for InfoView {
+    type Err = String;
+
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        /// An intermediate representation of the struct to use for parsing.
+        #[derive(Default)]
+        #[allow(dead_code)]
+        struct IntermediateRep {
+            pub message: Vec<String>,
+            pub r_type: Vec<String>,
+        }
+
+        let mut intermediate_rep = IntermediateRep::default();
+
+        // Parse into intermediate representation
+        let mut string_iter = s.split(',');
+        let mut key_result = string_iter.next();
+
+        while key_result.is_some() {
+            let val = match string_iter.next() {
+                Some(x) => x,
+                None => return std::result::Result::Err("Missing value while parsing InfoView".to_string())
+            };
+
+            if let Some(key) = key_result {
+                #[allow(clippy::match_single_binding)]
+                match key {
+                    #[allow(clippy::redundant_clone)]
+                    "message" => intermediate_rep.message.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
+                    #[allow(clippy::redundant_clone)]
+                    "type" => intermediate_rep.r_type.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
+                    _ => return std::result::Result::Err("Unexpected key while parsing InfoView".to_string())
+                }
+            }
+
+            // Get the next key
+            key_result = string_iter.next();
+        }
+
+        // Use the intermediate representation to return the struct
+        std::result::Result::Ok(InfoView {
+            message: intermediate_rep.message.into_iter().next().ok_or_else(|| "message missing in InfoView".to_string())?,
+            r_type: intermediate_rep.r_type.into_iter().next().ok_or_else(|| "type missing in InfoView".to_string())?,
+        })
+    }
+}
+
+// Methods for converting between header::IntoHeaderValue<InfoView> and HeaderValue
+
+#[cfg(feature = "server")]
+impl std::convert::TryFrom<header::IntoHeaderValue<InfoView>> for HeaderValue {
+    type Error = String;
+
+    fn try_from(hdr_value: header::IntoHeaderValue<InfoView>) -> std::result::Result<Self, Self::Error> {
+        let hdr_value = hdr_value.to_string();
+        match HeaderValue::from_str(&hdr_value) {
+             std::result::Result::Ok(value) => std::result::Result::Ok(value),
+             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Invalid header value for InfoView - value: {hdr_value} is invalid {e}"#))
+        }
+    }
+}
+
+#[cfg(feature = "server")]
+impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<InfoView> {
+    type Error = String;
+
+    fn try_from(hdr_value: HeaderValue) -> std::result::Result<Self, Self::Error> {
+        match hdr_value.to_str() {
+             std::result::Result::Ok(value) => {
+                    match <InfoView as std::str::FromStr>::from_str(value) {
+                        std::result::Result::Ok(value) => std::result::Result::Ok(header::IntoHeaderValue(value)),
+                        std::result::Result::Err(err) => std::result::Result::Err(format!(r#"Unable to convert header value '{value}' into InfoView - {err}"#))
+                    }
+             },
+             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Unable to convert header: {hdr_value:?} to string: {e}"#))
+        }
+    }
+}
+
+
+
+/// Input from the user; provided by UssdAction.UssdView.InputView.
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, validator::Validate)]
+#[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
+pub struct InputResult {
+    /// Note: inline enums are not fully supported by openapi-generator
+    #[serde(default = "InputResult::_name_for_r_type")]
+    #[serde(serialize_with = "InputResult::_serialize_r_type")]
+    #[serde(rename = "type")]
+          #[validate(custom(function = "check_xss_string"))]
+    pub r_type: String,
+
+    /// Raw value typed in by the user.
+    #[serde(rename = "value")]
+          #[validate(custom(function = "check_xss_string"))]
+    pub value: String,
+
+}
+
+impl InputResult {
+    fn _name_for_r_type() -> String {
+        String::from("InputResult")
+    }
+
+    fn _serialize_r_type<S>(_: &String, s: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        s.serialize_str(&Self::_name_for_r_type())
+    }
+}
+
+
+impl InputResult {
+    #[allow(clippy::new_without_default, clippy::too_many_arguments)]
+    pub fn new(value: String, ) -> InputResult {
+        InputResult {
+ r_type: Self::_name_for_r_type(),
+ value,
+        }
+    }
+}
+
+/// Converts the InputResult value to the Query Parameters representation (style=form, explode=false)
+/// specified in https://swagger.io/docs/specification/serialization/
+/// Should be implemented in a serde serializer
+impl std::fmt::Display for InputResult {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let params: Vec<Option<String>> = vec![
+
+            Some("type".to_string()),
+            Some(self.r_type.to_string()),
+
+
+            Some("value".to_string()),
+            Some(self.value.to_string()),
+
+        ];
+
+        write!(f, "{}", params.into_iter().flatten().collect::<Vec<_>>().join(","))
+    }
+}
+
+/// Converts Query Parameters representation (style=form, explode=false) to a InputResult value
+/// as specified in https://swagger.io/docs/specification/serialization/
+/// Should be implemented in a serde deserializer
+impl std::str::FromStr for InputResult {
+    type Err = String;
+
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        /// An intermediate representation of the struct to use for parsing.
+        #[derive(Default)]
+        #[allow(dead_code)]
+        struct IntermediateRep {
+            pub r_type: Vec<String>,
+            pub value: Vec<String>,
+        }
+
+        let mut intermediate_rep = IntermediateRep::default();
+
+        // Parse into intermediate representation
+        let mut string_iter = s.split(',');
+        let mut key_result = string_iter.next();
+
+        while key_result.is_some() {
+            let val = match string_iter.next() {
+                Some(x) => x,
+                None => return std::result::Result::Err("Missing value while parsing InputResult".to_string())
+            };
+
+            if let Some(key) = key_result {
+                #[allow(clippy::match_single_binding)]
+                match key {
+                    #[allow(clippy::redundant_clone)]
+                    "type" => intermediate_rep.r_type.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
+                    #[allow(clippy::redundant_clone)]
+                    "value" => intermediate_rep.value.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
+                    _ => return std::result::Result::Err("Unexpected key while parsing InputResult".to_string())
+                }
+            }
+
+            // Get the next key
+            key_result = string_iter.next();
+        }
+
+        // Use the intermediate representation to return the struct
+        std::result::Result::Ok(InputResult {
+            r_type: intermediate_rep.r_type.into_iter().next().ok_or_else(|| "type missing in InputResult".to_string())?,
+            value: intermediate_rep.value.into_iter().next().ok_or_else(|| "value missing in InputResult".to_string())?,
+        })
+    }
+}
+
+// Methods for converting between header::IntoHeaderValue<InputResult> and HeaderValue
+
+#[cfg(feature = "server")]
+impl std::convert::TryFrom<header::IntoHeaderValue<InputResult>> for HeaderValue {
+    type Error = String;
+
+    fn try_from(hdr_value: header::IntoHeaderValue<InputResult>) -> std::result::Result<Self, Self::Error> {
+        let hdr_value = hdr_value.to_string();
+        match HeaderValue::from_str(&hdr_value) {
+             std::result::Result::Ok(value) => std::result::Result::Ok(value),
+             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Invalid header value for InputResult - value: {hdr_value} is invalid {e}"#))
+        }
+    }
+}
+
+#[cfg(feature = "server")]
+impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<InputResult> {
+    type Error = String;
+
+    fn try_from(hdr_value: HeaderValue) -> std::result::Result<Self, Self::Error> {
+        match hdr_value.to_str() {
+             std::result::Result::Ok(value) => {
+                    match <InputResult as std::str::FromStr>::from_str(value) {
+                        std::result::Result::Ok(value) => std::result::Result::Ok(header::IntoHeaderValue(value)),
+                        std::result::Result::Err(err) => std::result::Result::Err(format!(r#"Unable to convert header value '{value}' into InputResult - {err}"#))
+                    }
+             },
+             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Unable to convert header: {hdr_value:?} to string: {e}"#))
+        }
+    }
+}
+
+
+
+/// A view with text; takes user input. The session will continue when this message is sent.
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, validator::Validate)]
+#[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
+pub struct InputView {
+    /// Message that will be displayed to the user, for example asking the user to input some value
+    #[serde(rename = "message")]
+          #[validate(custom(function = "check_xss_string"))]
+    pub message: String,
+
+    /// Note: inline enums are not fully supported by openapi-generator
+    #[serde(default = "InputView::_name_for_r_type")]
+    #[serde(serialize_with = "InputView::_serialize_r_type")]
+    #[serde(rename = "type")]
+          #[validate(custom(function = "check_xss_string"))]
+    pub r_type: String,
+
+}
+
+impl InputView {
+    fn _name_for_r_type() -> String {
+        String::from("InputView")
+    }
+
+    fn _serialize_r_type<S>(_: &String, s: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        s.serialize_str(&Self::_name_for_r_type())
+    }
+}
+
+
+impl InputView {
+    #[allow(clippy::new_without_default, clippy::too_many_arguments)]
+    pub fn new(message: String, ) -> InputView {
+        InputView {
+ message,
+ r_type: Self::_name_for_r_type(),
+        }
+    }
+}
+
+/// Converts the InputView value to the Query Parameters representation (style=form, explode=false)
+/// specified in https://swagger.io/docs/specification/serialization/
+/// Should be implemented in a serde serializer
+impl std::fmt::Display for InputView {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let params: Vec<Option<String>> = vec![
+
+            Some("message".to_string()),
+            Some(self.message.to_string()),
+
+
+            Some("type".to_string()),
+            Some(self.r_type.to_string()),
+
+        ];
+
+        write!(f, "{}", params.into_iter().flatten().collect::<Vec<_>>().join(","))
+    }
+}
+
+/// Converts Query Parameters representation (style=form, explode=false) to a InputView value
+/// as specified in https://swagger.io/docs/specification/serialization/
+/// Should be implemented in a serde deserializer
+impl std::str::FromStr for InputView {
+    type Err = String;
+
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        /// An intermediate representation of the struct to use for parsing.
+        #[derive(Default)]
+        #[allow(dead_code)]
+        struct IntermediateRep {
+            pub message: Vec<String>,
+            pub r_type: Vec<String>,
+        }
+
+        let mut intermediate_rep = IntermediateRep::default();
+
+        // Parse into intermediate representation
+        let mut string_iter = s.split(',');
+        let mut key_result = string_iter.next();
+
+        while key_result.is_some() {
+            let val = match string_iter.next() {
+                Some(x) => x,
+                None => return std::result::Result::Err("Missing value while parsing InputView".to_string())
+            };
+
+            if let Some(key) = key_result {
+                #[allow(clippy::match_single_binding)]
+                match key {
+                    #[allow(clippy::redundant_clone)]
+                    "message" => intermediate_rep.message.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
+                    #[allow(clippy::redundant_clone)]
+                    "type" => intermediate_rep.r_type.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
+                    _ => return std::result::Result::Err("Unexpected key while parsing InputView".to_string())
+                }
+            }
+
+            // Get the next key
+            key_result = string_iter.next();
+        }
+
+        // Use the intermediate representation to return the struct
+        std::result::Result::Ok(InputView {
+            message: intermediate_rep.message.into_iter().next().ok_or_else(|| "message missing in InputView".to_string())?,
+            r_type: intermediate_rep.r_type.into_iter().next().ok_or_else(|| "type missing in InputView".to_string())?,
+        })
+    }
+}
+
+// Methods for converting between header::IntoHeaderValue<InputView> and HeaderValue
+
+#[cfg(feature = "server")]
+impl std::convert::TryFrom<header::IntoHeaderValue<InputView>> for HeaderValue {
+    type Error = String;
+
+    fn try_from(hdr_value: header::IntoHeaderValue<InputView>) -> std::result::Result<Self, Self::Error> {
+        let hdr_value = hdr_value.to_string();
+        match HeaderValue::from_str(&hdr_value) {
+             std::result::Result::Ok(value) => std::result::Result::Ok(value),
+             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Invalid header value for InputView - value: {hdr_value} is invalid {e}"#))
+        }
+    }
+}
+
+#[cfg(feature = "server")]
+impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<InputView> {
+    type Error = String;
+
+    fn try_from(hdr_value: HeaderValue) -> std::result::Result<Self, Self::Error> {
+        match hdr_value.to_str() {
+             std::result::Result::Ok(value) => {
+                    match <InputView as std::str::FromStr>::from_str(value) {
+                        std::result::Result::Ok(value) => std::result::Result::Ok(header::IntoHeaderValue(value)),
+                        std::result::Result::Err(err) => std::result::Result::Err(format!(r#"Unable to convert header value '{value}' into InputView - {err}"#))
+                    }
+             },
+             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Unable to convert header: {hdr_value:?} to string: {e}"#))
+        }
+    }
+}
+
+
+
+/// USSD process abort reason - not enough funds to fulfil the request.
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, validator::Validate)]
+#[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
+pub struct InsufficientBalanceInVirtualPurse {
+    /// Note: inline enums are not fully supported by openapi-generator
+    #[serde(default = "InsufficientBalanceInVirtualPurse::_name_for_r_type")]
+    #[serde(serialize_with = "InsufficientBalanceInVirtualPurse::_serialize_r_type")]
+    #[serde(rename = "type")]
+          #[validate(custom(function = "check_xss_string"))]
+    pub r_type: String,
+
+}
+
+impl InsufficientBalanceInVirtualPurse {
+    fn _name_for_r_type() -> String {
+        String::from("InsufficientBalanceInVirtualPurse")
+    }
+
+    fn _serialize_r_type<S>(_: &String, s: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        s.serialize_str(&Self::_name_for_r_type())
+    }
+}
+
+
+impl InsufficientBalanceInVirtualPurse {
+    #[allow(clippy::new_without_default, clippy::too_many_arguments)]
+    pub fn new() -> InsufficientBalanceInVirtualPurse {
+        InsufficientBalanceInVirtualPurse {
+ r_type: Self::_name_for_r_type(),
+        }
+    }
+}
+
+/// Converts the InsufficientBalanceInVirtualPurse value to the Query Parameters representation (style=form, explode=false)
+/// specified in https://swagger.io/docs/specification/serialization/
+/// Should be implemented in a serde serializer
+impl std::fmt::Display for InsufficientBalanceInVirtualPurse {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let params: Vec<Option<String>> = vec![
+
+            Some("type".to_string()),
+            Some(self.r_type.to_string()),
+
+        ];
+
+        write!(f, "{}", params.into_iter().flatten().collect::<Vec<_>>().join(","))
+    }
+}
+
+/// Converts Query Parameters representation (style=form, explode=false) to a InsufficientBalanceInVirtualPurse value
+/// as specified in https://swagger.io/docs/specification/serialization/
+/// Should be implemented in a serde deserializer
+impl std::str::FromStr for InsufficientBalanceInVirtualPurse {
+    type Err = String;
+
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        /// An intermediate representation of the struct to use for parsing.
+        #[derive(Default)]
+        #[allow(dead_code)]
+        struct IntermediateRep {
+            pub r_type: Vec<String>,
+        }
+
+        let mut intermediate_rep = IntermediateRep::default();
+
+        // Parse into intermediate representation
+        let mut string_iter = s.split(',');
+        let mut key_result = string_iter.next();
+
+        while key_result.is_some() {
+            let val = match string_iter.next() {
+                Some(x) => x,
+                None => return std::result::Result::Err("Missing value while parsing InsufficientBalanceInVirtualPurse".to_string())
+            };
+
+            if let Some(key) = key_result {
+                #[allow(clippy::match_single_binding)]
+                match key {
+                    #[allow(clippy::redundant_clone)]
+                    "type" => intermediate_rep.r_type.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
+                    _ => return std::result::Result::Err("Unexpected key while parsing InsufficientBalanceInVirtualPurse".to_string())
+                }
+            }
+
+            // Get the next key
+            key_result = string_iter.next();
+        }
+
+        // Use the intermediate representation to return the struct
+        std::result::Result::Ok(InsufficientBalanceInVirtualPurse {
+            r_type: intermediate_rep.r_type.into_iter().next().ok_or_else(|| "type missing in InsufficientBalanceInVirtualPurse".to_string())?,
+        })
+    }
+}
+
+// Methods for converting between header::IntoHeaderValue<InsufficientBalanceInVirtualPurse> and HeaderValue
+
+#[cfg(feature = "server")]
+impl std::convert::TryFrom<header::IntoHeaderValue<InsufficientBalanceInVirtualPurse>> for HeaderValue {
+    type Error = String;
+
+    fn try_from(hdr_value: header::IntoHeaderValue<InsufficientBalanceInVirtualPurse>) -> std::result::Result<Self, Self::Error> {
+        let hdr_value = hdr_value.to_string();
+        match HeaderValue::from_str(&hdr_value) {
+             std::result::Result::Ok(value) => std::result::Result::Ok(value),
+             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Invalid header value for InsufficientBalanceInVirtualPurse - value: {hdr_value} is invalid {e}"#))
+        }
+    }
+}
+
+#[cfg(feature = "server")]
+impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<InsufficientBalanceInVirtualPurse> {
+    type Error = String;
+
+    fn try_from(hdr_value: HeaderValue) -> std::result::Result<Self, Self::Error> {
+        match hdr_value.to_str() {
+             std::result::Result::Ok(value) => {
+                    match <InsufficientBalanceInVirtualPurse as std::str::FromStr>::from_str(value) {
+                        std::result::Result::Ok(value) => std::result::Result::Ok(header::IntoHeaderValue(value)),
+                        std::result::Result::Err(err) => std::result::Result::Err(format!(r#"Unable to convert header value '{value}' into InsufficientBalanceInVirtualPurse - {err}"#))
+                    }
+             },
+             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Unable to convert header: {hdr_value:?} to string: {e}"#))
+        }
+    }
+}
+
+
+
+/// USSD process abort reason - there was some internal error in Qrios API.
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, validator::Validate)]
+#[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
+pub struct InternalError {
+    /// Note: inline enums are not fully supported by openapi-generator
+    #[serde(default = "InternalError::_name_for_r_type")]
+    #[serde(serialize_with = "InternalError::_serialize_r_type")]
+    #[serde(rename = "type")]
+          #[validate(custom(function = "check_xss_string"))]
+    pub r_type: String,
+
+}
+
+impl InternalError {
+    fn _name_for_r_type() -> String {
+        String::from("InternalError")
+    }
+
+    fn _serialize_r_type<S>(_: &String, s: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        s.serialize_str(&Self::_name_for_r_type())
+    }
+}
+
+
+impl InternalError {
+    #[allow(clippy::new_without_default, clippy::too_many_arguments)]
+    pub fn new() -> InternalError {
+        InternalError {
+ r_type: Self::_name_for_r_type(),
+        }
+    }
+}
+
+/// Converts the InternalError value to the Query Parameters representation (style=form, explode=false)
+/// specified in https://swagger.io/docs/specification/serialization/
+/// Should be implemented in a serde serializer
+impl std::fmt::Display for InternalError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let params: Vec<Option<String>> = vec![
+
+            Some("type".to_string()),
+            Some(self.r_type.to_string()),
+
+        ];
+
+        write!(f, "{}", params.into_iter().flatten().collect::<Vec<_>>().join(","))
+    }
+}
+
+/// Converts Query Parameters representation (style=form, explode=false) to a InternalError value
+/// as specified in https://swagger.io/docs/specification/serialization/
+/// Should be implemented in a serde deserializer
+impl std::str::FromStr for InternalError {
+    type Err = String;
+
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        /// An intermediate representation of the struct to use for parsing.
+        #[derive(Default)]
+        #[allow(dead_code)]
+        struct IntermediateRep {
+            pub r_type: Vec<String>,
+        }
+
+        let mut intermediate_rep = IntermediateRep::default();
+
+        // Parse into intermediate representation
+        let mut string_iter = s.split(',');
+        let mut key_result = string_iter.next();
+
+        while key_result.is_some() {
+            let val = match string_iter.next() {
+                Some(x) => x,
+                None => return std::result::Result::Err("Missing value while parsing InternalError".to_string())
+            };
+
+            if let Some(key) = key_result {
+                #[allow(clippy::match_single_binding)]
+                match key {
+                    #[allow(clippy::redundant_clone)]
+                    "type" => intermediate_rep.r_type.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
+                    _ => return std::result::Result::Err("Unexpected key while parsing InternalError".to_string())
+                }
+            }
+
+            // Get the next key
+            key_result = string_iter.next();
+        }
+
+        // Use the intermediate representation to return the struct
+        std::result::Result::Ok(InternalError {
+            r_type: intermediate_rep.r_type.into_iter().next().ok_or_else(|| "type missing in InternalError".to_string())?,
+        })
+    }
+}
+
+// Methods for converting between header::IntoHeaderValue<InternalError> and HeaderValue
+
+#[cfg(feature = "server")]
+impl std::convert::TryFrom<header::IntoHeaderValue<InternalError>> for HeaderValue {
+    type Error = String;
+
+    fn try_from(hdr_value: header::IntoHeaderValue<InternalError>) -> std::result::Result<Self, Self::Error> {
+        let hdr_value = hdr_value.to_string();
+        match HeaderValue::from_str(&hdr_value) {
+             std::result::Result::Ok(value) => std::result::Result::Ok(value),
+             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Invalid header value for InternalError - value: {hdr_value} is invalid {e}"#))
+        }
+    }
+}
+
+#[cfg(feature = "server")]
+impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<InternalError> {
+    type Error = String;
+
+    fn try_from(hdr_value: HeaderValue) -> std::result::Result<Self, Self::Error> {
+        match hdr_value.to_str() {
+             std::result::Result::Ok(value) => {
+                    match <InternalError as std::str::FromStr>::from_str(value) {
+                        std::result::Result::Ok(value) => std::result::Result::Ok(header::IntoHeaderValue(value)),
+                        std::result::Result::Err(err) => std::result::Result::Err(format!(r#"Unable to convert header value '{value}' into InternalError - {err}"#))
                     }
              },
              std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Unable to convert header: {hdr_value:?} to string: {e}"#))
@@ -1915,22 +3263,215 @@ impl std::ops::DerefMut for LegacyAppRedirectUssdApiUrl {
 
 
 
+/// Initiation of merchant payment process. In this process, the control is handed over to an external USSD merchant payment process. The user will be asked for credentials and the payment will commence. As the process ends, it will call this API to deliver the result and hand control over the session back to the server.
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, validator::Validate)]
+#[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
+pub struct MerchantPaymentProcess {
+    /// Merchant payment operation id
+    #[serde(rename = "operationId")]
+          #[validate(custom(function = "check_xss_string"))]
+    pub operation_id: String,
+
+    /// Merchant code
+    #[serde(rename = "merchantCode")]
+          #[validate(custom(function = "check_xss_string"))]
+    pub merchant_code: String,
+
+    #[serde(rename = "amount")]
+    pub amount: f64,
+
+    #[serde(rename = "paymentMode")]
+          #[validate(nested)]
+    pub payment_mode: models::MerchantPaymentProcessPaymentMode,
+
+    #[serde(rename = "executionMode")]
+          #[validate(nested)]
+    #[serde(skip_serializing_if="Option::is_none")]
+    pub execution_mode: Option<models::MerchantPaymentProcessExecutionMode>,
+
+    #[serde(default = "MerchantPaymentProcess::_name_for_r_type")]
+    #[serde(serialize_with = "MerchantPaymentProcess::_serialize_r_type")]
+    #[serde(rename = "type")]
+    pub r_type: String,
+
+}
+
+impl MerchantPaymentProcess {
+    fn _name_for_r_type() -> String {
+        String::from("MerchantPaymentProcess")
+    }
+
+    fn _serialize_r_type<S>(_: &String, s: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        s.serialize_str(&Self::_name_for_r_type())
+    }
+}
+
+
+impl MerchantPaymentProcess {
+    #[allow(clippy::new_without_default, clippy::too_many_arguments)]
+    pub fn new(operation_id: String, merchant_code: String, amount: f64, payment_mode: models::MerchantPaymentProcessPaymentMode, ) -> MerchantPaymentProcess {
+        MerchantPaymentProcess {
+ operation_id,
+ merchant_code,
+ amount,
+ payment_mode,
+ execution_mode: None,
+ r_type: Self::_name_for_r_type(),
+        }
+    }
+}
+
+/// Converts the MerchantPaymentProcess value to the Query Parameters representation (style=form, explode=false)
+/// specified in https://swagger.io/docs/specification/serialization/
+/// Should be implemented in a serde serializer
+impl std::fmt::Display for MerchantPaymentProcess {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let params: Vec<Option<String>> = vec![
+
+            Some("operationId".to_string()),
+            Some(self.operation_id.to_string()),
+
+
+            Some("merchantCode".to_string()),
+            Some(self.merchant_code.to_string()),
+
+
+            Some("amount".to_string()),
+            Some(self.amount.to_string()),
+
+            // Skipping paymentMode in query parameter serialization
+
+            // Skipping executionMode in query parameter serialization
+
+
+            Some("type".to_string()),
+            Some(self.r_type.to_string()),
+
+        ];
+
+        write!(f, "{}", params.into_iter().flatten().collect::<Vec<_>>().join(","))
+    }
+}
+
+/// Converts Query Parameters representation (style=form, explode=false) to a MerchantPaymentProcess value
+/// as specified in https://swagger.io/docs/specification/serialization/
+/// Should be implemented in a serde deserializer
+impl std::str::FromStr for MerchantPaymentProcess {
+    type Err = String;
+
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        /// An intermediate representation of the struct to use for parsing.
+        #[derive(Default)]
+        #[allow(dead_code)]
+        struct IntermediateRep {
+            pub operation_id: Vec<String>,
+            pub merchant_code: Vec<String>,
+            pub amount: Vec<f64>,
+            pub payment_mode: Vec<models::MerchantPaymentProcessPaymentMode>,
+            pub execution_mode: Vec<models::MerchantPaymentProcessExecutionMode>,
+            pub r_type: Vec<String>,
+        }
+
+        let mut intermediate_rep = IntermediateRep::default();
+
+        // Parse into intermediate representation
+        let mut string_iter = s.split(',');
+        let mut key_result = string_iter.next();
+
+        while key_result.is_some() {
+            let val = match string_iter.next() {
+                Some(x) => x,
+                None => return std::result::Result::Err("Missing value while parsing MerchantPaymentProcess".to_string())
+            };
+
+            if let Some(key) = key_result {
+                #[allow(clippy::match_single_binding)]
+                match key {
+                    #[allow(clippy::redundant_clone)]
+                    "operationId" => intermediate_rep.operation_id.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
+                    #[allow(clippy::redundant_clone)]
+                    "merchantCode" => intermediate_rep.merchant_code.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
+                    #[allow(clippy::redundant_clone)]
+                    "amount" => intermediate_rep.amount.push(<f64 as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
+                    #[allow(clippy::redundant_clone)]
+                    "paymentMode" => intermediate_rep.payment_mode.push(<models::MerchantPaymentProcessPaymentMode as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
+                    #[allow(clippy::redundant_clone)]
+                    "executionMode" => intermediate_rep.execution_mode.push(<models::MerchantPaymentProcessExecutionMode as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
+                    #[allow(clippy::redundant_clone)]
+                    "type" => intermediate_rep.r_type.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
+                    _ => return std::result::Result::Err("Unexpected key while parsing MerchantPaymentProcess".to_string())
+                }
+            }
+
+            // Get the next key
+            key_result = string_iter.next();
+        }
+
+        // Use the intermediate representation to return the struct
+        std::result::Result::Ok(MerchantPaymentProcess {
+            operation_id: intermediate_rep.operation_id.into_iter().next().ok_or_else(|| "operationId missing in MerchantPaymentProcess".to_string())?,
+            merchant_code: intermediate_rep.merchant_code.into_iter().next().ok_or_else(|| "merchantCode missing in MerchantPaymentProcess".to_string())?,
+            amount: intermediate_rep.amount.into_iter().next().ok_or_else(|| "amount missing in MerchantPaymentProcess".to_string())?,
+            payment_mode: intermediate_rep.payment_mode.into_iter().next().ok_or_else(|| "paymentMode missing in MerchantPaymentProcess".to_string())?,
+            execution_mode: intermediate_rep.execution_mode.into_iter().next(),
+            r_type: intermediate_rep.r_type.into_iter().next().ok_or_else(|| "type missing in MerchantPaymentProcess".to_string())?,
+        })
+    }
+}
+
+// Methods for converting between header::IntoHeaderValue<MerchantPaymentProcess> and HeaderValue
+
+#[cfg(feature = "server")]
+impl std::convert::TryFrom<header::IntoHeaderValue<MerchantPaymentProcess>> for HeaderValue {
+    type Error = String;
+
+    fn try_from(hdr_value: header::IntoHeaderValue<MerchantPaymentProcess>) -> std::result::Result<Self, Self::Error> {
+        let hdr_value = hdr_value.to_string();
+        match HeaderValue::from_str(&hdr_value) {
+             std::result::Result::Ok(value) => std::result::Result::Ok(value),
+             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Invalid header value for MerchantPaymentProcess - value: {hdr_value} is invalid {e}"#))
+        }
+    }
+}
+
+#[cfg(feature = "server")]
+impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<MerchantPaymentProcess> {
+    type Error = String;
+
+    fn try_from(hdr_value: HeaderValue) -> std::result::Result<Self, Self::Error> {
+        match hdr_value.to_str() {
+             std::result::Result::Ok(value) => {
+                    match <MerchantPaymentProcess as std::str::FromStr>::from_str(value) {
+                        std::result::Result::Ok(value) => std::result::Result::Ok(header::IntoHeaderValue(value)),
+                        std::result::Result::Err(err) => std::result::Result::Err(format!(r#"Unable to convert header value '{value}' into MerchantPaymentProcess - {err}"#))
+                    }
+             },
+             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Unable to convert header: {hdr_value:?} to string: {e}"#))
+        }
+    }
+}
+
+
+
 #[derive(Debug, Clone, PartialEq, serde::Deserialize)]
 #[serde(tag = "type")]
 #[allow(non_camel_case_types, clippy::large_enum_variant)]
 pub enum MerchantPaymentProcessExecutionMode {
     #[serde(alias = "WithBankResponseTimeout")]
-    MerchantPaymentProcessExecutionModeWithBankResponseTimeout(models::MerchantPaymentProcessExecutionModeWithBankResponseTimeout),
+    WithBankResponseTimeout(models::WithBankResponseTimeout),
     #[serde(alias = "WithoutWaitingForBank")]
-    MerchantPaymentProcessExecutionModeWithoutWaitingForBank(models::MerchantPaymentProcessExecutionModeWithoutWaitingForBank),
+    WithoutWaitingForBank(models::WithoutWaitingForBank),
 }
 
 impl validator::Validate for MerchantPaymentProcessExecutionMode
 {
     fn validate(&self) -> std::result::Result<(), validator::ValidationErrors> {
         match self {
-            Self::MerchantPaymentProcessExecutionModeWithBankResponseTimeout(v) => v.validate(),
-            Self::MerchantPaymentProcessExecutionModeWithoutWaitingForBank(v) => v.validate(),
+            Self::WithBankResponseTimeout(v) => v.validate(),
+            Self::WithoutWaitingForBank(v) => v.validate(),
         }
     }
 }
@@ -1950,272 +3491,24 @@ impl serde::Serialize for MerchantPaymentProcessExecutionMode {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
         where S: serde::Serializer {
             match self {
-                Self::MerchantPaymentProcessExecutionModeWithBankResponseTimeout(x) => x.serialize(serializer),
-                Self::MerchantPaymentProcessExecutionModeWithoutWaitingForBank(x) => x.serialize(serializer),
+                Self::WithBankResponseTimeout(x) => x.serialize(serializer),
+                Self::WithoutWaitingForBank(x) => x.serialize(serializer),
             }
     }
 }
 
-impl From<models::MerchantPaymentProcessExecutionModeWithBankResponseTimeout> for MerchantPaymentProcessExecutionMode {
-    fn from(value: models::MerchantPaymentProcessExecutionModeWithBankResponseTimeout) -> Self {
-        Self::MerchantPaymentProcessExecutionModeWithBankResponseTimeout(value)
+impl From<models::WithBankResponseTimeout> for MerchantPaymentProcessExecutionMode {
+    fn from(value: models::WithBankResponseTimeout) -> Self {
+        Self::WithBankResponseTimeout(value)
     }
 }
-impl From<models::MerchantPaymentProcessExecutionModeWithoutWaitingForBank> for MerchantPaymentProcessExecutionMode {
-    fn from(value: models::MerchantPaymentProcessExecutionModeWithoutWaitingForBank) -> Self {
-        Self::MerchantPaymentProcessExecutionModeWithoutWaitingForBank(value)
-    }
-}
-
-
-
-
-
-/// Merchant payment process will use a timeout when finalizing.
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, validator::Validate)]
-#[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
-pub struct MerchantPaymentProcessExecutionModeWithBankResponseTimeout {
-    #[serde(rename = "millis")]
-    pub millis: i64,
-
-    /// Note: inline enums are not fully supported by openapi-generator
-    #[serde(rename = "type")]
-          #[validate(custom(function = "check_xss_string"))]
-    pub r_type: String,
-
-}
-
-
-
-impl MerchantPaymentProcessExecutionModeWithBankResponseTimeout {
-    #[allow(clippy::new_without_default, clippy::too_many_arguments)]
-    pub fn new(millis: i64, r_type: String, ) -> MerchantPaymentProcessExecutionModeWithBankResponseTimeout {
-        MerchantPaymentProcessExecutionModeWithBankResponseTimeout {
- millis,
- r_type,
-        }
-    }
-}
-
-/// Converts the MerchantPaymentProcessExecutionModeWithBankResponseTimeout value to the Query Parameters representation (style=form, explode=false)
-/// specified in https://swagger.io/docs/specification/serialization/
-/// Should be implemented in a serde serializer
-impl std::fmt::Display for MerchantPaymentProcessExecutionModeWithBankResponseTimeout {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let params: Vec<Option<String>> = vec![
-
-            Some("millis".to_string()),
-            Some(self.millis.to_string()),
-
-
-            Some("type".to_string()),
-            Some(self.r_type.to_string()),
-
-        ];
-
-        write!(f, "{}", params.into_iter().flatten().collect::<Vec<_>>().join(","))
-    }
-}
-
-/// Converts Query Parameters representation (style=form, explode=false) to a MerchantPaymentProcessExecutionModeWithBankResponseTimeout value
-/// as specified in https://swagger.io/docs/specification/serialization/
-/// Should be implemented in a serde deserializer
-impl std::str::FromStr for MerchantPaymentProcessExecutionModeWithBankResponseTimeout {
-    type Err = String;
-
-    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-        /// An intermediate representation of the struct to use for parsing.
-        #[derive(Default)]
-        #[allow(dead_code)]
-        struct IntermediateRep {
-            pub millis: Vec<i64>,
-            pub r_type: Vec<String>,
-        }
-
-        let mut intermediate_rep = IntermediateRep::default();
-
-        // Parse into intermediate representation
-        let mut string_iter = s.split(',');
-        let mut key_result = string_iter.next();
-
-        while key_result.is_some() {
-            let val = match string_iter.next() {
-                Some(x) => x,
-                None => return std::result::Result::Err("Missing value while parsing MerchantPaymentProcessExecutionModeWithBankResponseTimeout".to_string())
-            };
-
-            if let Some(key) = key_result {
-                #[allow(clippy::match_single_binding)]
-                match key {
-                    #[allow(clippy::redundant_clone)]
-                    "millis" => intermediate_rep.millis.push(<i64 as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
-                    #[allow(clippy::redundant_clone)]
-                    "type" => intermediate_rep.r_type.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
-                    _ => return std::result::Result::Err("Unexpected key while parsing MerchantPaymentProcessExecutionModeWithBankResponseTimeout".to_string())
-                }
-            }
-
-            // Get the next key
-            key_result = string_iter.next();
-        }
-
-        // Use the intermediate representation to return the struct
-        std::result::Result::Ok(MerchantPaymentProcessExecutionModeWithBankResponseTimeout {
-            millis: intermediate_rep.millis.into_iter().next().ok_or_else(|| "millis missing in MerchantPaymentProcessExecutionModeWithBankResponseTimeout".to_string())?,
-            r_type: intermediate_rep.r_type.into_iter().next().ok_or_else(|| "type missing in MerchantPaymentProcessExecutionModeWithBankResponseTimeout".to_string())?,
-        })
-    }
-}
-
-// Methods for converting between header::IntoHeaderValue<MerchantPaymentProcessExecutionModeWithBankResponseTimeout> and HeaderValue
-
-#[cfg(feature = "server")]
-impl std::convert::TryFrom<header::IntoHeaderValue<MerchantPaymentProcessExecutionModeWithBankResponseTimeout>> for HeaderValue {
-    type Error = String;
-
-    fn try_from(hdr_value: header::IntoHeaderValue<MerchantPaymentProcessExecutionModeWithBankResponseTimeout>) -> std::result::Result<Self, Self::Error> {
-        let hdr_value = hdr_value.to_string();
-        match HeaderValue::from_str(&hdr_value) {
-             std::result::Result::Ok(value) => std::result::Result::Ok(value),
-             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Invalid header value for MerchantPaymentProcessExecutionModeWithBankResponseTimeout - value: {hdr_value} is invalid {e}"#))
-        }
-    }
-}
-
-#[cfg(feature = "server")]
-impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<MerchantPaymentProcessExecutionModeWithBankResponseTimeout> {
-    type Error = String;
-
-    fn try_from(hdr_value: HeaderValue) -> std::result::Result<Self, Self::Error> {
-        match hdr_value.to_str() {
-             std::result::Result::Ok(value) => {
-                    match <MerchantPaymentProcessExecutionModeWithBankResponseTimeout as std::str::FromStr>::from_str(value) {
-                        std::result::Result::Ok(value) => std::result::Result::Ok(header::IntoHeaderValue(value)),
-                        std::result::Result::Err(err) => std::result::Result::Err(format!(r#"Unable to convert header value '{value}' into MerchantPaymentProcessExecutionModeWithBankResponseTimeout - {err}"#))
-                    }
-             },
-             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Unable to convert header: {hdr_value:?} to string: {e}"#))
-        }
+impl From<models::WithoutWaitingForBank> for MerchantPaymentProcessExecutionMode {
+    fn from(value: models::WithoutWaitingForBank) -> Self {
+        Self::WithoutWaitingForBank(value)
     }
 }
 
 
-
-/// Merchant payment process will not use a timeout when finalizing.
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, validator::Validate)]
-#[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
-pub struct MerchantPaymentProcessExecutionModeWithoutWaitingForBank {
-    /// Note: inline enums are not fully supported by openapi-generator
-    #[serde(rename = "type")]
-          #[validate(custom(function = "check_xss_string"))]
-    pub r_type: String,
-
-}
-
-
-
-impl MerchantPaymentProcessExecutionModeWithoutWaitingForBank {
-    #[allow(clippy::new_without_default, clippy::too_many_arguments)]
-    pub fn new(r_type: String, ) -> MerchantPaymentProcessExecutionModeWithoutWaitingForBank {
-        MerchantPaymentProcessExecutionModeWithoutWaitingForBank {
- r_type,
-        }
-    }
-}
-
-/// Converts the MerchantPaymentProcessExecutionModeWithoutWaitingForBank value to the Query Parameters representation (style=form, explode=false)
-/// specified in https://swagger.io/docs/specification/serialization/
-/// Should be implemented in a serde serializer
-impl std::fmt::Display for MerchantPaymentProcessExecutionModeWithoutWaitingForBank {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let params: Vec<Option<String>> = vec![
-
-            Some("type".to_string()),
-            Some(self.r_type.to_string()),
-
-        ];
-
-        write!(f, "{}", params.into_iter().flatten().collect::<Vec<_>>().join(","))
-    }
-}
-
-/// Converts Query Parameters representation (style=form, explode=false) to a MerchantPaymentProcessExecutionModeWithoutWaitingForBank value
-/// as specified in https://swagger.io/docs/specification/serialization/
-/// Should be implemented in a serde deserializer
-impl std::str::FromStr for MerchantPaymentProcessExecutionModeWithoutWaitingForBank {
-    type Err = String;
-
-    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-        /// An intermediate representation of the struct to use for parsing.
-        #[derive(Default)]
-        #[allow(dead_code)]
-        struct IntermediateRep {
-            pub r_type: Vec<String>,
-        }
-
-        let mut intermediate_rep = IntermediateRep::default();
-
-        // Parse into intermediate representation
-        let mut string_iter = s.split(',');
-        let mut key_result = string_iter.next();
-
-        while key_result.is_some() {
-            let val = match string_iter.next() {
-                Some(x) => x,
-                None => return std::result::Result::Err("Missing value while parsing MerchantPaymentProcessExecutionModeWithoutWaitingForBank".to_string())
-            };
-
-            if let Some(key) = key_result {
-                #[allow(clippy::match_single_binding)]
-                match key {
-                    #[allow(clippy::redundant_clone)]
-                    "type" => intermediate_rep.r_type.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
-                    _ => return std::result::Result::Err("Unexpected key while parsing MerchantPaymentProcessExecutionModeWithoutWaitingForBank".to_string())
-                }
-            }
-
-            // Get the next key
-            key_result = string_iter.next();
-        }
-
-        // Use the intermediate representation to return the struct
-        std::result::Result::Ok(MerchantPaymentProcessExecutionModeWithoutWaitingForBank {
-            r_type: intermediate_rep.r_type.into_iter().next().ok_or_else(|| "type missing in MerchantPaymentProcessExecutionModeWithoutWaitingForBank".to_string())?,
-        })
-    }
-}
-
-// Methods for converting between header::IntoHeaderValue<MerchantPaymentProcessExecutionModeWithoutWaitingForBank> and HeaderValue
-
-#[cfg(feature = "server")]
-impl std::convert::TryFrom<header::IntoHeaderValue<MerchantPaymentProcessExecutionModeWithoutWaitingForBank>> for HeaderValue {
-    type Error = String;
-
-    fn try_from(hdr_value: header::IntoHeaderValue<MerchantPaymentProcessExecutionModeWithoutWaitingForBank>) -> std::result::Result<Self, Self::Error> {
-        let hdr_value = hdr_value.to_string();
-        match HeaderValue::from_str(&hdr_value) {
-             std::result::Result::Ok(value) => std::result::Result::Ok(value),
-             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Invalid header value for MerchantPaymentProcessExecutionModeWithoutWaitingForBank - value: {hdr_value} is invalid {e}"#))
-        }
-    }
-}
-
-#[cfg(feature = "server")]
-impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<MerchantPaymentProcessExecutionModeWithoutWaitingForBank> {
-    type Error = String;
-
-    fn try_from(hdr_value: HeaderValue) -> std::result::Result<Self, Self::Error> {
-        match hdr_value.to_str() {
-             std::result::Result::Ok(value) => {
-                    match <MerchantPaymentProcessExecutionModeWithoutWaitingForBank as std::str::FromStr>::from_str(value) {
-                        std::result::Result::Ok(value) => std::result::Result::Ok(header::IntoHeaderValue(value)),
-                        std::result::Result::Err(err) => std::result::Result::Err(format!(r#"Unable to convert header value '{value}' into MerchantPaymentProcessExecutionModeWithoutWaitingForBank - {err}"#))
-                    }
-             },
-             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Unable to convert header: {hdr_value:?} to string: {e}"#))
-        }
-    }
-}
 
 
 
@@ -2224,20 +3517,20 @@ impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<MerchantPaym
 #[allow(non_camel_case_types, clippy::large_enum_variant)]
 pub enum MerchantPaymentProcessPaymentMode {
     #[serde(alias = "FixedAccount")]
-    MerchantPaymentProcessPaymentModeFixedAccount(models::MerchantPaymentProcessPaymentModeFixedAccount),
+    FixedAccount(models::FixedAccount),
     #[serde(alias = "FixedBank")]
-    MerchantPaymentProcessPaymentModeFixedBank(models::MerchantPaymentProcessPaymentModeFixedBank),
+    FixedBank(models::FixedBank),
     #[serde(alias = "Flexible")]
-    MerchantPaymentProcessPaymentModeFlexible(models::MerchantPaymentProcessPaymentModeFlexible),
+    Flexible(models::Flexible),
 }
 
 impl validator::Validate for MerchantPaymentProcessPaymentMode
 {
     fn validate(&self) -> std::result::Result<(), validator::ValidationErrors> {
         match self {
-            Self::MerchantPaymentProcessPaymentModeFixedAccount(v) => v.validate(),
-            Self::MerchantPaymentProcessPaymentModeFixedBank(v) => v.validate(),
-            Self::MerchantPaymentProcessPaymentModeFlexible(v) => v.validate(),
+            Self::FixedAccount(v) => v.validate(),
+            Self::FixedBank(v) => v.validate(),
+            Self::Flexible(v) => v.validate(),
         }
     }
 }
@@ -2257,26 +3550,26 @@ impl serde::Serialize for MerchantPaymentProcessPaymentMode {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
         where S: serde::Serializer {
             match self {
-                Self::MerchantPaymentProcessPaymentModeFixedAccount(x) => x.serialize(serializer),
-                Self::MerchantPaymentProcessPaymentModeFixedBank(x) => x.serialize(serializer),
-                Self::MerchantPaymentProcessPaymentModeFlexible(x) => x.serialize(serializer),
+                Self::FixedAccount(x) => x.serialize(serializer),
+                Self::FixedBank(x) => x.serialize(serializer),
+                Self::Flexible(x) => x.serialize(serializer),
             }
     }
 }
 
-impl From<models::MerchantPaymentProcessPaymentModeFixedAccount> for MerchantPaymentProcessPaymentMode {
-    fn from(value: models::MerchantPaymentProcessPaymentModeFixedAccount) -> Self {
-        Self::MerchantPaymentProcessPaymentModeFixedAccount(value)
+impl From<models::FixedAccount> for MerchantPaymentProcessPaymentMode {
+    fn from(value: models::FixedAccount) -> Self {
+        Self::FixedAccount(value)
     }
 }
-impl From<models::MerchantPaymentProcessPaymentModeFixedBank> for MerchantPaymentProcessPaymentMode {
-    fn from(value: models::MerchantPaymentProcessPaymentModeFixedBank) -> Self {
-        Self::MerchantPaymentProcessPaymentModeFixedBank(value)
+impl From<models::FixedBank> for MerchantPaymentProcessPaymentMode {
+    fn from(value: models::FixedBank) -> Self {
+        Self::FixedBank(value)
     }
 }
-impl From<models::MerchantPaymentProcessPaymentModeFlexible> for MerchantPaymentProcessPaymentMode {
-    fn from(value: models::MerchantPaymentProcessPaymentModeFlexible) -> Self {
-        Self::MerchantPaymentProcessPaymentModeFlexible(value)
+impl From<models::Flexible> for MerchantPaymentProcessPaymentMode {
+    fn from(value: models::Flexible) -> Self {
+        Self::Flexible(value)
     }
 }
 
@@ -2284,57 +3577,68 @@ impl From<models::MerchantPaymentProcessPaymentModeFlexible> for MerchantPayment
 
 
 
-/// Fixed account mode in merchant payment process, with account ID specified.
+/// Result from merchant payment process; provided by UssdProcess.MerchantPaymentProcess.
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, validator::Validate)]
 #[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
-pub struct MerchantPaymentProcessPaymentModeFixedAccount {
-    /// Number of the account which will be used in transaction. Account numbers can be obtained with Qrios API using `/merchants/accounts` endpoint.
-    #[serde(rename = "accountNumber")]
-          #[validate(custom(function = "check_xss_string"))]
-    pub account_number: String,
-
-    /// Code of the bank which will be used in transaction. Bank codes can be obtained with Qrios API using `/merchants/accounts` endpoint.
-    #[serde(rename = "bank")]
-          #[validate(custom(function = "check_xss_string"))]
-    pub bank: String,
-
+pub struct MerchantPaymentResult {
     /// Note: inline enums are not fully supported by openapi-generator
+    #[serde(default = "MerchantPaymentResult::_name_for_r_type")]
+    #[serde(serialize_with = "MerchantPaymentResult::_serialize_r_type")]
     #[serde(rename = "type")]
           #[validate(custom(function = "check_xss_string"))]
     pub r_type: String,
 
+    /// Merchant payment operation id
+    #[serde(rename = "operationId")]
+          #[validate(custom(function = "check_xss_string"))]
+    pub operation_id: String,
+
+    #[serde(rename = "status")]
+          #[validate(nested)]
+    pub status: models::MerchantPaymentResultOperationStatus,
+
+}
+
+impl MerchantPaymentResult {
+    fn _name_for_r_type() -> String {
+        String::from("MerchantPaymentResult")
+    }
+
+    fn _serialize_r_type<S>(_: &String, s: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        s.serialize_str(&Self::_name_for_r_type())
+    }
 }
 
 
-
-impl MerchantPaymentProcessPaymentModeFixedAccount {
+impl MerchantPaymentResult {
     #[allow(clippy::new_without_default, clippy::too_many_arguments)]
-    pub fn new(account_number: String, bank: String, r_type: String, ) -> MerchantPaymentProcessPaymentModeFixedAccount {
-        MerchantPaymentProcessPaymentModeFixedAccount {
- account_number,
- bank,
- r_type,
+    pub fn new(operation_id: String, status: models::MerchantPaymentResultOperationStatus, ) -> MerchantPaymentResult {
+        MerchantPaymentResult {
+ r_type: Self::_name_for_r_type(),
+ operation_id,
+ status,
         }
     }
 }
 
-/// Converts the MerchantPaymentProcessPaymentModeFixedAccount value to the Query Parameters representation (style=form, explode=false)
+/// Converts the MerchantPaymentResult value to the Query Parameters representation (style=form, explode=false)
 /// specified in https://swagger.io/docs/specification/serialization/
 /// Should be implemented in a serde serializer
-impl std::fmt::Display for MerchantPaymentProcessPaymentModeFixedAccount {
+impl std::fmt::Display for MerchantPaymentResult {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let params: Vec<Option<String>> = vec![
 
-            Some("accountNumber".to_string()),
-            Some(self.account_number.to_string()),
-
-
-            Some("bank".to_string()),
-            Some(self.bank.to_string()),
-
-
             Some("type".to_string()),
             Some(self.r_type.to_string()),
+
+
+            Some("operationId".to_string()),
+            Some(self.operation_id.to_string()),
+
+            // Skipping status in query parameter serialization
 
         ];
 
@@ -2342,10 +3646,10 @@ impl std::fmt::Display for MerchantPaymentProcessPaymentModeFixedAccount {
     }
 }
 
-/// Converts Query Parameters representation (style=form, explode=false) to a MerchantPaymentProcessPaymentModeFixedAccount value
+/// Converts Query Parameters representation (style=form, explode=false) to a MerchantPaymentResult value
 /// as specified in https://swagger.io/docs/specification/serialization/
 /// Should be implemented in a serde deserializer
-impl std::str::FromStr for MerchantPaymentProcessPaymentModeFixedAccount {
+impl std::str::FromStr for MerchantPaymentResult {
     type Err = String;
 
     fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
@@ -2353,9 +3657,9 @@ impl std::str::FromStr for MerchantPaymentProcessPaymentModeFixedAccount {
         #[derive(Default)]
         #[allow(dead_code)]
         struct IntermediateRep {
-            pub account_number: Vec<String>,
-            pub bank: Vec<String>,
             pub r_type: Vec<String>,
+            pub operation_id: Vec<String>,
+            pub status: Vec<models::MerchantPaymentResultOperationStatus>,
         }
 
         let mut intermediate_rep = IntermediateRep::default();
@@ -2367,19 +3671,19 @@ impl std::str::FromStr for MerchantPaymentProcessPaymentModeFixedAccount {
         while key_result.is_some() {
             let val = match string_iter.next() {
                 Some(x) => x,
-                None => return std::result::Result::Err("Missing value while parsing MerchantPaymentProcessPaymentModeFixedAccount".to_string())
+                None => return std::result::Result::Err("Missing value while parsing MerchantPaymentResult".to_string())
             };
 
             if let Some(key) = key_result {
                 #[allow(clippy::match_single_binding)]
                 match key {
                     #[allow(clippy::redundant_clone)]
-                    "accountNumber" => intermediate_rep.account_number.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
-                    #[allow(clippy::redundant_clone)]
-                    "bank" => intermediate_rep.bank.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
-                    #[allow(clippy::redundant_clone)]
                     "type" => intermediate_rep.r_type.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
-                    _ => return std::result::Result::Err("Unexpected key while parsing MerchantPaymentProcessPaymentModeFixedAccount".to_string())
+                    #[allow(clippy::redundant_clone)]
+                    "operationId" => intermediate_rep.operation_id.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
+                    #[allow(clippy::redundant_clone)]
+                    "status" => intermediate_rep.status.push(<models::MerchantPaymentResultOperationStatus as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
+                    _ => return std::result::Result::Err("Unexpected key while parsing MerchantPaymentResult".to_string())
                 }
             }
 
@@ -2388,289 +3692,39 @@ impl std::str::FromStr for MerchantPaymentProcessPaymentModeFixedAccount {
         }
 
         // Use the intermediate representation to return the struct
-        std::result::Result::Ok(MerchantPaymentProcessPaymentModeFixedAccount {
-            account_number: intermediate_rep.account_number.into_iter().next().ok_or_else(|| "accountNumber missing in MerchantPaymentProcessPaymentModeFixedAccount".to_string())?,
-            bank: intermediate_rep.bank.into_iter().next().ok_or_else(|| "bank missing in MerchantPaymentProcessPaymentModeFixedAccount".to_string())?,
-            r_type: intermediate_rep.r_type.into_iter().next().ok_or_else(|| "type missing in MerchantPaymentProcessPaymentModeFixedAccount".to_string())?,
+        std::result::Result::Ok(MerchantPaymentResult {
+            r_type: intermediate_rep.r_type.into_iter().next().ok_or_else(|| "type missing in MerchantPaymentResult".to_string())?,
+            operation_id: intermediate_rep.operation_id.into_iter().next().ok_or_else(|| "operationId missing in MerchantPaymentResult".to_string())?,
+            status: intermediate_rep.status.into_iter().next().ok_or_else(|| "status missing in MerchantPaymentResult".to_string())?,
         })
     }
 }
 
-// Methods for converting between header::IntoHeaderValue<MerchantPaymentProcessPaymentModeFixedAccount> and HeaderValue
+// Methods for converting between header::IntoHeaderValue<MerchantPaymentResult> and HeaderValue
 
 #[cfg(feature = "server")]
-impl std::convert::TryFrom<header::IntoHeaderValue<MerchantPaymentProcessPaymentModeFixedAccount>> for HeaderValue {
+impl std::convert::TryFrom<header::IntoHeaderValue<MerchantPaymentResult>> for HeaderValue {
     type Error = String;
 
-    fn try_from(hdr_value: header::IntoHeaderValue<MerchantPaymentProcessPaymentModeFixedAccount>) -> std::result::Result<Self, Self::Error> {
+    fn try_from(hdr_value: header::IntoHeaderValue<MerchantPaymentResult>) -> std::result::Result<Self, Self::Error> {
         let hdr_value = hdr_value.to_string();
         match HeaderValue::from_str(&hdr_value) {
              std::result::Result::Ok(value) => std::result::Result::Ok(value),
-             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Invalid header value for MerchantPaymentProcessPaymentModeFixedAccount - value: {hdr_value} is invalid {e}"#))
+             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Invalid header value for MerchantPaymentResult - value: {hdr_value} is invalid {e}"#))
         }
     }
 }
 
 #[cfg(feature = "server")]
-impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<MerchantPaymentProcessPaymentModeFixedAccount> {
+impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<MerchantPaymentResult> {
     type Error = String;
 
     fn try_from(hdr_value: HeaderValue) -> std::result::Result<Self, Self::Error> {
         match hdr_value.to_str() {
              std::result::Result::Ok(value) => {
-                    match <MerchantPaymentProcessPaymentModeFixedAccount as std::str::FromStr>::from_str(value) {
+                    match <MerchantPaymentResult as std::str::FromStr>::from_str(value) {
                         std::result::Result::Ok(value) => std::result::Result::Ok(header::IntoHeaderValue(value)),
-                        std::result::Result::Err(err) => std::result::Result::Err(format!(r#"Unable to convert header value '{value}' into MerchantPaymentProcessPaymentModeFixedAccount - {err}"#))
-                    }
-             },
-             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Unable to convert header: {hdr_value:?} to string: {e}"#))
-        }
-    }
-}
-
-
-
-/// Fixed bank mode in merchant payment process, with bank ID specified. The account from provided bank will then be selected within the process.
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, validator::Validate)]
-#[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
-pub struct MerchantPaymentProcessPaymentModeFixedBank {
-    /// Code of the bank which will be used in transaction. Bank codes can be obtained with Qrios API using `/merchants/accounts` endpoint.
-    #[serde(rename = "bank")]
-          #[validate(custom(function = "check_xss_string"))]
-    pub bank: String,
-
-    /// Note: inline enums are not fully supported by openapi-generator
-    #[serde(rename = "type")]
-          #[validate(custom(function = "check_xss_string"))]
-    pub r_type: String,
-
-}
-
-
-
-impl MerchantPaymentProcessPaymentModeFixedBank {
-    #[allow(clippy::new_without_default, clippy::too_many_arguments)]
-    pub fn new(bank: String, r_type: String, ) -> MerchantPaymentProcessPaymentModeFixedBank {
-        MerchantPaymentProcessPaymentModeFixedBank {
- bank,
- r_type,
-        }
-    }
-}
-
-/// Converts the MerchantPaymentProcessPaymentModeFixedBank value to the Query Parameters representation (style=form, explode=false)
-/// specified in https://swagger.io/docs/specification/serialization/
-/// Should be implemented in a serde serializer
-impl std::fmt::Display for MerchantPaymentProcessPaymentModeFixedBank {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let params: Vec<Option<String>> = vec![
-
-            Some("bank".to_string()),
-            Some(self.bank.to_string()),
-
-
-            Some("type".to_string()),
-            Some(self.r_type.to_string()),
-
-        ];
-
-        write!(f, "{}", params.into_iter().flatten().collect::<Vec<_>>().join(","))
-    }
-}
-
-/// Converts Query Parameters representation (style=form, explode=false) to a MerchantPaymentProcessPaymentModeFixedBank value
-/// as specified in https://swagger.io/docs/specification/serialization/
-/// Should be implemented in a serde deserializer
-impl std::str::FromStr for MerchantPaymentProcessPaymentModeFixedBank {
-    type Err = String;
-
-    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-        /// An intermediate representation of the struct to use for parsing.
-        #[derive(Default)]
-        #[allow(dead_code)]
-        struct IntermediateRep {
-            pub bank: Vec<String>,
-            pub r_type: Vec<String>,
-        }
-
-        let mut intermediate_rep = IntermediateRep::default();
-
-        // Parse into intermediate representation
-        let mut string_iter = s.split(',');
-        let mut key_result = string_iter.next();
-
-        while key_result.is_some() {
-            let val = match string_iter.next() {
-                Some(x) => x,
-                None => return std::result::Result::Err("Missing value while parsing MerchantPaymentProcessPaymentModeFixedBank".to_string())
-            };
-
-            if let Some(key) = key_result {
-                #[allow(clippy::match_single_binding)]
-                match key {
-                    #[allow(clippy::redundant_clone)]
-                    "bank" => intermediate_rep.bank.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
-                    #[allow(clippy::redundant_clone)]
-                    "type" => intermediate_rep.r_type.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
-                    _ => return std::result::Result::Err("Unexpected key while parsing MerchantPaymentProcessPaymentModeFixedBank".to_string())
-                }
-            }
-
-            // Get the next key
-            key_result = string_iter.next();
-        }
-
-        // Use the intermediate representation to return the struct
-        std::result::Result::Ok(MerchantPaymentProcessPaymentModeFixedBank {
-            bank: intermediate_rep.bank.into_iter().next().ok_or_else(|| "bank missing in MerchantPaymentProcessPaymentModeFixedBank".to_string())?,
-            r_type: intermediate_rep.r_type.into_iter().next().ok_or_else(|| "type missing in MerchantPaymentProcessPaymentModeFixedBank".to_string())?,
-        })
-    }
-}
-
-// Methods for converting between header::IntoHeaderValue<MerchantPaymentProcessPaymentModeFixedBank> and HeaderValue
-
-#[cfg(feature = "server")]
-impl std::convert::TryFrom<header::IntoHeaderValue<MerchantPaymentProcessPaymentModeFixedBank>> for HeaderValue {
-    type Error = String;
-
-    fn try_from(hdr_value: header::IntoHeaderValue<MerchantPaymentProcessPaymentModeFixedBank>) -> std::result::Result<Self, Self::Error> {
-        let hdr_value = hdr_value.to_string();
-        match HeaderValue::from_str(&hdr_value) {
-             std::result::Result::Ok(value) => std::result::Result::Ok(value),
-             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Invalid header value for MerchantPaymentProcessPaymentModeFixedBank - value: {hdr_value} is invalid {e}"#))
-        }
-    }
-}
-
-#[cfg(feature = "server")]
-impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<MerchantPaymentProcessPaymentModeFixedBank> {
-    type Error = String;
-
-    fn try_from(hdr_value: HeaderValue) -> std::result::Result<Self, Self::Error> {
-        match hdr_value.to_str() {
-             std::result::Result::Ok(value) => {
-                    match <MerchantPaymentProcessPaymentModeFixedBank as std::str::FromStr>::from_str(value) {
-                        std::result::Result::Ok(value) => std::result::Result::Ok(header::IntoHeaderValue(value)),
-                        std::result::Result::Err(err) => std::result::Result::Err(format!(r#"Unable to convert header value '{value}' into MerchantPaymentProcessPaymentModeFixedBank - {err}"#))
-                    }
-             },
-             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Unable to convert header: {hdr_value:?} to string: {e}"#))
-        }
-    }
-}
-
-
-
-/// Flexible payment mode in merchant payment process. The account will then be selected within the process.
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, validator::Validate)]
-#[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
-pub struct MerchantPaymentProcessPaymentModeFlexible {
-    /// Note: inline enums are not fully supported by openapi-generator
-    #[serde(rename = "type")]
-          #[validate(custom(function = "check_xss_string"))]
-    pub r_type: String,
-
-}
-
-
-
-impl MerchantPaymentProcessPaymentModeFlexible {
-    #[allow(clippy::new_without_default, clippy::too_many_arguments)]
-    pub fn new(r_type: String, ) -> MerchantPaymentProcessPaymentModeFlexible {
-        MerchantPaymentProcessPaymentModeFlexible {
- r_type,
-        }
-    }
-}
-
-/// Converts the MerchantPaymentProcessPaymentModeFlexible value to the Query Parameters representation (style=form, explode=false)
-/// specified in https://swagger.io/docs/specification/serialization/
-/// Should be implemented in a serde serializer
-impl std::fmt::Display for MerchantPaymentProcessPaymentModeFlexible {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let params: Vec<Option<String>> = vec![
-
-            Some("type".to_string()),
-            Some(self.r_type.to_string()),
-
-        ];
-
-        write!(f, "{}", params.into_iter().flatten().collect::<Vec<_>>().join(","))
-    }
-}
-
-/// Converts Query Parameters representation (style=form, explode=false) to a MerchantPaymentProcessPaymentModeFlexible value
-/// as specified in https://swagger.io/docs/specification/serialization/
-/// Should be implemented in a serde deserializer
-impl std::str::FromStr for MerchantPaymentProcessPaymentModeFlexible {
-    type Err = String;
-
-    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-        /// An intermediate representation of the struct to use for parsing.
-        #[derive(Default)]
-        #[allow(dead_code)]
-        struct IntermediateRep {
-            pub r_type: Vec<String>,
-        }
-
-        let mut intermediate_rep = IntermediateRep::default();
-
-        // Parse into intermediate representation
-        let mut string_iter = s.split(',');
-        let mut key_result = string_iter.next();
-
-        while key_result.is_some() {
-            let val = match string_iter.next() {
-                Some(x) => x,
-                None => return std::result::Result::Err("Missing value while parsing MerchantPaymentProcessPaymentModeFlexible".to_string())
-            };
-
-            if let Some(key) = key_result {
-                #[allow(clippy::match_single_binding)]
-                match key {
-                    #[allow(clippy::redundant_clone)]
-                    "type" => intermediate_rep.r_type.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
-                    _ => return std::result::Result::Err("Unexpected key while parsing MerchantPaymentProcessPaymentModeFlexible".to_string())
-                }
-            }
-
-            // Get the next key
-            key_result = string_iter.next();
-        }
-
-        // Use the intermediate representation to return the struct
-        std::result::Result::Ok(MerchantPaymentProcessPaymentModeFlexible {
-            r_type: intermediate_rep.r_type.into_iter().next().ok_or_else(|| "type missing in MerchantPaymentProcessPaymentModeFlexible".to_string())?,
-        })
-    }
-}
-
-// Methods for converting between header::IntoHeaderValue<MerchantPaymentProcessPaymentModeFlexible> and HeaderValue
-
-#[cfg(feature = "server")]
-impl std::convert::TryFrom<header::IntoHeaderValue<MerchantPaymentProcessPaymentModeFlexible>> for HeaderValue {
-    type Error = String;
-
-    fn try_from(hdr_value: header::IntoHeaderValue<MerchantPaymentProcessPaymentModeFlexible>) -> std::result::Result<Self, Self::Error> {
-        let hdr_value = hdr_value.to_string();
-        match HeaderValue::from_str(&hdr_value) {
-             std::result::Result::Ok(value) => std::result::Result::Ok(value),
-             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Invalid header value for MerchantPaymentProcessPaymentModeFlexible - value: {hdr_value} is invalid {e}"#))
-        }
-    }
-}
-
-#[cfg(feature = "server")]
-impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<MerchantPaymentProcessPaymentModeFlexible> {
-    type Error = String;
-
-    fn try_from(hdr_value: HeaderValue) -> std::result::Result<Self, Self::Error> {
-        match hdr_value.to_str() {
-             std::result::Result::Ok(value) => {
-                    match <MerchantPaymentProcessPaymentModeFlexible as std::str::FromStr>::from_str(value) {
-                        std::result::Result::Ok(value) => std::result::Result::Ok(header::IntoHeaderValue(value)),
-                        std::result::Result::Err(err) => std::result::Result::Err(format!(r#"Unable to convert header value '{value}' into MerchantPaymentProcessPaymentModeFlexible - {err}"#))
+                        std::result::Result::Err(err) => std::result::Result::Err(format!(r#"Unable to convert header value '{value}' into MerchantPaymentResult - {err}"#))
                     }
              },
              std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Unable to convert header: {hdr_value:?} to string: {e}"#))
@@ -2685,20 +3739,20 @@ impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<MerchantPaym
 #[allow(non_camel_case_types, clippy::large_enum_variant)]
 pub enum MerchantPaymentResultOperationStatus {
     #[serde(alias = "Failure")]
-    MerchantPaymentResultOperationStatusFailure(models::MerchantPaymentResultOperationStatusFailure),
+    Failure(models::Failure),
     #[serde(alias = "Success")]
-    MerchantPaymentResultOperationStatusSuccess(models::MerchantPaymentResultOperationStatusSuccess),
+    Success(models::Success),
     #[serde(alias = "Unknown")]
-    MerchantPaymentResultOperationStatusUnknown(models::MerchantPaymentResultOperationStatusUnknown),
+    Unknown(models::Unknown),
 }
 
 impl validator::Validate for MerchantPaymentResultOperationStatus
 {
     fn validate(&self) -> std::result::Result<(), validator::ValidationErrors> {
         match self {
-            Self::MerchantPaymentResultOperationStatusFailure(v) => v.validate(),
-            Self::MerchantPaymentResultOperationStatusSuccess(v) => v.validate(),
-            Self::MerchantPaymentResultOperationStatusUnknown(v) => v.validate(),
+            Self::Failure(v) => v.validate(),
+            Self::Success(v) => v.validate(),
+            Self::Unknown(v) => v.validate(),
         }
     }
 }
@@ -2718,159 +3772,30 @@ impl serde::Serialize for MerchantPaymentResultOperationStatus {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
         where S: serde::Serializer {
             match self {
-                Self::MerchantPaymentResultOperationStatusFailure(x) => x.serialize(serializer),
-                Self::MerchantPaymentResultOperationStatusSuccess(x) => x.serialize(serializer),
-                Self::MerchantPaymentResultOperationStatusUnknown(x) => x.serialize(serializer),
+                Self::Failure(x) => x.serialize(serializer),
+                Self::Success(x) => x.serialize(serializer),
+                Self::Unknown(x) => x.serialize(serializer),
             }
     }
 }
 
-impl From<models::MerchantPaymentResultOperationStatusFailure> for MerchantPaymentResultOperationStatus {
-    fn from(value: models::MerchantPaymentResultOperationStatusFailure) -> Self {
-        Self::MerchantPaymentResultOperationStatusFailure(value)
+impl From<models::Failure> for MerchantPaymentResultOperationStatus {
+    fn from(value: models::Failure) -> Self {
+        Self::Failure(value)
     }
 }
-impl From<models::MerchantPaymentResultOperationStatusSuccess> for MerchantPaymentResultOperationStatus {
-    fn from(value: models::MerchantPaymentResultOperationStatusSuccess) -> Self {
-        Self::MerchantPaymentResultOperationStatusSuccess(value)
+impl From<models::Success> for MerchantPaymentResultOperationStatus {
+    fn from(value: models::Success) -> Self {
+        Self::Success(value)
     }
 }
-impl From<models::MerchantPaymentResultOperationStatusUnknown> for MerchantPaymentResultOperationStatus {
-    fn from(value: models::MerchantPaymentResultOperationStatusUnknown) -> Self {
-        Self::MerchantPaymentResultOperationStatusUnknown(value)
-    }
-}
-
-
-
-
-
-/// Merchant payment operation failed (there was no charge for sure)
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, validator::Validate)]
-#[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
-pub struct MerchantPaymentResultOperationStatusFailure {
-    #[serde(rename = "cause")]
-          #[validate(nested)]
-    pub cause: models::MerchantPaymentResultOperationStatusFailureCause,
-
-    /// Note: inline enums are not fully supported by openapi-generator
-    #[serde(rename = "type")]
-          #[validate(custom(function = "check_xss_string"))]
-    pub r_type: String,
-
-}
-
-
-
-impl MerchantPaymentResultOperationStatusFailure {
-    #[allow(clippy::new_without_default, clippy::too_many_arguments)]
-    pub fn new(cause: models::MerchantPaymentResultOperationStatusFailureCause, r_type: String, ) -> MerchantPaymentResultOperationStatusFailure {
-        MerchantPaymentResultOperationStatusFailure {
- cause,
- r_type,
-        }
+impl From<models::Unknown> for MerchantPaymentResultOperationStatus {
+    fn from(value: models::Unknown) -> Self {
+        Self::Unknown(value)
     }
 }
 
-/// Converts the MerchantPaymentResultOperationStatusFailure value to the Query Parameters representation (style=form, explode=false)
-/// specified in https://swagger.io/docs/specification/serialization/
-/// Should be implemented in a serde serializer
-impl std::fmt::Display for MerchantPaymentResultOperationStatusFailure {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let params: Vec<Option<String>> = vec![
-            // Skipping cause in query parameter serialization
 
-
-            Some("type".to_string()),
-            Some(self.r_type.to_string()),
-
-        ];
-
-        write!(f, "{}", params.into_iter().flatten().collect::<Vec<_>>().join(","))
-    }
-}
-
-/// Converts Query Parameters representation (style=form, explode=false) to a MerchantPaymentResultOperationStatusFailure value
-/// as specified in https://swagger.io/docs/specification/serialization/
-/// Should be implemented in a serde deserializer
-impl std::str::FromStr for MerchantPaymentResultOperationStatusFailure {
-    type Err = String;
-
-    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-        /// An intermediate representation of the struct to use for parsing.
-        #[derive(Default)]
-        #[allow(dead_code)]
-        struct IntermediateRep {
-            pub cause: Vec<models::MerchantPaymentResultOperationStatusFailureCause>,
-            pub r_type: Vec<String>,
-        }
-
-        let mut intermediate_rep = IntermediateRep::default();
-
-        // Parse into intermediate representation
-        let mut string_iter = s.split(',');
-        let mut key_result = string_iter.next();
-
-        while key_result.is_some() {
-            let val = match string_iter.next() {
-                Some(x) => x,
-                None => return std::result::Result::Err("Missing value while parsing MerchantPaymentResultOperationStatusFailure".to_string())
-            };
-
-            if let Some(key) = key_result {
-                #[allow(clippy::match_single_binding)]
-                match key {
-                    #[allow(clippy::redundant_clone)]
-                    "cause" => intermediate_rep.cause.push(<models::MerchantPaymentResultOperationStatusFailureCause as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
-                    #[allow(clippy::redundant_clone)]
-                    "type" => intermediate_rep.r_type.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
-                    _ => return std::result::Result::Err("Unexpected key while parsing MerchantPaymentResultOperationStatusFailure".to_string())
-                }
-            }
-
-            // Get the next key
-            key_result = string_iter.next();
-        }
-
-        // Use the intermediate representation to return the struct
-        std::result::Result::Ok(MerchantPaymentResultOperationStatusFailure {
-            cause: intermediate_rep.cause.into_iter().next().ok_or_else(|| "cause missing in MerchantPaymentResultOperationStatusFailure".to_string())?,
-            r_type: intermediate_rep.r_type.into_iter().next().ok_or_else(|| "type missing in MerchantPaymentResultOperationStatusFailure".to_string())?,
-        })
-    }
-}
-
-// Methods for converting between header::IntoHeaderValue<MerchantPaymentResultOperationStatusFailure> and HeaderValue
-
-#[cfg(feature = "server")]
-impl std::convert::TryFrom<header::IntoHeaderValue<MerchantPaymentResultOperationStatusFailure>> for HeaderValue {
-    type Error = String;
-
-    fn try_from(hdr_value: header::IntoHeaderValue<MerchantPaymentResultOperationStatusFailure>) -> std::result::Result<Self, Self::Error> {
-        let hdr_value = hdr_value.to_string();
-        match HeaderValue::from_str(&hdr_value) {
-             std::result::Result::Ok(value) => std::result::Result::Ok(value),
-             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Invalid header value for MerchantPaymentResultOperationStatusFailure - value: {hdr_value} is invalid {e}"#))
-        }
-    }
-}
-
-#[cfg(feature = "server")]
-impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<MerchantPaymentResultOperationStatusFailure> {
-    type Error = String;
-
-    fn try_from(hdr_value: HeaderValue) -> std::result::Result<Self, Self::Error> {
-        match hdr_value.to_str() {
-             std::result::Result::Ok(value) => {
-                    match <MerchantPaymentResultOperationStatusFailure as std::str::FromStr>::from_str(value) {
-                        std::result::Result::Ok(value) => std::result::Result::Ok(header::IntoHeaderValue(value)),
-                        std::result::Result::Err(err) => std::result::Result::Err(format!(r#"Unable to convert header value '{value}' into MerchantPaymentResultOperationStatusFailure - {err}"#))
-                    }
-             },
-             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Unable to convert header: {hdr_value:?} to string: {e}"#))
-        }
-    }
-}
 
 
 
@@ -2934,34 +3859,57 @@ impl std::str::FromStr for MerchantPaymentResultOperationStatusFailureCause {
 }
 
 
-/// Merchant payment operation finished with success
+/// USSD process abort reason - there are no required privileges to run a USSD operation.
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, validator::Validate)]
 #[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
-pub struct MerchantPaymentResultOperationStatusSuccess {
+pub struct MissingPrivilege {
+    #[serde(rename = "privilege")]
+          #[validate(custom(function = "check_xss_string"))]
+    pub privilege: String,
+
     /// Note: inline enums are not fully supported by openapi-generator
+    #[serde(default = "MissingPrivilege::_name_for_r_type")]
+    #[serde(serialize_with = "MissingPrivilege::_serialize_r_type")]
     #[serde(rename = "type")]
           #[validate(custom(function = "check_xss_string"))]
     pub r_type: String,
 
 }
 
+impl MissingPrivilege {
+    fn _name_for_r_type() -> String {
+        String::from("MissingPrivilege")
+    }
+
+    fn _serialize_r_type<S>(_: &String, s: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        s.serialize_str(&Self::_name_for_r_type())
+    }
+}
 
 
-impl MerchantPaymentResultOperationStatusSuccess {
+impl MissingPrivilege {
     #[allow(clippy::new_without_default, clippy::too_many_arguments)]
-    pub fn new(r_type: String, ) -> MerchantPaymentResultOperationStatusSuccess {
-        MerchantPaymentResultOperationStatusSuccess {
- r_type,
+    pub fn new(privilege: String, ) -> MissingPrivilege {
+        MissingPrivilege {
+ privilege,
+ r_type: Self::_name_for_r_type(),
         }
     }
 }
 
-/// Converts the MerchantPaymentResultOperationStatusSuccess value to the Query Parameters representation (style=form, explode=false)
+/// Converts the MissingPrivilege value to the Query Parameters representation (style=form, explode=false)
 /// specified in https://swagger.io/docs/specification/serialization/
 /// Should be implemented in a serde serializer
-impl std::fmt::Display for MerchantPaymentResultOperationStatusSuccess {
+impl std::fmt::Display for MissingPrivilege {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let params: Vec<Option<String>> = vec![
+
+            Some("privilege".to_string()),
+            Some(self.privilege.to_string()),
+
 
             Some("type".to_string()),
             Some(self.r_type.to_string()),
@@ -2972,10 +3920,10 @@ impl std::fmt::Display for MerchantPaymentResultOperationStatusSuccess {
     }
 }
 
-/// Converts Query Parameters representation (style=form, explode=false) to a MerchantPaymentResultOperationStatusSuccess value
+/// Converts Query Parameters representation (style=form, explode=false) to a MissingPrivilege value
 /// as specified in https://swagger.io/docs/specification/serialization/
 /// Should be implemented in a serde deserializer
-impl std::str::FromStr for MerchantPaymentResultOperationStatusSuccess {
+impl std::str::FromStr for MissingPrivilege {
     type Err = String;
 
     fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
@@ -2983,6 +3931,7 @@ impl std::str::FromStr for MerchantPaymentResultOperationStatusSuccess {
         #[derive(Default)]
         #[allow(dead_code)]
         struct IntermediateRep {
+            pub privilege: Vec<String>,
             pub r_type: Vec<String>,
         }
 
@@ -2995,15 +3944,17 @@ impl std::str::FromStr for MerchantPaymentResultOperationStatusSuccess {
         while key_result.is_some() {
             let val = match string_iter.next() {
                 Some(x) => x,
-                None => return std::result::Result::Err("Missing value while parsing MerchantPaymentResultOperationStatusSuccess".to_string())
+                None => return std::result::Result::Err("Missing value while parsing MissingPrivilege".to_string())
             };
 
             if let Some(key) = key_result {
                 #[allow(clippy::match_single_binding)]
                 match key {
                     #[allow(clippy::redundant_clone)]
+                    "privilege" => intermediate_rep.privilege.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
+                    #[allow(clippy::redundant_clone)]
                     "type" => intermediate_rep.r_type.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
-                    _ => return std::result::Result::Err("Unexpected key while parsing MerchantPaymentResultOperationStatusSuccess".to_string())
+                    _ => return std::result::Result::Err("Unexpected key while parsing MissingPrivilege".to_string())
                 }
             }
 
@@ -3012,287 +3963,38 @@ impl std::str::FromStr for MerchantPaymentResultOperationStatusSuccess {
         }
 
         // Use the intermediate representation to return the struct
-        std::result::Result::Ok(MerchantPaymentResultOperationStatusSuccess {
-            r_type: intermediate_rep.r_type.into_iter().next().ok_or_else(|| "type missing in MerchantPaymentResultOperationStatusSuccess".to_string())?,
+        std::result::Result::Ok(MissingPrivilege {
+            privilege: intermediate_rep.privilege.into_iter().next().ok_or_else(|| "privilege missing in MissingPrivilege".to_string())?,
+            r_type: intermediate_rep.r_type.into_iter().next().ok_or_else(|| "type missing in MissingPrivilege".to_string())?,
         })
     }
 }
 
-// Methods for converting between header::IntoHeaderValue<MerchantPaymentResultOperationStatusSuccess> and HeaderValue
+// Methods for converting between header::IntoHeaderValue<MissingPrivilege> and HeaderValue
 
 #[cfg(feature = "server")]
-impl std::convert::TryFrom<header::IntoHeaderValue<MerchantPaymentResultOperationStatusSuccess>> for HeaderValue {
+impl std::convert::TryFrom<header::IntoHeaderValue<MissingPrivilege>> for HeaderValue {
     type Error = String;
 
-    fn try_from(hdr_value: header::IntoHeaderValue<MerchantPaymentResultOperationStatusSuccess>) -> std::result::Result<Self, Self::Error> {
+    fn try_from(hdr_value: header::IntoHeaderValue<MissingPrivilege>) -> std::result::Result<Self, Self::Error> {
         let hdr_value = hdr_value.to_string();
         match HeaderValue::from_str(&hdr_value) {
              std::result::Result::Ok(value) => std::result::Result::Ok(value),
-             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Invalid header value for MerchantPaymentResultOperationStatusSuccess - value: {hdr_value} is invalid {e}"#))
+             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Invalid header value for MissingPrivilege - value: {hdr_value} is invalid {e}"#))
         }
     }
 }
 
 #[cfg(feature = "server")]
-impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<MerchantPaymentResultOperationStatusSuccess> {
+impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<MissingPrivilege> {
     type Error = String;
 
     fn try_from(hdr_value: HeaderValue) -> std::result::Result<Self, Self::Error> {
         match hdr_value.to_str() {
              std::result::Result::Ok(value) => {
-                    match <MerchantPaymentResultOperationStatusSuccess as std::str::FromStr>::from_str(value) {
+                    match <MissingPrivilege as std::str::FromStr>::from_str(value) {
                         std::result::Result::Ok(value) => std::result::Result::Ok(header::IntoHeaderValue(value)),
-                        std::result::Result::Err(err) => std::result::Result::Err(format!(r#"Unable to convert header value '{value}' into MerchantPaymentResultOperationStatusSuccess - {err}"#))
-                    }
-             },
-             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Unable to convert header: {hdr_value:?} to string: {e}"#))
-        }
-    }
-}
-
-
-
-/// Cannot determine if merchant payment operation succeed or not
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, validator::Validate)]
-#[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
-pub struct MerchantPaymentResultOperationStatusUnknown {
-    /// Note: inline enums are not fully supported by openapi-generator
-    #[serde(rename = "type")]
-          #[validate(custom(function = "check_xss_string"))]
-    pub r_type: String,
-
-}
-
-
-
-impl MerchantPaymentResultOperationStatusUnknown {
-    #[allow(clippy::new_without_default, clippy::too_many_arguments)]
-    pub fn new(r_type: String, ) -> MerchantPaymentResultOperationStatusUnknown {
-        MerchantPaymentResultOperationStatusUnknown {
- r_type,
-        }
-    }
-}
-
-/// Converts the MerchantPaymentResultOperationStatusUnknown value to the Query Parameters representation (style=form, explode=false)
-/// specified in https://swagger.io/docs/specification/serialization/
-/// Should be implemented in a serde serializer
-impl std::fmt::Display for MerchantPaymentResultOperationStatusUnknown {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let params: Vec<Option<String>> = vec![
-
-            Some("type".to_string()),
-            Some(self.r_type.to_string()),
-
-        ];
-
-        write!(f, "{}", params.into_iter().flatten().collect::<Vec<_>>().join(","))
-    }
-}
-
-/// Converts Query Parameters representation (style=form, explode=false) to a MerchantPaymentResultOperationStatusUnknown value
-/// as specified in https://swagger.io/docs/specification/serialization/
-/// Should be implemented in a serde deserializer
-impl std::str::FromStr for MerchantPaymentResultOperationStatusUnknown {
-    type Err = String;
-
-    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-        /// An intermediate representation of the struct to use for parsing.
-        #[derive(Default)]
-        #[allow(dead_code)]
-        struct IntermediateRep {
-            pub r_type: Vec<String>,
-        }
-
-        let mut intermediate_rep = IntermediateRep::default();
-
-        // Parse into intermediate representation
-        let mut string_iter = s.split(',');
-        let mut key_result = string_iter.next();
-
-        while key_result.is_some() {
-            let val = match string_iter.next() {
-                Some(x) => x,
-                None => return std::result::Result::Err("Missing value while parsing MerchantPaymentResultOperationStatusUnknown".to_string())
-            };
-
-            if let Some(key) = key_result {
-                #[allow(clippy::match_single_binding)]
-                match key {
-                    #[allow(clippy::redundant_clone)]
-                    "type" => intermediate_rep.r_type.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
-                    _ => return std::result::Result::Err("Unexpected key while parsing MerchantPaymentResultOperationStatusUnknown".to_string())
-                }
-            }
-
-            // Get the next key
-            key_result = string_iter.next();
-        }
-
-        // Use the intermediate representation to return the struct
-        std::result::Result::Ok(MerchantPaymentResultOperationStatusUnknown {
-            r_type: intermediate_rep.r_type.into_iter().next().ok_or_else(|| "type missing in MerchantPaymentResultOperationStatusUnknown".to_string())?,
-        })
-    }
-}
-
-// Methods for converting between header::IntoHeaderValue<MerchantPaymentResultOperationStatusUnknown> and HeaderValue
-
-#[cfg(feature = "server")]
-impl std::convert::TryFrom<header::IntoHeaderValue<MerchantPaymentResultOperationStatusUnknown>> for HeaderValue {
-    type Error = String;
-
-    fn try_from(hdr_value: header::IntoHeaderValue<MerchantPaymentResultOperationStatusUnknown>) -> std::result::Result<Self, Self::Error> {
-        let hdr_value = hdr_value.to_string();
-        match HeaderValue::from_str(&hdr_value) {
-             std::result::Result::Ok(value) => std::result::Result::Ok(value),
-             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Invalid header value for MerchantPaymentResultOperationStatusUnknown - value: {hdr_value} is invalid {e}"#))
-        }
-    }
-}
-
-#[cfg(feature = "server")]
-impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<MerchantPaymentResultOperationStatusUnknown> {
-    type Error = String;
-
-    fn try_from(hdr_value: HeaderValue) -> std::result::Result<Self, Self::Error> {
-        match hdr_value.to_str() {
-             std::result::Result::Ok(value) => {
-                    match <MerchantPaymentResultOperationStatusUnknown as std::str::FromStr>::from_str(value) {
-                        std::result::Result::Ok(value) => std::result::Result::Ok(header::IntoHeaderValue(value)),
-                        std::result::Result::Err(err) => std::result::Result::Err(format!(r#"Unable to convert header value '{value}' into MerchantPaymentResultOperationStatusUnknown - {err}"#))
-                    }
-             },
-             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Unable to convert header: {hdr_value:?} to string: {e}"#))
-        }
-    }
-}
-
-
-
-/// Input provided when the user dials into the session (dials the shortcode string)
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, validator::Validate)]
-#[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
-pub struct NewSessionSessionInputDial {
-    /// Note: inline enums are not fully supported by openapi-generator
-    #[serde(rename = "type")]
-          #[validate(custom(function = "check_xss_string"))]
-    pub r_type: String,
-
-    /// Shortcode string dialed by the user
-    #[serde(rename = "shortcodeString")]
-          #[validate(custom(function = "check_xss_string"))]
-    pub shortcode_string: String,
-
-}
-
-
-
-impl NewSessionSessionInputDial {
-    #[allow(clippy::new_without_default, clippy::too_many_arguments)]
-    pub fn new(r_type: String, shortcode_string: String, ) -> NewSessionSessionInputDial {
-        NewSessionSessionInputDial {
- r_type,
- shortcode_string,
-        }
-    }
-}
-
-/// Converts the NewSessionSessionInputDial value to the Query Parameters representation (style=form, explode=false)
-/// specified in https://swagger.io/docs/specification/serialization/
-/// Should be implemented in a serde serializer
-impl std::fmt::Display for NewSessionSessionInputDial {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let params: Vec<Option<String>> = vec![
-
-            Some("type".to_string()),
-            Some(self.r_type.to_string()),
-
-
-            Some("shortcodeString".to_string()),
-            Some(self.shortcode_string.to_string()),
-
-        ];
-
-        write!(f, "{}", params.into_iter().flatten().collect::<Vec<_>>().join(","))
-    }
-}
-
-/// Converts Query Parameters representation (style=form, explode=false) to a NewSessionSessionInputDial value
-/// as specified in https://swagger.io/docs/specification/serialization/
-/// Should be implemented in a serde deserializer
-impl std::str::FromStr for NewSessionSessionInputDial {
-    type Err = String;
-
-    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-        /// An intermediate representation of the struct to use for parsing.
-        #[derive(Default)]
-        #[allow(dead_code)]
-        struct IntermediateRep {
-            pub r_type: Vec<String>,
-            pub shortcode_string: Vec<String>,
-        }
-
-        let mut intermediate_rep = IntermediateRep::default();
-
-        // Parse into intermediate representation
-        let mut string_iter = s.split(',');
-        let mut key_result = string_iter.next();
-
-        while key_result.is_some() {
-            let val = match string_iter.next() {
-                Some(x) => x,
-                None => return std::result::Result::Err("Missing value while parsing NewSessionSessionInputDial".to_string())
-            };
-
-            if let Some(key) = key_result {
-                #[allow(clippy::match_single_binding)]
-                match key {
-                    #[allow(clippy::redundant_clone)]
-                    "type" => intermediate_rep.r_type.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
-                    #[allow(clippy::redundant_clone)]
-                    "shortcodeString" => intermediate_rep.shortcode_string.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
-                    _ => return std::result::Result::Err("Unexpected key while parsing NewSessionSessionInputDial".to_string())
-                }
-            }
-
-            // Get the next key
-            key_result = string_iter.next();
-        }
-
-        // Use the intermediate representation to return the struct
-        std::result::Result::Ok(NewSessionSessionInputDial {
-            r_type: intermediate_rep.r_type.into_iter().next().ok_or_else(|| "type missing in NewSessionSessionInputDial".to_string())?,
-            shortcode_string: intermediate_rep.shortcode_string.into_iter().next().ok_or_else(|| "shortcodeString missing in NewSessionSessionInputDial".to_string())?,
-        })
-    }
-}
-
-// Methods for converting between header::IntoHeaderValue<NewSessionSessionInputDial> and HeaderValue
-
-#[cfg(feature = "server")]
-impl std::convert::TryFrom<header::IntoHeaderValue<NewSessionSessionInputDial>> for HeaderValue {
-    type Error = String;
-
-    fn try_from(hdr_value: header::IntoHeaderValue<NewSessionSessionInputDial>) -> std::result::Result<Self, Self::Error> {
-        let hdr_value = hdr_value.to_string();
-        match HeaderValue::from_str(&hdr_value) {
-             std::result::Result::Ok(value) => std::result::Result::Ok(value),
-             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Invalid header value for NewSessionSessionInputDial - value: {hdr_value} is invalid {e}"#))
-        }
-    }
-}
-
-#[cfg(feature = "server")]
-impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<NewSessionSessionInputDial> {
-    type Error = String;
-
-    fn try_from(hdr_value: HeaderValue) -> std::result::Result<Self, Self::Error> {
-        match hdr_value.to_str() {
-             std::result::Result::Ok(value) => {
-                    match <NewSessionSessionInputDial as std::str::FromStr>::from_str(value) {
-                        std::result::Result::Ok(value) => std::result::Result::Ok(header::IntoHeaderValue(value)),
-                        std::result::Result::Err(err) => std::result::Result::Err(format!(r#"Unable to convert header value '{value}' into NewSessionSessionInputDial - {err}"#))
+                        std::result::Result::Err(err) => std::result::Result::Err(format!(r#"Unable to convert header value '{value}' into MissingPrivilege - {err}"#))
                     }
              },
              std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Unable to convert header: {hdr_value:?} to string: {e}"#))
@@ -3305,8 +4007,10 @@ impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<NewSessionSe
 /// Input provided when session is begun by a push message sent to a user.
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, validator::Validate)]
 #[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
-pub struct NewSessionSessionInputPush {
+pub struct Push {
     /// Note: inline enums are not fully supported by openapi-generator
+    #[serde(default = "Push::_name_for_r_type")]
+    #[serde(serialize_with = "Push::_serialize_r_type")]
     #[serde(rename = "type")]
           #[validate(custom(function = "check_xss_string"))]
     pub r_type: String,
@@ -3318,22 +4022,34 @@ pub struct NewSessionSessionInputPush {
 
 }
 
+impl Push {
+    fn _name_for_r_type() -> String {
+        String::from("Push")
+    }
+
+    fn _serialize_r_type<S>(_: &String, s: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        s.serialize_str(&Self::_name_for_r_type())
+    }
+}
 
 
-impl NewSessionSessionInputPush {
+impl Push {
     #[allow(clippy::new_without_default, clippy::too_many_arguments)]
-    pub fn new(r_type: String, context_data: String, ) -> NewSessionSessionInputPush {
-        NewSessionSessionInputPush {
- r_type,
+    pub fn new(context_data: String, ) -> Push {
+        Push {
+ r_type: Self::_name_for_r_type(),
  context_data,
         }
     }
 }
 
-/// Converts the NewSessionSessionInputPush value to the Query Parameters representation (style=form, explode=false)
+/// Converts the Push value to the Query Parameters representation (style=form, explode=false)
 /// specified in https://swagger.io/docs/specification/serialization/
 /// Should be implemented in a serde serializer
-impl std::fmt::Display for NewSessionSessionInputPush {
+impl std::fmt::Display for Push {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let params: Vec<Option<String>> = vec![
 
@@ -3350,10 +4066,10 @@ impl std::fmt::Display for NewSessionSessionInputPush {
     }
 }
 
-/// Converts Query Parameters representation (style=form, explode=false) to a NewSessionSessionInputPush value
+/// Converts Query Parameters representation (style=form, explode=false) to a Push value
 /// as specified in https://swagger.io/docs/specification/serialization/
 /// Should be implemented in a serde deserializer
-impl std::str::FromStr for NewSessionSessionInputPush {
+impl std::str::FromStr for Push {
     type Err = String;
 
     fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
@@ -3374,7 +4090,7 @@ impl std::str::FromStr for NewSessionSessionInputPush {
         while key_result.is_some() {
             let val = match string_iter.next() {
                 Some(x) => x,
-                None => return std::result::Result::Err("Missing value while parsing NewSessionSessionInputPush".to_string())
+                None => return std::result::Result::Err("Missing value while parsing Push".to_string())
             };
 
             if let Some(key) = key_result {
@@ -3384,7 +4100,7 @@ impl std::str::FromStr for NewSessionSessionInputPush {
                     "type" => intermediate_rep.r_type.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
                     #[allow(clippy::redundant_clone)]
                     "contextData" => intermediate_rep.context_data.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
-                    _ => return std::result::Result::Err("Unexpected key while parsing NewSessionSessionInputPush".to_string())
+                    _ => return std::result::Result::Err("Unexpected key while parsing Push".to_string())
                 }
             }
 
@@ -3393,38 +4109,38 @@ impl std::str::FromStr for NewSessionSessionInputPush {
         }
 
         // Use the intermediate representation to return the struct
-        std::result::Result::Ok(NewSessionSessionInputPush {
-            r_type: intermediate_rep.r_type.into_iter().next().ok_or_else(|| "type missing in NewSessionSessionInputPush".to_string())?,
-            context_data: intermediate_rep.context_data.into_iter().next().ok_or_else(|| "contextData missing in NewSessionSessionInputPush".to_string())?,
+        std::result::Result::Ok(Push {
+            r_type: intermediate_rep.r_type.into_iter().next().ok_or_else(|| "type missing in Push".to_string())?,
+            context_data: intermediate_rep.context_data.into_iter().next().ok_or_else(|| "contextData missing in Push".to_string())?,
         })
     }
 }
 
-// Methods for converting between header::IntoHeaderValue<NewSessionSessionInputPush> and HeaderValue
+// Methods for converting between header::IntoHeaderValue<Push> and HeaderValue
 
 #[cfg(feature = "server")]
-impl std::convert::TryFrom<header::IntoHeaderValue<NewSessionSessionInputPush>> for HeaderValue {
+impl std::convert::TryFrom<header::IntoHeaderValue<Push>> for HeaderValue {
     type Error = String;
 
-    fn try_from(hdr_value: header::IntoHeaderValue<NewSessionSessionInputPush>) -> std::result::Result<Self, Self::Error> {
+    fn try_from(hdr_value: header::IntoHeaderValue<Push>) -> std::result::Result<Self, Self::Error> {
         let hdr_value = hdr_value.to_string();
         match HeaderValue::from_str(&hdr_value) {
              std::result::Result::Ok(value) => std::result::Result::Ok(value),
-             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Invalid header value for NewSessionSessionInputPush - value: {hdr_value} is invalid {e}"#))
+             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Invalid header value for Push - value: {hdr_value} is invalid {e}"#))
         }
     }
 }
 
 #[cfg(feature = "server")]
-impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<NewSessionSessionInputPush> {
+impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<Push> {
     type Error = String;
 
     fn try_from(hdr_value: HeaderValue) -> std::result::Result<Self, Self::Error> {
         match hdr_value.to_str() {
              std::result::Result::Ok(value) => {
-                    match <NewSessionSessionInputPush as std::str::FromStr>::from_str(value) {
+                    match <Push as std::str::FromStr>::from_str(value) {
                         std::result::Result::Ok(value) => std::result::Result::Ok(header::IntoHeaderValue(value)),
-                        std::result::Result::Err(err) => std::result::Result::Err(format!(r#"Unable to convert header value '{value}' into NewSessionSessionInputPush - {err}"#))
+                        std::result::Result::Err(err) => std::result::Result::Err(format!(r#"Unable to convert header value '{value}' into Push - {err}"#))
                     }
              },
              std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Unable to convert header: {hdr_value:?} to string: {e}"#))
@@ -3437,154 +4153,6 @@ impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<NewSessionSe
 /// Input provided when session is redirected from different USSD application.
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, validator::Validate)]
 #[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
-pub struct NewSessionSessionInputRedirect {
-    /// Note: inline enums are not fully supported by openapi-generator
-    #[serde(rename = "type")]
-          #[validate(custom(function = "check_xss_string"))]
-    pub r_type: String,
-
-    #[serde(rename = "processId")]
-          #[validate(custom(function = "check_xss_string"))]
-    #[serde(skip_serializing_if="Option::is_none")]
-    pub process_id: Option<String>,
-
-    #[serde(rename = "process")]
-          #[validate(nested)]
-    #[serde(skip_serializing_if="Option::is_none")]
-    pub process: Option<models::UssdAppProcess>,
-
-}
-
-
-
-impl NewSessionSessionInputRedirect {
-    #[allow(clippy::new_without_default, clippy::too_many_arguments)]
-    pub fn new(r_type: String, ) -> NewSessionSessionInputRedirect {
-        NewSessionSessionInputRedirect {
- r_type,
- process_id: None,
- process: None,
-        }
-    }
-}
-
-/// Converts the NewSessionSessionInputRedirect value to the Query Parameters representation (style=form, explode=false)
-/// specified in https://swagger.io/docs/specification/serialization/
-/// Should be implemented in a serde serializer
-impl std::fmt::Display for NewSessionSessionInputRedirect {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let params: Vec<Option<String>> = vec![
-
-            Some("type".to_string()),
-            Some(self.r_type.to_string()),
-
-
-            self.process_id.as_ref().map(|process_id| {
-                [
-                    "processId".to_string(),
-                    process_id.to_string(),
-                ].join(",")
-            }),
-
-            // Skipping process in query parameter serialization
-
-        ];
-
-        write!(f, "{}", params.into_iter().flatten().collect::<Vec<_>>().join(","))
-    }
-}
-
-/// Converts Query Parameters representation (style=form, explode=false) to a NewSessionSessionInputRedirect value
-/// as specified in https://swagger.io/docs/specification/serialization/
-/// Should be implemented in a serde deserializer
-impl std::str::FromStr for NewSessionSessionInputRedirect {
-    type Err = String;
-
-    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-        /// An intermediate representation of the struct to use for parsing.
-        #[derive(Default)]
-        #[allow(dead_code)]
-        struct IntermediateRep {
-            pub r_type: Vec<String>,
-            pub process_id: Vec<String>,
-            pub process: Vec<models::UssdAppProcess>,
-        }
-
-        let mut intermediate_rep = IntermediateRep::default();
-
-        // Parse into intermediate representation
-        let mut string_iter = s.split(',');
-        let mut key_result = string_iter.next();
-
-        while key_result.is_some() {
-            let val = match string_iter.next() {
-                Some(x) => x,
-                None => return std::result::Result::Err("Missing value while parsing NewSessionSessionInputRedirect".to_string())
-            };
-
-            if let Some(key) = key_result {
-                #[allow(clippy::match_single_binding)]
-                match key {
-                    #[allow(clippy::redundant_clone)]
-                    "type" => intermediate_rep.r_type.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
-                    #[allow(clippy::redundant_clone)]
-                    "processId" => intermediate_rep.process_id.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
-                    #[allow(clippy::redundant_clone)]
-                    "process" => intermediate_rep.process.push(<models::UssdAppProcess as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
-                    _ => return std::result::Result::Err("Unexpected key while parsing NewSessionSessionInputRedirect".to_string())
-                }
-            }
-
-            // Get the next key
-            key_result = string_iter.next();
-        }
-
-        // Use the intermediate representation to return the struct
-        std::result::Result::Ok(NewSessionSessionInputRedirect {
-            r_type: intermediate_rep.r_type.into_iter().next().ok_or_else(|| "type missing in NewSessionSessionInputRedirect".to_string())?,
-            process_id: intermediate_rep.process_id.into_iter().next(),
-            process: intermediate_rep.process.into_iter().next(),
-        })
-    }
-}
-
-// Methods for converting between header::IntoHeaderValue<NewSessionSessionInputRedirect> and HeaderValue
-
-#[cfg(feature = "server")]
-impl std::convert::TryFrom<header::IntoHeaderValue<NewSessionSessionInputRedirect>> for HeaderValue {
-    type Error = String;
-
-    fn try_from(hdr_value: header::IntoHeaderValue<NewSessionSessionInputRedirect>) -> std::result::Result<Self, Self::Error> {
-        let hdr_value = hdr_value.to_string();
-        match HeaderValue::from_str(&hdr_value) {
-             std::result::Result::Ok(value) => std::result::Result::Ok(value),
-             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Invalid header value for NewSessionSessionInputRedirect - value: {hdr_value} is invalid {e}"#))
-        }
-    }
-}
-
-#[cfg(feature = "server")]
-impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<NewSessionSessionInputRedirect> {
-    type Error = String;
-
-    fn try_from(hdr_value: HeaderValue) -> std::result::Result<Self, Self::Error> {
-        match hdr_value.to_str() {
-             std::result::Result::Ok(value) => {
-                    match <NewSessionSessionInputRedirect as std::str::FromStr>::from_str(value) {
-                        std::result::Result::Ok(value) => std::result::Result::Ok(header::IntoHeaderValue(value)),
-                        std::result::Result::Err(err) => std::result::Result::Err(format!(r#"Unable to convert header value '{value}' into NewSessionSessionInputRedirect - {err}"#))
-                    }
-             },
-             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Unable to convert header: {hdr_value:?} to string: {e}"#))
-        }
-    }
-}
-
-
-
-/// Developer's USSD App returns USSD process result as a map of params
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, validator::Validate)]
-#[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
 pub struct Redirect {
     /// Note: inline enums are not fully supported by openapi-generator
     #[serde(default = "Redirect::_name_for_r_type")]
@@ -3593,10 +4161,10 @@ pub struct Redirect {
           #[validate(custom(function = "check_xss_string"))]
     pub r_type: String,
 
-    /// Identifier of the USSD app created on Qrios platform.
-    #[serde(rename = "destinationAppId")]
+    #[serde(rename = "processId")]
           #[validate(custom(function = "check_xss_string"))]
-    pub destination_app_id: String,
+    #[serde(skip_serializing_if="Option::is_none")]
+    pub process_id: Option<String>,
 
     #[serde(rename = "process")]
           #[validate(nested)]
@@ -3621,10 +4189,10 @@ impl Redirect {
 
 impl Redirect {
     #[allow(clippy::new_without_default, clippy::too_many_arguments)]
-    pub fn new(destination_app_id: String, ) -> Redirect {
+    pub fn new() -> Redirect {
         Redirect {
  r_type: Self::_name_for_r_type(),
- destination_app_id,
+ process_id: None,
  process: None,
         }
     }
@@ -3641,8 +4209,12 @@ impl std::fmt::Display for Redirect {
             Some(self.r_type.to_string()),
 
 
-            Some("destinationAppId".to_string()),
-            Some(self.destination_app_id.to_string()),
+            self.process_id.as_ref().map(|process_id| {
+                [
+                    "processId".to_string(),
+                    process_id.to_string(),
+                ].join(",")
+            }),
 
             // Skipping process in query parameter serialization
 
@@ -3664,7 +4236,7 @@ impl std::str::FromStr for Redirect {
         #[allow(dead_code)]
         struct IntermediateRep {
             pub r_type: Vec<String>,
-            pub destination_app_id: Vec<String>,
+            pub process_id: Vec<String>,
             pub process: Vec<models::UssdAppProcess>,
         }
 
@@ -3686,7 +4258,7 @@ impl std::str::FromStr for Redirect {
                     #[allow(clippy::redundant_clone)]
                     "type" => intermediate_rep.r_type.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
                     #[allow(clippy::redundant_clone)]
-                    "destinationAppId" => intermediate_rep.destination_app_id.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
+                    "processId" => intermediate_rep.process_id.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
                     #[allow(clippy::redundant_clone)]
                     "process" => intermediate_rep.process.push(<models::UssdAppProcess as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
                     _ => return std::result::Result::Err("Unexpected key while parsing Redirect".to_string())
@@ -3700,7 +4272,7 @@ impl std::str::FromStr for Redirect {
         // Use the intermediate representation to return the struct
         std::result::Result::Ok(Redirect {
             r_type: intermediate_rep.r_type.into_iter().next().ok_or_else(|| "type missing in Redirect".to_string())?,
-            destination_app_id: intermediate_rep.destination_app_id.into_iter().next().ok_or_else(|| "destinationAppId missing in Redirect".to_string())?,
+            process_id: intermediate_rep.process_id.into_iter().next(),
             process: intermediate_rep.process.into_iter().next(),
         })
     }
@@ -3872,6 +4444,149 @@ impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<ReturnFromRe
                     match <ReturnFromRedirect as std::str::FromStr>::from_str(value) {
                         std::result::Result::Ok(value) => std::result::Result::Ok(header::IntoHeaderValue(value)),
                         std::result::Result::Err(err) => std::result::Result::Err(format!(r#"Unable to convert header value '{value}' into ReturnFromRedirect - {err}"#))
+                    }
+             },
+             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Unable to convert header: {hdr_value:?} to string: {e}"#))
+        }
+    }
+}
+
+
+
+/// Result returned from the app, to which the session was previously redirected.
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, validator::Validate)]
+#[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
+pub struct ReturnFromRedirectResult {
+    /// Note: inline enums are not fully supported by openapi-generator
+    #[serde(default = "ReturnFromRedirectResult::_name_for_r_type")]
+    #[serde(serialize_with = "ReturnFromRedirectResult::_serialize_r_type")]
+    #[serde(rename = "type")]
+          #[validate(custom(function = "check_xss_string"))]
+    pub r_type: String,
+
+    /// Result of the `return from redirection`. Keys should be considered as result parameter names and their values as result parameter values.
+    #[serde(rename = "resultParams")]
+          #[validate(custom(function = "check_xss_map_string"))]
+    pub result_params: std::collections::HashMap<String, String>,
+
+}
+
+impl ReturnFromRedirectResult {
+    fn _name_for_r_type() -> String {
+        String::from("ReturnFromRedirectResult")
+    }
+
+    fn _serialize_r_type<S>(_: &String, s: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        s.serialize_str(&Self::_name_for_r_type())
+    }
+}
+
+
+impl ReturnFromRedirectResult {
+    #[allow(clippy::new_without_default, clippy::too_many_arguments)]
+    pub fn new(result_params: std::collections::HashMap<String, String>, ) -> ReturnFromRedirectResult {
+        ReturnFromRedirectResult {
+ r_type: Self::_name_for_r_type(),
+ result_params,
+        }
+    }
+}
+
+/// Converts the ReturnFromRedirectResult value to the Query Parameters representation (style=form, explode=false)
+/// specified in https://swagger.io/docs/specification/serialization/
+/// Should be implemented in a serde serializer
+impl std::fmt::Display for ReturnFromRedirectResult {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let params: Vec<Option<String>> = vec![
+
+            Some("type".to_string()),
+            Some(self.r_type.to_string()),
+
+            // Skipping resultParams in query parameter serialization
+
+        ];
+
+        write!(f, "{}", params.into_iter().flatten().collect::<Vec<_>>().join(","))
+    }
+}
+
+/// Converts Query Parameters representation (style=form, explode=false) to a ReturnFromRedirectResult value
+/// as specified in https://swagger.io/docs/specification/serialization/
+/// Should be implemented in a serde deserializer
+impl std::str::FromStr for ReturnFromRedirectResult {
+    type Err = String;
+
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        /// An intermediate representation of the struct to use for parsing.
+        #[derive(Default)]
+        #[allow(dead_code)]
+        struct IntermediateRep {
+            pub r_type: Vec<String>,
+            pub result_params: Vec<std::collections::HashMap<String, String>>,
+        }
+
+        let mut intermediate_rep = IntermediateRep::default();
+
+        // Parse into intermediate representation
+        let mut string_iter = s.split(',');
+        let mut key_result = string_iter.next();
+
+        while key_result.is_some() {
+            let val = match string_iter.next() {
+                Some(x) => x,
+                None => return std::result::Result::Err("Missing value while parsing ReturnFromRedirectResult".to_string())
+            };
+
+            if let Some(key) = key_result {
+                #[allow(clippy::match_single_binding)]
+                match key {
+                    #[allow(clippy::redundant_clone)]
+                    "type" => intermediate_rep.r_type.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
+                    "resultParams" => return std::result::Result::Err("Parsing a container in this style is not supported in ReturnFromRedirectResult".to_string()),
+                    _ => return std::result::Result::Err("Unexpected key while parsing ReturnFromRedirectResult".to_string())
+                }
+            }
+
+            // Get the next key
+            key_result = string_iter.next();
+        }
+
+        // Use the intermediate representation to return the struct
+        std::result::Result::Ok(ReturnFromRedirectResult {
+            r_type: intermediate_rep.r_type.into_iter().next().ok_or_else(|| "type missing in ReturnFromRedirectResult".to_string())?,
+            result_params: intermediate_rep.result_params.into_iter().next().ok_or_else(|| "resultParams missing in ReturnFromRedirectResult".to_string())?,
+        })
+    }
+}
+
+// Methods for converting between header::IntoHeaderValue<ReturnFromRedirectResult> and HeaderValue
+
+#[cfg(feature = "server")]
+impl std::convert::TryFrom<header::IntoHeaderValue<ReturnFromRedirectResult>> for HeaderValue {
+    type Error = String;
+
+    fn try_from(hdr_value: header::IntoHeaderValue<ReturnFromRedirectResult>) -> std::result::Result<Self, Self::Error> {
+        let hdr_value = hdr_value.to_string();
+        match HeaderValue::from_str(&hdr_value) {
+             std::result::Result::Ok(value) => std::result::Result::Ok(value),
+             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Invalid header value for ReturnFromRedirectResult - value: {hdr_value} is invalid {e}"#))
+        }
+    }
+}
+
+#[cfg(feature = "server")]
+impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<ReturnFromRedirectResult> {
+    type Error = String;
+
+    fn try_from(hdr_value: HeaderValue) -> std::result::Result<Self, Self::Error> {
+        match hdr_value.to_str() {
+             std::result::Result::Ok(value) => {
+                    match <ReturnFromRedirectResult as std::str::FromStr>::from_str(value) {
+                        std::result::Result::Ok(value) => std::result::Result::Ok(header::IntoHeaderValue(value)),
+                        std::result::Result::Err(err) => std::result::Result::Err(format!(r#"Unable to convert header value '{value}' into ReturnFromRedirectResult - {err}"#))
                     }
              },
              std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Unable to convert header: {hdr_value:?} to string: {e}"#))
@@ -4167,6 +4882,692 @@ impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<ShowView> {
 
 
 
+/// Merchant payment operation finished with success
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, validator::Validate)]
+#[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
+pub struct Success {
+    /// Note: inline enums are not fully supported by openapi-generator
+    #[serde(default = "Success::_name_for_r_type")]
+    #[serde(serialize_with = "Success::_serialize_r_type")]
+    #[serde(rename = "type")]
+          #[validate(custom(function = "check_xss_string"))]
+    pub r_type: String,
+
+}
+
+impl Success {
+    fn _name_for_r_type() -> String {
+        String::from("Success")
+    }
+
+    fn _serialize_r_type<S>(_: &String, s: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        s.serialize_str(&Self::_name_for_r_type())
+    }
+}
+
+
+impl Success {
+    #[allow(clippy::new_without_default, clippy::too_many_arguments)]
+    pub fn new() -> Success {
+        Success {
+ r_type: Self::_name_for_r_type(),
+        }
+    }
+}
+
+/// Converts the Success value to the Query Parameters representation (style=form, explode=false)
+/// specified in https://swagger.io/docs/specification/serialization/
+/// Should be implemented in a serde serializer
+impl std::fmt::Display for Success {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let params: Vec<Option<String>> = vec![
+
+            Some("type".to_string()),
+            Some(self.r_type.to_string()),
+
+        ];
+
+        write!(f, "{}", params.into_iter().flatten().collect::<Vec<_>>().join(","))
+    }
+}
+
+/// Converts Query Parameters representation (style=form, explode=false) to a Success value
+/// as specified in https://swagger.io/docs/specification/serialization/
+/// Should be implemented in a serde deserializer
+impl std::str::FromStr for Success {
+    type Err = String;
+
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        /// An intermediate representation of the struct to use for parsing.
+        #[derive(Default)]
+        #[allow(dead_code)]
+        struct IntermediateRep {
+            pub r_type: Vec<String>,
+        }
+
+        let mut intermediate_rep = IntermediateRep::default();
+
+        // Parse into intermediate representation
+        let mut string_iter = s.split(',');
+        let mut key_result = string_iter.next();
+
+        while key_result.is_some() {
+            let val = match string_iter.next() {
+                Some(x) => x,
+                None => return std::result::Result::Err("Missing value while parsing Success".to_string())
+            };
+
+            if let Some(key) = key_result {
+                #[allow(clippy::match_single_binding)]
+                match key {
+                    #[allow(clippy::redundant_clone)]
+                    "type" => intermediate_rep.r_type.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
+                    _ => return std::result::Result::Err("Unexpected key while parsing Success".to_string())
+                }
+            }
+
+            // Get the next key
+            key_result = string_iter.next();
+        }
+
+        // Use the intermediate representation to return the struct
+        std::result::Result::Ok(Success {
+            r_type: intermediate_rep.r_type.into_iter().next().ok_or_else(|| "type missing in Success".to_string())?,
+        })
+    }
+}
+
+// Methods for converting between header::IntoHeaderValue<Success> and HeaderValue
+
+#[cfg(feature = "server")]
+impl std::convert::TryFrom<header::IntoHeaderValue<Success>> for HeaderValue {
+    type Error = String;
+
+    fn try_from(hdr_value: header::IntoHeaderValue<Success>) -> std::result::Result<Self, Self::Error> {
+        let hdr_value = hdr_value.to_string();
+        match HeaderValue::from_str(&hdr_value) {
+             std::result::Result::Ok(value) => std::result::Result::Ok(value),
+             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Invalid header value for Success - value: {hdr_value} is invalid {e}"#))
+        }
+    }
+}
+
+#[cfg(feature = "server")]
+impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<Success> {
+    type Error = String;
+
+    fn try_from(hdr_value: HeaderValue) -> std::result::Result<Self, Self::Error> {
+        match hdr_value.to_str() {
+             std::result::Result::Ok(value) => {
+                    match <Success as std::str::FromStr>::from_str(value) {
+                        std::result::Result::Ok(value) => std::result::Result::Ok(header::IntoHeaderValue(value)),
+                        std::result::Result::Err(err) => std::result::Result::Err(format!(r#"Unable to convert header value '{value}' into Success - {err}"#))
+                    }
+             },
+             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Unable to convert header: {hdr_value:?} to string: {e}"#))
+        }
+    }
+}
+
+
+
+/// Timeout - the session is ended by the mobile operator (e.g. after two minutes).
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, validator::Validate)]
+#[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
+pub struct Timeout {
+    /// Note: inline enums are not fully supported by openapi-generator
+    #[serde(default = "Timeout::_name_for_r_type")]
+    #[serde(serialize_with = "Timeout::_serialize_r_type")]
+    #[serde(rename = "type")]
+          #[validate(custom(function = "check_xss_string"))]
+    pub r_type: String,
+
+}
+
+impl Timeout {
+    fn _name_for_r_type() -> String {
+        String::from("Timeout")
+    }
+
+    fn _serialize_r_type<S>(_: &String, s: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        s.serialize_str(&Self::_name_for_r_type())
+    }
+}
+
+
+impl Timeout {
+    #[allow(clippy::new_without_default, clippy::too_many_arguments)]
+    pub fn new() -> Timeout {
+        Timeout {
+ r_type: Self::_name_for_r_type(),
+        }
+    }
+}
+
+/// Converts the Timeout value to the Query Parameters representation (style=form, explode=false)
+/// specified in https://swagger.io/docs/specification/serialization/
+/// Should be implemented in a serde serializer
+impl std::fmt::Display for Timeout {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let params: Vec<Option<String>> = vec![
+
+            Some("type".to_string()),
+            Some(self.r_type.to_string()),
+
+        ];
+
+        write!(f, "{}", params.into_iter().flatten().collect::<Vec<_>>().join(","))
+    }
+}
+
+/// Converts Query Parameters representation (style=form, explode=false) to a Timeout value
+/// as specified in https://swagger.io/docs/specification/serialization/
+/// Should be implemented in a serde deserializer
+impl std::str::FromStr for Timeout {
+    type Err = String;
+
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        /// An intermediate representation of the struct to use for parsing.
+        #[derive(Default)]
+        #[allow(dead_code)]
+        struct IntermediateRep {
+            pub r_type: Vec<String>,
+        }
+
+        let mut intermediate_rep = IntermediateRep::default();
+
+        // Parse into intermediate representation
+        let mut string_iter = s.split(',');
+        let mut key_result = string_iter.next();
+
+        while key_result.is_some() {
+            let val = match string_iter.next() {
+                Some(x) => x,
+                None => return std::result::Result::Err("Missing value while parsing Timeout".to_string())
+            };
+
+            if let Some(key) = key_result {
+                #[allow(clippy::match_single_binding)]
+                match key {
+                    #[allow(clippy::redundant_clone)]
+                    "type" => intermediate_rep.r_type.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
+                    _ => return std::result::Result::Err("Unexpected key while parsing Timeout".to_string())
+                }
+            }
+
+            // Get the next key
+            key_result = string_iter.next();
+        }
+
+        // Use the intermediate representation to return the struct
+        std::result::Result::Ok(Timeout {
+            r_type: intermediate_rep.r_type.into_iter().next().ok_or_else(|| "type missing in Timeout".to_string())?,
+        })
+    }
+}
+
+// Methods for converting between header::IntoHeaderValue<Timeout> and HeaderValue
+
+#[cfg(feature = "server")]
+impl std::convert::TryFrom<header::IntoHeaderValue<Timeout>> for HeaderValue {
+    type Error = String;
+
+    fn try_from(hdr_value: header::IntoHeaderValue<Timeout>) -> std::result::Result<Self, Self::Error> {
+        let hdr_value = hdr_value.to_string();
+        match HeaderValue::from_str(&hdr_value) {
+             std::result::Result::Ok(value) => std::result::Result::Ok(value),
+             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Invalid header value for Timeout - value: {hdr_value} is invalid {e}"#))
+        }
+    }
+}
+
+#[cfg(feature = "server")]
+impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<Timeout> {
+    type Error = String;
+
+    fn try_from(hdr_value: HeaderValue) -> std::result::Result<Self, Self::Error> {
+        match hdr_value.to_str() {
+             std::result::Result::Ok(value) => {
+                    match <Timeout as std::str::FromStr>::from_str(value) {
+                        std::result::Result::Ok(value) => std::result::Result::Ok(header::IntoHeaderValue(value)),
+                        std::result::Result::Err(err) => std::result::Result::Err(format!(r#"Unable to convert header value '{value}' into Timeout - {err}"#))
+                    }
+             },
+             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Unable to convert header: {hdr_value:?} to string: {e}"#))
+        }
+    }
+}
+
+
+
+/// USSD process abort reason - previous USSD app response was malformed or not expected.
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, validator::Validate)]
+#[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
+pub struct UnexpectedUssdAppResponse {
+    /// Note: inline enums are not fully supported by openapi-generator
+    #[serde(default = "UnexpectedUssdAppResponse::_name_for_r_type")]
+    #[serde(serialize_with = "UnexpectedUssdAppResponse::_serialize_r_type")]
+    #[serde(rename = "type")]
+          #[validate(custom(function = "check_xss_string"))]
+    pub r_type: String,
+
+}
+
+impl UnexpectedUssdAppResponse {
+    fn _name_for_r_type() -> String {
+        String::from("UnexpectedUssdAppResponse")
+    }
+
+    fn _serialize_r_type<S>(_: &String, s: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        s.serialize_str(&Self::_name_for_r_type())
+    }
+}
+
+
+impl UnexpectedUssdAppResponse {
+    #[allow(clippy::new_without_default, clippy::too_many_arguments)]
+    pub fn new() -> UnexpectedUssdAppResponse {
+        UnexpectedUssdAppResponse {
+ r_type: Self::_name_for_r_type(),
+        }
+    }
+}
+
+/// Converts the UnexpectedUssdAppResponse value to the Query Parameters representation (style=form, explode=false)
+/// specified in https://swagger.io/docs/specification/serialization/
+/// Should be implemented in a serde serializer
+impl std::fmt::Display for UnexpectedUssdAppResponse {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let params: Vec<Option<String>> = vec![
+
+            Some("type".to_string()),
+            Some(self.r_type.to_string()),
+
+        ];
+
+        write!(f, "{}", params.into_iter().flatten().collect::<Vec<_>>().join(","))
+    }
+}
+
+/// Converts Query Parameters representation (style=form, explode=false) to a UnexpectedUssdAppResponse value
+/// as specified in https://swagger.io/docs/specification/serialization/
+/// Should be implemented in a serde deserializer
+impl std::str::FromStr for UnexpectedUssdAppResponse {
+    type Err = String;
+
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        /// An intermediate representation of the struct to use for parsing.
+        #[derive(Default)]
+        #[allow(dead_code)]
+        struct IntermediateRep {
+            pub r_type: Vec<String>,
+        }
+
+        let mut intermediate_rep = IntermediateRep::default();
+
+        // Parse into intermediate representation
+        let mut string_iter = s.split(',');
+        let mut key_result = string_iter.next();
+
+        while key_result.is_some() {
+            let val = match string_iter.next() {
+                Some(x) => x,
+                None => return std::result::Result::Err("Missing value while parsing UnexpectedUssdAppResponse".to_string())
+            };
+
+            if let Some(key) = key_result {
+                #[allow(clippy::match_single_binding)]
+                match key {
+                    #[allow(clippy::redundant_clone)]
+                    "type" => intermediate_rep.r_type.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
+                    _ => return std::result::Result::Err("Unexpected key while parsing UnexpectedUssdAppResponse".to_string())
+                }
+            }
+
+            // Get the next key
+            key_result = string_iter.next();
+        }
+
+        // Use the intermediate representation to return the struct
+        std::result::Result::Ok(UnexpectedUssdAppResponse {
+            r_type: intermediate_rep.r_type.into_iter().next().ok_or_else(|| "type missing in UnexpectedUssdAppResponse".to_string())?,
+        })
+    }
+}
+
+// Methods for converting between header::IntoHeaderValue<UnexpectedUssdAppResponse> and HeaderValue
+
+#[cfg(feature = "server")]
+impl std::convert::TryFrom<header::IntoHeaderValue<UnexpectedUssdAppResponse>> for HeaderValue {
+    type Error = String;
+
+    fn try_from(hdr_value: header::IntoHeaderValue<UnexpectedUssdAppResponse>) -> std::result::Result<Self, Self::Error> {
+        let hdr_value = hdr_value.to_string();
+        match HeaderValue::from_str(&hdr_value) {
+             std::result::Result::Ok(value) => std::result::Result::Ok(value),
+             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Invalid header value for UnexpectedUssdAppResponse - value: {hdr_value} is invalid {e}"#))
+        }
+    }
+}
+
+#[cfg(feature = "server")]
+impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<UnexpectedUssdAppResponse> {
+    type Error = String;
+
+    fn try_from(hdr_value: HeaderValue) -> std::result::Result<Self, Self::Error> {
+        match hdr_value.to_str() {
+             std::result::Result::Ok(value) => {
+                    match <UnexpectedUssdAppResponse as std::str::FromStr>::from_str(value) {
+                        std::result::Result::Ok(value) => std::result::Result::Ok(header::IntoHeaderValue(value)),
+                        std::result::Result::Err(err) => std::result::Result::Err(format!(r#"Unable to convert header value '{value}' into UnexpectedUssdAppResponse - {err}"#))
+                    }
+             },
+             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Unable to convert header: {hdr_value:?} to string: {e}"#))
+        }
+    }
+}
+
+
+
+/// Cannot determine if merchant payment operation succeed or not
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, validator::Validate)]
+#[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
+pub struct Unknown {
+    /// Note: inline enums are not fully supported by openapi-generator
+    #[serde(default = "Unknown::_name_for_r_type")]
+    #[serde(serialize_with = "Unknown::_serialize_r_type")]
+    #[serde(rename = "type")]
+          #[validate(custom(function = "check_xss_string"))]
+    pub r_type: String,
+
+}
+
+impl Unknown {
+    fn _name_for_r_type() -> String {
+        String::from("Unknown")
+    }
+
+    fn _serialize_r_type<S>(_: &String, s: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        s.serialize_str(&Self::_name_for_r_type())
+    }
+}
+
+
+impl Unknown {
+    #[allow(clippy::new_without_default, clippy::too_many_arguments)]
+    pub fn new() -> Unknown {
+        Unknown {
+ r_type: Self::_name_for_r_type(),
+        }
+    }
+}
+
+/// Converts the Unknown value to the Query Parameters representation (style=form, explode=false)
+/// specified in https://swagger.io/docs/specification/serialization/
+/// Should be implemented in a serde serializer
+impl std::fmt::Display for Unknown {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let params: Vec<Option<String>> = vec![
+
+            Some("type".to_string()),
+            Some(self.r_type.to_string()),
+
+        ];
+
+        write!(f, "{}", params.into_iter().flatten().collect::<Vec<_>>().join(","))
+    }
+}
+
+/// Converts Query Parameters representation (style=form, explode=false) to a Unknown value
+/// as specified in https://swagger.io/docs/specification/serialization/
+/// Should be implemented in a serde deserializer
+impl std::str::FromStr for Unknown {
+    type Err = String;
+
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        /// An intermediate representation of the struct to use for parsing.
+        #[derive(Default)]
+        #[allow(dead_code)]
+        struct IntermediateRep {
+            pub r_type: Vec<String>,
+        }
+
+        let mut intermediate_rep = IntermediateRep::default();
+
+        // Parse into intermediate representation
+        let mut string_iter = s.split(',');
+        let mut key_result = string_iter.next();
+
+        while key_result.is_some() {
+            let val = match string_iter.next() {
+                Some(x) => x,
+                None => return std::result::Result::Err("Missing value while parsing Unknown".to_string())
+            };
+
+            if let Some(key) = key_result {
+                #[allow(clippy::match_single_binding)]
+                match key {
+                    #[allow(clippy::redundant_clone)]
+                    "type" => intermediate_rep.r_type.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
+                    _ => return std::result::Result::Err("Unexpected key while parsing Unknown".to_string())
+                }
+            }
+
+            // Get the next key
+            key_result = string_iter.next();
+        }
+
+        // Use the intermediate representation to return the struct
+        std::result::Result::Ok(Unknown {
+            r_type: intermediate_rep.r_type.into_iter().next().ok_or_else(|| "type missing in Unknown".to_string())?,
+        })
+    }
+}
+
+// Methods for converting between header::IntoHeaderValue<Unknown> and HeaderValue
+
+#[cfg(feature = "server")]
+impl std::convert::TryFrom<header::IntoHeaderValue<Unknown>> for HeaderValue {
+    type Error = String;
+
+    fn try_from(hdr_value: header::IntoHeaderValue<Unknown>) -> std::result::Result<Self, Self::Error> {
+        let hdr_value = hdr_value.to_string();
+        match HeaderValue::from_str(&hdr_value) {
+             std::result::Result::Ok(value) => std::result::Result::Ok(value),
+             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Invalid header value for Unknown - value: {hdr_value} is invalid {e}"#))
+        }
+    }
+}
+
+#[cfg(feature = "server")]
+impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<Unknown> {
+    type Error = String;
+
+    fn try_from(hdr_value: HeaderValue) -> std::result::Result<Self, Self::Error> {
+        match hdr_value.to_str() {
+             std::result::Result::Ok(value) => {
+                    match <Unknown as std::str::FromStr>::from_str(value) {
+                        std::result::Result::Ok(value) => std::result::Result::Ok(header::IntoHeaderValue(value)),
+                        std::result::Result::Err(err) => std::result::Result::Err(format!(r#"Unable to convert header value '{value}' into Unknown - {err}"#))
+                    }
+             },
+             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Unable to convert header: {hdr_value:?} to string: {e}"#))
+        }
+    }
+}
+
+
+
+/// Developer's USSD App returns USSD process result as a map of params
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, validator::Validate)]
+#[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
+pub struct UnsupportedRedirect {
+    /// Note: inline enums are not fully supported by openapi-generator
+    #[serde(default = "UnsupportedRedirect::_name_for_r_type")]
+    #[serde(serialize_with = "UnsupportedRedirect::_serialize_r_type")]
+    #[serde(rename = "type")]
+          #[validate(custom(function = "check_xss_string"))]
+    pub r_type: String,
+
+    /// Identifier of the USSD app created on Qrios platform.
+    #[serde(rename = "destinationAppId")]
+          #[validate(custom(function = "check_xss_string"))]
+    pub destination_app_id: String,
+
+    #[serde(rename = "process")]
+          #[validate(nested)]
+    #[serde(skip_serializing_if="Option::is_none")]
+    pub process: Option<models::UssdAppProcess>,
+
+}
+
+impl UnsupportedRedirect {
+    fn _name_for_r_type() -> String {
+        String::from("UnsupportedRedirect")
+    }
+
+    fn _serialize_r_type<S>(_: &String, s: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        s.serialize_str(&Self::_name_for_r_type())
+    }
+}
+
+
+impl UnsupportedRedirect {
+    #[allow(clippy::new_without_default, clippy::too_many_arguments)]
+    pub fn new(destination_app_id: String, ) -> UnsupportedRedirect {
+        UnsupportedRedirect {
+ r_type: Self::_name_for_r_type(),
+ destination_app_id,
+ process: None,
+        }
+    }
+}
+
+/// Converts the UnsupportedRedirect value to the Query Parameters representation (style=form, explode=false)
+/// specified in https://swagger.io/docs/specification/serialization/
+/// Should be implemented in a serde serializer
+impl std::fmt::Display for UnsupportedRedirect {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let params: Vec<Option<String>> = vec![
+
+            Some("type".to_string()),
+            Some(self.r_type.to_string()),
+
+
+            Some("destinationAppId".to_string()),
+            Some(self.destination_app_id.to_string()),
+
+            // Skipping process in query parameter serialization
+
+        ];
+
+        write!(f, "{}", params.into_iter().flatten().collect::<Vec<_>>().join(","))
+    }
+}
+
+/// Converts Query Parameters representation (style=form, explode=false) to a UnsupportedRedirect value
+/// as specified in https://swagger.io/docs/specification/serialization/
+/// Should be implemented in a serde deserializer
+impl std::str::FromStr for UnsupportedRedirect {
+    type Err = String;
+
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        /// An intermediate representation of the struct to use for parsing.
+        #[derive(Default)]
+        #[allow(dead_code)]
+        struct IntermediateRep {
+            pub r_type: Vec<String>,
+            pub destination_app_id: Vec<String>,
+            pub process: Vec<models::UssdAppProcess>,
+        }
+
+        let mut intermediate_rep = IntermediateRep::default();
+
+        // Parse into intermediate representation
+        let mut string_iter = s.split(',');
+        let mut key_result = string_iter.next();
+
+        while key_result.is_some() {
+            let val = match string_iter.next() {
+                Some(x) => x,
+                None => return std::result::Result::Err("Missing value while parsing UnsupportedRedirect".to_string())
+            };
+
+            if let Some(key) = key_result {
+                #[allow(clippy::match_single_binding)]
+                match key {
+                    #[allow(clippy::redundant_clone)]
+                    "type" => intermediate_rep.r_type.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
+                    #[allow(clippy::redundant_clone)]
+                    "destinationAppId" => intermediate_rep.destination_app_id.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
+                    #[allow(clippy::redundant_clone)]
+                    "process" => intermediate_rep.process.push(<models::UssdAppProcess as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
+                    _ => return std::result::Result::Err("Unexpected key while parsing UnsupportedRedirect".to_string())
+                }
+            }
+
+            // Get the next key
+            key_result = string_iter.next();
+        }
+
+        // Use the intermediate representation to return the struct
+        std::result::Result::Ok(UnsupportedRedirect {
+            r_type: intermediate_rep.r_type.into_iter().next().ok_or_else(|| "type missing in UnsupportedRedirect".to_string())?,
+            destination_app_id: intermediate_rep.destination_app_id.into_iter().next().ok_or_else(|| "destinationAppId missing in UnsupportedRedirect".to_string())?,
+            process: intermediate_rep.process.into_iter().next(),
+        })
+    }
+}
+
+// Methods for converting between header::IntoHeaderValue<UnsupportedRedirect> and HeaderValue
+
+#[cfg(feature = "server")]
+impl std::convert::TryFrom<header::IntoHeaderValue<UnsupportedRedirect>> for HeaderValue {
+    type Error = String;
+
+    fn try_from(hdr_value: header::IntoHeaderValue<UnsupportedRedirect>) -> std::result::Result<Self, Self::Error> {
+        let hdr_value = hdr_value.to_string();
+        match HeaderValue::from_str(&hdr_value) {
+             std::result::Result::Ok(value) => std::result::Result::Ok(value),
+             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Invalid header value for UnsupportedRedirect - value: {hdr_value} is invalid {e}"#))
+        }
+    }
+}
+
+#[cfg(feature = "server")]
+impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<UnsupportedRedirect> {
+    type Error = String;
+
+    fn try_from(hdr_value: HeaderValue) -> std::result::Result<Self, Self::Error> {
+        match hdr_value.to_str() {
+             std::result::Result::Ok(value) => {
+                    match <UnsupportedRedirect as std::str::FromStr>::from_str(value) {
+                        std::result::Result::Ok(value) => std::result::Result::Ok(header::IntoHeaderValue(value)),
+                        std::result::Result::Err(err) => std::result::Result::Err(format!(r#"Unable to convert header value '{value}' into UnsupportedRedirect - {err}"#))
+                    }
+             },
+             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Unable to convert header: {hdr_value:?} to string: {e}"#))
+        }
+    }
+}
+
+
+
 /// Action to be sent back to the user. It can either start a predefined process or show a view.
 #[derive(Debug, Clone, PartialEq, serde::Deserialize)]
 #[serde(tag = "type")]
@@ -4175,7 +5576,7 @@ pub enum UssdAction {
     #[serde(alias = "LegacyAppRedirect")]
     LegacyAppRedirect(models::LegacyAppRedirect),
     #[serde(alias = "Redirect")]
-    Redirect(models::Redirect),
+    UnsupportedRedirect(models::UnsupportedRedirect),
     #[serde(alias = "ReturnFromRedirect")]
     ReturnFromRedirect(models::ReturnFromRedirect),
     #[serde(alias = "RunProcess")]
@@ -4189,7 +5590,7 @@ impl validator::Validate for UssdAction
     fn validate(&self) -> std::result::Result<(), validator::ValidationErrors> {
         match self {
             Self::LegacyAppRedirect(v) => v.validate(),
-            Self::Redirect(v) => v.validate(),
+            Self::UnsupportedRedirect(v) => v.validate(),
             Self::ReturnFromRedirect(v) => v.validate(),
             Self::RunProcess(v) => v.validate(),
             Self::ShowView(v) => v.validate(),
@@ -4213,7 +5614,7 @@ impl serde::Serialize for UssdAction {
         where S: serde::Serializer {
             match self {
                 Self::LegacyAppRedirect(x) => x.serialize(serializer),
-                Self::Redirect(x) => x.serialize(serializer),
+                Self::UnsupportedRedirect(x) => x.serialize(serializer),
                 Self::ReturnFromRedirect(x) => x.serialize(serializer),
                 Self::RunProcess(x) => x.serialize(serializer),
                 Self::ShowView(x) => x.serialize(serializer),
@@ -4226,9 +5627,9 @@ impl From<models::LegacyAppRedirect> for UssdAction {
         Self::LegacyAppRedirect(value)
     }
 }
-impl From<models::Redirect> for UssdAction {
-    fn from(value: models::Redirect) -> Self {
-        Self::Redirect(value)
+impl From<models::UnsupportedRedirect> for UssdAction {
+    fn from(value: models::UnsupportedRedirect) -> Self {
+        Self::UnsupportedRedirect(value)
     }
 }
 impl From<models::ReturnFromRedirect> for UssdAction {
@@ -4257,23 +5658,23 @@ impl From<models::ShowView> for UssdAction {
 #[allow(non_camel_case_types, clippy::large_enum_variant)]
 pub enum UssdActionResult {
     #[serde(alias = "EmbeddedProcessResult")]
-    UssdActionResultEmbeddedProcessResult(models::UssdActionResultEmbeddedProcessResult),
+    EmbeddedProcessResult(models::EmbeddedProcessResult),
     #[serde(alias = "InputResult")]
-    UssdActionResultInputResult(models::UssdActionResultInputResult),
+    InputResult(models::InputResult),
     #[serde(alias = "MerchantPaymentResult")]
-    UssdActionResultMerchantPaymentResult(models::UssdActionResultMerchantPaymentResult),
+    MerchantPaymentResult(models::MerchantPaymentResult),
     #[serde(alias = "ReturnFromRedirectResult")]
-    UssdActionResultReturnFromRedirectResult(models::UssdActionResultReturnFromRedirectResult),
+    ReturnFromRedirectResult(models::ReturnFromRedirectResult),
 }
 
 impl validator::Validate for UssdActionResult
 {
     fn validate(&self) -> std::result::Result<(), validator::ValidationErrors> {
         match self {
-            Self::UssdActionResultEmbeddedProcessResult(v) => v.validate(),
-            Self::UssdActionResultInputResult(v) => v.validate(),
-            Self::UssdActionResultMerchantPaymentResult(v) => v.validate(),
-            Self::UssdActionResultReturnFromRedirectResult(v) => v.validate(),
+            Self::EmbeddedProcessResult(v) => v.validate(),
+            Self::InputResult(v) => v.validate(),
+            Self::MerchantPaymentResult(v) => v.validate(),
+            Self::ReturnFromRedirectResult(v) => v.validate(),
         }
     }
 }
@@ -4293,569 +5694,36 @@ impl serde::Serialize for UssdActionResult {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
         where S: serde::Serializer {
             match self {
-                Self::UssdActionResultEmbeddedProcessResult(x) => x.serialize(serializer),
-                Self::UssdActionResultInputResult(x) => x.serialize(serializer),
-                Self::UssdActionResultMerchantPaymentResult(x) => x.serialize(serializer),
-                Self::UssdActionResultReturnFromRedirectResult(x) => x.serialize(serializer),
+                Self::EmbeddedProcessResult(x) => x.serialize(serializer),
+                Self::InputResult(x) => x.serialize(serializer),
+                Self::MerchantPaymentResult(x) => x.serialize(serializer),
+                Self::ReturnFromRedirectResult(x) => x.serialize(serializer),
             }
     }
 }
 
-impl From<models::UssdActionResultEmbeddedProcessResult> for UssdActionResult {
-    fn from(value: models::UssdActionResultEmbeddedProcessResult) -> Self {
-        Self::UssdActionResultEmbeddedProcessResult(value)
+impl From<models::EmbeddedProcessResult> for UssdActionResult {
+    fn from(value: models::EmbeddedProcessResult) -> Self {
+        Self::EmbeddedProcessResult(value)
     }
 }
-impl From<models::UssdActionResultInputResult> for UssdActionResult {
-    fn from(value: models::UssdActionResultInputResult) -> Self {
-        Self::UssdActionResultInputResult(value)
+impl From<models::InputResult> for UssdActionResult {
+    fn from(value: models::InputResult) -> Self {
+        Self::InputResult(value)
     }
 }
-impl From<models::UssdActionResultMerchantPaymentResult> for UssdActionResult {
-    fn from(value: models::UssdActionResultMerchantPaymentResult) -> Self {
-        Self::UssdActionResultMerchantPaymentResult(value)
+impl From<models::MerchantPaymentResult> for UssdActionResult {
+    fn from(value: models::MerchantPaymentResult) -> Self {
+        Self::MerchantPaymentResult(value)
     }
 }
-impl From<models::UssdActionResultReturnFromRedirectResult> for UssdActionResult {
-    fn from(value: models::UssdActionResultReturnFromRedirectResult) -> Self {
-        Self::UssdActionResultReturnFromRedirectResult(value)
-    }
-}
-
-
-
-
-
-/// Returns control of the session back to the developer and passes the result of embedded process execution.
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, validator::Validate)]
-#[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
-pub struct UssdActionResultEmbeddedProcessResult {
-    /// Note: inline enums are not fully supported by openapi-generator
-    #[serde(rename = "type")]
-          #[validate(custom(function = "check_xss_string"))]
-    pub r_type: String,
-
-    /// Result of the `embedded process`. Keys should be considered as result parameter names and their values as result parameter values.
-    #[serde(rename = "resultParams")]
-          #[validate(custom(function = "check_xss_map_string"))]
-    pub result_params: std::collections::HashMap<String, String>,
-
-}
-
-
-
-impl UssdActionResultEmbeddedProcessResult {
-    #[allow(clippy::new_without_default, clippy::too_many_arguments)]
-    pub fn new(r_type: String, result_params: std::collections::HashMap<String, String>, ) -> UssdActionResultEmbeddedProcessResult {
-        UssdActionResultEmbeddedProcessResult {
- r_type,
- result_params,
-        }
-    }
-}
-
-/// Converts the UssdActionResultEmbeddedProcessResult value to the Query Parameters representation (style=form, explode=false)
-/// specified in https://swagger.io/docs/specification/serialization/
-/// Should be implemented in a serde serializer
-impl std::fmt::Display for UssdActionResultEmbeddedProcessResult {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let params: Vec<Option<String>> = vec![
-
-            Some("type".to_string()),
-            Some(self.r_type.to_string()),
-
-            // Skipping resultParams in query parameter serialization
-
-        ];
-
-        write!(f, "{}", params.into_iter().flatten().collect::<Vec<_>>().join(","))
-    }
-}
-
-/// Converts Query Parameters representation (style=form, explode=false) to a UssdActionResultEmbeddedProcessResult value
-/// as specified in https://swagger.io/docs/specification/serialization/
-/// Should be implemented in a serde deserializer
-impl std::str::FromStr for UssdActionResultEmbeddedProcessResult {
-    type Err = String;
-
-    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-        /// An intermediate representation of the struct to use for parsing.
-        #[derive(Default)]
-        #[allow(dead_code)]
-        struct IntermediateRep {
-            pub r_type: Vec<String>,
-            pub result_params: Vec<std::collections::HashMap<String, String>>,
-        }
-
-        let mut intermediate_rep = IntermediateRep::default();
-
-        // Parse into intermediate representation
-        let mut string_iter = s.split(',');
-        let mut key_result = string_iter.next();
-
-        while key_result.is_some() {
-            let val = match string_iter.next() {
-                Some(x) => x,
-                None => return std::result::Result::Err("Missing value while parsing UssdActionResultEmbeddedProcessResult".to_string())
-            };
-
-            if let Some(key) = key_result {
-                #[allow(clippy::match_single_binding)]
-                match key {
-                    #[allow(clippy::redundant_clone)]
-                    "type" => intermediate_rep.r_type.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
-                    "resultParams" => return std::result::Result::Err("Parsing a container in this style is not supported in UssdActionResultEmbeddedProcessResult".to_string()),
-                    _ => return std::result::Result::Err("Unexpected key while parsing UssdActionResultEmbeddedProcessResult".to_string())
-                }
-            }
-
-            // Get the next key
-            key_result = string_iter.next();
-        }
-
-        // Use the intermediate representation to return the struct
-        std::result::Result::Ok(UssdActionResultEmbeddedProcessResult {
-            r_type: intermediate_rep.r_type.into_iter().next().ok_or_else(|| "type missing in UssdActionResultEmbeddedProcessResult".to_string())?,
-            result_params: intermediate_rep.result_params.into_iter().next().ok_or_else(|| "resultParams missing in UssdActionResultEmbeddedProcessResult".to_string())?,
-        })
-    }
-}
-
-// Methods for converting between header::IntoHeaderValue<UssdActionResultEmbeddedProcessResult> and HeaderValue
-
-#[cfg(feature = "server")]
-impl std::convert::TryFrom<header::IntoHeaderValue<UssdActionResultEmbeddedProcessResult>> for HeaderValue {
-    type Error = String;
-
-    fn try_from(hdr_value: header::IntoHeaderValue<UssdActionResultEmbeddedProcessResult>) -> std::result::Result<Self, Self::Error> {
-        let hdr_value = hdr_value.to_string();
-        match HeaderValue::from_str(&hdr_value) {
-             std::result::Result::Ok(value) => std::result::Result::Ok(value),
-             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Invalid header value for UssdActionResultEmbeddedProcessResult - value: {hdr_value} is invalid {e}"#))
-        }
-    }
-}
-
-#[cfg(feature = "server")]
-impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<UssdActionResultEmbeddedProcessResult> {
-    type Error = String;
-
-    fn try_from(hdr_value: HeaderValue) -> std::result::Result<Self, Self::Error> {
-        match hdr_value.to_str() {
-             std::result::Result::Ok(value) => {
-                    match <UssdActionResultEmbeddedProcessResult as std::str::FromStr>::from_str(value) {
-                        std::result::Result::Ok(value) => std::result::Result::Ok(header::IntoHeaderValue(value)),
-                        std::result::Result::Err(err) => std::result::Result::Err(format!(r#"Unable to convert header value '{value}' into UssdActionResultEmbeddedProcessResult - {err}"#))
-                    }
-             },
-             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Unable to convert header: {hdr_value:?} to string: {e}"#))
-        }
+impl From<models::ReturnFromRedirectResult> for UssdActionResult {
+    fn from(value: models::ReturnFromRedirectResult) -> Self {
+        Self::ReturnFromRedirectResult(value)
     }
 }
 
 
-
-/// Input from the user; provided by UssdAction.UssdView.InputView.
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, validator::Validate)]
-#[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
-pub struct UssdActionResultInputResult {
-    /// Note: inline enums are not fully supported by openapi-generator
-    #[serde(rename = "type")]
-          #[validate(custom(function = "check_xss_string"))]
-    pub r_type: String,
-
-    /// Raw value typed in by the user.
-    #[serde(rename = "value")]
-          #[validate(custom(function = "check_xss_string"))]
-    pub value: String,
-
-}
-
-
-
-impl UssdActionResultInputResult {
-    #[allow(clippy::new_without_default, clippy::too_many_arguments)]
-    pub fn new(r_type: String, value: String, ) -> UssdActionResultInputResult {
-        UssdActionResultInputResult {
- r_type,
- value,
-        }
-    }
-}
-
-/// Converts the UssdActionResultInputResult value to the Query Parameters representation (style=form, explode=false)
-/// specified in https://swagger.io/docs/specification/serialization/
-/// Should be implemented in a serde serializer
-impl std::fmt::Display for UssdActionResultInputResult {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let params: Vec<Option<String>> = vec![
-
-            Some("type".to_string()),
-            Some(self.r_type.to_string()),
-
-
-            Some("value".to_string()),
-            Some(self.value.to_string()),
-
-        ];
-
-        write!(f, "{}", params.into_iter().flatten().collect::<Vec<_>>().join(","))
-    }
-}
-
-/// Converts Query Parameters representation (style=form, explode=false) to a UssdActionResultInputResult value
-/// as specified in https://swagger.io/docs/specification/serialization/
-/// Should be implemented in a serde deserializer
-impl std::str::FromStr for UssdActionResultInputResult {
-    type Err = String;
-
-    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-        /// An intermediate representation of the struct to use for parsing.
-        #[derive(Default)]
-        #[allow(dead_code)]
-        struct IntermediateRep {
-            pub r_type: Vec<String>,
-            pub value: Vec<String>,
-        }
-
-        let mut intermediate_rep = IntermediateRep::default();
-
-        // Parse into intermediate representation
-        let mut string_iter = s.split(',');
-        let mut key_result = string_iter.next();
-
-        while key_result.is_some() {
-            let val = match string_iter.next() {
-                Some(x) => x,
-                None => return std::result::Result::Err("Missing value while parsing UssdActionResultInputResult".to_string())
-            };
-
-            if let Some(key) = key_result {
-                #[allow(clippy::match_single_binding)]
-                match key {
-                    #[allow(clippy::redundant_clone)]
-                    "type" => intermediate_rep.r_type.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
-                    #[allow(clippy::redundant_clone)]
-                    "value" => intermediate_rep.value.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
-                    _ => return std::result::Result::Err("Unexpected key while parsing UssdActionResultInputResult".to_string())
-                }
-            }
-
-            // Get the next key
-            key_result = string_iter.next();
-        }
-
-        // Use the intermediate representation to return the struct
-        std::result::Result::Ok(UssdActionResultInputResult {
-            r_type: intermediate_rep.r_type.into_iter().next().ok_or_else(|| "type missing in UssdActionResultInputResult".to_string())?,
-            value: intermediate_rep.value.into_iter().next().ok_or_else(|| "value missing in UssdActionResultInputResult".to_string())?,
-        })
-    }
-}
-
-// Methods for converting between header::IntoHeaderValue<UssdActionResultInputResult> and HeaderValue
-
-#[cfg(feature = "server")]
-impl std::convert::TryFrom<header::IntoHeaderValue<UssdActionResultInputResult>> for HeaderValue {
-    type Error = String;
-
-    fn try_from(hdr_value: header::IntoHeaderValue<UssdActionResultInputResult>) -> std::result::Result<Self, Self::Error> {
-        let hdr_value = hdr_value.to_string();
-        match HeaderValue::from_str(&hdr_value) {
-             std::result::Result::Ok(value) => std::result::Result::Ok(value),
-             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Invalid header value for UssdActionResultInputResult - value: {hdr_value} is invalid {e}"#))
-        }
-    }
-}
-
-#[cfg(feature = "server")]
-impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<UssdActionResultInputResult> {
-    type Error = String;
-
-    fn try_from(hdr_value: HeaderValue) -> std::result::Result<Self, Self::Error> {
-        match hdr_value.to_str() {
-             std::result::Result::Ok(value) => {
-                    match <UssdActionResultInputResult as std::str::FromStr>::from_str(value) {
-                        std::result::Result::Ok(value) => std::result::Result::Ok(header::IntoHeaderValue(value)),
-                        std::result::Result::Err(err) => std::result::Result::Err(format!(r#"Unable to convert header value '{value}' into UssdActionResultInputResult - {err}"#))
-                    }
-             },
-             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Unable to convert header: {hdr_value:?} to string: {e}"#))
-        }
-    }
-}
-
-
-
-/// Result from merchant payment process; provided by UssdProcess.MerchantPaymentProcess.
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, validator::Validate)]
-#[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
-pub struct UssdActionResultMerchantPaymentResult {
-    /// Note: inline enums are not fully supported by openapi-generator
-    #[serde(rename = "type")]
-          #[validate(custom(function = "check_xss_string"))]
-    pub r_type: String,
-
-    /// Merchant payment operation id
-    #[serde(rename = "operationId")]
-          #[validate(custom(function = "check_xss_string"))]
-    pub operation_id: String,
-
-    #[serde(rename = "status")]
-          #[validate(nested)]
-    pub status: models::MerchantPaymentResultOperationStatus,
-
-}
-
-
-
-impl UssdActionResultMerchantPaymentResult {
-    #[allow(clippy::new_without_default, clippy::too_many_arguments)]
-    pub fn new(r_type: String, operation_id: String, status: models::MerchantPaymentResultOperationStatus, ) -> UssdActionResultMerchantPaymentResult {
-        UssdActionResultMerchantPaymentResult {
- r_type,
- operation_id,
- status,
-        }
-    }
-}
-
-/// Converts the UssdActionResultMerchantPaymentResult value to the Query Parameters representation (style=form, explode=false)
-/// specified in https://swagger.io/docs/specification/serialization/
-/// Should be implemented in a serde serializer
-impl std::fmt::Display for UssdActionResultMerchantPaymentResult {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let params: Vec<Option<String>> = vec![
-
-            Some("type".to_string()),
-            Some(self.r_type.to_string()),
-
-
-            Some("operationId".to_string()),
-            Some(self.operation_id.to_string()),
-
-            // Skipping status in query parameter serialization
-
-        ];
-
-        write!(f, "{}", params.into_iter().flatten().collect::<Vec<_>>().join(","))
-    }
-}
-
-/// Converts Query Parameters representation (style=form, explode=false) to a UssdActionResultMerchantPaymentResult value
-/// as specified in https://swagger.io/docs/specification/serialization/
-/// Should be implemented in a serde deserializer
-impl std::str::FromStr for UssdActionResultMerchantPaymentResult {
-    type Err = String;
-
-    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-        /// An intermediate representation of the struct to use for parsing.
-        #[derive(Default)]
-        #[allow(dead_code)]
-        struct IntermediateRep {
-            pub r_type: Vec<String>,
-            pub operation_id: Vec<String>,
-            pub status: Vec<models::MerchantPaymentResultOperationStatus>,
-        }
-
-        let mut intermediate_rep = IntermediateRep::default();
-
-        // Parse into intermediate representation
-        let mut string_iter = s.split(',');
-        let mut key_result = string_iter.next();
-
-        while key_result.is_some() {
-            let val = match string_iter.next() {
-                Some(x) => x,
-                None => return std::result::Result::Err("Missing value while parsing UssdActionResultMerchantPaymentResult".to_string())
-            };
-
-            if let Some(key) = key_result {
-                #[allow(clippy::match_single_binding)]
-                match key {
-                    #[allow(clippy::redundant_clone)]
-                    "type" => intermediate_rep.r_type.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
-                    #[allow(clippy::redundant_clone)]
-                    "operationId" => intermediate_rep.operation_id.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
-                    #[allow(clippy::redundant_clone)]
-                    "status" => intermediate_rep.status.push(<models::MerchantPaymentResultOperationStatus as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
-                    _ => return std::result::Result::Err("Unexpected key while parsing UssdActionResultMerchantPaymentResult".to_string())
-                }
-            }
-
-            // Get the next key
-            key_result = string_iter.next();
-        }
-
-        // Use the intermediate representation to return the struct
-        std::result::Result::Ok(UssdActionResultMerchantPaymentResult {
-            r_type: intermediate_rep.r_type.into_iter().next().ok_or_else(|| "type missing in UssdActionResultMerchantPaymentResult".to_string())?,
-            operation_id: intermediate_rep.operation_id.into_iter().next().ok_or_else(|| "operationId missing in UssdActionResultMerchantPaymentResult".to_string())?,
-            status: intermediate_rep.status.into_iter().next().ok_or_else(|| "status missing in UssdActionResultMerchantPaymentResult".to_string())?,
-        })
-    }
-}
-
-// Methods for converting between header::IntoHeaderValue<UssdActionResultMerchantPaymentResult> and HeaderValue
-
-#[cfg(feature = "server")]
-impl std::convert::TryFrom<header::IntoHeaderValue<UssdActionResultMerchantPaymentResult>> for HeaderValue {
-    type Error = String;
-
-    fn try_from(hdr_value: header::IntoHeaderValue<UssdActionResultMerchantPaymentResult>) -> std::result::Result<Self, Self::Error> {
-        let hdr_value = hdr_value.to_string();
-        match HeaderValue::from_str(&hdr_value) {
-             std::result::Result::Ok(value) => std::result::Result::Ok(value),
-             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Invalid header value for UssdActionResultMerchantPaymentResult - value: {hdr_value} is invalid {e}"#))
-        }
-    }
-}
-
-#[cfg(feature = "server")]
-impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<UssdActionResultMerchantPaymentResult> {
-    type Error = String;
-
-    fn try_from(hdr_value: HeaderValue) -> std::result::Result<Self, Self::Error> {
-        match hdr_value.to_str() {
-             std::result::Result::Ok(value) => {
-                    match <UssdActionResultMerchantPaymentResult as std::str::FromStr>::from_str(value) {
-                        std::result::Result::Ok(value) => std::result::Result::Ok(header::IntoHeaderValue(value)),
-                        std::result::Result::Err(err) => std::result::Result::Err(format!(r#"Unable to convert header value '{value}' into UssdActionResultMerchantPaymentResult - {err}"#))
-                    }
-             },
-             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Unable to convert header: {hdr_value:?} to string: {e}"#))
-        }
-    }
-}
-
-
-
-/// Result returned from the app, to which the session was previously redirected.
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, validator::Validate)]
-#[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
-pub struct UssdActionResultReturnFromRedirectResult {
-    /// Note: inline enums are not fully supported by openapi-generator
-    #[serde(rename = "type")]
-          #[validate(custom(function = "check_xss_string"))]
-    pub r_type: String,
-
-    /// Result of the `return from redirection`. Keys should be considered as result parameter names and their values as result parameter values.
-    #[serde(rename = "resultParams")]
-          #[validate(custom(function = "check_xss_map_string"))]
-    pub result_params: std::collections::HashMap<String, String>,
-
-}
-
-
-
-impl UssdActionResultReturnFromRedirectResult {
-    #[allow(clippy::new_without_default, clippy::too_many_arguments)]
-    pub fn new(r_type: String, result_params: std::collections::HashMap<String, String>, ) -> UssdActionResultReturnFromRedirectResult {
-        UssdActionResultReturnFromRedirectResult {
- r_type,
- result_params,
-        }
-    }
-}
-
-/// Converts the UssdActionResultReturnFromRedirectResult value to the Query Parameters representation (style=form, explode=false)
-/// specified in https://swagger.io/docs/specification/serialization/
-/// Should be implemented in a serde serializer
-impl std::fmt::Display for UssdActionResultReturnFromRedirectResult {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let params: Vec<Option<String>> = vec![
-
-            Some("type".to_string()),
-            Some(self.r_type.to_string()),
-
-            // Skipping resultParams in query parameter serialization
-
-        ];
-
-        write!(f, "{}", params.into_iter().flatten().collect::<Vec<_>>().join(","))
-    }
-}
-
-/// Converts Query Parameters representation (style=form, explode=false) to a UssdActionResultReturnFromRedirectResult value
-/// as specified in https://swagger.io/docs/specification/serialization/
-/// Should be implemented in a serde deserializer
-impl std::str::FromStr for UssdActionResultReturnFromRedirectResult {
-    type Err = String;
-
-    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-        /// An intermediate representation of the struct to use for parsing.
-        #[derive(Default)]
-        #[allow(dead_code)]
-        struct IntermediateRep {
-            pub r_type: Vec<String>,
-            pub result_params: Vec<std::collections::HashMap<String, String>>,
-        }
-
-        let mut intermediate_rep = IntermediateRep::default();
-
-        // Parse into intermediate representation
-        let mut string_iter = s.split(',');
-        let mut key_result = string_iter.next();
-
-        while key_result.is_some() {
-            let val = match string_iter.next() {
-                Some(x) => x,
-                None => return std::result::Result::Err("Missing value while parsing UssdActionResultReturnFromRedirectResult".to_string())
-            };
-
-            if let Some(key) = key_result {
-                #[allow(clippy::match_single_binding)]
-                match key {
-                    #[allow(clippy::redundant_clone)]
-                    "type" => intermediate_rep.r_type.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
-                    "resultParams" => return std::result::Result::Err("Parsing a container in this style is not supported in UssdActionResultReturnFromRedirectResult".to_string()),
-                    _ => return std::result::Result::Err("Unexpected key while parsing UssdActionResultReturnFromRedirectResult".to_string())
-                }
-            }
-
-            // Get the next key
-            key_result = string_iter.next();
-        }
-
-        // Use the intermediate representation to return the struct
-        std::result::Result::Ok(UssdActionResultReturnFromRedirectResult {
-            r_type: intermediate_rep.r_type.into_iter().next().ok_or_else(|| "type missing in UssdActionResultReturnFromRedirectResult".to_string())?,
-            result_params: intermediate_rep.result_params.into_iter().next().ok_or_else(|| "resultParams missing in UssdActionResultReturnFromRedirectResult".to_string())?,
-        })
-    }
-}
-
-// Methods for converting between header::IntoHeaderValue<UssdActionResultReturnFromRedirectResult> and HeaderValue
-
-#[cfg(feature = "server")]
-impl std::convert::TryFrom<header::IntoHeaderValue<UssdActionResultReturnFromRedirectResult>> for HeaderValue {
-    type Error = String;
-
-    fn try_from(hdr_value: header::IntoHeaderValue<UssdActionResultReturnFromRedirectResult>) -> std::result::Result<Self, Self::Error> {
-        let hdr_value = hdr_value.to_string();
-        match HeaderValue::from_str(&hdr_value) {
-             std::result::Result::Ok(value) => std::result::Result::Ok(value),
-             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Invalid header value for UssdActionResultReturnFromRedirectResult - value: {hdr_value} is invalid {e}"#))
-        }
-    }
-}
-
-#[cfg(feature = "server")]
-impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<UssdActionResultReturnFromRedirectResult> {
-    type Error = String;
-
-    fn try_from(hdr_value: HeaderValue) -> std::result::Result<Self, Self::Error> {
-        match hdr_value.to_str() {
-             std::result::Result::Ok(value) => {
-                    match <UssdActionResultReturnFromRedirectResult as std::str::FromStr>::from_str(value) {
-                        std::result::Result::Ok(value) => std::result::Result::Ok(header::IntoHeaderValue(value)),
-                        std::result::Result::Err(err) => std::result::Result::Err(format!(r#"Unable to convert header value '{value}' into UssdActionResultReturnFromRedirectResult - {err}"#))
-                    }
-             },
-             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Unable to convert header: {hdr_value:?} to string: {e}"#))
-        }
-    }
-}
 
 
 
@@ -4994,17 +5862,17 @@ impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<UssdAppProce
 #[allow(non_camel_case_types, clippy::large_enum_variant)]
 pub enum UssdProcess {
     #[serde(alias = "EmbeddedProcess")]
-    UssdProcessEmbeddedProcess(models::UssdProcessEmbeddedProcess),
+    EmbeddedProcess(models::EmbeddedProcess),
     #[serde(alias = "MerchantPaymentProcess")]
-    UssdProcessMerchantPaymentProcess(models::UssdProcessMerchantPaymentProcess),
+    MerchantPaymentProcess(models::MerchantPaymentProcess),
 }
 
 impl validator::Validate for UssdProcess
 {
     fn validate(&self) -> std::result::Result<(), validator::ValidationErrors> {
         match self {
-            Self::UssdProcessEmbeddedProcess(v) => v.validate(),
-            Self::UssdProcessMerchantPaymentProcess(v) => v.validate(),
+            Self::EmbeddedProcess(v) => v.validate(),
+            Self::MerchantPaymentProcess(v) => v.validate(),
         }
     }
 }
@@ -5024,319 +5892,24 @@ impl serde::Serialize for UssdProcess {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
         where S: serde::Serializer {
             match self {
-                Self::UssdProcessEmbeddedProcess(x) => x.serialize(serializer),
-                Self::UssdProcessMerchantPaymentProcess(x) => x.serialize(serializer),
+                Self::EmbeddedProcess(x) => x.serialize(serializer),
+                Self::MerchantPaymentProcess(x) => x.serialize(serializer),
             }
     }
 }
 
-impl From<models::UssdProcessEmbeddedProcess> for UssdProcess {
-    fn from(value: models::UssdProcessEmbeddedProcess) -> Self {
-        Self::UssdProcessEmbeddedProcess(value)
+impl From<models::EmbeddedProcess> for UssdProcess {
+    fn from(value: models::EmbeddedProcess) -> Self {
+        Self::EmbeddedProcess(value)
     }
 }
-impl From<models::UssdProcessMerchantPaymentProcess> for UssdProcess {
-    fn from(value: models::UssdProcessMerchantPaymentProcess) -> Self {
-        Self::UssdProcessMerchantPaymentProcess(value)
-    }
-}
-
-
-
-
-
-/// Initiate an embedded process. This action causes the Qrios system to hand over control to an external application. The user may be prompted to provide credentials during the embedded process. After the embedded process is complete, the ussdSessionEvent/continue API endpoint is called to deliver the result and return control of the session to the developer application.
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, validator::Validate)]
-#[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
-pub struct UssdProcessEmbeddedProcess {
-    /// embedded process id
-    #[serde(rename = "processId")]
-          #[validate(custom(function = "check_xss_string"))]
-    pub process_id: String,
-
-    #[serde(rename = "params")]
-          #[validate(custom(function = "check_xss_map_string"))]
-    pub params: std::collections::HashMap<String, String>,
-
-}
-
-
-
-impl UssdProcessEmbeddedProcess {
-    #[allow(clippy::new_without_default, clippy::too_many_arguments)]
-    pub fn new(process_id: String, params: std::collections::HashMap<String, String>, ) -> UssdProcessEmbeddedProcess {
-        UssdProcessEmbeddedProcess {
- process_id,
- params,
-        }
-    }
-}
-
-/// Converts the UssdProcessEmbeddedProcess value to the Query Parameters representation (style=form, explode=false)
-/// specified in https://swagger.io/docs/specification/serialization/
-/// Should be implemented in a serde serializer
-impl std::fmt::Display for UssdProcessEmbeddedProcess {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let params: Vec<Option<String>> = vec![
-
-            Some("processId".to_string()),
-            Some(self.process_id.to_string()),
-
-            // Skipping params in query parameter serialization
-
-        ];
-
-        write!(f, "{}", params.into_iter().flatten().collect::<Vec<_>>().join(","))
-    }
-}
-
-/// Converts Query Parameters representation (style=form, explode=false) to a UssdProcessEmbeddedProcess value
-/// as specified in https://swagger.io/docs/specification/serialization/
-/// Should be implemented in a serde deserializer
-impl std::str::FromStr for UssdProcessEmbeddedProcess {
-    type Err = String;
-
-    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-        /// An intermediate representation of the struct to use for parsing.
-        #[derive(Default)]
-        #[allow(dead_code)]
-        struct IntermediateRep {
-            pub process_id: Vec<String>,
-            pub params: Vec<std::collections::HashMap<String, String>>,
-        }
-
-        let mut intermediate_rep = IntermediateRep::default();
-
-        // Parse into intermediate representation
-        let mut string_iter = s.split(',');
-        let mut key_result = string_iter.next();
-
-        while key_result.is_some() {
-            let val = match string_iter.next() {
-                Some(x) => x,
-                None => return std::result::Result::Err("Missing value while parsing UssdProcessEmbeddedProcess".to_string())
-            };
-
-            if let Some(key) = key_result {
-                #[allow(clippy::match_single_binding)]
-                match key {
-                    #[allow(clippy::redundant_clone)]
-                    "processId" => intermediate_rep.process_id.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
-                    "params" => return std::result::Result::Err("Parsing a container in this style is not supported in UssdProcessEmbeddedProcess".to_string()),
-                    _ => return std::result::Result::Err("Unexpected key while parsing UssdProcessEmbeddedProcess".to_string())
-                }
-            }
-
-            // Get the next key
-            key_result = string_iter.next();
-        }
-
-        // Use the intermediate representation to return the struct
-        std::result::Result::Ok(UssdProcessEmbeddedProcess {
-            process_id: intermediate_rep.process_id.into_iter().next().ok_or_else(|| "processId missing in UssdProcessEmbeddedProcess".to_string())?,
-            params: intermediate_rep.params.into_iter().next().ok_or_else(|| "params missing in UssdProcessEmbeddedProcess".to_string())?,
-        })
-    }
-}
-
-// Methods for converting between header::IntoHeaderValue<UssdProcessEmbeddedProcess> and HeaderValue
-
-#[cfg(feature = "server")]
-impl std::convert::TryFrom<header::IntoHeaderValue<UssdProcessEmbeddedProcess>> for HeaderValue {
-    type Error = String;
-
-    fn try_from(hdr_value: header::IntoHeaderValue<UssdProcessEmbeddedProcess>) -> std::result::Result<Self, Self::Error> {
-        let hdr_value = hdr_value.to_string();
-        match HeaderValue::from_str(&hdr_value) {
-             std::result::Result::Ok(value) => std::result::Result::Ok(value),
-             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Invalid header value for UssdProcessEmbeddedProcess - value: {hdr_value} is invalid {e}"#))
-        }
-    }
-}
-
-#[cfg(feature = "server")]
-impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<UssdProcessEmbeddedProcess> {
-    type Error = String;
-
-    fn try_from(hdr_value: HeaderValue) -> std::result::Result<Self, Self::Error> {
-        match hdr_value.to_str() {
-             std::result::Result::Ok(value) => {
-                    match <UssdProcessEmbeddedProcess as std::str::FromStr>::from_str(value) {
-                        std::result::Result::Ok(value) => std::result::Result::Ok(header::IntoHeaderValue(value)),
-                        std::result::Result::Err(err) => std::result::Result::Err(format!(r#"Unable to convert header value '{value}' into UssdProcessEmbeddedProcess - {err}"#))
-                    }
-             },
-             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Unable to convert header: {hdr_value:?} to string: {e}"#))
-        }
+impl From<models::MerchantPaymentProcess> for UssdProcess {
+    fn from(value: models::MerchantPaymentProcess) -> Self {
+        Self::MerchantPaymentProcess(value)
     }
 }
 
 
-
-/// Initiation of merchant payment process. In this process, the control is handed over to an external USSD merchant payment process. The user will be asked for credentials and the payment will commence. As the process ends, it will call this API to deliver the result and hand control over the session back to the server.
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, validator::Validate)]
-#[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
-pub struct UssdProcessMerchantPaymentProcess {
-    /// Merchant payment operation id
-    #[serde(rename = "operationId")]
-          #[validate(custom(function = "check_xss_string"))]
-    pub operation_id: String,
-
-    /// Merchant code
-    #[serde(rename = "merchantCode")]
-          #[validate(custom(function = "check_xss_string"))]
-    pub merchant_code: String,
-
-    #[serde(rename = "amount")]
-    pub amount: f64,
-
-    #[serde(rename = "paymentMode")]
-          #[validate(nested)]
-    pub payment_mode: models::MerchantPaymentProcessPaymentMode,
-
-    #[serde(rename = "executionMode")]
-          #[validate(nested)]
-    #[serde(skip_serializing_if="Option::is_none")]
-    pub execution_mode: Option<models::MerchantPaymentProcessExecutionMode>,
-
-}
-
-
-
-impl UssdProcessMerchantPaymentProcess {
-    #[allow(clippy::new_without_default, clippy::too_many_arguments)]
-    pub fn new(operation_id: String, merchant_code: String, amount: f64, payment_mode: models::MerchantPaymentProcessPaymentMode, ) -> UssdProcessMerchantPaymentProcess {
-        UssdProcessMerchantPaymentProcess {
- operation_id,
- merchant_code,
- amount,
- payment_mode,
- execution_mode: None,
-        }
-    }
-}
-
-/// Converts the UssdProcessMerchantPaymentProcess value to the Query Parameters representation (style=form, explode=false)
-/// specified in https://swagger.io/docs/specification/serialization/
-/// Should be implemented in a serde serializer
-impl std::fmt::Display for UssdProcessMerchantPaymentProcess {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let params: Vec<Option<String>> = vec![
-
-            Some("operationId".to_string()),
-            Some(self.operation_id.to_string()),
-
-
-            Some("merchantCode".to_string()),
-            Some(self.merchant_code.to_string()),
-
-
-            Some("amount".to_string()),
-            Some(self.amount.to_string()),
-
-            // Skipping paymentMode in query parameter serialization
-
-            // Skipping executionMode in query parameter serialization
-
-        ];
-
-        write!(f, "{}", params.into_iter().flatten().collect::<Vec<_>>().join(","))
-    }
-}
-
-/// Converts Query Parameters representation (style=form, explode=false) to a UssdProcessMerchantPaymentProcess value
-/// as specified in https://swagger.io/docs/specification/serialization/
-/// Should be implemented in a serde deserializer
-impl std::str::FromStr for UssdProcessMerchantPaymentProcess {
-    type Err = String;
-
-    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-        /// An intermediate representation of the struct to use for parsing.
-        #[derive(Default)]
-        #[allow(dead_code)]
-        struct IntermediateRep {
-            pub operation_id: Vec<String>,
-            pub merchant_code: Vec<String>,
-            pub amount: Vec<f64>,
-            pub payment_mode: Vec<models::MerchantPaymentProcessPaymentMode>,
-            pub execution_mode: Vec<models::MerchantPaymentProcessExecutionMode>,
-        }
-
-        let mut intermediate_rep = IntermediateRep::default();
-
-        // Parse into intermediate representation
-        let mut string_iter = s.split(',');
-        let mut key_result = string_iter.next();
-
-        while key_result.is_some() {
-            let val = match string_iter.next() {
-                Some(x) => x,
-                None => return std::result::Result::Err("Missing value while parsing UssdProcessMerchantPaymentProcess".to_string())
-            };
-
-            if let Some(key) = key_result {
-                #[allow(clippy::match_single_binding)]
-                match key {
-                    #[allow(clippy::redundant_clone)]
-                    "operationId" => intermediate_rep.operation_id.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
-                    #[allow(clippy::redundant_clone)]
-                    "merchantCode" => intermediate_rep.merchant_code.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
-                    #[allow(clippy::redundant_clone)]
-                    "amount" => intermediate_rep.amount.push(<f64 as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
-                    #[allow(clippy::redundant_clone)]
-                    "paymentMode" => intermediate_rep.payment_mode.push(<models::MerchantPaymentProcessPaymentMode as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
-                    #[allow(clippy::redundant_clone)]
-                    "executionMode" => intermediate_rep.execution_mode.push(<models::MerchantPaymentProcessExecutionMode as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
-                    _ => return std::result::Result::Err("Unexpected key while parsing UssdProcessMerchantPaymentProcess".to_string())
-                }
-            }
-
-            // Get the next key
-            key_result = string_iter.next();
-        }
-
-        // Use the intermediate representation to return the struct
-        std::result::Result::Ok(UssdProcessMerchantPaymentProcess {
-            operation_id: intermediate_rep.operation_id.into_iter().next().ok_or_else(|| "operationId missing in UssdProcessMerchantPaymentProcess".to_string())?,
-            merchant_code: intermediate_rep.merchant_code.into_iter().next().ok_or_else(|| "merchantCode missing in UssdProcessMerchantPaymentProcess".to_string())?,
-            amount: intermediate_rep.amount.into_iter().next().ok_or_else(|| "amount missing in UssdProcessMerchantPaymentProcess".to_string())?,
-            payment_mode: intermediate_rep.payment_mode.into_iter().next().ok_or_else(|| "paymentMode missing in UssdProcessMerchantPaymentProcess".to_string())?,
-            execution_mode: intermediate_rep.execution_mode.into_iter().next(),
-        })
-    }
-}
-
-// Methods for converting between header::IntoHeaderValue<UssdProcessMerchantPaymentProcess> and HeaderValue
-
-#[cfg(feature = "server")]
-impl std::convert::TryFrom<header::IntoHeaderValue<UssdProcessMerchantPaymentProcess>> for HeaderValue {
-    type Error = String;
-
-    fn try_from(hdr_value: header::IntoHeaderValue<UssdProcessMerchantPaymentProcess>) -> std::result::Result<Self, Self::Error> {
-        let hdr_value = hdr_value.to_string();
-        match HeaderValue::from_str(&hdr_value) {
-             std::result::Result::Ok(value) => std::result::Result::Ok(value),
-             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Invalid header value for UssdProcessMerchantPaymentProcess - value: {hdr_value} is invalid {e}"#))
-        }
-    }
-}
-
-#[cfg(feature = "server")]
-impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<UssdProcessMerchantPaymentProcess> {
-    type Error = String;
-
-    fn try_from(hdr_value: HeaderValue) -> std::result::Result<Self, Self::Error> {
-        match hdr_value.to_str() {
-             std::result::Result::Ok(value) => {
-                    match <UssdProcessMerchantPaymentProcess as std::str::FromStr>::from_str(value) {
-                        std::result::Result::Ok(value) => std::result::Result::Ok(header::IntoHeaderValue(value)),
-                        std::result::Result::Err(err) => std::result::Result::Err(format!(r#"Unable to convert header value '{value}' into UssdProcessMerchantPaymentProcess - {err}"#))
-                    }
-             },
-             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Unable to convert header: {hdr_value:?} to string: {e}"#))
-        }
-    }
-}
 
 
 
@@ -5680,20 +6253,20 @@ impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<UssdSessionE
 #[allow(non_camel_case_types, clippy::large_enum_variant)]
 pub enum UssdSessionEventNewSessionSessionInput {
     #[serde(alias = "Dial")]
-    NewSessionSessionInputDial(models::NewSessionSessionInputDial),
+    Dial(models::Dial),
     #[serde(alias = "Push")]
-    NewSessionSessionInputPush(models::NewSessionSessionInputPush),
+    Push(models::Push),
     #[serde(alias = "Redirect")]
-    NewSessionSessionInputRedirect(models::NewSessionSessionInputRedirect),
+    Redirect(models::Redirect),
 }
 
 impl validator::Validate for UssdSessionEventNewSessionSessionInput
 {
     fn validate(&self) -> std::result::Result<(), validator::ValidationErrors> {
         match self {
-            Self::NewSessionSessionInputDial(v) => v.validate(),
-            Self::NewSessionSessionInputPush(v) => v.validate(),
-            Self::NewSessionSessionInputRedirect(v) => v.validate(),
+            Self::Dial(v) => v.validate(),
+            Self::Push(v) => v.validate(),
+            Self::Redirect(v) => v.validate(),
         }
     }
 }
@@ -5713,26 +6286,26 @@ impl serde::Serialize for UssdSessionEventNewSessionSessionInput {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
         where S: serde::Serializer {
             match self {
-                Self::NewSessionSessionInputDial(x) => x.serialize(serializer),
-                Self::NewSessionSessionInputPush(x) => x.serialize(serializer),
-                Self::NewSessionSessionInputRedirect(x) => x.serialize(serializer),
+                Self::Dial(x) => x.serialize(serializer),
+                Self::Push(x) => x.serialize(serializer),
+                Self::Redirect(x) => x.serialize(serializer),
             }
     }
 }
 
-impl From<models::NewSessionSessionInputDial> for UssdSessionEventNewSessionSessionInput {
-    fn from(value: models::NewSessionSessionInputDial) -> Self {
-        Self::NewSessionSessionInputDial(value)
+impl From<models::Dial> for UssdSessionEventNewSessionSessionInput {
+    fn from(value: models::Dial) -> Self {
+        Self::Dial(value)
     }
 }
-impl From<models::NewSessionSessionInputPush> for UssdSessionEventNewSessionSessionInput {
-    fn from(value: models::NewSessionSessionInputPush) -> Self {
-        Self::NewSessionSessionInputPush(value)
+impl From<models::Push> for UssdSessionEventNewSessionSessionInput {
+    fn from(value: models::Push) -> Self {
+        Self::Push(value)
     }
 }
-impl From<models::NewSessionSessionInputRedirect> for UssdSessionEventNewSessionSessionInput {
-    fn from(value: models::NewSessionSessionInputRedirect) -> Self {
-        Self::NewSessionSessionInputRedirect(value)
+impl From<models::Redirect> for UssdSessionEventNewSessionSessionInput {
+    fn from(value: models::Redirect) -> Self {
+        Self::Redirect(value)
     }
 }
 
@@ -5745,20 +6318,20 @@ impl From<models::NewSessionSessionInputRedirect> for UssdSessionEventNewSession
 #[allow(non_camel_case_types, clippy::large_enum_variant)]
 pub enum UssdView {
     #[serde(alias = "ChooserView")]
-    UssdViewChooserView(models::UssdViewChooserView),
+    ChooserView(models::ChooserView),
     #[serde(alias = "InfoView")]
-    UssdViewInfoView(models::UssdViewInfoView),
+    InfoView(models::InfoView),
     #[serde(alias = "InputView")]
-    UssdViewInputView(models::UssdViewInputView),
+    InputView(models::InputView),
 }
 
 impl validator::Validate for UssdView
 {
     fn validate(&self) -> std::result::Result<(), validator::ValidationErrors> {
         match self {
-            Self::UssdViewChooserView(v) => v.validate(),
-            Self::UssdViewInfoView(v) => v.validate(),
-            Self::UssdViewInputView(v) => v.validate(),
+            Self::ChooserView(v) => v.validate(),
+            Self::InfoView(v) => v.validate(),
+            Self::InputView(v) => v.validate(),
         }
     }
 }
@@ -5778,199 +6351,30 @@ impl serde::Serialize for UssdView {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
         where S: serde::Serializer {
             match self {
-                Self::UssdViewChooserView(x) => x.serialize(serializer),
-                Self::UssdViewInfoView(x) => x.serialize(serializer),
-                Self::UssdViewInputView(x) => x.serialize(serializer),
+                Self::ChooserView(x) => x.serialize(serializer),
+                Self::InfoView(x) => x.serialize(serializer),
+                Self::InputView(x) => x.serialize(serializer),
             }
     }
 }
 
-impl From<models::UssdViewChooserView> for UssdView {
-    fn from(value: models::UssdViewChooserView) -> Self {
-        Self::UssdViewChooserView(value)
+impl From<models::ChooserView> for UssdView {
+    fn from(value: models::ChooserView) -> Self {
+        Self::ChooserView(value)
     }
 }
-impl From<models::UssdViewInfoView> for UssdView {
-    fn from(value: models::UssdViewInfoView) -> Self {
-        Self::UssdViewInfoView(value)
+impl From<models::InfoView> for UssdView {
+    fn from(value: models::InfoView) -> Self {
+        Self::InfoView(value)
     }
 }
-impl From<models::UssdViewInputView> for UssdView {
-    fn from(value: models::UssdViewInputView) -> Self {
-        Self::UssdViewInputView(value)
-    }
-}
-
-
-
-
-
-/// A chooser (menu) view. User can choose one of the chooser items. If user picks invalid option (when user input does not match any of the available items), then the user will be asked to try again. It will be done internally by the USSD API without involving developer's app. It's guaranteed, that the user input sent in next request to the developer's app will match one of the provided items. The session will continue when this message is sent.
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, validator::Validate)]
-#[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
-pub struct UssdViewChooserView {
-    /// Text that will be displayed before the chooser items
-    #[serde(rename = "title")]
-          #[validate(custom(function = "check_xss_string"))]
-    pub title: String,
-
-    /// Chooser items, each will be presented to user in a new line. All items must have unique access keys.
-    #[serde(rename = "items")]
-    #[validate(
-            length(min = 1),
-          nested,
-    )]
-    #[serde(skip_serializing_if="Option::is_none")]
-    pub items: Option<Vec<models::UssdViewChooserViewItem>>,
-
-    /// Text, that separates each item's accessKey and label when the ChooserView is rendered
-    #[serde(rename = "separator")]
-    #[validate(
-            length(min = 1),
-          custom(function = "check_xss_string"),
-    )]
-    #[serde(skip_serializing_if="Option::is_none")]
-    pub separator: Option<String>,
-
-    /// Note: inline enums are not fully supported by openapi-generator
-    #[serde(rename = "type")]
-          #[validate(custom(function = "check_xss_string"))]
-    pub r_type: String,
-
-}
-
-
-
-impl UssdViewChooserView {
-    #[allow(clippy::new_without_default, clippy::too_many_arguments)]
-    pub fn new(title: String, r_type: String, ) -> UssdViewChooserView {
-        UssdViewChooserView {
- title,
- items: None,
- separator: None,
- r_type,
-        }
+impl From<models::InputView> for UssdView {
+    fn from(value: models::InputView) -> Self {
+        Self::InputView(value)
     }
 }
 
-/// Converts the UssdViewChooserView value to the Query Parameters representation (style=form, explode=false)
-/// specified in https://swagger.io/docs/specification/serialization/
-/// Should be implemented in a serde serializer
-impl std::fmt::Display for UssdViewChooserView {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let params: Vec<Option<String>> = vec![
 
-            Some("title".to_string()),
-            Some(self.title.to_string()),
-
-            // Skipping items in query parameter serialization
-
-
-            self.separator.as_ref().map(|separator| {
-                [
-                    "separator".to_string(),
-                    separator.to_string(),
-                ].join(",")
-            }),
-
-
-            Some("type".to_string()),
-            Some(self.r_type.to_string()),
-
-        ];
-
-        write!(f, "{}", params.into_iter().flatten().collect::<Vec<_>>().join(","))
-    }
-}
-
-/// Converts Query Parameters representation (style=form, explode=false) to a UssdViewChooserView value
-/// as specified in https://swagger.io/docs/specification/serialization/
-/// Should be implemented in a serde deserializer
-impl std::str::FromStr for UssdViewChooserView {
-    type Err = String;
-
-    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-        /// An intermediate representation of the struct to use for parsing.
-        #[derive(Default)]
-        #[allow(dead_code)]
-        struct IntermediateRep {
-            pub title: Vec<String>,
-            pub items: Vec<Vec<models::UssdViewChooserViewItem>>,
-            pub separator: Vec<String>,
-            pub r_type: Vec<String>,
-        }
-
-        let mut intermediate_rep = IntermediateRep::default();
-
-        // Parse into intermediate representation
-        let mut string_iter = s.split(',');
-        let mut key_result = string_iter.next();
-
-        while key_result.is_some() {
-            let val = match string_iter.next() {
-                Some(x) => x,
-                None => return std::result::Result::Err("Missing value while parsing UssdViewChooserView".to_string())
-            };
-
-            if let Some(key) = key_result {
-                #[allow(clippy::match_single_binding)]
-                match key {
-                    #[allow(clippy::redundant_clone)]
-                    "title" => intermediate_rep.title.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
-                    "items" => return std::result::Result::Err("Parsing a container in this style is not supported in UssdViewChooserView".to_string()),
-                    #[allow(clippy::redundant_clone)]
-                    "separator" => intermediate_rep.separator.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
-                    #[allow(clippy::redundant_clone)]
-                    "type" => intermediate_rep.r_type.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
-                    _ => return std::result::Result::Err("Unexpected key while parsing UssdViewChooserView".to_string())
-                }
-            }
-
-            // Get the next key
-            key_result = string_iter.next();
-        }
-
-        // Use the intermediate representation to return the struct
-        std::result::Result::Ok(UssdViewChooserView {
-            title: intermediate_rep.title.into_iter().next().ok_or_else(|| "title missing in UssdViewChooserView".to_string())?,
-            items: intermediate_rep.items.into_iter().next(),
-            separator: intermediate_rep.separator.into_iter().next(),
-            r_type: intermediate_rep.r_type.into_iter().next().ok_or_else(|| "type missing in UssdViewChooserView".to_string())?,
-        })
-    }
-}
-
-// Methods for converting between header::IntoHeaderValue<UssdViewChooserView> and HeaderValue
-
-#[cfg(feature = "server")]
-impl std::convert::TryFrom<header::IntoHeaderValue<UssdViewChooserView>> for HeaderValue {
-    type Error = String;
-
-    fn try_from(hdr_value: header::IntoHeaderValue<UssdViewChooserView>) -> std::result::Result<Self, Self::Error> {
-        let hdr_value = hdr_value.to_string();
-        match HeaderValue::from_str(&hdr_value) {
-             std::result::Result::Ok(value) => std::result::Result::Ok(value),
-             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Invalid header value for UssdViewChooserView - value: {hdr_value} is invalid {e}"#))
-        }
-    }
-}
-
-#[cfg(feature = "server")]
-impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<UssdViewChooserView> {
-    type Error = String;
-
-    fn try_from(hdr_value: HeaderValue) -> std::result::Result<Self, Self::Error> {
-        match hdr_value.to_str() {
-             std::result::Result::Ok(value) => {
-                    match <UssdViewChooserView as std::str::FromStr>::from_str(value) {
-                        std::result::Result::Ok(value) => std::result::Result::Ok(header::IntoHeaderValue(value)),
-                        std::result::Result::Err(err) => std::result::Result::Err(format!(r#"Unable to convert header value '{value}' into UssdViewChooserView - {err}"#))
-                    }
-             },
-             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Unable to convert header: {hdr_value:?} to string: {e}"#))
-        }
-    }
-}
 
 
 
@@ -6112,43 +6516,55 @@ impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<UssdViewChoo
 
 
 
-/// A text-only view; does not take any user input. The session will be closed when this message is sent.
+/// Merchant payment process will use a timeout when finalizing.
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, validator::Validate)]
 #[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
-pub struct UssdViewInfoView {
-    /// Final message that will be displayed to the user
-    #[serde(rename = "message")]
-          #[validate(custom(function = "check_xss_string"))]
-    pub message: String,
+pub struct WithBankResponseTimeout {
+    #[serde(rename = "millis")]
+    pub millis: i64,
 
     /// Note: inline enums are not fully supported by openapi-generator
+    #[serde(default = "WithBankResponseTimeout::_name_for_r_type")]
+    #[serde(serialize_with = "WithBankResponseTimeout::_serialize_r_type")]
     #[serde(rename = "type")]
           #[validate(custom(function = "check_xss_string"))]
     pub r_type: String,
 
 }
 
+impl WithBankResponseTimeout {
+    fn _name_for_r_type() -> String {
+        String::from("WithBankResponseTimeout")
+    }
+
+    fn _serialize_r_type<S>(_: &String, s: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        s.serialize_str(&Self::_name_for_r_type())
+    }
+}
 
 
-impl UssdViewInfoView {
+impl WithBankResponseTimeout {
     #[allow(clippy::new_without_default, clippy::too_many_arguments)]
-    pub fn new(message: String, r_type: String, ) -> UssdViewInfoView {
-        UssdViewInfoView {
- message,
- r_type,
+    pub fn new(millis: i64, ) -> WithBankResponseTimeout {
+        WithBankResponseTimeout {
+ millis,
+ r_type: Self::_name_for_r_type(),
         }
     }
 }
 
-/// Converts the UssdViewInfoView value to the Query Parameters representation (style=form, explode=false)
+/// Converts the WithBankResponseTimeout value to the Query Parameters representation (style=form, explode=false)
 /// specified in https://swagger.io/docs/specification/serialization/
 /// Should be implemented in a serde serializer
-impl std::fmt::Display for UssdViewInfoView {
+impl std::fmt::Display for WithBankResponseTimeout {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let params: Vec<Option<String>> = vec![
 
-            Some("message".to_string()),
-            Some(self.message.to_string()),
+            Some("millis".to_string()),
+            Some(self.millis.to_string()),
 
 
             Some("type".to_string()),
@@ -6160,10 +6576,10 @@ impl std::fmt::Display for UssdViewInfoView {
     }
 }
 
-/// Converts Query Parameters representation (style=form, explode=false) to a UssdViewInfoView value
+/// Converts Query Parameters representation (style=form, explode=false) to a WithBankResponseTimeout value
 /// as specified in https://swagger.io/docs/specification/serialization/
 /// Should be implemented in a serde deserializer
-impl std::str::FromStr for UssdViewInfoView {
+impl std::str::FromStr for WithBankResponseTimeout {
     type Err = String;
 
     fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
@@ -6171,7 +6587,7 @@ impl std::str::FromStr for UssdViewInfoView {
         #[derive(Default)]
         #[allow(dead_code)]
         struct IntermediateRep {
-            pub message: Vec<String>,
+            pub millis: Vec<i64>,
             pub r_type: Vec<String>,
         }
 
@@ -6184,17 +6600,17 @@ impl std::str::FromStr for UssdViewInfoView {
         while key_result.is_some() {
             let val = match string_iter.next() {
                 Some(x) => x,
-                None => return std::result::Result::Err("Missing value while parsing UssdViewInfoView".to_string())
+                None => return std::result::Result::Err("Missing value while parsing WithBankResponseTimeout".to_string())
             };
 
             if let Some(key) = key_result {
                 #[allow(clippy::match_single_binding)]
                 match key {
                     #[allow(clippy::redundant_clone)]
-                    "message" => intermediate_rep.message.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
+                    "millis" => intermediate_rep.millis.push(<i64 as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
                     #[allow(clippy::redundant_clone)]
                     "type" => intermediate_rep.r_type.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
-                    _ => return std::result::Result::Err("Unexpected key while parsing UssdViewInfoView".to_string())
+                    _ => return std::result::Result::Err("Unexpected key while parsing WithBankResponseTimeout".to_string())
                 }
             }
 
@@ -6203,38 +6619,38 @@ impl std::str::FromStr for UssdViewInfoView {
         }
 
         // Use the intermediate representation to return the struct
-        std::result::Result::Ok(UssdViewInfoView {
-            message: intermediate_rep.message.into_iter().next().ok_or_else(|| "message missing in UssdViewInfoView".to_string())?,
-            r_type: intermediate_rep.r_type.into_iter().next().ok_or_else(|| "type missing in UssdViewInfoView".to_string())?,
+        std::result::Result::Ok(WithBankResponseTimeout {
+            millis: intermediate_rep.millis.into_iter().next().ok_or_else(|| "millis missing in WithBankResponseTimeout".to_string())?,
+            r_type: intermediate_rep.r_type.into_iter().next().ok_or_else(|| "type missing in WithBankResponseTimeout".to_string())?,
         })
     }
 }
 
-// Methods for converting between header::IntoHeaderValue<UssdViewInfoView> and HeaderValue
+// Methods for converting between header::IntoHeaderValue<WithBankResponseTimeout> and HeaderValue
 
 #[cfg(feature = "server")]
-impl std::convert::TryFrom<header::IntoHeaderValue<UssdViewInfoView>> for HeaderValue {
+impl std::convert::TryFrom<header::IntoHeaderValue<WithBankResponseTimeout>> for HeaderValue {
     type Error = String;
 
-    fn try_from(hdr_value: header::IntoHeaderValue<UssdViewInfoView>) -> std::result::Result<Self, Self::Error> {
+    fn try_from(hdr_value: header::IntoHeaderValue<WithBankResponseTimeout>) -> std::result::Result<Self, Self::Error> {
         let hdr_value = hdr_value.to_string();
         match HeaderValue::from_str(&hdr_value) {
              std::result::Result::Ok(value) => std::result::Result::Ok(value),
-             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Invalid header value for UssdViewInfoView - value: {hdr_value} is invalid {e}"#))
+             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Invalid header value for WithBankResponseTimeout - value: {hdr_value} is invalid {e}"#))
         }
     }
 }
 
 #[cfg(feature = "server")]
-impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<UssdViewInfoView> {
+impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<WithBankResponseTimeout> {
     type Error = String;
 
     fn try_from(hdr_value: HeaderValue) -> std::result::Result<Self, Self::Error> {
         match hdr_value.to_str() {
              std::result::Result::Ok(value) => {
-                    match <UssdViewInfoView as std::str::FromStr>::from_str(value) {
+                    match <WithBankResponseTimeout as std::str::FromStr>::from_str(value) {
                         std::result::Result::Ok(value) => std::result::Result::Ok(header::IntoHeaderValue(value)),
-                        std::result::Result::Err(err) => std::result::Result::Err(format!(r#"Unable to convert header value '{value}' into UssdViewInfoView - {err}"#))
+                        std::result::Result::Err(err) => std::result::Result::Err(format!(r#"Unable to convert header value '{value}' into WithBankResponseTimeout - {err}"#))
                     }
              },
              std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Unable to convert header: {hdr_value:?} to string: {e}"#))
@@ -6244,44 +6660,48 @@ impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<UssdViewInfo
 
 
 
-/// A view with text; takes user input. The session will continue when this message is sent.
+/// Merchant payment process will not use a timeout when finalizing.
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, validator::Validate)]
 #[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
-pub struct UssdViewInputView {
-    /// Message that will be displayed to the user, for example asking the user to input some value
-    #[serde(rename = "message")]
-          #[validate(custom(function = "check_xss_string"))]
-    pub message: String,
-
+pub struct WithoutWaitingForBank {
     /// Note: inline enums are not fully supported by openapi-generator
+    #[serde(default = "WithoutWaitingForBank::_name_for_r_type")]
+    #[serde(serialize_with = "WithoutWaitingForBank::_serialize_r_type")]
     #[serde(rename = "type")]
           #[validate(custom(function = "check_xss_string"))]
     pub r_type: String,
 
 }
 
+impl WithoutWaitingForBank {
+    fn _name_for_r_type() -> String {
+        String::from("WithoutWaitingForBank")
+    }
+
+    fn _serialize_r_type<S>(_: &String, s: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        s.serialize_str(&Self::_name_for_r_type())
+    }
+}
 
 
-impl UssdViewInputView {
+impl WithoutWaitingForBank {
     #[allow(clippy::new_without_default, clippy::too_many_arguments)]
-    pub fn new(message: String, r_type: String, ) -> UssdViewInputView {
-        UssdViewInputView {
- message,
- r_type,
+    pub fn new() -> WithoutWaitingForBank {
+        WithoutWaitingForBank {
+ r_type: Self::_name_for_r_type(),
         }
     }
 }
 
-/// Converts the UssdViewInputView value to the Query Parameters representation (style=form, explode=false)
+/// Converts the WithoutWaitingForBank value to the Query Parameters representation (style=form, explode=false)
 /// specified in https://swagger.io/docs/specification/serialization/
 /// Should be implemented in a serde serializer
-impl std::fmt::Display for UssdViewInputView {
+impl std::fmt::Display for WithoutWaitingForBank {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let params: Vec<Option<String>> = vec![
-
-            Some("message".to_string()),
-            Some(self.message.to_string()),
-
 
             Some("type".to_string()),
             Some(self.r_type.to_string()),
@@ -6292,10 +6712,10 @@ impl std::fmt::Display for UssdViewInputView {
     }
 }
 
-/// Converts Query Parameters representation (style=form, explode=false) to a UssdViewInputView value
+/// Converts Query Parameters representation (style=form, explode=false) to a WithoutWaitingForBank value
 /// as specified in https://swagger.io/docs/specification/serialization/
 /// Should be implemented in a serde deserializer
-impl std::str::FromStr for UssdViewInputView {
+impl std::str::FromStr for WithoutWaitingForBank {
     type Err = String;
 
     fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
@@ -6303,7 +6723,6 @@ impl std::str::FromStr for UssdViewInputView {
         #[derive(Default)]
         #[allow(dead_code)]
         struct IntermediateRep {
-            pub message: Vec<String>,
             pub r_type: Vec<String>,
         }
 
@@ -6316,17 +6735,15 @@ impl std::str::FromStr for UssdViewInputView {
         while key_result.is_some() {
             let val = match string_iter.next() {
                 Some(x) => x,
-                None => return std::result::Result::Err("Missing value while parsing UssdViewInputView".to_string())
+                None => return std::result::Result::Err("Missing value while parsing WithoutWaitingForBank".to_string())
             };
 
             if let Some(key) = key_result {
                 #[allow(clippy::match_single_binding)]
                 match key {
                     #[allow(clippy::redundant_clone)]
-                    "message" => intermediate_rep.message.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
-                    #[allow(clippy::redundant_clone)]
                     "type" => intermediate_rep.r_type.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
-                    _ => return std::result::Result::Err("Unexpected key while parsing UssdViewInputView".to_string())
+                    _ => return std::result::Result::Err("Unexpected key while parsing WithoutWaitingForBank".to_string())
                 }
             }
 
@@ -6335,38 +6752,37 @@ impl std::str::FromStr for UssdViewInputView {
         }
 
         // Use the intermediate representation to return the struct
-        std::result::Result::Ok(UssdViewInputView {
-            message: intermediate_rep.message.into_iter().next().ok_or_else(|| "message missing in UssdViewInputView".to_string())?,
-            r_type: intermediate_rep.r_type.into_iter().next().ok_or_else(|| "type missing in UssdViewInputView".to_string())?,
+        std::result::Result::Ok(WithoutWaitingForBank {
+            r_type: intermediate_rep.r_type.into_iter().next().ok_or_else(|| "type missing in WithoutWaitingForBank".to_string())?,
         })
     }
 }
 
-// Methods for converting between header::IntoHeaderValue<UssdViewInputView> and HeaderValue
+// Methods for converting between header::IntoHeaderValue<WithoutWaitingForBank> and HeaderValue
 
 #[cfg(feature = "server")]
-impl std::convert::TryFrom<header::IntoHeaderValue<UssdViewInputView>> for HeaderValue {
+impl std::convert::TryFrom<header::IntoHeaderValue<WithoutWaitingForBank>> for HeaderValue {
     type Error = String;
 
-    fn try_from(hdr_value: header::IntoHeaderValue<UssdViewInputView>) -> std::result::Result<Self, Self::Error> {
+    fn try_from(hdr_value: header::IntoHeaderValue<WithoutWaitingForBank>) -> std::result::Result<Self, Self::Error> {
         let hdr_value = hdr_value.to_string();
         match HeaderValue::from_str(&hdr_value) {
              std::result::Result::Ok(value) => std::result::Result::Ok(value),
-             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Invalid header value for UssdViewInputView - value: {hdr_value} is invalid {e}"#))
+             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Invalid header value for WithoutWaitingForBank - value: {hdr_value} is invalid {e}"#))
         }
     }
 }
 
 #[cfg(feature = "server")]
-impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<UssdViewInputView> {
+impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<WithoutWaitingForBank> {
     type Error = String;
 
     fn try_from(hdr_value: HeaderValue) -> std::result::Result<Self, Self::Error> {
         match hdr_value.to_str() {
              std::result::Result::Ok(value) => {
-                    match <UssdViewInputView as std::str::FromStr>::from_str(value) {
+                    match <WithoutWaitingForBank as std::str::FromStr>::from_str(value) {
                         std::result::Result::Ok(value) => std::result::Result::Ok(header::IntoHeaderValue(value)),
-                        std::result::Result::Err(err) => std::result::Result::Err(format!(r#"Unable to convert header value '{value}' into UssdViewInputView - {err}"#))
+                        std::result::Result::Err(err) => std::result::Result::Err(format!(r#"Unable to convert header value '{value}' into WithoutWaitingForBank - {err}"#))
                     }
              },
              std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Unable to convert header: {hdr_value:?} to string: {e}"#))

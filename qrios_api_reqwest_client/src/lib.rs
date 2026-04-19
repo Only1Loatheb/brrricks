@@ -37,6 +37,109 @@ pub mod types {
             }
         }
     }
+    ///Abandon - the user leaves the session (e.g. the user presses "Cancel" on the phone).
+    ///
+    /// <details><summary>JSON schema</summary>
+    ///
+    /// ```json
+    ///{
+    ///  "description": "Abandon - the user leaves the session (e.g. the user presses \"Cancel\" on the phone).",
+    ///  "type": "object",
+    ///  "required": [
+    ///    "type"
+    ///  ],
+    ///  "properties": {
+    ///    "type": {
+    ///      "examples": [
+    ///        "Abandon"
+    ///      ],
+    ///      "type": "string",
+    ///      "enum": [
+    ///        "Abandon"
+    ///      ]
+    ///    }
+    ///  }
+    ///}
+    /// ```
+    /// </details>
+    #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+    pub struct Abandon {
+        #[serde(rename = "type")]
+        pub type_: AbandonType,
+    }
+    ///`AbandonType`
+    ///
+    /// <details><summary>JSON schema</summary>
+    ///
+    /// ```json
+    ///{
+    ///  "examples": [
+    ///    "Abandon"
+    ///  ],
+    ///  "type": "string",
+    ///  "enum": [
+    ///    "Abandon"
+    ///  ]
+    ///}
+    /// ```
+    /// </details>
+    #[derive(
+        ::serde::Deserialize,
+        ::serde::Serialize,
+        Clone,
+        Copy,
+        Debug,
+        Eq,
+        Hash,
+        Ord,
+        PartialEq,
+        PartialOrd
+    )]
+    pub enum AbandonType {
+        Abandon,
+    }
+    impl ::std::fmt::Display for AbandonType {
+        fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+            match *self {
+                Self::Abandon => f.write_str("Abandon"),
+            }
+        }
+    }
+    impl ::std::str::FromStr for AbandonType {
+        type Err = self::error::ConversionError;
+        fn from_str(
+            value: &str,
+        ) -> ::std::result::Result<Self, self::error::ConversionError> {
+            match value {
+                "Abandon" => Ok(Self::Abandon),
+                _ => Err("invalid value".into()),
+            }
+        }
+    }
+    impl ::std::convert::TryFrom<&str> for AbandonType {
+        type Error = self::error::ConversionError;
+        fn try_from(
+            value: &str,
+        ) -> ::std::result::Result<Self, self::error::ConversionError> {
+            value.parse()
+        }
+    }
+    impl ::std::convert::TryFrom<&::std::string::String> for AbandonType {
+        type Error = self::error::ConversionError;
+        fn try_from(
+            value: &::std::string::String,
+        ) -> ::std::result::Result<Self, self::error::ConversionError> {
+            value.parse()
+        }
+    }
+    impl ::std::convert::TryFrom<::std::string::String> for AbandonType {
+        type Error = self::error::ConversionError;
+        fn try_from(
+            value: ::std::string::String,
+        ) -> ::std::result::Result<Self, self::error::ConversionError> {
+            value.parse()
+        }
+    }
     ///The event sent when the USSD session is aborted (internal error).
     ///
     /// <details><summary>JSON schema</summary>
@@ -95,19 +198,19 @@ pub mod types {
     ///{
     ///  "oneOf": [
     ///    {
-    ///      "$ref": "#/components/schemas/AbortSession.AbortReason.DuplicatedOperation"
+    ///      "$ref": "#/components/schemas/DuplicatedOperation"
     ///    },
     ///    {
-    ///      "$ref": "#/components/schemas/AbortSession.AbortReason.InsufficientBalanceInVirtualPurse"
+    ///      "$ref": "#/components/schemas/InsufficientBalanceInVirtualPurse"
     ///    },
     ///    {
-    ///      "$ref": "#/components/schemas/AbortSession.AbortReason.InternalError"
+    ///      "$ref": "#/components/schemas/InternalError"
     ///    },
     ///    {
-    ///      "$ref": "#/components/schemas/AbortSession.AbortReason.MissingPrivilege"
+    ///      "$ref": "#/components/schemas/MissingPrivilege"
     ///    },
     ///    {
-    ///      "$ref": "#/components/schemas/AbortSession.AbortReason.UnexpectedUssdAppResponse"
+    ///      "$ref": "#/components/schemas/UnexpectedUssdAppResponse"
     ///    }
     ///  ]
     ///}
@@ -116,69 +219,79 @@ pub mod types {
     #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
     #[serde(untagged)]
     pub enum AbortSessionAbortReason {
-        DuplicatedOperation(AbortSessionAbortReasonDuplicatedOperation),
-        InsufficientBalanceInVirtualPurse(
-            AbortSessionAbortReasonInsufficientBalanceInVirtualPurse,
-        ),
-        InternalError(AbortSessionAbortReasonInternalError),
-        MissingPrivilege(AbortSessionAbortReasonMissingPrivilege),
-        UnexpectedUssdAppResponse(AbortSessionAbortReasonUnexpectedUssdAppResponse),
+        DuplicatedOperation(DuplicatedOperation),
+        InsufficientBalanceInVirtualPurse(InsufficientBalanceInVirtualPurse),
+        InternalError(InternalError),
+        MissingPrivilege(MissingPrivilege),
+        UnexpectedUssdAppResponse(UnexpectedUssdAppResponse),
     }
-    impl ::std::convert::From<AbortSessionAbortReasonDuplicatedOperation>
-    for AbortSessionAbortReason {
-        fn from(value: AbortSessionAbortReasonDuplicatedOperation) -> Self {
+    impl ::std::convert::From<DuplicatedOperation> for AbortSessionAbortReason {
+        fn from(value: DuplicatedOperation) -> Self {
             Self::DuplicatedOperation(value)
         }
     }
-    impl ::std::convert::From<AbortSessionAbortReasonInsufficientBalanceInVirtualPurse>
+    impl ::std::convert::From<InsufficientBalanceInVirtualPurse>
     for AbortSessionAbortReason {
-        fn from(
-            value: AbortSessionAbortReasonInsufficientBalanceInVirtualPurse,
-        ) -> Self {
+        fn from(value: InsufficientBalanceInVirtualPurse) -> Self {
             Self::InsufficientBalanceInVirtualPurse(value)
         }
     }
-    impl ::std::convert::From<AbortSessionAbortReasonInternalError>
-    for AbortSessionAbortReason {
-        fn from(value: AbortSessionAbortReasonInternalError) -> Self {
+    impl ::std::convert::From<InternalError> for AbortSessionAbortReason {
+        fn from(value: InternalError) -> Self {
             Self::InternalError(value)
         }
     }
-    impl ::std::convert::From<AbortSessionAbortReasonMissingPrivilege>
-    for AbortSessionAbortReason {
-        fn from(value: AbortSessionAbortReasonMissingPrivilege) -> Self {
+    impl ::std::convert::From<MissingPrivilege> for AbortSessionAbortReason {
+        fn from(value: MissingPrivilege) -> Self {
             Self::MissingPrivilege(value)
         }
     }
-    impl ::std::convert::From<AbortSessionAbortReasonUnexpectedUssdAppResponse>
-    for AbortSessionAbortReason {
-        fn from(value: AbortSessionAbortReasonUnexpectedUssdAppResponse) -> Self {
+    impl ::std::convert::From<UnexpectedUssdAppResponse> for AbortSessionAbortReason {
+        fn from(value: UnexpectedUssdAppResponse) -> Self {
             Self::UnexpectedUssdAppResponse(value)
         }
     }
-    ///USSD process abort reason - operation, eg. Merchant Payment, was previously invoked with given identifier.
+    /**A chooser (menu) view. User can choose one of the chooser items.
+If user picks invalid option (when user input does not match any of the available items), then the user will be asked to try again.
+It will be done internally by the USSD API without involving developer's app.
+It's guaranteed, that the user input sent in next request to the developer's app will match one of the provided items.
+The session will continue when this message is sent.*/
     ///
     /// <details><summary>JSON schema</summary>
     ///
     /// ```json
     ///{
-    ///  "description": "USSD process abort reason - operation, eg. Merchant Payment, was previously invoked with given identifier.",
+    ///  "description": "A chooser (menu) view. User can choose one of the chooser items.\nIf user picks invalid option (when user input does not match any of the available items), then the user will be asked to try again.\nIt will be done internally by the USSD API without involving developer's app.\nIt's guaranteed, that the user input sent in next request to the developer's app will match one of the provided items.\nThe session will continue when this message is sent.",
     ///  "type": "object",
     ///  "required": [
-    ///    "operationId",
+    ///    "title",
     ///    "type"
     ///  ],
     ///  "properties": {
-    ///    "operationId": {
+    ///    "items": {
+    ///      "description": "Chooser items, each will be presented to user in a new line. All items must have unique access keys.",
+    ///      "type": "array",
+    ///      "items": {
+    ///        "$ref": "#/components/schemas/UssdView.ChooserView.Item"
+    ///      },
+    ///      "minItems": 1
+    ///    },
+    ///    "separator": {
+    ///      "description": "Text, that separates each item's accessKey and label when the ChooserView is rendered",
+    ///      "type": "string",
+    ///      "minLength": 1
+    ///    },
+    ///    "title": {
+    ///      "description": "Text that will be displayed before the chooser items",
     ///      "type": "string"
     ///    },
     ///    "type": {
     ///      "examples": [
-    ///        "DuplicatedOperation"
+    ///        "ChooserView"
     ///      ],
     ///      "type": "string",
     ///      "enum": [
-    ///        "DuplicatedOperation"
+    ///        "ChooserView"
     ///      ]
     ///    }
     ///  }
@@ -186,63 +299,56 @@ pub mod types {
     /// ```
     /// </details>
     #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
-    pub struct AbortSessionAbortReasonDuplicatedOperation {
-        #[serde(rename = "operationId")]
-        pub operation_id: ::std::string::String,
+    pub struct ChooserView {
+        ///Chooser items, each will be presented to user in a new line. All items must have unique access keys.
+        #[serde(default, skip_serializing_if = "::std::vec::Vec::is_empty")]
+        pub items: ::std::vec::Vec<UssdViewChooserViewItem>,
+        ///Text, that separates each item's accessKey and label when the ChooserView is rendered
+        #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+        pub separator: ::std::option::Option<ChooserViewSeparator>,
+        ///Text that will be displayed before the chooser items
+        pub title: ::std::string::String,
         #[serde(rename = "type")]
-        pub type_: AbortSessionAbortReasonDuplicatedOperationType,
+        pub type_: ChooserViewType,
     }
-    ///`AbortSessionAbortReasonDuplicatedOperationType`
+    ///Text, that separates each item's accessKey and label when the ChooserView is rendered
     ///
     /// <details><summary>JSON schema</summary>
     ///
     /// ```json
     ///{
-    ///  "examples": [
-    ///    "DuplicatedOperation"
-    ///  ],
+    ///  "description": "Text, that separates each item's accessKey and label when the ChooserView is rendered",
     ///  "type": "string",
-    ///  "enum": [
-    ///    "DuplicatedOperation"
-    ///  ]
+    ///  "minLength": 1
     ///}
     /// ```
     /// </details>
-    #[derive(
-        ::serde::Deserialize,
-        ::serde::Serialize,
-        Clone,
-        Copy,
-        Debug,
-        Eq,
-        Hash,
-        Ord,
-        PartialEq,
-        PartialOrd
-    )]
-    pub enum AbortSessionAbortReasonDuplicatedOperationType {
-        DuplicatedOperation,
-    }
-    impl ::std::fmt::Display for AbortSessionAbortReasonDuplicatedOperationType {
-        fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-            match *self {
-                Self::DuplicatedOperation => f.write_str("DuplicatedOperation"),
-            }
+    #[derive(::serde::Serialize, Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+    #[serde(transparent)]
+    pub struct ChooserViewSeparator(::std::string::String);
+    impl ::std::ops::Deref for ChooserViewSeparator {
+        type Target = ::std::string::String;
+        fn deref(&self) -> &::std::string::String {
+            &self.0
         }
     }
-    impl ::std::str::FromStr for AbortSessionAbortReasonDuplicatedOperationType {
+    impl ::std::convert::From<ChooserViewSeparator> for ::std::string::String {
+        fn from(value: ChooserViewSeparator) -> Self {
+            value.0
+        }
+    }
+    impl ::std::str::FromStr for ChooserViewSeparator {
         type Err = self::error::ConversionError;
         fn from_str(
             value: &str,
         ) -> ::std::result::Result<Self, self::error::ConversionError> {
-            match value {
-                "DuplicatedOperation" => Ok(Self::DuplicatedOperation),
-                _ => Err("invalid value".into()),
+            if value.chars().count() < 1usize {
+                return Err("shorter than 1 characters".into());
             }
+            Ok(Self(value.to_string()))
         }
     }
-    impl ::std::convert::TryFrom<&str>
-    for AbortSessionAbortReasonDuplicatedOperationType {
+    impl ::std::convert::TryFrom<&str> for ChooserViewSeparator {
         type Error = self::error::ConversionError;
         fn try_from(
             value: &str,
@@ -250,8 +356,7 @@ pub mod types {
             value.parse()
         }
     }
-    impl ::std::convert::TryFrom<&::std::string::String>
-    for AbortSessionAbortReasonDuplicatedOperationType {
+    impl ::std::convert::TryFrom<&::std::string::String> for ChooserViewSeparator {
         type Error = self::error::ConversionError;
         fn try_from(
             value: &::std::string::String,
@@ -259,8 +364,7 @@ pub mod types {
             value.parse()
         }
     }
-    impl ::std::convert::TryFrom<::std::string::String>
-    for AbortSessionAbortReasonDuplicatedOperationType {
+    impl ::std::convert::TryFrom<::std::string::String> for ChooserViewSeparator {
         type Error = self::error::ConversionError;
         fn try_from(
             value: ::std::string::String,
@@ -268,48 +372,30 @@ pub mod types {
             value.parse()
         }
     }
-    ///USSD process abort reason - not enough funds to fulfil the request.
-    ///
-    /// <details><summary>JSON schema</summary>
-    ///
-    /// ```json
-    ///{
-    ///  "description": "USSD process abort reason - not enough funds to fulfil the request.",
-    ///  "type": "object",
-    ///  "required": [
-    ///    "type"
-    ///  ],
-    ///  "properties": {
-    ///    "type": {
-    ///      "examples": [
-    ///        "InsufficientBalanceInVirtualPurse"
-    ///      ],
-    ///      "type": "string",
-    ///      "enum": [
-    ///        "InsufficientBalanceInVirtualPurse"
-    ///      ]
-    ///    }
-    ///  }
-    ///}
-    /// ```
-    /// </details>
-    #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
-    pub struct AbortSessionAbortReasonInsufficientBalanceInVirtualPurse {
-        #[serde(rename = "type")]
-        pub type_: AbortSessionAbortReasonInsufficientBalanceInVirtualPurseType,
+    impl<'de> ::serde::Deserialize<'de> for ChooserViewSeparator {
+        fn deserialize<D>(deserializer: D) -> ::std::result::Result<Self, D::Error>
+        where
+            D: ::serde::Deserializer<'de>,
+        {
+            ::std::string::String::deserialize(deserializer)?
+                .parse()
+                .map_err(|e: self::error::ConversionError| {
+                    <D::Error as ::serde::de::Error>::custom(e.to_string())
+                })
+        }
     }
-    ///`AbortSessionAbortReasonInsufficientBalanceInVirtualPurseType`
+    ///`ChooserViewType`
     ///
     /// <details><summary>JSON schema</summary>
     ///
     /// ```json
     ///{
     ///  "examples": [
-    ///    "InsufficientBalanceInVirtualPurse"
+    ///    "ChooserView"
     ///  ],
     ///  "type": "string",
     ///  "enum": [
-    ///    "InsufficientBalanceInVirtualPurse"
+    ///    "ChooserView"
     ///  ]
     ///}
     /// ```
@@ -326,35 +412,28 @@ pub mod types {
         PartialEq,
         PartialOrd
     )]
-    pub enum AbortSessionAbortReasonInsufficientBalanceInVirtualPurseType {
-        InsufficientBalanceInVirtualPurse,
+    pub enum ChooserViewType {
+        ChooserView,
     }
-    impl ::std::fmt::Display
-    for AbortSessionAbortReasonInsufficientBalanceInVirtualPurseType {
+    impl ::std::fmt::Display for ChooserViewType {
         fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
             match *self {
-                Self::InsufficientBalanceInVirtualPurse => {
-                    f.write_str("InsufficientBalanceInVirtualPurse")
-                }
+                Self::ChooserView => f.write_str("ChooserView"),
             }
         }
     }
-    impl ::std::str::FromStr
-    for AbortSessionAbortReasonInsufficientBalanceInVirtualPurseType {
+    impl ::std::str::FromStr for ChooserViewType {
         type Err = self::error::ConversionError;
         fn from_str(
             value: &str,
         ) -> ::std::result::Result<Self, self::error::ConversionError> {
             match value {
-                "InsufficientBalanceInVirtualPurse" => {
-                    Ok(Self::InsufficientBalanceInVirtualPurse)
-                }
+                "ChooserView" => Ok(Self::ChooserView),
                 _ => Err("invalid value".into()),
             }
         }
     }
-    impl ::std::convert::TryFrom<&str>
-    for AbortSessionAbortReasonInsufficientBalanceInVirtualPurseType {
+    impl ::std::convert::TryFrom<&str> for ChooserViewType {
         type Error = self::error::ConversionError;
         fn try_from(
             value: &str,
@@ -362,8 +441,7 @@ pub mod types {
             value.parse()
         }
     }
-    impl ::std::convert::TryFrom<&::std::string::String>
-    for AbortSessionAbortReasonInsufficientBalanceInVirtualPurseType {
+    impl ::std::convert::TryFrom<&::std::string::String> for ChooserViewType {
         type Error = self::error::ConversionError;
         fn try_from(
             value: &::std::string::String,
@@ -371,331 +449,7 @@ pub mod types {
             value.parse()
         }
     }
-    impl ::std::convert::TryFrom<::std::string::String>
-    for AbortSessionAbortReasonInsufficientBalanceInVirtualPurseType {
-        type Error = self::error::ConversionError;
-        fn try_from(
-            value: ::std::string::String,
-        ) -> ::std::result::Result<Self, self::error::ConversionError> {
-            value.parse()
-        }
-    }
-    ///USSD process abort reason - there was some internal error in Qrios API.
-    ///
-    /// <details><summary>JSON schema</summary>
-    ///
-    /// ```json
-    ///{
-    ///  "description": "USSD process abort reason - there was some internal error in Qrios API.",
-    ///  "type": "object",
-    ///  "required": [
-    ///    "type"
-    ///  ],
-    ///  "properties": {
-    ///    "type": {
-    ///      "examples": [
-    ///        "InternalError"
-    ///      ],
-    ///      "type": "string",
-    ///      "enum": [
-    ///        "InternalError"
-    ///      ]
-    ///    }
-    ///  }
-    ///}
-    /// ```
-    /// </details>
-    #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
-    pub struct AbortSessionAbortReasonInternalError {
-        #[serde(rename = "type")]
-        pub type_: AbortSessionAbortReasonInternalErrorType,
-    }
-    ///`AbortSessionAbortReasonInternalErrorType`
-    ///
-    /// <details><summary>JSON schema</summary>
-    ///
-    /// ```json
-    ///{
-    ///  "examples": [
-    ///    "InternalError"
-    ///  ],
-    ///  "type": "string",
-    ///  "enum": [
-    ///    "InternalError"
-    ///  ]
-    ///}
-    /// ```
-    /// </details>
-    #[derive(
-        ::serde::Deserialize,
-        ::serde::Serialize,
-        Clone,
-        Copy,
-        Debug,
-        Eq,
-        Hash,
-        Ord,
-        PartialEq,
-        PartialOrd
-    )]
-    pub enum AbortSessionAbortReasonInternalErrorType {
-        InternalError,
-    }
-    impl ::std::fmt::Display for AbortSessionAbortReasonInternalErrorType {
-        fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-            match *self {
-                Self::InternalError => f.write_str("InternalError"),
-            }
-        }
-    }
-    impl ::std::str::FromStr for AbortSessionAbortReasonInternalErrorType {
-        type Err = self::error::ConversionError;
-        fn from_str(
-            value: &str,
-        ) -> ::std::result::Result<Self, self::error::ConversionError> {
-            match value {
-                "InternalError" => Ok(Self::InternalError),
-                _ => Err("invalid value".into()),
-            }
-        }
-    }
-    impl ::std::convert::TryFrom<&str> for AbortSessionAbortReasonInternalErrorType {
-        type Error = self::error::ConversionError;
-        fn try_from(
-            value: &str,
-        ) -> ::std::result::Result<Self, self::error::ConversionError> {
-            value.parse()
-        }
-    }
-    impl ::std::convert::TryFrom<&::std::string::String>
-    for AbortSessionAbortReasonInternalErrorType {
-        type Error = self::error::ConversionError;
-        fn try_from(
-            value: &::std::string::String,
-        ) -> ::std::result::Result<Self, self::error::ConversionError> {
-            value.parse()
-        }
-    }
-    impl ::std::convert::TryFrom<::std::string::String>
-    for AbortSessionAbortReasonInternalErrorType {
-        type Error = self::error::ConversionError;
-        fn try_from(
-            value: ::std::string::String,
-        ) -> ::std::result::Result<Self, self::error::ConversionError> {
-            value.parse()
-        }
-    }
-    ///USSD process abort reason - there are no required privileges to run a USSD operation.
-    ///
-    /// <details><summary>JSON schema</summary>
-    ///
-    /// ```json
-    ///{
-    ///  "description": "USSD process abort reason - there are no required privileges to run a USSD operation.",
-    ///  "type": "object",
-    ///  "required": [
-    ///    "privilege",
-    ///    "type"
-    ///  ],
-    ///  "properties": {
-    ///    "privilege": {
-    ///      "type": "string"
-    ///    },
-    ///    "type": {
-    ///      "examples": [
-    ///        "MissingPrivilege"
-    ///      ],
-    ///      "type": "string",
-    ///      "enum": [
-    ///        "MissingPrivilege"
-    ///      ]
-    ///    }
-    ///  }
-    ///}
-    /// ```
-    /// </details>
-    #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
-    pub struct AbortSessionAbortReasonMissingPrivilege {
-        pub privilege: ::std::string::String,
-        #[serde(rename = "type")]
-        pub type_: AbortSessionAbortReasonMissingPrivilegeType,
-    }
-    ///`AbortSessionAbortReasonMissingPrivilegeType`
-    ///
-    /// <details><summary>JSON schema</summary>
-    ///
-    /// ```json
-    ///{
-    ///  "examples": [
-    ///    "MissingPrivilege"
-    ///  ],
-    ///  "type": "string",
-    ///  "enum": [
-    ///    "MissingPrivilege"
-    ///  ]
-    ///}
-    /// ```
-    /// </details>
-    #[derive(
-        ::serde::Deserialize,
-        ::serde::Serialize,
-        Clone,
-        Copy,
-        Debug,
-        Eq,
-        Hash,
-        Ord,
-        PartialEq,
-        PartialOrd
-    )]
-    pub enum AbortSessionAbortReasonMissingPrivilegeType {
-        MissingPrivilege,
-    }
-    impl ::std::fmt::Display for AbortSessionAbortReasonMissingPrivilegeType {
-        fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-            match *self {
-                Self::MissingPrivilege => f.write_str("MissingPrivilege"),
-            }
-        }
-    }
-    impl ::std::str::FromStr for AbortSessionAbortReasonMissingPrivilegeType {
-        type Err = self::error::ConversionError;
-        fn from_str(
-            value: &str,
-        ) -> ::std::result::Result<Self, self::error::ConversionError> {
-            match value {
-                "MissingPrivilege" => Ok(Self::MissingPrivilege),
-                _ => Err("invalid value".into()),
-            }
-        }
-    }
-    impl ::std::convert::TryFrom<&str> for AbortSessionAbortReasonMissingPrivilegeType {
-        type Error = self::error::ConversionError;
-        fn try_from(
-            value: &str,
-        ) -> ::std::result::Result<Self, self::error::ConversionError> {
-            value.parse()
-        }
-    }
-    impl ::std::convert::TryFrom<&::std::string::String>
-    for AbortSessionAbortReasonMissingPrivilegeType {
-        type Error = self::error::ConversionError;
-        fn try_from(
-            value: &::std::string::String,
-        ) -> ::std::result::Result<Self, self::error::ConversionError> {
-            value.parse()
-        }
-    }
-    impl ::std::convert::TryFrom<::std::string::String>
-    for AbortSessionAbortReasonMissingPrivilegeType {
-        type Error = self::error::ConversionError;
-        fn try_from(
-            value: ::std::string::String,
-        ) -> ::std::result::Result<Self, self::error::ConversionError> {
-            value.parse()
-        }
-    }
-    ///USSD process abort reason - previous USSD app response was malformed or not expected.
-    ///
-    /// <details><summary>JSON schema</summary>
-    ///
-    /// ```json
-    ///{
-    ///  "description": "USSD process abort reason - previous USSD app response was malformed or not expected.",
-    ///  "type": "object",
-    ///  "required": [
-    ///    "type"
-    ///  ],
-    ///  "properties": {
-    ///    "type": {
-    ///      "examples": [
-    ///        "UnexpectedUssdAppResponse"
-    ///      ],
-    ///      "type": "string",
-    ///      "enum": [
-    ///        "UnexpectedUssdAppResponse"
-    ///      ]
-    ///    }
-    ///  }
-    ///}
-    /// ```
-    /// </details>
-    #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
-    pub struct AbortSessionAbortReasonUnexpectedUssdAppResponse {
-        #[serde(rename = "type")]
-        pub type_: AbortSessionAbortReasonUnexpectedUssdAppResponseType,
-    }
-    ///`AbortSessionAbortReasonUnexpectedUssdAppResponseType`
-    ///
-    /// <details><summary>JSON schema</summary>
-    ///
-    /// ```json
-    ///{
-    ///  "examples": [
-    ///    "UnexpectedUssdAppResponse"
-    ///  ],
-    ///  "type": "string",
-    ///  "enum": [
-    ///    "UnexpectedUssdAppResponse"
-    ///  ]
-    ///}
-    /// ```
-    /// </details>
-    #[derive(
-        ::serde::Deserialize,
-        ::serde::Serialize,
-        Clone,
-        Copy,
-        Debug,
-        Eq,
-        Hash,
-        Ord,
-        PartialEq,
-        PartialOrd
-    )]
-    pub enum AbortSessionAbortReasonUnexpectedUssdAppResponseType {
-        UnexpectedUssdAppResponse,
-    }
-    impl ::std::fmt::Display for AbortSessionAbortReasonUnexpectedUssdAppResponseType {
-        fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-            match *self {
-                Self::UnexpectedUssdAppResponse => {
-                    f.write_str("UnexpectedUssdAppResponse")
-                }
-            }
-        }
-    }
-    impl ::std::str::FromStr for AbortSessionAbortReasonUnexpectedUssdAppResponseType {
-        type Err = self::error::ConversionError;
-        fn from_str(
-            value: &str,
-        ) -> ::std::result::Result<Self, self::error::ConversionError> {
-            match value {
-                "UnexpectedUssdAppResponse" => Ok(Self::UnexpectedUssdAppResponse),
-                _ => Err("invalid value".into()),
-            }
-        }
-    }
-    impl ::std::convert::TryFrom<&str>
-    for AbortSessionAbortReasonUnexpectedUssdAppResponseType {
-        type Error = self::error::ConversionError;
-        fn try_from(
-            value: &str,
-        ) -> ::std::result::Result<Self, self::error::ConversionError> {
-            value.parse()
-        }
-    }
-    impl ::std::convert::TryFrom<&::std::string::String>
-    for AbortSessionAbortReasonUnexpectedUssdAppResponseType {
-        type Error = self::error::ConversionError;
-        fn try_from(
-            value: &::std::string::String,
-        ) -> ::std::result::Result<Self, self::error::ConversionError> {
-            value.parse()
-        }
-    }
-    impl ::std::convert::TryFrom<::std::string::String>
-    for AbortSessionAbortReasonUnexpectedUssdAppResponseType {
+    impl ::std::convert::TryFrom<::std::string::String> for ChooserViewType {
         type Error = self::error::ConversionError;
         fn try_from(
             value: ::std::string::String,
@@ -769,13 +523,13 @@ pub mod types {
     ///{
     ///  "oneOf": [
     ///    {
-    ///      "$ref": "#/components/schemas/CloseSession.CloseReason.Abandon"
+    ///      "$ref": "#/components/schemas/Abandon"
     ///    },
     ///    {
-    ///      "$ref": "#/components/schemas/CloseSession.CloseReason.End"
+    ///      "$ref": "#/components/schemas/End"
     ///    },
     ///    {
-    ///      "$ref": "#/components/schemas/CloseSession.CloseReason.Timeout"
+    ///      "$ref": "#/components/schemas/Timeout"
     ///    }
     ///  ]
     ///}
@@ -784,340 +538,23 @@ pub mod types {
     #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
     #[serde(untagged)]
     pub enum CloseSessionCloseReason {
-        Abandon(CloseSessionCloseReasonAbandon),
-        End(CloseSessionCloseReasonEnd),
-        Timeout(CloseSessionCloseReasonTimeout),
+        Abandon(Abandon),
+        End(End),
+        Timeout(Timeout),
     }
-    impl ::std::convert::From<CloseSessionCloseReasonAbandon>
-    for CloseSessionCloseReason {
-        fn from(value: CloseSessionCloseReasonAbandon) -> Self {
+    impl ::std::convert::From<Abandon> for CloseSessionCloseReason {
+        fn from(value: Abandon) -> Self {
             Self::Abandon(value)
         }
     }
-    impl ::std::convert::From<CloseSessionCloseReasonEnd> for CloseSessionCloseReason {
-        fn from(value: CloseSessionCloseReasonEnd) -> Self {
+    impl ::std::convert::From<End> for CloseSessionCloseReason {
+        fn from(value: End) -> Self {
             Self::End(value)
         }
     }
-    impl ::std::convert::From<CloseSessionCloseReasonTimeout>
-    for CloseSessionCloseReason {
-        fn from(value: CloseSessionCloseReasonTimeout) -> Self {
+    impl ::std::convert::From<Timeout> for CloseSessionCloseReason {
+        fn from(value: Timeout) -> Self {
             Self::Timeout(value)
-        }
-    }
-    ///Abandon - the user leaves the session (e.g. the user presses "Cancel" on the phone).
-    ///
-    /// <details><summary>JSON schema</summary>
-    ///
-    /// ```json
-    ///{
-    ///  "description": "Abandon - the user leaves the session (e.g. the user presses \"Cancel\" on the phone).",
-    ///  "type": "object",
-    ///  "required": [
-    ///    "type"
-    ///  ],
-    ///  "properties": {
-    ///    "type": {
-    ///      "examples": [
-    ///        "Abandon"
-    ///      ],
-    ///      "type": "string",
-    ///      "enum": [
-    ///        "Abandon"
-    ///      ]
-    ///    }
-    ///  }
-    ///}
-    /// ```
-    /// </details>
-    #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
-    pub struct CloseSessionCloseReasonAbandon {
-        #[serde(rename = "type")]
-        pub type_: CloseSessionCloseReasonAbandonType,
-    }
-    ///`CloseSessionCloseReasonAbandonType`
-    ///
-    /// <details><summary>JSON schema</summary>
-    ///
-    /// ```json
-    ///{
-    ///  "examples": [
-    ///    "Abandon"
-    ///  ],
-    ///  "type": "string",
-    ///  "enum": [
-    ///    "Abandon"
-    ///  ]
-    ///}
-    /// ```
-    /// </details>
-    #[derive(
-        ::serde::Deserialize,
-        ::serde::Serialize,
-        Clone,
-        Copy,
-        Debug,
-        Eq,
-        Hash,
-        Ord,
-        PartialEq,
-        PartialOrd
-    )]
-    pub enum CloseSessionCloseReasonAbandonType {
-        Abandon,
-    }
-    impl ::std::fmt::Display for CloseSessionCloseReasonAbandonType {
-        fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-            match *self {
-                Self::Abandon => f.write_str("Abandon"),
-            }
-        }
-    }
-    impl ::std::str::FromStr for CloseSessionCloseReasonAbandonType {
-        type Err = self::error::ConversionError;
-        fn from_str(
-            value: &str,
-        ) -> ::std::result::Result<Self, self::error::ConversionError> {
-            match value {
-                "Abandon" => Ok(Self::Abandon),
-                _ => Err("invalid value".into()),
-            }
-        }
-    }
-    impl ::std::convert::TryFrom<&str> for CloseSessionCloseReasonAbandonType {
-        type Error = self::error::ConversionError;
-        fn try_from(
-            value: &str,
-        ) -> ::std::result::Result<Self, self::error::ConversionError> {
-            value.parse()
-        }
-    }
-    impl ::std::convert::TryFrom<&::std::string::String>
-    for CloseSessionCloseReasonAbandonType {
-        type Error = self::error::ConversionError;
-        fn try_from(
-            value: &::std::string::String,
-        ) -> ::std::result::Result<Self, self::error::ConversionError> {
-            value.parse()
-        }
-    }
-    impl ::std::convert::TryFrom<::std::string::String>
-    for CloseSessionCloseReasonAbandonType {
-        type Error = self::error::ConversionError;
-        fn try_from(
-            value: ::std::string::String,
-        ) -> ::std::result::Result<Self, self::error::ConversionError> {
-            value.parse()
-        }
-    }
-    ///End - the session ends naturally (e.g. the user can no longer input data).
-    ///
-    /// <details><summary>JSON schema</summary>
-    ///
-    /// ```json
-    ///{
-    ///  "description": "End - the session ends naturally (e.g. the user can no longer input data).",
-    ///  "type": "object",
-    ///  "required": [
-    ///    "type"
-    ///  ],
-    ///  "properties": {
-    ///    "type": {
-    ///      "examples": [
-    ///        "End"
-    ///      ],
-    ///      "type": "string",
-    ///      "enum": [
-    ///        "End"
-    ///      ]
-    ///    }
-    ///  }
-    ///}
-    /// ```
-    /// </details>
-    #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
-    pub struct CloseSessionCloseReasonEnd {
-        #[serde(rename = "type")]
-        pub type_: CloseSessionCloseReasonEndType,
-    }
-    ///`CloseSessionCloseReasonEndType`
-    ///
-    /// <details><summary>JSON schema</summary>
-    ///
-    /// ```json
-    ///{
-    ///  "examples": [
-    ///    "End"
-    ///  ],
-    ///  "type": "string",
-    ///  "enum": [
-    ///    "End"
-    ///  ]
-    ///}
-    /// ```
-    /// </details>
-    #[derive(
-        ::serde::Deserialize,
-        ::serde::Serialize,
-        Clone,
-        Copy,
-        Debug,
-        Eq,
-        Hash,
-        Ord,
-        PartialEq,
-        PartialOrd
-    )]
-    pub enum CloseSessionCloseReasonEndType {
-        End,
-    }
-    impl ::std::fmt::Display for CloseSessionCloseReasonEndType {
-        fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-            match *self {
-                Self::End => f.write_str("End"),
-            }
-        }
-    }
-    impl ::std::str::FromStr for CloseSessionCloseReasonEndType {
-        type Err = self::error::ConversionError;
-        fn from_str(
-            value: &str,
-        ) -> ::std::result::Result<Self, self::error::ConversionError> {
-            match value {
-                "End" => Ok(Self::End),
-                _ => Err("invalid value".into()),
-            }
-        }
-    }
-    impl ::std::convert::TryFrom<&str> for CloseSessionCloseReasonEndType {
-        type Error = self::error::ConversionError;
-        fn try_from(
-            value: &str,
-        ) -> ::std::result::Result<Self, self::error::ConversionError> {
-            value.parse()
-        }
-    }
-    impl ::std::convert::TryFrom<&::std::string::String>
-    for CloseSessionCloseReasonEndType {
-        type Error = self::error::ConversionError;
-        fn try_from(
-            value: &::std::string::String,
-        ) -> ::std::result::Result<Self, self::error::ConversionError> {
-            value.parse()
-        }
-    }
-    impl ::std::convert::TryFrom<::std::string::String>
-    for CloseSessionCloseReasonEndType {
-        type Error = self::error::ConversionError;
-        fn try_from(
-            value: ::std::string::String,
-        ) -> ::std::result::Result<Self, self::error::ConversionError> {
-            value.parse()
-        }
-    }
-    ///Timeout - the session is ended by the mobile operator (e.g. after two minutes).
-    ///
-    /// <details><summary>JSON schema</summary>
-    ///
-    /// ```json
-    ///{
-    ///  "description": "Timeout - the session is ended by the mobile operator (e.g. after two minutes).",
-    ///  "type": "object",
-    ///  "required": [
-    ///    "type"
-    ///  ],
-    ///  "properties": {
-    ///    "type": {
-    ///      "examples": [
-    ///        "Timeout"
-    ///      ],
-    ///      "type": "string",
-    ///      "enum": [
-    ///        "Timeout"
-    ///      ]
-    ///    }
-    ///  }
-    ///}
-    /// ```
-    /// </details>
-    #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
-    pub struct CloseSessionCloseReasonTimeout {
-        #[serde(rename = "type")]
-        pub type_: CloseSessionCloseReasonTimeoutType,
-    }
-    ///`CloseSessionCloseReasonTimeoutType`
-    ///
-    /// <details><summary>JSON schema</summary>
-    ///
-    /// ```json
-    ///{
-    ///  "examples": [
-    ///    "Timeout"
-    ///  ],
-    ///  "type": "string",
-    ///  "enum": [
-    ///    "Timeout"
-    ///  ]
-    ///}
-    /// ```
-    /// </details>
-    #[derive(
-        ::serde::Deserialize,
-        ::serde::Serialize,
-        Clone,
-        Copy,
-        Debug,
-        Eq,
-        Hash,
-        Ord,
-        PartialEq,
-        PartialOrd
-    )]
-    pub enum CloseSessionCloseReasonTimeoutType {
-        Timeout,
-    }
-    impl ::std::fmt::Display for CloseSessionCloseReasonTimeoutType {
-        fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-            match *self {
-                Self::Timeout => f.write_str("Timeout"),
-            }
-        }
-    }
-    impl ::std::str::FromStr for CloseSessionCloseReasonTimeoutType {
-        type Err = self::error::ConversionError;
-        fn from_str(
-            value: &str,
-        ) -> ::std::result::Result<Self, self::error::ConversionError> {
-            match value {
-                "Timeout" => Ok(Self::Timeout),
-                _ => Err("invalid value".into()),
-            }
-        }
-    }
-    impl ::std::convert::TryFrom<&str> for CloseSessionCloseReasonTimeoutType {
-        type Error = self::error::ConversionError;
-        fn try_from(
-            value: &str,
-        ) -> ::std::result::Result<Self, self::error::ConversionError> {
-            value.parse()
-        }
-    }
-    impl ::std::convert::TryFrom<&::std::string::String>
-    for CloseSessionCloseReasonTimeoutType {
-        type Error = self::error::ConversionError;
-        fn try_from(
-            value: &::std::string::String,
-        ) -> ::std::result::Result<Self, self::error::ConversionError> {
-            value.parse()
-        }
-    }
-    impl ::std::convert::TryFrom<::std::string::String>
-    for CloseSessionCloseReasonTimeoutType {
-        type Error = self::error::ConversionError;
-        fn try_from(
-            value: ::std::string::String,
-        ) -> ::std::result::Result<Self, self::error::ConversionError> {
-            value.parse()
         }
     }
     ///The event sent when the USSD session continues (input is received or process ends).
@@ -1177,6 +614,1453 @@ pub mod types {
         ///Unique identifier of USSD session.
         #[serde(rename = "sessionId")]
         pub session_id: ::std::string::String,
+    }
+    ///Input provided when the user dials into the session (dials the shortcode string)
+    ///
+    /// <details><summary>JSON schema</summary>
+    ///
+    /// ```json
+    ///{
+    ///  "description": "Input provided when the user dials into the session (dials the shortcode string)",
+    ///  "type": "object",
+    ///  "required": [
+    ///    "shortcodeString",
+    ///    "type"
+    ///  ],
+    ///  "properties": {
+    ///    "shortcodeString": {
+    ///      "description": "Shortcode string dialed by the user",
+    ///      "examples": [
+    ///        "*425*001*123#"
+    ///      ],
+    ///      "type": "string"
+    ///    },
+    ///    "type": {
+    ///      "examples": [
+    ///        "Dial"
+    ///      ],
+    ///      "type": "string",
+    ///      "enum": [
+    ///        "Dial"
+    ///      ]
+    ///    }
+    ///  }
+    ///}
+    /// ```
+    /// </details>
+    #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+    pub struct Dial {
+        ///Shortcode string dialed by the user
+        #[serde(rename = "shortcodeString")]
+        pub shortcode_string: ::std::string::String,
+        #[serde(rename = "type")]
+        pub type_: DialType,
+    }
+    ///`DialType`
+    ///
+    /// <details><summary>JSON schema</summary>
+    ///
+    /// ```json
+    ///{
+    ///  "examples": [
+    ///    "Dial"
+    ///  ],
+    ///  "type": "string",
+    ///  "enum": [
+    ///    "Dial"
+    ///  ]
+    ///}
+    /// ```
+    /// </details>
+    #[derive(
+        ::serde::Deserialize,
+        ::serde::Serialize,
+        Clone,
+        Copy,
+        Debug,
+        Eq,
+        Hash,
+        Ord,
+        PartialEq,
+        PartialOrd
+    )]
+    pub enum DialType {
+        Dial,
+    }
+    impl ::std::fmt::Display for DialType {
+        fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+            match *self {
+                Self::Dial => f.write_str("Dial"),
+            }
+        }
+    }
+    impl ::std::str::FromStr for DialType {
+        type Err = self::error::ConversionError;
+        fn from_str(
+            value: &str,
+        ) -> ::std::result::Result<Self, self::error::ConversionError> {
+            match value {
+                "Dial" => Ok(Self::Dial),
+                _ => Err("invalid value".into()),
+            }
+        }
+    }
+    impl ::std::convert::TryFrom<&str> for DialType {
+        type Error = self::error::ConversionError;
+        fn try_from(
+            value: &str,
+        ) -> ::std::result::Result<Self, self::error::ConversionError> {
+            value.parse()
+        }
+    }
+    impl ::std::convert::TryFrom<&::std::string::String> for DialType {
+        type Error = self::error::ConversionError;
+        fn try_from(
+            value: &::std::string::String,
+        ) -> ::std::result::Result<Self, self::error::ConversionError> {
+            value.parse()
+        }
+    }
+    impl ::std::convert::TryFrom<::std::string::String> for DialType {
+        type Error = self::error::ConversionError;
+        fn try_from(
+            value: ::std::string::String,
+        ) -> ::std::result::Result<Self, self::error::ConversionError> {
+            value.parse()
+        }
+    }
+    ///USSD process abort reason - operation, eg. Merchant Payment, was previously invoked with given identifier.
+    ///
+    /// <details><summary>JSON schema</summary>
+    ///
+    /// ```json
+    ///{
+    ///  "description": "USSD process abort reason - operation, eg. Merchant Payment, was previously invoked with given identifier.",
+    ///  "type": "object",
+    ///  "required": [
+    ///    "operationId",
+    ///    "type"
+    ///  ],
+    ///  "properties": {
+    ///    "operationId": {
+    ///      "type": "string"
+    ///    },
+    ///    "type": {
+    ///      "examples": [
+    ///        "DuplicatedOperation"
+    ///      ],
+    ///      "type": "string",
+    ///      "enum": [
+    ///        "DuplicatedOperation"
+    ///      ]
+    ///    }
+    ///  }
+    ///}
+    /// ```
+    /// </details>
+    #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+    pub struct DuplicatedOperation {
+        #[serde(rename = "operationId")]
+        pub operation_id: ::std::string::String,
+        #[serde(rename = "type")]
+        pub type_: DuplicatedOperationType,
+    }
+    ///`DuplicatedOperationType`
+    ///
+    /// <details><summary>JSON schema</summary>
+    ///
+    /// ```json
+    ///{
+    ///  "examples": [
+    ///    "DuplicatedOperation"
+    ///  ],
+    ///  "type": "string",
+    ///  "enum": [
+    ///    "DuplicatedOperation"
+    ///  ]
+    ///}
+    /// ```
+    /// </details>
+    #[derive(
+        ::serde::Deserialize,
+        ::serde::Serialize,
+        Clone,
+        Copy,
+        Debug,
+        Eq,
+        Hash,
+        Ord,
+        PartialEq,
+        PartialOrd
+    )]
+    pub enum DuplicatedOperationType {
+        DuplicatedOperation,
+    }
+    impl ::std::fmt::Display for DuplicatedOperationType {
+        fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+            match *self {
+                Self::DuplicatedOperation => f.write_str("DuplicatedOperation"),
+            }
+        }
+    }
+    impl ::std::str::FromStr for DuplicatedOperationType {
+        type Err = self::error::ConversionError;
+        fn from_str(
+            value: &str,
+        ) -> ::std::result::Result<Self, self::error::ConversionError> {
+            match value {
+                "DuplicatedOperation" => Ok(Self::DuplicatedOperation),
+                _ => Err("invalid value".into()),
+            }
+        }
+    }
+    impl ::std::convert::TryFrom<&str> for DuplicatedOperationType {
+        type Error = self::error::ConversionError;
+        fn try_from(
+            value: &str,
+        ) -> ::std::result::Result<Self, self::error::ConversionError> {
+            value.parse()
+        }
+    }
+    impl ::std::convert::TryFrom<&::std::string::String> for DuplicatedOperationType {
+        type Error = self::error::ConversionError;
+        fn try_from(
+            value: &::std::string::String,
+        ) -> ::std::result::Result<Self, self::error::ConversionError> {
+            value.parse()
+        }
+    }
+    impl ::std::convert::TryFrom<::std::string::String> for DuplicatedOperationType {
+        type Error = self::error::ConversionError;
+        fn try_from(
+            value: ::std::string::String,
+        ) -> ::std::result::Result<Self, self::error::ConversionError> {
+            value.parse()
+        }
+    }
+    ///Initiate an embedded process. This action causes the Qrios system to hand over control to an external application. The user may be prompted to provide credentials during the embedded process. After the embedded process is complete, the ussdSessionEvent/continue API endpoint is called to deliver the result and return control of the session to the developer application.
+    ///
+    /// <details><summary>JSON schema</summary>
+    ///
+    /// ```json
+    ///{
+    ///  "description": "Initiate an embedded process. This action causes the Qrios system to hand over control to an external application. The user may be prompted to provide credentials during the embedded process. After the embedded process is complete, the ussdSessionEvent/continue API endpoint is called to deliver the result and return control of the session to the developer application.",
+    ///  "type": "object",
+    ///  "required": [
+    ///    "params",
+    ///    "processId"
+    ///  ],
+    ///  "properties": {
+    ///    "params": {
+    ///      "$ref": "#/components/schemas/Map"
+    ///    },
+    ///    "processId": {
+    ///      "description": "embedded process id",
+    ///      "type": "string"
+    ///    }
+    ///  }
+    ///}
+    /// ```
+    /// </details>
+    #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+    pub struct EmbeddedProcess {
+        pub params: Map,
+        ///embedded process id
+        #[serde(rename = "processId")]
+        pub process_id: ::std::string::String,
+    }
+    ///Returns control of the session back to the developer and passes the result of embedded process execution.
+    ///
+    /// <details><summary>JSON schema</summary>
+    ///
+    /// ```json
+    ///{
+    ///  "description": "Returns control of the session back to the developer and passes the result of embedded process execution.",
+    ///  "type": "object",
+    ///  "required": [
+    ///    "resultParams",
+    ///    "type"
+    ///  ],
+    ///  "properties": {
+    ///    "resultParams": {
+    ///      "$ref": "#/components/schemas/UssdActionResult.EmbeddedProcessResult.ResultParams"
+    ///    },
+    ///    "type": {
+    ///      "examples": [
+    ///        "EmbeddedProcessResult"
+    ///      ],
+    ///      "type": "string",
+    ///      "enum": [
+    ///        "EmbeddedProcessResult"
+    ///      ]
+    ///    }
+    ///  }
+    ///}
+    /// ```
+    /// </details>
+    #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+    pub struct EmbeddedProcessResult {
+        #[serde(rename = "resultParams")]
+        pub result_params: UssdActionResultEmbeddedProcessResultResultParams,
+        #[serde(rename = "type")]
+        pub type_: EmbeddedProcessResultType,
+    }
+    ///`EmbeddedProcessResultType`
+    ///
+    /// <details><summary>JSON schema</summary>
+    ///
+    /// ```json
+    ///{
+    ///  "examples": [
+    ///    "EmbeddedProcessResult"
+    ///  ],
+    ///  "type": "string",
+    ///  "enum": [
+    ///    "EmbeddedProcessResult"
+    ///  ]
+    ///}
+    /// ```
+    /// </details>
+    #[derive(
+        ::serde::Deserialize,
+        ::serde::Serialize,
+        Clone,
+        Copy,
+        Debug,
+        Eq,
+        Hash,
+        Ord,
+        PartialEq,
+        PartialOrd
+    )]
+    pub enum EmbeddedProcessResultType {
+        EmbeddedProcessResult,
+    }
+    impl ::std::fmt::Display for EmbeddedProcessResultType {
+        fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+            match *self {
+                Self::EmbeddedProcessResult => f.write_str("EmbeddedProcessResult"),
+            }
+        }
+    }
+    impl ::std::str::FromStr for EmbeddedProcessResultType {
+        type Err = self::error::ConversionError;
+        fn from_str(
+            value: &str,
+        ) -> ::std::result::Result<Self, self::error::ConversionError> {
+            match value {
+                "EmbeddedProcessResult" => Ok(Self::EmbeddedProcessResult),
+                _ => Err("invalid value".into()),
+            }
+        }
+    }
+    impl ::std::convert::TryFrom<&str> for EmbeddedProcessResultType {
+        type Error = self::error::ConversionError;
+        fn try_from(
+            value: &str,
+        ) -> ::std::result::Result<Self, self::error::ConversionError> {
+            value.parse()
+        }
+    }
+    impl ::std::convert::TryFrom<&::std::string::String> for EmbeddedProcessResultType {
+        type Error = self::error::ConversionError;
+        fn try_from(
+            value: &::std::string::String,
+        ) -> ::std::result::Result<Self, self::error::ConversionError> {
+            value.parse()
+        }
+    }
+    impl ::std::convert::TryFrom<::std::string::String> for EmbeddedProcessResultType {
+        type Error = self::error::ConversionError;
+        fn try_from(
+            value: ::std::string::String,
+        ) -> ::std::result::Result<Self, self::error::ConversionError> {
+            value.parse()
+        }
+    }
+    ///End - the session ends naturally (e.g. the user can no longer input data).
+    ///
+    /// <details><summary>JSON schema</summary>
+    ///
+    /// ```json
+    ///{
+    ///  "description": "End - the session ends naturally (e.g. the user can no longer input data).",
+    ///  "type": "object",
+    ///  "required": [
+    ///    "type"
+    ///  ],
+    ///  "properties": {
+    ///    "type": {
+    ///      "examples": [
+    ///        "End"
+    ///      ],
+    ///      "type": "string",
+    ///      "enum": [
+    ///        "End"
+    ///      ]
+    ///    }
+    ///  }
+    ///}
+    /// ```
+    /// </details>
+    #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+    pub struct End {
+        #[serde(rename = "type")]
+        pub type_: EndType,
+    }
+    ///`EndType`
+    ///
+    /// <details><summary>JSON schema</summary>
+    ///
+    /// ```json
+    ///{
+    ///  "examples": [
+    ///    "End"
+    ///  ],
+    ///  "type": "string",
+    ///  "enum": [
+    ///    "End"
+    ///  ]
+    ///}
+    /// ```
+    /// </details>
+    #[derive(
+        ::serde::Deserialize,
+        ::serde::Serialize,
+        Clone,
+        Copy,
+        Debug,
+        Eq,
+        Hash,
+        Ord,
+        PartialEq,
+        PartialOrd
+    )]
+    pub enum EndType {
+        End,
+    }
+    impl ::std::fmt::Display for EndType {
+        fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+            match *self {
+                Self::End => f.write_str("End"),
+            }
+        }
+    }
+    impl ::std::str::FromStr for EndType {
+        type Err = self::error::ConversionError;
+        fn from_str(
+            value: &str,
+        ) -> ::std::result::Result<Self, self::error::ConversionError> {
+            match value {
+                "End" => Ok(Self::End),
+                _ => Err("invalid value".into()),
+            }
+        }
+    }
+    impl ::std::convert::TryFrom<&str> for EndType {
+        type Error = self::error::ConversionError;
+        fn try_from(
+            value: &str,
+        ) -> ::std::result::Result<Self, self::error::ConversionError> {
+            value.parse()
+        }
+    }
+    impl ::std::convert::TryFrom<&::std::string::String> for EndType {
+        type Error = self::error::ConversionError;
+        fn try_from(
+            value: &::std::string::String,
+        ) -> ::std::result::Result<Self, self::error::ConversionError> {
+            value.parse()
+        }
+    }
+    impl ::std::convert::TryFrom<::std::string::String> for EndType {
+        type Error = self::error::ConversionError;
+        fn try_from(
+            value: ::std::string::String,
+        ) -> ::std::result::Result<Self, self::error::ConversionError> {
+            value.parse()
+        }
+    }
+    ///Merchant payment operation failed (there was no charge for sure)
+    ///
+    /// <details><summary>JSON schema</summary>
+    ///
+    /// ```json
+    ///{
+    ///  "description": "Merchant payment operation failed (there was no charge for sure)",
+    ///  "type": "object",
+    ///  "required": [
+    ///    "cause",
+    ///    "type"
+    ///  ],
+    ///  "properties": {
+    ///    "cause": {
+    ///      "$ref": "#/components/schemas/MerchantPaymentResult.OperationStatus.Failure.Cause"
+    ///    },
+    ///    "type": {
+    ///      "examples": [
+    ///        "Failure"
+    ///      ],
+    ///      "type": "string",
+    ///      "enum": [
+    ///        "Failure"
+    ///      ]
+    ///    }
+    ///  }
+    ///}
+    /// ```
+    /// </details>
+    #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+    pub struct Failure {
+        pub cause: MerchantPaymentResultOperationStatusFailureCause,
+        #[serde(rename = "type")]
+        pub type_: FailureType,
+    }
+    ///`FailureType`
+    ///
+    /// <details><summary>JSON schema</summary>
+    ///
+    /// ```json
+    ///{
+    ///  "examples": [
+    ///    "Failure"
+    ///  ],
+    ///  "type": "string",
+    ///  "enum": [
+    ///    "Failure"
+    ///  ]
+    ///}
+    /// ```
+    /// </details>
+    #[derive(
+        ::serde::Deserialize,
+        ::serde::Serialize,
+        Clone,
+        Copy,
+        Debug,
+        Eq,
+        Hash,
+        Ord,
+        PartialEq,
+        PartialOrd
+    )]
+    pub enum FailureType {
+        Failure,
+    }
+    impl ::std::fmt::Display for FailureType {
+        fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+            match *self {
+                Self::Failure => f.write_str("Failure"),
+            }
+        }
+    }
+    impl ::std::str::FromStr for FailureType {
+        type Err = self::error::ConversionError;
+        fn from_str(
+            value: &str,
+        ) -> ::std::result::Result<Self, self::error::ConversionError> {
+            match value {
+                "Failure" => Ok(Self::Failure),
+                _ => Err("invalid value".into()),
+            }
+        }
+    }
+    impl ::std::convert::TryFrom<&str> for FailureType {
+        type Error = self::error::ConversionError;
+        fn try_from(
+            value: &str,
+        ) -> ::std::result::Result<Self, self::error::ConversionError> {
+            value.parse()
+        }
+    }
+    impl ::std::convert::TryFrom<&::std::string::String> for FailureType {
+        type Error = self::error::ConversionError;
+        fn try_from(
+            value: &::std::string::String,
+        ) -> ::std::result::Result<Self, self::error::ConversionError> {
+            value.parse()
+        }
+    }
+    impl ::std::convert::TryFrom<::std::string::String> for FailureType {
+        type Error = self::error::ConversionError;
+        fn try_from(
+            value: ::std::string::String,
+        ) -> ::std::result::Result<Self, self::error::ConversionError> {
+            value.parse()
+        }
+    }
+    ///Fixed account mode in merchant payment process, with account ID specified.
+    ///
+    /// <details><summary>JSON schema</summary>
+    ///
+    /// ```json
+    ///{
+    ///  "description": "Fixed account mode in merchant payment process, with account ID specified.",
+    ///  "type": "object",
+    ///  "required": [
+    ///    "accountNumber",
+    ///    "bank",
+    ///    "type"
+    ///  ],
+    ///  "properties": {
+    ///    "accountNumber": {
+    ///      "description": "Number of the account which will be used in transaction. Account numbers can be obtained with Qrios API using `/merchants/accounts` endpoint.",
+    ///      "type": "string"
+    ///    },
+    ///    "bank": {
+    ///      "description": "Code of the bank which will be used in transaction. Bank codes can be obtained with Qrios API using `/merchants/accounts` endpoint.",
+    ///      "type": "string"
+    ///    },
+    ///    "type": {
+    ///      "examples": [
+    ///        "FixedAccount"
+    ///      ],
+    ///      "type": "string",
+    ///      "enum": [
+    ///        "FixedAccount"
+    ///      ]
+    ///    }
+    ///  }
+    ///}
+    /// ```
+    /// </details>
+    #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+    pub struct FixedAccount {
+        ///Number of the account which will be used in transaction. Account numbers can be obtained with Qrios API using `/merchants/accounts` endpoint.
+        #[serde(rename = "accountNumber")]
+        pub account_number: ::std::string::String,
+        ///Code of the bank which will be used in transaction. Bank codes can be obtained with Qrios API using `/merchants/accounts` endpoint.
+        pub bank: ::std::string::String,
+        #[serde(rename = "type")]
+        pub type_: FixedAccountType,
+    }
+    ///`FixedAccountType`
+    ///
+    /// <details><summary>JSON schema</summary>
+    ///
+    /// ```json
+    ///{
+    ///  "examples": [
+    ///    "FixedAccount"
+    ///  ],
+    ///  "type": "string",
+    ///  "enum": [
+    ///    "FixedAccount"
+    ///  ]
+    ///}
+    /// ```
+    /// </details>
+    #[derive(
+        ::serde::Deserialize,
+        ::serde::Serialize,
+        Clone,
+        Copy,
+        Debug,
+        Eq,
+        Hash,
+        Ord,
+        PartialEq,
+        PartialOrd
+    )]
+    pub enum FixedAccountType {
+        FixedAccount,
+    }
+    impl ::std::fmt::Display for FixedAccountType {
+        fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+            match *self {
+                Self::FixedAccount => f.write_str("FixedAccount"),
+            }
+        }
+    }
+    impl ::std::str::FromStr for FixedAccountType {
+        type Err = self::error::ConversionError;
+        fn from_str(
+            value: &str,
+        ) -> ::std::result::Result<Self, self::error::ConversionError> {
+            match value {
+                "FixedAccount" => Ok(Self::FixedAccount),
+                _ => Err("invalid value".into()),
+            }
+        }
+    }
+    impl ::std::convert::TryFrom<&str> for FixedAccountType {
+        type Error = self::error::ConversionError;
+        fn try_from(
+            value: &str,
+        ) -> ::std::result::Result<Self, self::error::ConversionError> {
+            value.parse()
+        }
+    }
+    impl ::std::convert::TryFrom<&::std::string::String> for FixedAccountType {
+        type Error = self::error::ConversionError;
+        fn try_from(
+            value: &::std::string::String,
+        ) -> ::std::result::Result<Self, self::error::ConversionError> {
+            value.parse()
+        }
+    }
+    impl ::std::convert::TryFrom<::std::string::String> for FixedAccountType {
+        type Error = self::error::ConversionError;
+        fn try_from(
+            value: ::std::string::String,
+        ) -> ::std::result::Result<Self, self::error::ConversionError> {
+            value.parse()
+        }
+    }
+    ///Fixed bank mode in merchant payment process, with bank ID specified. The account from provided bank will then be selected within the process.
+    ///
+    /// <details><summary>JSON schema</summary>
+    ///
+    /// ```json
+    ///{
+    ///  "description": "Fixed bank mode in merchant payment process, with bank ID specified. The account from provided bank will then be selected within the process.",
+    ///  "type": "object",
+    ///  "required": [
+    ///    "bank",
+    ///    "type"
+    ///  ],
+    ///  "properties": {
+    ///    "bank": {
+    ///      "description": "Code of the bank which will be used in transaction. Bank codes can be obtained with Qrios API using `/merchants/accounts` endpoint.",
+    ///      "type": "string"
+    ///    },
+    ///    "type": {
+    ///      "examples": [
+    ///        "FixedBank"
+    ///      ],
+    ///      "type": "string",
+    ///      "enum": [
+    ///        "FixedBank"
+    ///      ]
+    ///    }
+    ///  }
+    ///}
+    /// ```
+    /// </details>
+    #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+    pub struct FixedBank {
+        ///Code of the bank which will be used in transaction. Bank codes can be obtained with Qrios API using `/merchants/accounts` endpoint.
+        pub bank: ::std::string::String,
+        #[serde(rename = "type")]
+        pub type_: FixedBankType,
+    }
+    ///`FixedBankType`
+    ///
+    /// <details><summary>JSON schema</summary>
+    ///
+    /// ```json
+    ///{
+    ///  "examples": [
+    ///    "FixedBank"
+    ///  ],
+    ///  "type": "string",
+    ///  "enum": [
+    ///    "FixedBank"
+    ///  ]
+    ///}
+    /// ```
+    /// </details>
+    #[derive(
+        ::serde::Deserialize,
+        ::serde::Serialize,
+        Clone,
+        Copy,
+        Debug,
+        Eq,
+        Hash,
+        Ord,
+        PartialEq,
+        PartialOrd
+    )]
+    pub enum FixedBankType {
+        FixedBank,
+    }
+    impl ::std::fmt::Display for FixedBankType {
+        fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+            match *self {
+                Self::FixedBank => f.write_str("FixedBank"),
+            }
+        }
+    }
+    impl ::std::str::FromStr for FixedBankType {
+        type Err = self::error::ConversionError;
+        fn from_str(
+            value: &str,
+        ) -> ::std::result::Result<Self, self::error::ConversionError> {
+            match value {
+                "FixedBank" => Ok(Self::FixedBank),
+                _ => Err("invalid value".into()),
+            }
+        }
+    }
+    impl ::std::convert::TryFrom<&str> for FixedBankType {
+        type Error = self::error::ConversionError;
+        fn try_from(
+            value: &str,
+        ) -> ::std::result::Result<Self, self::error::ConversionError> {
+            value.parse()
+        }
+    }
+    impl ::std::convert::TryFrom<&::std::string::String> for FixedBankType {
+        type Error = self::error::ConversionError;
+        fn try_from(
+            value: &::std::string::String,
+        ) -> ::std::result::Result<Self, self::error::ConversionError> {
+            value.parse()
+        }
+    }
+    impl ::std::convert::TryFrom<::std::string::String> for FixedBankType {
+        type Error = self::error::ConversionError;
+        fn try_from(
+            value: ::std::string::String,
+        ) -> ::std::result::Result<Self, self::error::ConversionError> {
+            value.parse()
+        }
+    }
+    ///Flexible payment mode in merchant payment process. The account will then be selected within the process.
+    ///
+    /// <details><summary>JSON schema</summary>
+    ///
+    /// ```json
+    ///{
+    ///  "description": "Flexible payment mode in merchant payment process. The account will then be selected within the process.",
+    ///  "type": "object",
+    ///  "required": [
+    ///    "type"
+    ///  ],
+    ///  "properties": {
+    ///    "type": {
+    ///      "examples": [
+    ///        "Flexible"
+    ///      ],
+    ///      "type": "string",
+    ///      "enum": [
+    ///        "Flexible"
+    ///      ]
+    ///    }
+    ///  }
+    ///}
+    /// ```
+    /// </details>
+    #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+    pub struct Flexible {
+        #[serde(rename = "type")]
+        pub type_: FlexibleType,
+    }
+    ///`FlexibleType`
+    ///
+    /// <details><summary>JSON schema</summary>
+    ///
+    /// ```json
+    ///{
+    ///  "examples": [
+    ///    "Flexible"
+    ///  ],
+    ///  "type": "string",
+    ///  "enum": [
+    ///    "Flexible"
+    ///  ]
+    ///}
+    /// ```
+    /// </details>
+    #[derive(
+        ::serde::Deserialize,
+        ::serde::Serialize,
+        Clone,
+        Copy,
+        Debug,
+        Eq,
+        Hash,
+        Ord,
+        PartialEq,
+        PartialOrd
+    )]
+    pub enum FlexibleType {
+        Flexible,
+    }
+    impl ::std::fmt::Display for FlexibleType {
+        fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+            match *self {
+                Self::Flexible => f.write_str("Flexible"),
+            }
+        }
+    }
+    impl ::std::str::FromStr for FlexibleType {
+        type Err = self::error::ConversionError;
+        fn from_str(
+            value: &str,
+        ) -> ::std::result::Result<Self, self::error::ConversionError> {
+            match value {
+                "Flexible" => Ok(Self::Flexible),
+                _ => Err("invalid value".into()),
+            }
+        }
+    }
+    impl ::std::convert::TryFrom<&str> for FlexibleType {
+        type Error = self::error::ConversionError;
+        fn try_from(
+            value: &str,
+        ) -> ::std::result::Result<Self, self::error::ConversionError> {
+            value.parse()
+        }
+    }
+    impl ::std::convert::TryFrom<&::std::string::String> for FlexibleType {
+        type Error = self::error::ConversionError;
+        fn try_from(
+            value: &::std::string::String,
+        ) -> ::std::result::Result<Self, self::error::ConversionError> {
+            value.parse()
+        }
+    }
+    impl ::std::convert::TryFrom<::std::string::String> for FlexibleType {
+        type Error = self::error::ConversionError;
+        fn try_from(
+            value: ::std::string::String,
+        ) -> ::std::result::Result<Self, self::error::ConversionError> {
+            value.parse()
+        }
+    }
+    ///A text-only view; does not take any user input. The session will be closed when this message is sent.
+    ///
+    /// <details><summary>JSON schema</summary>
+    ///
+    /// ```json
+    ///{
+    ///  "description": "A text-only view; does not take any user input. The session will be closed when this message is sent.",
+    ///  "type": "object",
+    ///  "required": [
+    ///    "message",
+    ///    "type"
+    ///  ],
+    ///  "properties": {
+    ///    "message": {
+    ///      "description": "Final message that will be displayed to the user",
+    ///      "type": "string"
+    ///    },
+    ///    "type": {
+    ///      "examples": [
+    ///        "InfoView"
+    ///      ],
+    ///      "type": "string",
+    ///      "enum": [
+    ///        "InfoView"
+    ///      ]
+    ///    }
+    ///  }
+    ///}
+    /// ```
+    /// </details>
+    #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+    pub struct InfoView {
+        ///Final message that will be displayed to the user
+        pub message: ::std::string::String,
+        #[serde(rename = "type")]
+        pub type_: InfoViewType,
+    }
+    ///`InfoViewType`
+    ///
+    /// <details><summary>JSON schema</summary>
+    ///
+    /// ```json
+    ///{
+    ///  "examples": [
+    ///    "InfoView"
+    ///  ],
+    ///  "type": "string",
+    ///  "enum": [
+    ///    "InfoView"
+    ///  ]
+    ///}
+    /// ```
+    /// </details>
+    #[derive(
+        ::serde::Deserialize,
+        ::serde::Serialize,
+        Clone,
+        Copy,
+        Debug,
+        Eq,
+        Hash,
+        Ord,
+        PartialEq,
+        PartialOrd
+    )]
+    pub enum InfoViewType {
+        InfoView,
+    }
+    impl ::std::fmt::Display for InfoViewType {
+        fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+            match *self {
+                Self::InfoView => f.write_str("InfoView"),
+            }
+        }
+    }
+    impl ::std::str::FromStr for InfoViewType {
+        type Err = self::error::ConversionError;
+        fn from_str(
+            value: &str,
+        ) -> ::std::result::Result<Self, self::error::ConversionError> {
+            match value {
+                "InfoView" => Ok(Self::InfoView),
+                _ => Err("invalid value".into()),
+            }
+        }
+    }
+    impl ::std::convert::TryFrom<&str> for InfoViewType {
+        type Error = self::error::ConversionError;
+        fn try_from(
+            value: &str,
+        ) -> ::std::result::Result<Self, self::error::ConversionError> {
+            value.parse()
+        }
+    }
+    impl ::std::convert::TryFrom<&::std::string::String> for InfoViewType {
+        type Error = self::error::ConversionError;
+        fn try_from(
+            value: &::std::string::String,
+        ) -> ::std::result::Result<Self, self::error::ConversionError> {
+            value.parse()
+        }
+    }
+    impl ::std::convert::TryFrom<::std::string::String> for InfoViewType {
+        type Error = self::error::ConversionError;
+        fn try_from(
+            value: ::std::string::String,
+        ) -> ::std::result::Result<Self, self::error::ConversionError> {
+            value.parse()
+        }
+    }
+    ///Input from the user; provided by UssdAction.UssdView.InputView.
+    ///
+    /// <details><summary>JSON schema</summary>
+    ///
+    /// ```json
+    ///{
+    ///  "description": "Input from the user; provided by UssdAction.UssdView.InputView.",
+    ///  "type": "object",
+    ///  "required": [
+    ///    "type",
+    ///    "value"
+    ///  ],
+    ///  "properties": {
+    ///    "type": {
+    ///      "examples": [
+    ///        "InputResult"
+    ///      ],
+    ///      "type": "string",
+    ///      "enum": [
+    ///        "InputResult"
+    ///      ]
+    ///    },
+    ///    "value": {
+    ///      "description": "Raw value typed in by the user.",
+    ///      "type": "string"
+    ///    }
+    ///  }
+    ///}
+    /// ```
+    /// </details>
+    #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+    pub struct InputResult {
+        #[serde(rename = "type")]
+        pub type_: InputResultType,
+        ///Raw value typed in by the user.
+        pub value: ::std::string::String,
+    }
+    ///`InputResultType`
+    ///
+    /// <details><summary>JSON schema</summary>
+    ///
+    /// ```json
+    ///{
+    ///  "examples": [
+    ///    "InputResult"
+    ///  ],
+    ///  "type": "string",
+    ///  "enum": [
+    ///    "InputResult"
+    ///  ]
+    ///}
+    /// ```
+    /// </details>
+    #[derive(
+        ::serde::Deserialize,
+        ::serde::Serialize,
+        Clone,
+        Copy,
+        Debug,
+        Eq,
+        Hash,
+        Ord,
+        PartialEq,
+        PartialOrd
+    )]
+    pub enum InputResultType {
+        InputResult,
+    }
+    impl ::std::fmt::Display for InputResultType {
+        fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+            match *self {
+                Self::InputResult => f.write_str("InputResult"),
+            }
+        }
+    }
+    impl ::std::str::FromStr for InputResultType {
+        type Err = self::error::ConversionError;
+        fn from_str(
+            value: &str,
+        ) -> ::std::result::Result<Self, self::error::ConversionError> {
+            match value {
+                "InputResult" => Ok(Self::InputResult),
+                _ => Err("invalid value".into()),
+            }
+        }
+    }
+    impl ::std::convert::TryFrom<&str> for InputResultType {
+        type Error = self::error::ConversionError;
+        fn try_from(
+            value: &str,
+        ) -> ::std::result::Result<Self, self::error::ConversionError> {
+            value.parse()
+        }
+    }
+    impl ::std::convert::TryFrom<&::std::string::String> for InputResultType {
+        type Error = self::error::ConversionError;
+        fn try_from(
+            value: &::std::string::String,
+        ) -> ::std::result::Result<Self, self::error::ConversionError> {
+            value.parse()
+        }
+    }
+    impl ::std::convert::TryFrom<::std::string::String> for InputResultType {
+        type Error = self::error::ConversionError;
+        fn try_from(
+            value: ::std::string::String,
+        ) -> ::std::result::Result<Self, self::error::ConversionError> {
+            value.parse()
+        }
+    }
+    ///A view with text; takes user input. The session will continue when this message is sent.
+    ///
+    /// <details><summary>JSON schema</summary>
+    ///
+    /// ```json
+    ///{
+    ///  "description": "A view with text; takes user input. The session will continue when this message is sent.",
+    ///  "type": "object",
+    ///  "required": [
+    ///    "message",
+    ///    "type"
+    ///  ],
+    ///  "properties": {
+    ///    "message": {
+    ///      "description": "Message that will be displayed to the user, for example asking the user to input some value",
+    ///      "type": "string"
+    ///    },
+    ///    "type": {
+    ///      "examples": [
+    ///        "InputView"
+    ///      ],
+    ///      "type": "string",
+    ///      "enum": [
+    ///        "InputView"
+    ///      ]
+    ///    }
+    ///  }
+    ///}
+    /// ```
+    /// </details>
+    #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+    pub struct InputView {
+        ///Message that will be displayed to the user, for example asking the user to input some value
+        pub message: ::std::string::String,
+        #[serde(rename = "type")]
+        pub type_: InputViewType,
+    }
+    ///`InputViewType`
+    ///
+    /// <details><summary>JSON schema</summary>
+    ///
+    /// ```json
+    ///{
+    ///  "examples": [
+    ///    "InputView"
+    ///  ],
+    ///  "type": "string",
+    ///  "enum": [
+    ///    "InputView"
+    ///  ]
+    ///}
+    /// ```
+    /// </details>
+    #[derive(
+        ::serde::Deserialize,
+        ::serde::Serialize,
+        Clone,
+        Copy,
+        Debug,
+        Eq,
+        Hash,
+        Ord,
+        PartialEq,
+        PartialOrd
+    )]
+    pub enum InputViewType {
+        InputView,
+    }
+    impl ::std::fmt::Display for InputViewType {
+        fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+            match *self {
+                Self::InputView => f.write_str("InputView"),
+            }
+        }
+    }
+    impl ::std::str::FromStr for InputViewType {
+        type Err = self::error::ConversionError;
+        fn from_str(
+            value: &str,
+        ) -> ::std::result::Result<Self, self::error::ConversionError> {
+            match value {
+                "InputView" => Ok(Self::InputView),
+                _ => Err("invalid value".into()),
+            }
+        }
+    }
+    impl ::std::convert::TryFrom<&str> for InputViewType {
+        type Error = self::error::ConversionError;
+        fn try_from(
+            value: &str,
+        ) -> ::std::result::Result<Self, self::error::ConversionError> {
+            value.parse()
+        }
+    }
+    impl ::std::convert::TryFrom<&::std::string::String> for InputViewType {
+        type Error = self::error::ConversionError;
+        fn try_from(
+            value: &::std::string::String,
+        ) -> ::std::result::Result<Self, self::error::ConversionError> {
+            value.parse()
+        }
+    }
+    impl ::std::convert::TryFrom<::std::string::String> for InputViewType {
+        type Error = self::error::ConversionError;
+        fn try_from(
+            value: ::std::string::String,
+        ) -> ::std::result::Result<Self, self::error::ConversionError> {
+            value.parse()
+        }
+    }
+    ///USSD process abort reason - not enough funds to fulfil the request.
+    ///
+    /// <details><summary>JSON schema</summary>
+    ///
+    /// ```json
+    ///{
+    ///  "description": "USSD process abort reason - not enough funds to fulfil the request.",
+    ///  "type": "object",
+    ///  "required": [
+    ///    "type"
+    ///  ],
+    ///  "properties": {
+    ///    "type": {
+    ///      "examples": [
+    ///        "InsufficientBalanceInVirtualPurse"
+    ///      ],
+    ///      "type": "string",
+    ///      "enum": [
+    ///        "InsufficientBalanceInVirtualPurse"
+    ///      ]
+    ///    }
+    ///  }
+    ///}
+    /// ```
+    /// </details>
+    #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+    pub struct InsufficientBalanceInVirtualPurse {
+        #[serde(rename = "type")]
+        pub type_: InsufficientBalanceInVirtualPurseType,
+    }
+    ///`InsufficientBalanceInVirtualPurseType`
+    ///
+    /// <details><summary>JSON schema</summary>
+    ///
+    /// ```json
+    ///{
+    ///  "examples": [
+    ///    "InsufficientBalanceInVirtualPurse"
+    ///  ],
+    ///  "type": "string",
+    ///  "enum": [
+    ///    "InsufficientBalanceInVirtualPurse"
+    ///  ]
+    ///}
+    /// ```
+    /// </details>
+    #[derive(
+        ::serde::Deserialize,
+        ::serde::Serialize,
+        Clone,
+        Copy,
+        Debug,
+        Eq,
+        Hash,
+        Ord,
+        PartialEq,
+        PartialOrd
+    )]
+    pub enum InsufficientBalanceInVirtualPurseType {
+        InsufficientBalanceInVirtualPurse,
+    }
+    impl ::std::fmt::Display for InsufficientBalanceInVirtualPurseType {
+        fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+            match *self {
+                Self::InsufficientBalanceInVirtualPurse => {
+                    f.write_str("InsufficientBalanceInVirtualPurse")
+                }
+            }
+        }
+    }
+    impl ::std::str::FromStr for InsufficientBalanceInVirtualPurseType {
+        type Err = self::error::ConversionError;
+        fn from_str(
+            value: &str,
+        ) -> ::std::result::Result<Self, self::error::ConversionError> {
+            match value {
+                "InsufficientBalanceInVirtualPurse" => {
+                    Ok(Self::InsufficientBalanceInVirtualPurse)
+                }
+                _ => Err("invalid value".into()),
+            }
+        }
+    }
+    impl ::std::convert::TryFrom<&str> for InsufficientBalanceInVirtualPurseType {
+        type Error = self::error::ConversionError;
+        fn try_from(
+            value: &str,
+        ) -> ::std::result::Result<Self, self::error::ConversionError> {
+            value.parse()
+        }
+    }
+    impl ::std::convert::TryFrom<&::std::string::String>
+    for InsufficientBalanceInVirtualPurseType {
+        type Error = self::error::ConversionError;
+        fn try_from(
+            value: &::std::string::String,
+        ) -> ::std::result::Result<Self, self::error::ConversionError> {
+            value.parse()
+        }
+    }
+    impl ::std::convert::TryFrom<::std::string::String>
+    for InsufficientBalanceInVirtualPurseType {
+        type Error = self::error::ConversionError;
+        fn try_from(
+            value: ::std::string::String,
+        ) -> ::std::result::Result<Self, self::error::ConversionError> {
+            value.parse()
+        }
+    }
+    ///USSD process abort reason - there was some internal error in Qrios API.
+    ///
+    /// <details><summary>JSON schema</summary>
+    ///
+    /// ```json
+    ///{
+    ///  "description": "USSD process abort reason - there was some internal error in Qrios API.",
+    ///  "type": "object",
+    ///  "required": [
+    ///    "type"
+    ///  ],
+    ///  "properties": {
+    ///    "type": {
+    ///      "examples": [
+    ///        "InternalError"
+    ///      ],
+    ///      "type": "string",
+    ///      "enum": [
+    ///        "InternalError"
+    ///      ]
+    ///    }
+    ///  }
+    ///}
+    /// ```
+    /// </details>
+    #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+    pub struct InternalError {
+        #[serde(rename = "type")]
+        pub type_: InternalErrorType,
+    }
+    ///`InternalErrorType`
+    ///
+    /// <details><summary>JSON schema</summary>
+    ///
+    /// ```json
+    ///{
+    ///  "examples": [
+    ///    "InternalError"
+    ///  ],
+    ///  "type": "string",
+    ///  "enum": [
+    ///    "InternalError"
+    ///  ]
+    ///}
+    /// ```
+    /// </details>
+    #[derive(
+        ::serde::Deserialize,
+        ::serde::Serialize,
+        Clone,
+        Copy,
+        Debug,
+        Eq,
+        Hash,
+        Ord,
+        PartialEq,
+        PartialOrd
+    )]
+    pub enum InternalErrorType {
+        InternalError,
+    }
+    impl ::std::fmt::Display for InternalErrorType {
+        fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+            match *self {
+                Self::InternalError => f.write_str("InternalError"),
+            }
+        }
+    }
+    impl ::std::str::FromStr for InternalErrorType {
+        type Err = self::error::ConversionError;
+        fn from_str(
+            value: &str,
+        ) -> ::std::result::Result<Self, self::error::ConversionError> {
+            match value {
+                "InternalError" => Ok(Self::InternalError),
+                _ => Err("invalid value".into()),
+            }
+        }
+    }
+    impl ::std::convert::TryFrom<&str> for InternalErrorType {
+        type Error = self::error::ConversionError;
+        fn try_from(
+            value: &str,
+        ) -> ::std::result::Result<Self, self::error::ConversionError> {
+            value.parse()
+        }
+    }
+    impl ::std::convert::TryFrom<&::std::string::String> for InternalErrorType {
+        type Error = self::error::ConversionError;
+        fn try_from(
+            value: &::std::string::String,
+        ) -> ::std::result::Result<Self, self::error::ConversionError> {
+            value.parse()
+        }
+    }
+    impl ::std::convert::TryFrom<::std::string::String> for InternalErrorType {
+        type Error = self::error::ConversionError;
+        fn try_from(
+            value: ::std::string::String,
+        ) -> ::std::result::Result<Self, self::error::ConversionError> {
+            value.parse()
+        }
     }
     ///Developer's USSD App requests a redirect to some Legacy USSD App
     ///
@@ -1386,6 +2270,64 @@ pub mod types {
             Self(value)
         }
     }
+    ///Initiation of merchant payment process. In this process, the control is handed over to an external USSD merchant payment process. The user will be asked for credentials and the payment will commence. As the process ends, it will call this API to deliver the result and hand control over the session back to the server.
+    ///
+    /// <details><summary>JSON schema</summary>
+    ///
+    /// ```json
+    ///{
+    ///  "description": "Initiation of merchant payment process. In this process, the control is handed over to an external USSD merchant payment process. The user will be asked for credentials and the payment will commence. As the process ends, it will call this API to deliver the result and hand control over the session back to the server.",
+    ///  "type": "object",
+    ///  "required": [
+    ///    "amount",
+    ///    "merchantCode",
+    ///    "operationId",
+    ///    "paymentMode"
+    ///  ],
+    ///  "properties": {
+    ///    "amount": {
+    ///      "examples": [
+    ///        12.34
+    ///      ],
+    ///      "type": "number",
+    ///      "format": "Amount in Naira with at most two decimal places."
+    ///    },
+    ///    "executionMode": {
+    ///      "$ref": "#/components/schemas/MerchantPaymentProcess.ExecutionMode"
+    ///    },
+    ///    "merchantCode": {
+    ///      "description": "Merchant code",
+    ///      "type": "string"
+    ///    },
+    ///    "operationId": {
+    ///      "description": "Merchant payment operation id",
+    ///      "type": "string"
+    ///    },
+    ///    "paymentMode": {
+    ///      "$ref": "#/components/schemas/MerchantPaymentProcess.PaymentMode"
+    ///    }
+    ///  }
+    ///}
+    /// ```
+    /// </details>
+    #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+    pub struct MerchantPaymentProcess {
+        pub amount: f64,
+        #[serde(
+            rename = "executionMode",
+            default,
+            skip_serializing_if = "::std::option::Option::is_none"
+        )]
+        pub execution_mode: ::std::option::Option<MerchantPaymentProcessExecutionMode>,
+        ///Merchant code
+        #[serde(rename = "merchantCode")]
+        pub merchant_code: ::std::string::String,
+        ///Merchant payment operation id
+        #[serde(rename = "operationId")]
+        pub operation_id: ::std::string::String,
+        #[serde(rename = "paymentMode")]
+        pub payment_mode: MerchantPaymentProcessPaymentMode,
+    }
     ///`MerchantPaymentProcessExecutionMode`
     ///
     /// <details><summary>JSON schema</summary>
@@ -1394,10 +2336,10 @@ pub mod types {
     ///{
     ///  "oneOf": [
     ///    {
-    ///      "$ref": "#/components/schemas/MerchantPaymentProcess.ExecutionMode.WithBankResponseTimeout"
+    ///      "$ref": "#/components/schemas/WithBankResponseTimeout"
     ///    },
     ///    {
-    ///      "$ref": "#/components/schemas/MerchantPaymentProcess.ExecutionMode.WithoutWaitingForBank"
+    ///      "$ref": "#/components/schemas/WithoutWaitingForBank"
     ///    }
     ///  ]
     ///}
@@ -1406,247 +2348,19 @@ pub mod types {
     #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
     #[serde(untagged)]
     pub enum MerchantPaymentProcessExecutionMode {
-        WithBankResponseTimeout(
-            MerchantPaymentProcessExecutionModeWithBankResponseTimeout,
-        ),
-        WithoutWaitingForBank(MerchantPaymentProcessExecutionModeWithoutWaitingForBank),
+        WithBankResponseTimeout(WithBankResponseTimeout),
+        WithoutWaitingForBank(WithoutWaitingForBank),
     }
-    impl ::std::convert::From<MerchantPaymentProcessExecutionModeWithBankResponseTimeout>
+    impl ::std::convert::From<WithBankResponseTimeout>
     for MerchantPaymentProcessExecutionMode {
-        fn from(
-            value: MerchantPaymentProcessExecutionModeWithBankResponseTimeout,
-        ) -> Self {
+        fn from(value: WithBankResponseTimeout) -> Self {
             Self::WithBankResponseTimeout(value)
         }
     }
-    impl ::std::convert::From<MerchantPaymentProcessExecutionModeWithoutWaitingForBank>
+    impl ::std::convert::From<WithoutWaitingForBank>
     for MerchantPaymentProcessExecutionMode {
-        fn from(
-            value: MerchantPaymentProcessExecutionModeWithoutWaitingForBank,
-        ) -> Self {
+        fn from(value: WithoutWaitingForBank) -> Self {
             Self::WithoutWaitingForBank(value)
-        }
-    }
-    ///Merchant payment process will use a timeout when finalizing.
-    ///
-    /// <details><summary>JSON schema</summary>
-    ///
-    /// ```json
-    ///{
-    ///  "description": "Merchant payment process will use a timeout when finalizing.",
-    ///  "type": "object",
-    ///  "required": [
-    ///    "millis",
-    ///    "type"
-    ///  ],
-    ///  "properties": {
-    ///    "millis": {
-    ///      "type": "integer",
-    ///      "format": "int64"
-    ///    },
-    ///    "type": {
-    ///      "examples": [
-    ///        "WithBankResponseTimeout"
-    ///      ],
-    ///      "type": "string",
-    ///      "enum": [
-    ///        "WithBankResponseTimeout"
-    ///      ]
-    ///    }
-    ///  }
-    ///}
-    /// ```
-    /// </details>
-    #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
-    pub struct MerchantPaymentProcessExecutionModeWithBankResponseTimeout {
-        pub millis: i64,
-        #[serde(rename = "type")]
-        pub type_: MerchantPaymentProcessExecutionModeWithBankResponseTimeoutType,
-    }
-    ///`MerchantPaymentProcessExecutionModeWithBankResponseTimeoutType`
-    ///
-    /// <details><summary>JSON schema</summary>
-    ///
-    /// ```json
-    ///{
-    ///  "examples": [
-    ///    "WithBankResponseTimeout"
-    ///  ],
-    ///  "type": "string",
-    ///  "enum": [
-    ///    "WithBankResponseTimeout"
-    ///  ]
-    ///}
-    /// ```
-    /// </details>
-    #[derive(
-        ::serde::Deserialize,
-        ::serde::Serialize,
-        Clone,
-        Copy,
-        Debug,
-        Eq,
-        Hash,
-        Ord,
-        PartialEq,
-        PartialOrd
-    )]
-    pub enum MerchantPaymentProcessExecutionModeWithBankResponseTimeoutType {
-        WithBankResponseTimeout,
-    }
-    impl ::std::fmt::Display
-    for MerchantPaymentProcessExecutionModeWithBankResponseTimeoutType {
-        fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-            match *self {
-                Self::WithBankResponseTimeout => f.write_str("WithBankResponseTimeout"),
-            }
-        }
-    }
-    impl ::std::str::FromStr
-    for MerchantPaymentProcessExecutionModeWithBankResponseTimeoutType {
-        type Err = self::error::ConversionError;
-        fn from_str(
-            value: &str,
-        ) -> ::std::result::Result<Self, self::error::ConversionError> {
-            match value {
-                "WithBankResponseTimeout" => Ok(Self::WithBankResponseTimeout),
-                _ => Err("invalid value".into()),
-            }
-        }
-    }
-    impl ::std::convert::TryFrom<&str>
-    for MerchantPaymentProcessExecutionModeWithBankResponseTimeoutType {
-        type Error = self::error::ConversionError;
-        fn try_from(
-            value: &str,
-        ) -> ::std::result::Result<Self, self::error::ConversionError> {
-            value.parse()
-        }
-    }
-    impl ::std::convert::TryFrom<&::std::string::String>
-    for MerchantPaymentProcessExecutionModeWithBankResponseTimeoutType {
-        type Error = self::error::ConversionError;
-        fn try_from(
-            value: &::std::string::String,
-        ) -> ::std::result::Result<Self, self::error::ConversionError> {
-            value.parse()
-        }
-    }
-    impl ::std::convert::TryFrom<::std::string::String>
-    for MerchantPaymentProcessExecutionModeWithBankResponseTimeoutType {
-        type Error = self::error::ConversionError;
-        fn try_from(
-            value: ::std::string::String,
-        ) -> ::std::result::Result<Self, self::error::ConversionError> {
-            value.parse()
-        }
-    }
-    ///Merchant payment process will not use a timeout when finalizing.
-    ///
-    /// <details><summary>JSON schema</summary>
-    ///
-    /// ```json
-    ///{
-    ///  "description": "Merchant payment process will not use a timeout when finalizing.",
-    ///  "type": "object",
-    ///  "required": [
-    ///    "type"
-    ///  ],
-    ///  "properties": {
-    ///    "type": {
-    ///      "examples": [
-    ///        "WithoutWaitingForBank"
-    ///      ],
-    ///      "type": "string",
-    ///      "enum": [
-    ///        "WithoutWaitingForBank"
-    ///      ]
-    ///    }
-    ///  }
-    ///}
-    /// ```
-    /// </details>
-    #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
-    pub struct MerchantPaymentProcessExecutionModeWithoutWaitingForBank {
-        #[serde(rename = "type")]
-        pub type_: MerchantPaymentProcessExecutionModeWithoutWaitingForBankType,
-    }
-    ///`MerchantPaymentProcessExecutionModeWithoutWaitingForBankType`
-    ///
-    /// <details><summary>JSON schema</summary>
-    ///
-    /// ```json
-    ///{
-    ///  "examples": [
-    ///    "WithoutWaitingForBank"
-    ///  ],
-    ///  "type": "string",
-    ///  "enum": [
-    ///    "WithoutWaitingForBank"
-    ///  ]
-    ///}
-    /// ```
-    /// </details>
-    #[derive(
-        ::serde::Deserialize,
-        ::serde::Serialize,
-        Clone,
-        Copy,
-        Debug,
-        Eq,
-        Hash,
-        Ord,
-        PartialEq,
-        PartialOrd
-    )]
-    pub enum MerchantPaymentProcessExecutionModeWithoutWaitingForBankType {
-        WithoutWaitingForBank,
-    }
-    impl ::std::fmt::Display
-    for MerchantPaymentProcessExecutionModeWithoutWaitingForBankType {
-        fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-            match *self {
-                Self::WithoutWaitingForBank => f.write_str("WithoutWaitingForBank"),
-            }
-        }
-    }
-    impl ::std::str::FromStr
-    for MerchantPaymentProcessExecutionModeWithoutWaitingForBankType {
-        type Err = self::error::ConversionError;
-        fn from_str(
-            value: &str,
-        ) -> ::std::result::Result<Self, self::error::ConversionError> {
-            match value {
-                "WithoutWaitingForBank" => Ok(Self::WithoutWaitingForBank),
-                _ => Err("invalid value".into()),
-            }
-        }
-    }
-    impl ::std::convert::TryFrom<&str>
-    for MerchantPaymentProcessExecutionModeWithoutWaitingForBankType {
-        type Error = self::error::ConversionError;
-        fn try_from(
-            value: &str,
-        ) -> ::std::result::Result<Self, self::error::ConversionError> {
-            value.parse()
-        }
-    }
-    impl ::std::convert::TryFrom<&::std::string::String>
-    for MerchantPaymentProcessExecutionModeWithoutWaitingForBankType {
-        type Error = self::error::ConversionError;
-        fn try_from(
-            value: &::std::string::String,
-        ) -> ::std::result::Result<Self, self::error::ConversionError> {
-            value.parse()
-        }
-    }
-    impl ::std::convert::TryFrom<::std::string::String>
-    for MerchantPaymentProcessExecutionModeWithoutWaitingForBankType {
-        type Error = self::error::ConversionError;
-        fn try_from(
-            value: ::std::string::String,
-        ) -> ::std::result::Result<Self, self::error::ConversionError> {
-            value.parse()
         }
     }
     ///`MerchantPaymentProcessPaymentMode`
@@ -1657,13 +2371,13 @@ pub mod types {
     ///{
     ///  "oneOf": [
     ///    {
-    ///      "$ref": "#/components/schemas/MerchantPaymentProcess.PaymentMode.FixedAccount"
+    ///      "$ref": "#/components/schemas/FixedAccount"
     ///    },
     ///    {
-    ///      "$ref": "#/components/schemas/MerchantPaymentProcess.PaymentMode.FixedBank"
+    ///      "$ref": "#/components/schemas/FixedBank"
     ///    },
     ///    {
-    ///      "$ref": "#/components/schemas/MerchantPaymentProcess.PaymentMode.Flexible"
+    ///      "$ref": "#/components/schemas/Flexible"
     ///    }
     ///  ]
     ///}
@@ -1672,57 +2386,53 @@ pub mod types {
     #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
     #[serde(untagged)]
     pub enum MerchantPaymentProcessPaymentMode {
-        FixedAccount(MerchantPaymentProcessPaymentModeFixedAccount),
-        FixedBank(MerchantPaymentProcessPaymentModeFixedBank),
-        Flexible(MerchantPaymentProcessPaymentModeFlexible),
+        FixedAccount(FixedAccount),
+        FixedBank(FixedBank),
+        Flexible(Flexible),
     }
-    impl ::std::convert::From<MerchantPaymentProcessPaymentModeFixedAccount>
-    for MerchantPaymentProcessPaymentMode {
-        fn from(value: MerchantPaymentProcessPaymentModeFixedAccount) -> Self {
+    impl ::std::convert::From<FixedAccount> for MerchantPaymentProcessPaymentMode {
+        fn from(value: FixedAccount) -> Self {
             Self::FixedAccount(value)
         }
     }
-    impl ::std::convert::From<MerchantPaymentProcessPaymentModeFixedBank>
-    for MerchantPaymentProcessPaymentMode {
-        fn from(value: MerchantPaymentProcessPaymentModeFixedBank) -> Self {
+    impl ::std::convert::From<FixedBank> for MerchantPaymentProcessPaymentMode {
+        fn from(value: FixedBank) -> Self {
             Self::FixedBank(value)
         }
     }
-    impl ::std::convert::From<MerchantPaymentProcessPaymentModeFlexible>
-    for MerchantPaymentProcessPaymentMode {
-        fn from(value: MerchantPaymentProcessPaymentModeFlexible) -> Self {
+    impl ::std::convert::From<Flexible> for MerchantPaymentProcessPaymentMode {
+        fn from(value: Flexible) -> Self {
             Self::Flexible(value)
         }
     }
-    ///Fixed account mode in merchant payment process, with account ID specified.
+    ///Result from merchant payment process; provided by UssdProcess.MerchantPaymentProcess.
     ///
     /// <details><summary>JSON schema</summary>
     ///
     /// ```json
     ///{
-    ///  "description": "Fixed account mode in merchant payment process, with account ID specified.",
+    ///  "description": "Result from merchant payment process; provided by UssdProcess.MerchantPaymentProcess.",
     ///  "type": "object",
     ///  "required": [
-    ///    "accountNumber",
-    ///    "bank",
+    ///    "operationId",
+    ///    "status",
     ///    "type"
     ///  ],
     ///  "properties": {
-    ///    "accountNumber": {
-    ///      "description": "Number of the account which will be used in transaction. Account numbers can be obtained with Qrios API using `/merchants/accounts` endpoint.",
+    ///    "operationId": {
+    ///      "description": "Merchant payment operation id",
     ///      "type": "string"
     ///    },
-    ///    "bank": {
-    ///      "description": "Code of the bank which will be used in transaction. Bank codes can be obtained with Qrios API using `/merchants/accounts` endpoint.",
-    ///      "type": "string"
+    ///    "status": {
+    ///      "$ref": "#/components/schemas/MerchantPaymentResult.OperationStatus"
     ///    },
     ///    "type": {
     ///      "examples": [
-    ///        "FixedAccount"
+    ///        "MerchantPaymentResult"
     ///      ],
     ///      "type": "string",
     ///      "enum": [
-    ///        "FixedAccount"
+    ///        "MerchantPaymentResult"
     ///      ]
     ///    }
     ///  }
@@ -1730,309 +2440,13 @@ pub mod types {
     /// ```
     /// </details>
     #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
-    pub struct MerchantPaymentProcessPaymentModeFixedAccount {
-        ///Number of the account which will be used in transaction. Account numbers can be obtained with Qrios API using `/merchants/accounts` endpoint.
-        #[serde(rename = "accountNumber")]
-        pub account_number: ::std::string::String,
-        ///Code of the bank which will be used in transaction. Bank codes can be obtained with Qrios API using `/merchants/accounts` endpoint.
-        pub bank: ::std::string::String,
+    pub struct MerchantPaymentResult {
+        ///Merchant payment operation id
+        #[serde(rename = "operationId")]
+        pub operation_id: ::std::string::String,
+        pub status: MerchantPaymentResultOperationStatus,
         #[serde(rename = "type")]
-        pub type_: MerchantPaymentProcessPaymentModeFixedAccountType,
-    }
-    ///`MerchantPaymentProcessPaymentModeFixedAccountType`
-    ///
-    /// <details><summary>JSON schema</summary>
-    ///
-    /// ```json
-    ///{
-    ///  "examples": [
-    ///    "FixedAccount"
-    ///  ],
-    ///  "type": "string",
-    ///  "enum": [
-    ///    "FixedAccount"
-    ///  ]
-    ///}
-    /// ```
-    /// </details>
-    #[derive(
-        ::serde::Deserialize,
-        ::serde::Serialize,
-        Clone,
-        Copy,
-        Debug,
-        Eq,
-        Hash,
-        Ord,
-        PartialEq,
-        PartialOrd
-    )]
-    pub enum MerchantPaymentProcessPaymentModeFixedAccountType {
-        FixedAccount,
-    }
-    impl ::std::fmt::Display for MerchantPaymentProcessPaymentModeFixedAccountType {
-        fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-            match *self {
-                Self::FixedAccount => f.write_str("FixedAccount"),
-            }
-        }
-    }
-    impl ::std::str::FromStr for MerchantPaymentProcessPaymentModeFixedAccountType {
-        type Err = self::error::ConversionError;
-        fn from_str(
-            value: &str,
-        ) -> ::std::result::Result<Self, self::error::ConversionError> {
-            match value {
-                "FixedAccount" => Ok(Self::FixedAccount),
-                _ => Err("invalid value".into()),
-            }
-        }
-    }
-    impl ::std::convert::TryFrom<&str>
-    for MerchantPaymentProcessPaymentModeFixedAccountType {
-        type Error = self::error::ConversionError;
-        fn try_from(
-            value: &str,
-        ) -> ::std::result::Result<Self, self::error::ConversionError> {
-            value.parse()
-        }
-    }
-    impl ::std::convert::TryFrom<&::std::string::String>
-    for MerchantPaymentProcessPaymentModeFixedAccountType {
-        type Error = self::error::ConversionError;
-        fn try_from(
-            value: &::std::string::String,
-        ) -> ::std::result::Result<Self, self::error::ConversionError> {
-            value.parse()
-        }
-    }
-    impl ::std::convert::TryFrom<::std::string::String>
-    for MerchantPaymentProcessPaymentModeFixedAccountType {
-        type Error = self::error::ConversionError;
-        fn try_from(
-            value: ::std::string::String,
-        ) -> ::std::result::Result<Self, self::error::ConversionError> {
-            value.parse()
-        }
-    }
-    ///Fixed bank mode in merchant payment process, with bank ID specified. The account from provided bank will then be selected within the process.
-    ///
-    /// <details><summary>JSON schema</summary>
-    ///
-    /// ```json
-    ///{
-    ///  "description": "Fixed bank mode in merchant payment process, with bank ID specified. The account from provided bank will then be selected within the process.",
-    ///  "type": "object",
-    ///  "required": [
-    ///    "bank",
-    ///    "type"
-    ///  ],
-    ///  "properties": {
-    ///    "bank": {
-    ///      "description": "Code of the bank which will be used in transaction. Bank codes can be obtained with Qrios API using `/merchants/accounts` endpoint.",
-    ///      "type": "string"
-    ///    },
-    ///    "type": {
-    ///      "examples": [
-    ///        "FixedBank"
-    ///      ],
-    ///      "type": "string",
-    ///      "enum": [
-    ///        "FixedBank"
-    ///      ]
-    ///    }
-    ///  }
-    ///}
-    /// ```
-    /// </details>
-    #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
-    pub struct MerchantPaymentProcessPaymentModeFixedBank {
-        ///Code of the bank which will be used in transaction. Bank codes can be obtained with Qrios API using `/merchants/accounts` endpoint.
-        pub bank: ::std::string::String,
-        #[serde(rename = "type")]
-        pub type_: MerchantPaymentProcessPaymentModeFixedBankType,
-    }
-    ///`MerchantPaymentProcessPaymentModeFixedBankType`
-    ///
-    /// <details><summary>JSON schema</summary>
-    ///
-    /// ```json
-    ///{
-    ///  "examples": [
-    ///    "FixedBank"
-    ///  ],
-    ///  "type": "string",
-    ///  "enum": [
-    ///    "FixedBank"
-    ///  ]
-    ///}
-    /// ```
-    /// </details>
-    #[derive(
-        ::serde::Deserialize,
-        ::serde::Serialize,
-        Clone,
-        Copy,
-        Debug,
-        Eq,
-        Hash,
-        Ord,
-        PartialEq,
-        PartialOrd
-    )]
-    pub enum MerchantPaymentProcessPaymentModeFixedBankType {
-        FixedBank,
-    }
-    impl ::std::fmt::Display for MerchantPaymentProcessPaymentModeFixedBankType {
-        fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-            match *self {
-                Self::FixedBank => f.write_str("FixedBank"),
-            }
-        }
-    }
-    impl ::std::str::FromStr for MerchantPaymentProcessPaymentModeFixedBankType {
-        type Err = self::error::ConversionError;
-        fn from_str(
-            value: &str,
-        ) -> ::std::result::Result<Self, self::error::ConversionError> {
-            match value {
-                "FixedBank" => Ok(Self::FixedBank),
-                _ => Err("invalid value".into()),
-            }
-        }
-    }
-    impl ::std::convert::TryFrom<&str>
-    for MerchantPaymentProcessPaymentModeFixedBankType {
-        type Error = self::error::ConversionError;
-        fn try_from(
-            value: &str,
-        ) -> ::std::result::Result<Self, self::error::ConversionError> {
-            value.parse()
-        }
-    }
-    impl ::std::convert::TryFrom<&::std::string::String>
-    for MerchantPaymentProcessPaymentModeFixedBankType {
-        type Error = self::error::ConversionError;
-        fn try_from(
-            value: &::std::string::String,
-        ) -> ::std::result::Result<Self, self::error::ConversionError> {
-            value.parse()
-        }
-    }
-    impl ::std::convert::TryFrom<::std::string::String>
-    for MerchantPaymentProcessPaymentModeFixedBankType {
-        type Error = self::error::ConversionError;
-        fn try_from(
-            value: ::std::string::String,
-        ) -> ::std::result::Result<Self, self::error::ConversionError> {
-            value.parse()
-        }
-    }
-    ///Flexible payment mode in merchant payment process. The account will then be selected within the process.
-    ///
-    /// <details><summary>JSON schema</summary>
-    ///
-    /// ```json
-    ///{
-    ///  "description": "Flexible payment mode in merchant payment process. The account will then be selected within the process.",
-    ///  "type": "object",
-    ///  "required": [
-    ///    "type"
-    ///  ],
-    ///  "properties": {
-    ///    "type": {
-    ///      "examples": [
-    ///        "Flexible"
-    ///      ],
-    ///      "type": "string",
-    ///      "enum": [
-    ///        "Flexible"
-    ///      ]
-    ///    }
-    ///  }
-    ///}
-    /// ```
-    /// </details>
-    #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
-    pub struct MerchantPaymentProcessPaymentModeFlexible {
-        #[serde(rename = "type")]
-        pub type_: MerchantPaymentProcessPaymentModeFlexibleType,
-    }
-    ///`MerchantPaymentProcessPaymentModeFlexibleType`
-    ///
-    /// <details><summary>JSON schema</summary>
-    ///
-    /// ```json
-    ///{
-    ///  "examples": [
-    ///    "Flexible"
-    ///  ],
-    ///  "type": "string",
-    ///  "enum": [
-    ///    "Flexible"
-    ///  ]
-    ///}
-    /// ```
-    /// </details>
-    #[derive(
-        ::serde::Deserialize,
-        ::serde::Serialize,
-        Clone,
-        Copy,
-        Debug,
-        Eq,
-        Hash,
-        Ord,
-        PartialEq,
-        PartialOrd
-    )]
-    pub enum MerchantPaymentProcessPaymentModeFlexibleType {
-        Flexible,
-    }
-    impl ::std::fmt::Display for MerchantPaymentProcessPaymentModeFlexibleType {
-        fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-            match *self {
-                Self::Flexible => f.write_str("Flexible"),
-            }
-        }
-    }
-    impl ::std::str::FromStr for MerchantPaymentProcessPaymentModeFlexibleType {
-        type Err = self::error::ConversionError;
-        fn from_str(
-            value: &str,
-        ) -> ::std::result::Result<Self, self::error::ConversionError> {
-            match value {
-                "Flexible" => Ok(Self::Flexible),
-                _ => Err("invalid value".into()),
-            }
-        }
-    }
-    impl ::std::convert::TryFrom<&str>
-    for MerchantPaymentProcessPaymentModeFlexibleType {
-        type Error = self::error::ConversionError;
-        fn try_from(
-            value: &str,
-        ) -> ::std::result::Result<Self, self::error::ConversionError> {
-            value.parse()
-        }
-    }
-    impl ::std::convert::TryFrom<&::std::string::String>
-    for MerchantPaymentProcessPaymentModeFlexibleType {
-        type Error = self::error::ConversionError;
-        fn try_from(
-            value: &::std::string::String,
-        ) -> ::std::result::Result<Self, self::error::ConversionError> {
-            value.parse()
-        }
-    }
-    impl ::std::convert::TryFrom<::std::string::String>
-    for MerchantPaymentProcessPaymentModeFlexibleType {
-        type Error = self::error::ConversionError;
-        fn try_from(
-            value: ::std::string::String,
-        ) -> ::std::result::Result<Self, self::error::ConversionError> {
-            value.parse()
-        }
+        pub type_: MerchantPaymentResultType,
     }
     ///`MerchantPaymentResultOperationStatus`
     ///
@@ -2042,13 +2456,13 @@ pub mod types {
     ///{
     ///  "oneOf": [
     ///    {
-    ///      "$ref": "#/components/schemas/MerchantPaymentResult.OperationStatus.Failure"
+    ///      "$ref": "#/components/schemas/Failure"
     ///    },
     ///    {
-    ///      "$ref": "#/components/schemas/MerchantPaymentResult.OperationStatus.Success"
+    ///      "$ref": "#/components/schemas/Success"
     ///    },
     ///    {
-    ///      "$ref": "#/components/schemas/MerchantPaymentResult.OperationStatus.Unknown"
+    ///      "$ref": "#/components/schemas/Unknown"
     ///    }
     ///  ]
     ///}
@@ -2057,62 +2471,24 @@ pub mod types {
     #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
     #[serde(untagged)]
     pub enum MerchantPaymentResultOperationStatus {
-        Failure(MerchantPaymentResultOperationStatusFailure),
-        Success(MerchantPaymentResultOperationStatusSuccess),
-        Unknown(MerchantPaymentResultOperationStatusUnknown),
+        Failure(Failure),
+        Success(Success),
+        Unknown(Unknown),
     }
-    impl ::std::convert::From<MerchantPaymentResultOperationStatusFailure>
-    for MerchantPaymentResultOperationStatus {
-        fn from(value: MerchantPaymentResultOperationStatusFailure) -> Self {
+    impl ::std::convert::From<Failure> for MerchantPaymentResultOperationStatus {
+        fn from(value: Failure) -> Self {
             Self::Failure(value)
         }
     }
-    impl ::std::convert::From<MerchantPaymentResultOperationStatusSuccess>
-    for MerchantPaymentResultOperationStatus {
-        fn from(value: MerchantPaymentResultOperationStatusSuccess) -> Self {
+    impl ::std::convert::From<Success> for MerchantPaymentResultOperationStatus {
+        fn from(value: Success) -> Self {
             Self::Success(value)
         }
     }
-    impl ::std::convert::From<MerchantPaymentResultOperationStatusUnknown>
-    for MerchantPaymentResultOperationStatus {
-        fn from(value: MerchantPaymentResultOperationStatusUnknown) -> Self {
+    impl ::std::convert::From<Unknown> for MerchantPaymentResultOperationStatus {
+        fn from(value: Unknown) -> Self {
             Self::Unknown(value)
         }
-    }
-    ///Merchant payment operation failed (there was no charge for sure)
-    ///
-    /// <details><summary>JSON schema</summary>
-    ///
-    /// ```json
-    ///{
-    ///  "description": "Merchant payment operation failed (there was no charge for sure)",
-    ///  "type": "object",
-    ///  "required": [
-    ///    "cause",
-    ///    "type"
-    ///  ],
-    ///  "properties": {
-    ///    "cause": {
-    ///      "$ref": "#/components/schemas/MerchantPaymentResult.OperationStatus.Failure.Cause"
-    ///    },
-    ///    "type": {
-    ///      "examples": [
-    ///        "Failure"
-    ///      ],
-    ///      "type": "string",
-    ///      "enum": [
-    ///        "Failure"
-    ///      ]
-    ///    }
-    ///  }
-    ///}
-    /// ```
-    /// </details>
-    #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
-    pub struct MerchantPaymentResultOperationStatusFailure {
-        pub cause: MerchantPaymentResultOperationStatusFailureCause,
-        #[serde(rename = "type")]
-        pub type_: MerchantPaymentResultOperationStatusFailureType,
     }
     ///The reason why the operation failed.
     ///
@@ -2208,18 +2584,18 @@ pub mod types {
             value.parse()
         }
     }
-    ///`MerchantPaymentResultOperationStatusFailureType`
+    ///`MerchantPaymentResultType`
     ///
     /// <details><summary>JSON schema</summary>
     ///
     /// ```json
     ///{
     ///  "examples": [
-    ///    "Failure"
+    ///    "MerchantPaymentResult"
     ///  ],
     ///  "type": "string",
     ///  "enum": [
-    ///    "Failure"
+    ///    "MerchantPaymentResult"
     ///  ]
     ///}
     /// ```
@@ -2236,29 +2612,28 @@ pub mod types {
         PartialEq,
         PartialOrd
     )]
-    pub enum MerchantPaymentResultOperationStatusFailureType {
-        Failure,
+    pub enum MerchantPaymentResultType {
+        MerchantPaymentResult,
     }
-    impl ::std::fmt::Display for MerchantPaymentResultOperationStatusFailureType {
+    impl ::std::fmt::Display for MerchantPaymentResultType {
         fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
             match *self {
-                Self::Failure => f.write_str("Failure"),
+                Self::MerchantPaymentResult => f.write_str("MerchantPaymentResult"),
             }
         }
     }
-    impl ::std::str::FromStr for MerchantPaymentResultOperationStatusFailureType {
+    impl ::std::str::FromStr for MerchantPaymentResultType {
         type Err = self::error::ConversionError;
         fn from_str(
             value: &str,
         ) -> ::std::result::Result<Self, self::error::ConversionError> {
             match value {
-                "Failure" => Ok(Self::Failure),
+                "MerchantPaymentResult" => Ok(Self::MerchantPaymentResult),
                 _ => Err("invalid value".into()),
             }
         }
     }
-    impl ::std::convert::TryFrom<&str>
-    for MerchantPaymentResultOperationStatusFailureType {
+    impl ::std::convert::TryFrom<&str> for MerchantPaymentResultType {
         type Error = self::error::ConversionError;
         fn try_from(
             value: &str,
@@ -2266,8 +2641,7 @@ pub mod types {
             value.parse()
         }
     }
-    impl ::std::convert::TryFrom<&::std::string::String>
-    for MerchantPaymentResultOperationStatusFailureType {
+    impl ::std::convert::TryFrom<&::std::string::String> for MerchantPaymentResultType {
         type Error = self::error::ConversionError;
         fn try_from(
             value: &::std::string::String,
@@ -2275,8 +2649,7 @@ pub mod types {
             value.parse()
         }
     }
-    impl ::std::convert::TryFrom<::std::string::String>
-    for MerchantPaymentResultOperationStatusFailureType {
+    impl ::std::convert::TryFrom<::std::string::String> for MerchantPaymentResultType {
         type Error = self::error::ConversionError;
         fn try_from(
             value: ::std::string::String,
@@ -2284,245 +2657,29 @@ pub mod types {
             value.parse()
         }
     }
-    ///Merchant payment operation finished with success
+    ///USSD process abort reason - there are no required privileges to run a USSD operation.
     ///
     /// <details><summary>JSON schema</summary>
     ///
     /// ```json
     ///{
-    ///  "description": "Merchant payment operation finished with success",
+    ///  "description": "USSD process abort reason - there are no required privileges to run a USSD operation.",
     ///  "type": "object",
     ///  "required": [
+    ///    "privilege",
     ///    "type"
     ///  ],
     ///  "properties": {
-    ///    "type": {
-    ///      "examples": [
-    ///        "Success"
-    ///      ],
-    ///      "type": "string",
-    ///      "enum": [
-    ///        "Success"
-    ///      ]
-    ///    }
-    ///  }
-    ///}
-    /// ```
-    /// </details>
-    #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
-    pub struct MerchantPaymentResultOperationStatusSuccess {
-        #[serde(rename = "type")]
-        pub type_: MerchantPaymentResultOperationStatusSuccessType,
-    }
-    ///`MerchantPaymentResultOperationStatusSuccessType`
-    ///
-    /// <details><summary>JSON schema</summary>
-    ///
-    /// ```json
-    ///{
-    ///  "examples": [
-    ///    "Success"
-    ///  ],
-    ///  "type": "string",
-    ///  "enum": [
-    ///    "Success"
-    ///  ]
-    ///}
-    /// ```
-    /// </details>
-    #[derive(
-        ::serde::Deserialize,
-        ::serde::Serialize,
-        Clone,
-        Copy,
-        Debug,
-        Eq,
-        Hash,
-        Ord,
-        PartialEq,
-        PartialOrd
-    )]
-    pub enum MerchantPaymentResultOperationStatusSuccessType {
-        Success,
-    }
-    impl ::std::fmt::Display for MerchantPaymentResultOperationStatusSuccessType {
-        fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-            match *self {
-                Self::Success => f.write_str("Success"),
-            }
-        }
-    }
-    impl ::std::str::FromStr for MerchantPaymentResultOperationStatusSuccessType {
-        type Err = self::error::ConversionError;
-        fn from_str(
-            value: &str,
-        ) -> ::std::result::Result<Self, self::error::ConversionError> {
-            match value {
-                "Success" => Ok(Self::Success),
-                _ => Err("invalid value".into()),
-            }
-        }
-    }
-    impl ::std::convert::TryFrom<&str>
-    for MerchantPaymentResultOperationStatusSuccessType {
-        type Error = self::error::ConversionError;
-        fn try_from(
-            value: &str,
-        ) -> ::std::result::Result<Self, self::error::ConversionError> {
-            value.parse()
-        }
-    }
-    impl ::std::convert::TryFrom<&::std::string::String>
-    for MerchantPaymentResultOperationStatusSuccessType {
-        type Error = self::error::ConversionError;
-        fn try_from(
-            value: &::std::string::String,
-        ) -> ::std::result::Result<Self, self::error::ConversionError> {
-            value.parse()
-        }
-    }
-    impl ::std::convert::TryFrom<::std::string::String>
-    for MerchantPaymentResultOperationStatusSuccessType {
-        type Error = self::error::ConversionError;
-        fn try_from(
-            value: ::std::string::String,
-        ) -> ::std::result::Result<Self, self::error::ConversionError> {
-            value.parse()
-        }
-    }
-    ///Cannot determine if merchant payment operation succeed or not
-    ///
-    /// <details><summary>JSON schema</summary>
-    ///
-    /// ```json
-    ///{
-    ///  "description": "Cannot determine if merchant payment operation succeed or not",
-    ///  "type": "object",
-    ///  "required": [
-    ///    "type"
-    ///  ],
-    ///  "properties": {
-    ///    "type": {
-    ///      "examples": [
-    ///        "Unknown"
-    ///      ],
-    ///      "type": "string",
-    ///      "enum": [
-    ///        "Unknown"
-    ///      ]
-    ///    }
-    ///  }
-    ///}
-    /// ```
-    /// </details>
-    #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
-    pub struct MerchantPaymentResultOperationStatusUnknown {
-        #[serde(rename = "type")]
-        pub type_: MerchantPaymentResultOperationStatusUnknownType,
-    }
-    ///`MerchantPaymentResultOperationStatusUnknownType`
-    ///
-    /// <details><summary>JSON schema</summary>
-    ///
-    /// ```json
-    ///{
-    ///  "examples": [
-    ///    "Unknown"
-    ///  ],
-    ///  "type": "string",
-    ///  "enum": [
-    ///    "Unknown"
-    ///  ]
-    ///}
-    /// ```
-    /// </details>
-    #[derive(
-        ::serde::Deserialize,
-        ::serde::Serialize,
-        Clone,
-        Copy,
-        Debug,
-        Eq,
-        Hash,
-        Ord,
-        PartialEq,
-        PartialOrd
-    )]
-    pub enum MerchantPaymentResultOperationStatusUnknownType {
-        Unknown,
-    }
-    impl ::std::fmt::Display for MerchantPaymentResultOperationStatusUnknownType {
-        fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-            match *self {
-                Self::Unknown => f.write_str("Unknown"),
-            }
-        }
-    }
-    impl ::std::str::FromStr for MerchantPaymentResultOperationStatusUnknownType {
-        type Err = self::error::ConversionError;
-        fn from_str(
-            value: &str,
-        ) -> ::std::result::Result<Self, self::error::ConversionError> {
-            match value {
-                "Unknown" => Ok(Self::Unknown),
-                _ => Err("invalid value".into()),
-            }
-        }
-    }
-    impl ::std::convert::TryFrom<&str>
-    for MerchantPaymentResultOperationStatusUnknownType {
-        type Error = self::error::ConversionError;
-        fn try_from(
-            value: &str,
-        ) -> ::std::result::Result<Self, self::error::ConversionError> {
-            value.parse()
-        }
-    }
-    impl ::std::convert::TryFrom<&::std::string::String>
-    for MerchantPaymentResultOperationStatusUnknownType {
-        type Error = self::error::ConversionError;
-        fn try_from(
-            value: &::std::string::String,
-        ) -> ::std::result::Result<Self, self::error::ConversionError> {
-            value.parse()
-        }
-    }
-    impl ::std::convert::TryFrom<::std::string::String>
-    for MerchantPaymentResultOperationStatusUnknownType {
-        type Error = self::error::ConversionError;
-        fn try_from(
-            value: ::std::string::String,
-        ) -> ::std::result::Result<Self, self::error::ConversionError> {
-            value.parse()
-        }
-    }
-    ///Input provided when the user dials into the session (dials the shortcode string)
-    ///
-    /// <details><summary>JSON schema</summary>
-    ///
-    /// ```json
-    ///{
-    ///  "description": "Input provided when the user dials into the session (dials the shortcode string)",
-    ///  "type": "object",
-    ///  "required": [
-    ///    "shortcodeString",
-    ///    "type"
-    ///  ],
-    ///  "properties": {
-    ///    "shortcodeString": {
-    ///      "description": "Shortcode string dialed by the user",
-    ///      "examples": [
-    ///        "*425*001*123#"
-    ///      ],
+    ///    "privilege": {
     ///      "type": "string"
     ///    },
     ///    "type": {
     ///      "examples": [
-    ///        "Dial"
+    ///        "MissingPrivilege"
     ///      ],
     ///      "type": "string",
     ///      "enum": [
-    ///        "Dial"
+    ///        "MissingPrivilege"
     ///      ]
     ///    }
     ///  }
@@ -2530,25 +2687,23 @@ pub mod types {
     /// ```
     /// </details>
     #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
-    pub struct NewSessionSessionInputDial {
-        ///Shortcode string dialed by the user
-        #[serde(rename = "shortcodeString")]
-        pub shortcode_string: ::std::string::String,
+    pub struct MissingPrivilege {
+        pub privilege: ::std::string::String,
         #[serde(rename = "type")]
-        pub type_: NewSessionSessionInputDialType,
+        pub type_: MissingPrivilegeType,
     }
-    ///`NewSessionSessionInputDialType`
+    ///`MissingPrivilegeType`
     ///
     /// <details><summary>JSON schema</summary>
     ///
     /// ```json
     ///{
     ///  "examples": [
-    ///    "Dial"
+    ///    "MissingPrivilege"
     ///  ],
     ///  "type": "string",
     ///  "enum": [
-    ///    "Dial"
+    ///    "MissingPrivilege"
     ///  ]
     ///}
     /// ```
@@ -2565,28 +2720,28 @@ pub mod types {
         PartialEq,
         PartialOrd
     )]
-    pub enum NewSessionSessionInputDialType {
-        Dial,
+    pub enum MissingPrivilegeType {
+        MissingPrivilege,
     }
-    impl ::std::fmt::Display for NewSessionSessionInputDialType {
+    impl ::std::fmt::Display for MissingPrivilegeType {
         fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
             match *self {
-                Self::Dial => f.write_str("Dial"),
+                Self::MissingPrivilege => f.write_str("MissingPrivilege"),
             }
         }
     }
-    impl ::std::str::FromStr for NewSessionSessionInputDialType {
+    impl ::std::str::FromStr for MissingPrivilegeType {
         type Err = self::error::ConversionError;
         fn from_str(
             value: &str,
         ) -> ::std::result::Result<Self, self::error::ConversionError> {
             match value {
-                "Dial" => Ok(Self::Dial),
+                "MissingPrivilege" => Ok(Self::MissingPrivilege),
                 _ => Err("invalid value".into()),
             }
         }
     }
-    impl ::std::convert::TryFrom<&str> for NewSessionSessionInputDialType {
+    impl ::std::convert::TryFrom<&str> for MissingPrivilegeType {
         type Error = self::error::ConversionError;
         fn try_from(
             value: &str,
@@ -2594,8 +2749,7 @@ pub mod types {
             value.parse()
         }
     }
-    impl ::std::convert::TryFrom<&::std::string::String>
-    for NewSessionSessionInputDialType {
+    impl ::std::convert::TryFrom<&::std::string::String> for MissingPrivilegeType {
         type Error = self::error::ConversionError;
         fn try_from(
             value: &::std::string::String,
@@ -2603,172 +2757,13 @@ pub mod types {
             value.parse()
         }
     }
-    impl ::std::convert::TryFrom<::std::string::String>
-    for NewSessionSessionInputDialType {
+    impl ::std::convert::TryFrom<::std::string::String> for MissingPrivilegeType {
         type Error = self::error::ConversionError;
         fn try_from(
             value: ::std::string::String,
         ) -> ::std::result::Result<Self, self::error::ConversionError> {
             value.parse()
         }
-    }
-    ///Input provided when session is begun by a push message sent to a user.
-    ///
-    /// <details><summary>JSON schema</summary>
-    ///
-    /// ```json
-    ///{
-    ///  "description": "Input provided when session is begun by a push message sent to a user.",
-    ///  "type": "object",
-    ///  "required": [
-    ///    "contextData",
-    ///    "type"
-    ///  ],
-    ///  "properties": {
-    ///    "contextData": {
-    ///      "description": "Context regarding the push message.",
-    ///      "type": "string"
-    ///    },
-    ///    "type": {
-    ///      "examples": [
-    ///        "Push"
-    ///      ],
-    ///      "type": "string",
-    ///      "enum": [
-    ///        "Push"
-    ///      ]
-    ///    }
-    ///  }
-    ///}
-    /// ```
-    /// </details>
-    #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
-    pub struct NewSessionSessionInputPush {
-        ///Context regarding the push message.
-        #[serde(rename = "contextData")]
-        pub context_data: ::std::string::String,
-        #[serde(rename = "type")]
-        pub type_: NewSessionSessionInputPushType,
-    }
-    ///`NewSessionSessionInputPushType`
-    ///
-    /// <details><summary>JSON schema</summary>
-    ///
-    /// ```json
-    ///{
-    ///  "examples": [
-    ///    "Push"
-    ///  ],
-    ///  "type": "string",
-    ///  "enum": [
-    ///    "Push"
-    ///  ]
-    ///}
-    /// ```
-    /// </details>
-    #[derive(
-        ::serde::Deserialize,
-        ::serde::Serialize,
-        Clone,
-        Copy,
-        Debug,
-        Eq,
-        Hash,
-        Ord,
-        PartialEq,
-        PartialOrd
-    )]
-    pub enum NewSessionSessionInputPushType {
-        Push,
-    }
-    impl ::std::fmt::Display for NewSessionSessionInputPushType {
-        fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-            match *self {
-                Self::Push => f.write_str("Push"),
-            }
-        }
-    }
-    impl ::std::str::FromStr for NewSessionSessionInputPushType {
-        type Err = self::error::ConversionError;
-        fn from_str(
-            value: &str,
-        ) -> ::std::result::Result<Self, self::error::ConversionError> {
-            match value {
-                "Push" => Ok(Self::Push),
-                _ => Err("invalid value".into()),
-            }
-        }
-    }
-    impl ::std::convert::TryFrom<&str> for NewSessionSessionInputPushType {
-        type Error = self::error::ConversionError;
-        fn try_from(
-            value: &str,
-        ) -> ::std::result::Result<Self, self::error::ConversionError> {
-            value.parse()
-        }
-    }
-    impl ::std::convert::TryFrom<&::std::string::String>
-    for NewSessionSessionInputPushType {
-        type Error = self::error::ConversionError;
-        fn try_from(
-            value: &::std::string::String,
-        ) -> ::std::result::Result<Self, self::error::ConversionError> {
-            value.parse()
-        }
-    }
-    impl ::std::convert::TryFrom<::std::string::String>
-    for NewSessionSessionInputPushType {
-        type Error = self::error::ConversionError;
-        fn try_from(
-            value: ::std::string::String,
-        ) -> ::std::result::Result<Self, self::error::ConversionError> {
-            value.parse()
-        }
-    }
-    ///Input provided when session is redirected from different USSD application.
-    ///
-    /// <details><summary>JSON schema</summary>
-    ///
-    /// ```json
-    ///{
-    ///  "description": "Input provided when session is redirected from different USSD application.",
-    ///  "type": "object",
-    ///  "required": [
-    ///    "type"
-    ///  ],
-    ///  "properties": {
-    ///    "process": {
-    ///      "$ref": "#/components/schemas/UssdApp.Process"
-    ///    },
-    ///    "processId": {
-    ///      "deprecated": true,
-    ///      "type": "string"
-    ///    },
-    ///    "type": {
-    ///      "examples": [
-    ///        "Redirect"
-    ///      ],
-    ///      "type": "string",
-    ///      "enum": [
-    ///        "Redirect"
-    ///      ]
-    ///    }
-    ///  }
-    ///}
-    /// ```
-    /// </details>
-    #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
-    pub struct NewSessionSessionInputRedirect {
-        #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
-        pub process: ::std::option::Option<UssdAppProcess>,
-        #[serde(
-            rename = "processId",
-            default,
-            skip_serializing_if = "::std::option::Option::is_none"
-        )]
-        pub process_id: ::std::option::Option<::std::string::String>,
-        #[serde(rename = "type")]
-        pub type_: NewSessionSessionInputRedirectType,
     }
     ///Parameters of the process. Keys should be considered as process param names and their values as process param values.
     ///
@@ -2818,18 +2813,56 @@ pub mod types {
             Self(value)
         }
     }
-    ///`NewSessionSessionInputRedirectType`
+    ///Input provided when session is begun by a push message sent to a user.
+    ///
+    /// <details><summary>JSON schema</summary>
+    ///
+    /// ```json
+    ///{
+    ///  "description": "Input provided when session is begun by a push message sent to a user.",
+    ///  "type": "object",
+    ///  "required": [
+    ///    "contextData",
+    ///    "type"
+    ///  ],
+    ///  "properties": {
+    ///    "contextData": {
+    ///      "description": "Context regarding the push message.",
+    ///      "type": "string"
+    ///    },
+    ///    "type": {
+    ///      "examples": [
+    ///        "Push"
+    ///      ],
+    ///      "type": "string",
+    ///      "enum": [
+    ///        "Push"
+    ///      ]
+    ///    }
+    ///  }
+    ///}
+    /// ```
+    /// </details>
+    #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+    pub struct Push {
+        ///Context regarding the push message.
+        #[serde(rename = "contextData")]
+        pub context_data: ::std::string::String,
+        #[serde(rename = "type")]
+        pub type_: PushType,
+    }
+    ///`PushType`
     ///
     /// <details><summary>JSON schema</summary>
     ///
     /// ```json
     ///{
     ///  "examples": [
-    ///    "Redirect"
+    ///    "Push"
     ///  ],
     ///  "type": "string",
     ///  "enum": [
-    ///    "Redirect"
+    ///    "Push"
     ///  ]
     ///}
     /// ```
@@ -2846,28 +2879,28 @@ pub mod types {
         PartialEq,
         PartialOrd
     )]
-    pub enum NewSessionSessionInputRedirectType {
-        Redirect,
+    pub enum PushType {
+        Push,
     }
-    impl ::std::fmt::Display for NewSessionSessionInputRedirectType {
+    impl ::std::fmt::Display for PushType {
         fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
             match *self {
-                Self::Redirect => f.write_str("Redirect"),
+                Self::Push => f.write_str("Push"),
             }
         }
     }
-    impl ::std::str::FromStr for NewSessionSessionInputRedirectType {
+    impl ::std::str::FromStr for PushType {
         type Err = self::error::ConversionError;
         fn from_str(
             value: &str,
         ) -> ::std::result::Result<Self, self::error::ConversionError> {
             match value {
-                "Redirect" => Ok(Self::Redirect),
+                "Push" => Ok(Self::Push),
                 _ => Err("invalid value".into()),
             }
         }
     }
-    impl ::std::convert::TryFrom<&str> for NewSessionSessionInputRedirectType {
+    impl ::std::convert::TryFrom<&str> for PushType {
         type Error = self::error::ConversionError;
         fn try_from(
             value: &str,
@@ -2875,8 +2908,7 @@ pub mod types {
             value.parse()
         }
     }
-    impl ::std::convert::TryFrom<&::std::string::String>
-    for NewSessionSessionInputRedirectType {
+    impl ::std::convert::TryFrom<&::std::string::String> for PushType {
         type Error = self::error::ConversionError;
         fn try_from(
             value: &::std::string::String,
@@ -2884,8 +2916,7 @@ pub mod types {
             value.parse()
         }
     }
-    impl ::std::convert::TryFrom<::std::string::String>
-    for NewSessionSessionInputRedirectType {
+    impl ::std::convert::TryFrom<::std::string::String> for PushType {
         type Error = self::error::ConversionError;
         fn try_from(
             value: ::std::string::String,
@@ -2893,28 +2924,24 @@ pub mod types {
             value.parse()
         }
     }
-    ///Developer's USSD App returns USSD process result as a map of params
+    ///Input provided when session is redirected from different USSD application.
     ///
     /// <details><summary>JSON schema</summary>
     ///
     /// ```json
     ///{
-    ///  "description": "Developer's USSD App returns USSD process result as a map of params",
+    ///  "description": "Input provided when session is redirected from different USSD application.",
     ///  "type": "object",
     ///  "required": [
-    ///    "destinationAppId",
     ///    "type"
     ///  ],
     ///  "properties": {
-    ///    "destinationAppId": {
-    ///      "description": "Identifier of the USSD app created on Qrios platform.",
-    ///      "examples": [
-    ///        "b56r455"
-    ///      ],
-    ///      "type": "string"
-    ///    },
     ///    "process": {
     ///      "$ref": "#/components/schemas/UssdApp.Process"
+    ///    },
+    ///    "processId": {
+    ///      "deprecated": true,
+    ///      "type": "string"
     ///    },
     ///    "type": {
     ///      "examples": [
@@ -2931,11 +2958,14 @@ pub mod types {
     /// </details>
     #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
     pub struct Redirect {
-        ///Identifier of the USSD app created on Qrios platform.
-        #[serde(rename = "destinationAppId")]
-        pub destination_app_id: ::std::string::String,
         #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
         pub process: ::std::option::Option<UssdAppProcess>,
+        #[serde(
+            rename = "processId",
+            default,
+            skip_serializing_if = "::std::option::Option::is_none"
+        )]
+        pub process_id: ::std::option::Option<::std::string::String>,
         #[serde(rename = "type")]
         pub type_: RedirectType,
     }
@@ -3039,6 +3069,42 @@ pub mod types {
         #[serde(rename = "type")]
         pub type_: ::serde_json::Value,
     }
+    ///Result returned from the app, to which the session was previously redirected.
+    ///
+    /// <details><summary>JSON schema</summary>
+    ///
+    /// ```json
+    ///{
+    ///  "description": "Result returned from the app, to which the session was previously redirected.",
+    ///  "type": "object",
+    ///  "required": [
+    ///    "resultParams",
+    ///    "type"
+    ///  ],
+    ///  "properties": {
+    ///    "resultParams": {
+    ///      "$ref": "#/components/schemas/UssdActionResult.ReturnFromRedirectResult.ResultParams"
+    ///    },
+    ///    "type": {
+    ///      "examples": [
+    ///        "ReturnFromRedirectResult"
+    ///      ],
+    ///      "type": "string",
+    ///      "enum": [
+    ///        "ReturnFromRedirectResult"
+    ///      ]
+    ///    }
+    ///  }
+    ///}
+    /// ```
+    /// </details>
+    #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+    pub struct ReturnFromRedirectResult {
+        #[serde(rename = "resultParams")]
+        pub result_params: UssdActionResultReturnFromRedirectResultResultParams,
+        #[serde(rename = "type")]
+        pub type_: ReturnFromRedirectResultType,
+    }
     ///Result parameters returned in the "return from redirect". Keys should be considered as result parameter names and their values as result parameter values.
     ///
     /// <details><summary>JSON schema</summary>
@@ -3085,6 +3151,81 @@ pub mod types {
             >,
         ) -> Self {
             Self(value)
+        }
+    }
+    ///`ReturnFromRedirectResultType`
+    ///
+    /// <details><summary>JSON schema</summary>
+    ///
+    /// ```json
+    ///{
+    ///  "examples": [
+    ///    "ReturnFromRedirectResult"
+    ///  ],
+    ///  "type": "string",
+    ///  "enum": [
+    ///    "ReturnFromRedirectResult"
+    ///  ]
+    ///}
+    /// ```
+    /// </details>
+    #[derive(
+        ::serde::Deserialize,
+        ::serde::Serialize,
+        Clone,
+        Copy,
+        Debug,
+        Eq,
+        Hash,
+        Ord,
+        PartialEq,
+        PartialOrd
+    )]
+    pub enum ReturnFromRedirectResultType {
+        ReturnFromRedirectResult,
+    }
+    impl ::std::fmt::Display for ReturnFromRedirectResultType {
+        fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+            match *self {
+                Self::ReturnFromRedirectResult => f.write_str("ReturnFromRedirectResult"),
+            }
+        }
+    }
+    impl ::std::str::FromStr for ReturnFromRedirectResultType {
+        type Err = self::error::ConversionError;
+        fn from_str(
+            value: &str,
+        ) -> ::std::result::Result<Self, self::error::ConversionError> {
+            match value {
+                "ReturnFromRedirectResult" => Ok(Self::ReturnFromRedirectResult),
+                _ => Err("invalid value".into()),
+            }
+        }
+    }
+    impl ::std::convert::TryFrom<&str> for ReturnFromRedirectResultType {
+        type Error = self::error::ConversionError;
+        fn try_from(
+            value: &str,
+        ) -> ::std::result::Result<Self, self::error::ConversionError> {
+            value.parse()
+        }
+    }
+    impl ::std::convert::TryFrom<&::std::string::String>
+    for ReturnFromRedirectResultType {
+        type Error = self::error::ConversionError;
+        fn try_from(
+            value: &::std::string::String,
+        ) -> ::std::result::Result<Self, self::error::ConversionError> {
+            value.parse()
+        }
+    }
+    impl ::std::convert::TryFrom<::std::string::String>
+    for ReturnFromRedirectResultType {
+        type Error = self::error::ConversionError;
+        fn try_from(
+            value: ::std::string::String,
+        ) -> ::std::result::Result<Self, self::error::ConversionError> {
+            value.parse()
         }
     }
     ///Run a predefined process. The process will then take control of the session (will send prompts to the user and handle responses from the user) until it returns control along with a response. From the view of a user, they will interact with a single app.
@@ -3303,6 +3444,541 @@ pub mod types {
             value.parse()
         }
     }
+    ///Merchant payment operation finished with success
+    ///
+    /// <details><summary>JSON schema</summary>
+    ///
+    /// ```json
+    ///{
+    ///  "description": "Merchant payment operation finished with success",
+    ///  "type": "object",
+    ///  "required": [
+    ///    "type"
+    ///  ],
+    ///  "properties": {
+    ///    "type": {
+    ///      "examples": [
+    ///        "Success"
+    ///      ],
+    ///      "type": "string",
+    ///      "enum": [
+    ///        "Success"
+    ///      ]
+    ///    }
+    ///  }
+    ///}
+    /// ```
+    /// </details>
+    #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+    pub struct Success {
+        #[serde(rename = "type")]
+        pub type_: SuccessType,
+    }
+    ///`SuccessType`
+    ///
+    /// <details><summary>JSON schema</summary>
+    ///
+    /// ```json
+    ///{
+    ///  "examples": [
+    ///    "Success"
+    ///  ],
+    ///  "type": "string",
+    ///  "enum": [
+    ///    "Success"
+    ///  ]
+    ///}
+    /// ```
+    /// </details>
+    #[derive(
+        ::serde::Deserialize,
+        ::serde::Serialize,
+        Clone,
+        Copy,
+        Debug,
+        Eq,
+        Hash,
+        Ord,
+        PartialEq,
+        PartialOrd
+    )]
+    pub enum SuccessType {
+        Success,
+    }
+    impl ::std::fmt::Display for SuccessType {
+        fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+            match *self {
+                Self::Success => f.write_str("Success"),
+            }
+        }
+    }
+    impl ::std::str::FromStr for SuccessType {
+        type Err = self::error::ConversionError;
+        fn from_str(
+            value: &str,
+        ) -> ::std::result::Result<Self, self::error::ConversionError> {
+            match value {
+                "Success" => Ok(Self::Success),
+                _ => Err("invalid value".into()),
+            }
+        }
+    }
+    impl ::std::convert::TryFrom<&str> for SuccessType {
+        type Error = self::error::ConversionError;
+        fn try_from(
+            value: &str,
+        ) -> ::std::result::Result<Self, self::error::ConversionError> {
+            value.parse()
+        }
+    }
+    impl ::std::convert::TryFrom<&::std::string::String> for SuccessType {
+        type Error = self::error::ConversionError;
+        fn try_from(
+            value: &::std::string::String,
+        ) -> ::std::result::Result<Self, self::error::ConversionError> {
+            value.parse()
+        }
+    }
+    impl ::std::convert::TryFrom<::std::string::String> for SuccessType {
+        type Error = self::error::ConversionError;
+        fn try_from(
+            value: ::std::string::String,
+        ) -> ::std::result::Result<Self, self::error::ConversionError> {
+            value.parse()
+        }
+    }
+    ///Timeout - the session is ended by the mobile operator (e.g. after two minutes).
+    ///
+    /// <details><summary>JSON schema</summary>
+    ///
+    /// ```json
+    ///{
+    ///  "description": "Timeout - the session is ended by the mobile operator (e.g. after two minutes).",
+    ///  "type": "object",
+    ///  "required": [
+    ///    "type"
+    ///  ],
+    ///  "properties": {
+    ///    "type": {
+    ///      "examples": [
+    ///        "Timeout"
+    ///      ],
+    ///      "type": "string",
+    ///      "enum": [
+    ///        "Timeout"
+    ///      ]
+    ///    }
+    ///  }
+    ///}
+    /// ```
+    /// </details>
+    #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+    pub struct Timeout {
+        #[serde(rename = "type")]
+        pub type_: TimeoutType,
+    }
+    ///`TimeoutType`
+    ///
+    /// <details><summary>JSON schema</summary>
+    ///
+    /// ```json
+    ///{
+    ///  "examples": [
+    ///    "Timeout"
+    ///  ],
+    ///  "type": "string",
+    ///  "enum": [
+    ///    "Timeout"
+    ///  ]
+    ///}
+    /// ```
+    /// </details>
+    #[derive(
+        ::serde::Deserialize,
+        ::serde::Serialize,
+        Clone,
+        Copy,
+        Debug,
+        Eq,
+        Hash,
+        Ord,
+        PartialEq,
+        PartialOrd
+    )]
+    pub enum TimeoutType {
+        Timeout,
+    }
+    impl ::std::fmt::Display for TimeoutType {
+        fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+            match *self {
+                Self::Timeout => f.write_str("Timeout"),
+            }
+        }
+    }
+    impl ::std::str::FromStr for TimeoutType {
+        type Err = self::error::ConversionError;
+        fn from_str(
+            value: &str,
+        ) -> ::std::result::Result<Self, self::error::ConversionError> {
+            match value {
+                "Timeout" => Ok(Self::Timeout),
+                _ => Err("invalid value".into()),
+            }
+        }
+    }
+    impl ::std::convert::TryFrom<&str> for TimeoutType {
+        type Error = self::error::ConversionError;
+        fn try_from(
+            value: &str,
+        ) -> ::std::result::Result<Self, self::error::ConversionError> {
+            value.parse()
+        }
+    }
+    impl ::std::convert::TryFrom<&::std::string::String> for TimeoutType {
+        type Error = self::error::ConversionError;
+        fn try_from(
+            value: &::std::string::String,
+        ) -> ::std::result::Result<Self, self::error::ConversionError> {
+            value.parse()
+        }
+    }
+    impl ::std::convert::TryFrom<::std::string::String> for TimeoutType {
+        type Error = self::error::ConversionError;
+        fn try_from(
+            value: ::std::string::String,
+        ) -> ::std::result::Result<Self, self::error::ConversionError> {
+            value.parse()
+        }
+    }
+    ///USSD process abort reason - previous USSD app response was malformed or not expected.
+    ///
+    /// <details><summary>JSON schema</summary>
+    ///
+    /// ```json
+    ///{
+    ///  "description": "USSD process abort reason - previous USSD app response was malformed or not expected.",
+    ///  "type": "object",
+    ///  "required": [
+    ///    "type"
+    ///  ],
+    ///  "properties": {
+    ///    "type": {
+    ///      "examples": [
+    ///        "UnexpectedUssdAppResponse"
+    ///      ],
+    ///      "type": "string",
+    ///      "enum": [
+    ///        "UnexpectedUssdAppResponse"
+    ///      ]
+    ///    }
+    ///  }
+    ///}
+    /// ```
+    /// </details>
+    #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+    pub struct UnexpectedUssdAppResponse {
+        #[serde(rename = "type")]
+        pub type_: UnexpectedUssdAppResponseType,
+    }
+    ///`UnexpectedUssdAppResponseType`
+    ///
+    /// <details><summary>JSON schema</summary>
+    ///
+    /// ```json
+    ///{
+    ///  "examples": [
+    ///    "UnexpectedUssdAppResponse"
+    ///  ],
+    ///  "type": "string",
+    ///  "enum": [
+    ///    "UnexpectedUssdAppResponse"
+    ///  ]
+    ///}
+    /// ```
+    /// </details>
+    #[derive(
+        ::serde::Deserialize,
+        ::serde::Serialize,
+        Clone,
+        Copy,
+        Debug,
+        Eq,
+        Hash,
+        Ord,
+        PartialEq,
+        PartialOrd
+    )]
+    pub enum UnexpectedUssdAppResponseType {
+        UnexpectedUssdAppResponse,
+    }
+    impl ::std::fmt::Display for UnexpectedUssdAppResponseType {
+        fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+            match *self {
+                Self::UnexpectedUssdAppResponse => {
+                    f.write_str("UnexpectedUssdAppResponse")
+                }
+            }
+        }
+    }
+    impl ::std::str::FromStr for UnexpectedUssdAppResponseType {
+        type Err = self::error::ConversionError;
+        fn from_str(
+            value: &str,
+        ) -> ::std::result::Result<Self, self::error::ConversionError> {
+            match value {
+                "UnexpectedUssdAppResponse" => Ok(Self::UnexpectedUssdAppResponse),
+                _ => Err("invalid value".into()),
+            }
+        }
+    }
+    impl ::std::convert::TryFrom<&str> for UnexpectedUssdAppResponseType {
+        type Error = self::error::ConversionError;
+        fn try_from(
+            value: &str,
+        ) -> ::std::result::Result<Self, self::error::ConversionError> {
+            value.parse()
+        }
+    }
+    impl ::std::convert::TryFrom<&::std::string::String>
+    for UnexpectedUssdAppResponseType {
+        type Error = self::error::ConversionError;
+        fn try_from(
+            value: &::std::string::String,
+        ) -> ::std::result::Result<Self, self::error::ConversionError> {
+            value.parse()
+        }
+    }
+    impl ::std::convert::TryFrom<::std::string::String>
+    for UnexpectedUssdAppResponseType {
+        type Error = self::error::ConversionError;
+        fn try_from(
+            value: ::std::string::String,
+        ) -> ::std::result::Result<Self, self::error::ConversionError> {
+            value.parse()
+        }
+    }
+    ///Cannot determine if merchant payment operation succeed or not
+    ///
+    /// <details><summary>JSON schema</summary>
+    ///
+    /// ```json
+    ///{
+    ///  "description": "Cannot determine if merchant payment operation succeed or not",
+    ///  "type": "object",
+    ///  "required": [
+    ///    "type"
+    ///  ],
+    ///  "properties": {
+    ///    "type": {
+    ///      "examples": [
+    ///        "Unknown"
+    ///      ],
+    ///      "type": "string",
+    ///      "enum": [
+    ///        "Unknown"
+    ///      ]
+    ///    }
+    ///  }
+    ///}
+    /// ```
+    /// </details>
+    #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+    pub struct Unknown {
+        #[serde(rename = "type")]
+        pub type_: UnknownType,
+    }
+    ///`UnknownType`
+    ///
+    /// <details><summary>JSON schema</summary>
+    ///
+    /// ```json
+    ///{
+    ///  "examples": [
+    ///    "Unknown"
+    ///  ],
+    ///  "type": "string",
+    ///  "enum": [
+    ///    "Unknown"
+    ///  ]
+    ///}
+    /// ```
+    /// </details>
+    #[derive(
+        ::serde::Deserialize,
+        ::serde::Serialize,
+        Clone,
+        Copy,
+        Debug,
+        Eq,
+        Hash,
+        Ord,
+        PartialEq,
+        PartialOrd
+    )]
+    pub enum UnknownType {
+        Unknown,
+    }
+    impl ::std::fmt::Display for UnknownType {
+        fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+            match *self {
+                Self::Unknown => f.write_str("Unknown"),
+            }
+        }
+    }
+    impl ::std::str::FromStr for UnknownType {
+        type Err = self::error::ConversionError;
+        fn from_str(
+            value: &str,
+        ) -> ::std::result::Result<Self, self::error::ConversionError> {
+            match value {
+                "Unknown" => Ok(Self::Unknown),
+                _ => Err("invalid value".into()),
+            }
+        }
+    }
+    impl ::std::convert::TryFrom<&str> for UnknownType {
+        type Error = self::error::ConversionError;
+        fn try_from(
+            value: &str,
+        ) -> ::std::result::Result<Self, self::error::ConversionError> {
+            value.parse()
+        }
+    }
+    impl ::std::convert::TryFrom<&::std::string::String> for UnknownType {
+        type Error = self::error::ConversionError;
+        fn try_from(
+            value: &::std::string::String,
+        ) -> ::std::result::Result<Self, self::error::ConversionError> {
+            value.parse()
+        }
+    }
+    impl ::std::convert::TryFrom<::std::string::String> for UnknownType {
+        type Error = self::error::ConversionError;
+        fn try_from(
+            value: ::std::string::String,
+        ) -> ::std::result::Result<Self, self::error::ConversionError> {
+            value.parse()
+        }
+    }
+    ///Developer's USSD App returns USSD process result as a map of params
+    ///
+    /// <details><summary>JSON schema</summary>
+    ///
+    /// ```json
+    ///{
+    ///  "description": "Developer's USSD App returns USSD process result as a map of params",
+    ///  "type": "object",
+    ///  "required": [
+    ///    "destinationAppId",
+    ///    "type"
+    ///  ],
+    ///  "properties": {
+    ///    "destinationAppId": {
+    ///      "description": "Identifier of the USSD app created on Qrios platform.",
+    ///      "examples": [
+    ///        "b56r455"
+    ///      ],
+    ///      "type": "string"
+    ///    },
+    ///    "process": {
+    ///      "$ref": "#/components/schemas/UssdApp.Process"
+    ///    },
+    ///    "type": {
+    ///      "examples": [
+    ///        "Redirect"
+    ///      ],
+    ///      "type": "string",
+    ///      "enum": [
+    ///        "Redirect"
+    ///      ]
+    ///    }
+    ///  }
+    ///}
+    /// ```
+    /// </details>
+    #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+    pub struct UnsupportedRedirect {
+        ///Identifier of the USSD app created on Qrios platform.
+        #[serde(rename = "destinationAppId")]
+        pub destination_app_id: ::std::string::String,
+        #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+        pub process: ::std::option::Option<UssdAppProcess>,
+        #[serde(rename = "type")]
+        pub type_: UnsupportedRedirectType,
+    }
+    ///`UnsupportedRedirectType`
+    ///
+    /// <details><summary>JSON schema</summary>
+    ///
+    /// ```json
+    ///{
+    ///  "examples": [
+    ///    "Redirect"
+    ///  ],
+    ///  "type": "string",
+    ///  "enum": [
+    ///    "Redirect"
+    ///  ]
+    ///}
+    /// ```
+    /// </details>
+    #[derive(
+        ::serde::Deserialize,
+        ::serde::Serialize,
+        Clone,
+        Copy,
+        Debug,
+        Eq,
+        Hash,
+        Ord,
+        PartialEq,
+        PartialOrd
+    )]
+    pub enum UnsupportedRedirectType {
+        Redirect,
+    }
+    impl ::std::fmt::Display for UnsupportedRedirectType {
+        fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+            match *self {
+                Self::Redirect => f.write_str("Redirect"),
+            }
+        }
+    }
+    impl ::std::str::FromStr for UnsupportedRedirectType {
+        type Err = self::error::ConversionError;
+        fn from_str(
+            value: &str,
+        ) -> ::std::result::Result<Self, self::error::ConversionError> {
+            match value {
+                "Redirect" => Ok(Self::Redirect),
+                _ => Err("invalid value".into()),
+            }
+        }
+    }
+    impl ::std::convert::TryFrom<&str> for UnsupportedRedirectType {
+        type Error = self::error::ConversionError;
+        fn try_from(
+            value: &str,
+        ) -> ::std::result::Result<Self, self::error::ConversionError> {
+            value.parse()
+        }
+    }
+    impl ::std::convert::TryFrom<&::std::string::String> for UnsupportedRedirectType {
+        type Error = self::error::ConversionError;
+        fn try_from(
+            value: &::std::string::String,
+        ) -> ::std::result::Result<Self, self::error::ConversionError> {
+            value.parse()
+        }
+    }
+    impl ::std::convert::TryFrom<::std::string::String> for UnsupportedRedirectType {
+        type Error = self::error::ConversionError;
+        fn try_from(
+            value: ::std::string::String,
+        ) -> ::std::result::Result<Self, self::error::ConversionError> {
+            value.parse()
+        }
+    }
     ///Action to be sent back to the user. It can either start a predefined process or show a view.
     ///
     /// <details><summary>JSON schema</summary>
@@ -3315,7 +3991,7 @@ pub mod types {
     ///      "$ref": "#/components/schemas/LegacyAppRedirect"
     ///    },
     ///    {
-    ///      "$ref": "#/components/schemas/Redirect"
+    ///      "$ref": "#/components/schemas/UnsupportedRedirect"
     ///    },
     ///    {
     ///      "$ref": "#/components/schemas/ReturnFromRedirect"
@@ -3334,7 +4010,7 @@ pub mod types {
     #[serde(untagged)]
     pub enum UssdAction {
         LegacyAppRedirect(LegacyAppRedirect),
-        Redirect(Redirect),
+        UnsupportedRedirect(UnsupportedRedirect),
         ReturnFromRedirect(ReturnFromRedirect),
         RunProcess(RunProcess),
         ShowView(ShowView),
@@ -3344,9 +4020,9 @@ pub mod types {
             Self::LegacyAppRedirect(value)
         }
     }
-    impl ::std::convert::From<Redirect> for UssdAction {
-        fn from(value: Redirect) -> Self {
-            Self::Redirect(value)
+    impl ::std::convert::From<UnsupportedRedirect> for UssdAction {
+        fn from(value: UnsupportedRedirect) -> Self {
+            Self::UnsupportedRedirect(value)
         }
     }
     impl ::std::convert::From<ReturnFromRedirect> for UssdAction {
@@ -3373,16 +4049,16 @@ pub mod types {
     ///  "description": "Result of USSD action. Either input provided by the user or the result of a previously-initiated process.",
     ///  "oneOf": [
     ///    {
-    ///      "$ref": "#/components/schemas/UssdActionResult.EmbeddedProcessResult"
+    ///      "$ref": "#/components/schemas/EmbeddedProcessResult"
     ///    },
     ///    {
-    ///      "$ref": "#/components/schemas/UssdActionResult.InputResult"
+    ///      "$ref": "#/components/schemas/InputResult"
     ///    },
     ///    {
-    ///      "$ref": "#/components/schemas/UssdActionResult.MerchantPaymentResult"
+    ///      "$ref": "#/components/schemas/MerchantPaymentResult"
     ///    },
     ///    {
-    ///      "$ref": "#/components/schemas/UssdActionResult.ReturnFromRedirectResult"
+    ///      "$ref": "#/components/schemas/ReturnFromRedirectResult"
     ///    }
     ///  ]
     ///}
@@ -3391,69 +4067,30 @@ pub mod types {
     #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
     #[serde(untagged)]
     pub enum UssdActionResult {
-        EmbeddedProcessResult(UssdActionResultEmbeddedProcessResult),
-        InputResult(UssdActionResultInputResult),
-        MerchantPaymentResult(UssdActionResultMerchantPaymentResult),
-        ReturnFromRedirectResult(UssdActionResultReturnFromRedirectResult),
+        EmbeddedProcessResult(EmbeddedProcessResult),
+        InputResult(InputResult),
+        MerchantPaymentResult(MerchantPaymentResult),
+        ReturnFromRedirectResult(ReturnFromRedirectResult),
     }
-    impl ::std::convert::From<UssdActionResultEmbeddedProcessResult>
-    for UssdActionResult {
-        fn from(value: UssdActionResultEmbeddedProcessResult) -> Self {
+    impl ::std::convert::From<EmbeddedProcessResult> for UssdActionResult {
+        fn from(value: EmbeddedProcessResult) -> Self {
             Self::EmbeddedProcessResult(value)
         }
     }
-    impl ::std::convert::From<UssdActionResultInputResult> for UssdActionResult {
-        fn from(value: UssdActionResultInputResult) -> Self {
+    impl ::std::convert::From<InputResult> for UssdActionResult {
+        fn from(value: InputResult) -> Self {
             Self::InputResult(value)
         }
     }
-    impl ::std::convert::From<UssdActionResultMerchantPaymentResult>
-    for UssdActionResult {
-        fn from(value: UssdActionResultMerchantPaymentResult) -> Self {
+    impl ::std::convert::From<MerchantPaymentResult> for UssdActionResult {
+        fn from(value: MerchantPaymentResult) -> Self {
             Self::MerchantPaymentResult(value)
         }
     }
-    impl ::std::convert::From<UssdActionResultReturnFromRedirectResult>
-    for UssdActionResult {
-        fn from(value: UssdActionResultReturnFromRedirectResult) -> Self {
+    impl ::std::convert::From<ReturnFromRedirectResult> for UssdActionResult {
+        fn from(value: ReturnFromRedirectResult) -> Self {
             Self::ReturnFromRedirectResult(value)
         }
-    }
-    ///Returns control of the session back to the developer and passes the result of embedded process execution.
-    ///
-    /// <details><summary>JSON schema</summary>
-    ///
-    /// ```json
-    ///{
-    ///  "description": "Returns control of the session back to the developer and passes the result of embedded process execution.",
-    ///  "type": "object",
-    ///  "required": [
-    ///    "resultParams",
-    ///    "type"
-    ///  ],
-    ///  "properties": {
-    ///    "resultParams": {
-    ///      "$ref": "#/components/schemas/UssdActionResult.EmbeddedProcessResult.ResultParams"
-    ///    },
-    ///    "type": {
-    ///      "examples": [
-    ///        "EmbeddedProcessResult"
-    ///      ],
-    ///      "type": "string",
-    ///      "enum": [
-    ///        "EmbeddedProcessResult"
-    ///      ]
-    ///    }
-    ///  }
-    ///}
-    /// ```
-    /// </details>
-    #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
-    pub struct UssdActionResultEmbeddedProcessResult {
-        #[serde(rename = "resultParams")]
-        pub result_params: UssdActionResultEmbeddedProcessResultResultParams,
-        #[serde(rename = "type")]
-        pub type_: UssdActionResultEmbeddedProcessResultType,
     }
     ///Result of the `embedded process`. Keys should be considered as result parameter names and their values as result parameter values.
     ///
@@ -3503,347 +4140,6 @@ pub mod types {
             Self(value)
         }
     }
-    ///`UssdActionResultEmbeddedProcessResultType`
-    ///
-    /// <details><summary>JSON schema</summary>
-    ///
-    /// ```json
-    ///{
-    ///  "examples": [
-    ///    "EmbeddedProcessResult"
-    ///  ],
-    ///  "type": "string",
-    ///  "enum": [
-    ///    "EmbeddedProcessResult"
-    ///  ]
-    ///}
-    /// ```
-    /// </details>
-    #[derive(
-        ::serde::Deserialize,
-        ::serde::Serialize,
-        Clone,
-        Copy,
-        Debug,
-        Eq,
-        Hash,
-        Ord,
-        PartialEq,
-        PartialOrd
-    )]
-    pub enum UssdActionResultEmbeddedProcessResultType {
-        EmbeddedProcessResult,
-    }
-    impl ::std::fmt::Display for UssdActionResultEmbeddedProcessResultType {
-        fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-            match *self {
-                Self::EmbeddedProcessResult => f.write_str("EmbeddedProcessResult"),
-            }
-        }
-    }
-    impl ::std::str::FromStr for UssdActionResultEmbeddedProcessResultType {
-        type Err = self::error::ConversionError;
-        fn from_str(
-            value: &str,
-        ) -> ::std::result::Result<Self, self::error::ConversionError> {
-            match value {
-                "EmbeddedProcessResult" => Ok(Self::EmbeddedProcessResult),
-                _ => Err("invalid value".into()),
-            }
-        }
-    }
-    impl ::std::convert::TryFrom<&str> for UssdActionResultEmbeddedProcessResultType {
-        type Error = self::error::ConversionError;
-        fn try_from(
-            value: &str,
-        ) -> ::std::result::Result<Self, self::error::ConversionError> {
-            value.parse()
-        }
-    }
-    impl ::std::convert::TryFrom<&::std::string::String>
-    for UssdActionResultEmbeddedProcessResultType {
-        type Error = self::error::ConversionError;
-        fn try_from(
-            value: &::std::string::String,
-        ) -> ::std::result::Result<Self, self::error::ConversionError> {
-            value.parse()
-        }
-    }
-    impl ::std::convert::TryFrom<::std::string::String>
-    for UssdActionResultEmbeddedProcessResultType {
-        type Error = self::error::ConversionError;
-        fn try_from(
-            value: ::std::string::String,
-        ) -> ::std::result::Result<Self, self::error::ConversionError> {
-            value.parse()
-        }
-    }
-    ///Input from the user; provided by UssdAction.UssdView.InputView.
-    ///
-    /// <details><summary>JSON schema</summary>
-    ///
-    /// ```json
-    ///{
-    ///  "description": "Input from the user; provided by UssdAction.UssdView.InputView.",
-    ///  "type": "object",
-    ///  "required": [
-    ///    "type",
-    ///    "value"
-    ///  ],
-    ///  "properties": {
-    ///    "type": {
-    ///      "examples": [
-    ///        "InputResult"
-    ///      ],
-    ///      "type": "string",
-    ///      "enum": [
-    ///        "InputResult"
-    ///      ]
-    ///    },
-    ///    "value": {
-    ///      "description": "Raw value typed in by the user.",
-    ///      "type": "string"
-    ///    }
-    ///  }
-    ///}
-    /// ```
-    /// </details>
-    #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
-    pub struct UssdActionResultInputResult {
-        #[serde(rename = "type")]
-        pub type_: UssdActionResultInputResultType,
-        ///Raw value typed in by the user.
-        pub value: ::std::string::String,
-    }
-    ///`UssdActionResultInputResultType`
-    ///
-    /// <details><summary>JSON schema</summary>
-    ///
-    /// ```json
-    ///{
-    ///  "examples": [
-    ///    "InputResult"
-    ///  ],
-    ///  "type": "string",
-    ///  "enum": [
-    ///    "InputResult"
-    ///  ]
-    ///}
-    /// ```
-    /// </details>
-    #[derive(
-        ::serde::Deserialize,
-        ::serde::Serialize,
-        Clone,
-        Copy,
-        Debug,
-        Eq,
-        Hash,
-        Ord,
-        PartialEq,
-        PartialOrd
-    )]
-    pub enum UssdActionResultInputResultType {
-        InputResult,
-    }
-    impl ::std::fmt::Display for UssdActionResultInputResultType {
-        fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-            match *self {
-                Self::InputResult => f.write_str("InputResult"),
-            }
-        }
-    }
-    impl ::std::str::FromStr for UssdActionResultInputResultType {
-        type Err = self::error::ConversionError;
-        fn from_str(
-            value: &str,
-        ) -> ::std::result::Result<Self, self::error::ConversionError> {
-            match value {
-                "InputResult" => Ok(Self::InputResult),
-                _ => Err("invalid value".into()),
-            }
-        }
-    }
-    impl ::std::convert::TryFrom<&str> for UssdActionResultInputResultType {
-        type Error = self::error::ConversionError;
-        fn try_from(
-            value: &str,
-        ) -> ::std::result::Result<Self, self::error::ConversionError> {
-            value.parse()
-        }
-    }
-    impl ::std::convert::TryFrom<&::std::string::String>
-    for UssdActionResultInputResultType {
-        type Error = self::error::ConversionError;
-        fn try_from(
-            value: &::std::string::String,
-        ) -> ::std::result::Result<Self, self::error::ConversionError> {
-            value.parse()
-        }
-    }
-    impl ::std::convert::TryFrom<::std::string::String>
-    for UssdActionResultInputResultType {
-        type Error = self::error::ConversionError;
-        fn try_from(
-            value: ::std::string::String,
-        ) -> ::std::result::Result<Self, self::error::ConversionError> {
-            value.parse()
-        }
-    }
-    ///Result from merchant payment process; provided by UssdProcess.MerchantPaymentProcess.
-    ///
-    /// <details><summary>JSON schema</summary>
-    ///
-    /// ```json
-    ///{
-    ///  "description": "Result from merchant payment process; provided by UssdProcess.MerchantPaymentProcess.",
-    ///  "type": "object",
-    ///  "required": [
-    ///    "operationId",
-    ///    "status",
-    ///    "type"
-    ///  ],
-    ///  "properties": {
-    ///    "operationId": {
-    ///      "description": "Merchant payment operation id",
-    ///      "type": "string"
-    ///    },
-    ///    "status": {
-    ///      "$ref": "#/components/schemas/MerchantPaymentResult.OperationStatus"
-    ///    },
-    ///    "type": {
-    ///      "examples": [
-    ///        "MerchantPaymentResult"
-    ///      ],
-    ///      "type": "string",
-    ///      "enum": [
-    ///        "MerchantPaymentResult"
-    ///      ]
-    ///    }
-    ///  }
-    ///}
-    /// ```
-    /// </details>
-    #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
-    pub struct UssdActionResultMerchantPaymentResult {
-        ///Merchant payment operation id
-        #[serde(rename = "operationId")]
-        pub operation_id: ::std::string::String,
-        pub status: MerchantPaymentResultOperationStatus,
-        #[serde(rename = "type")]
-        pub type_: UssdActionResultMerchantPaymentResultType,
-    }
-    ///`UssdActionResultMerchantPaymentResultType`
-    ///
-    /// <details><summary>JSON schema</summary>
-    ///
-    /// ```json
-    ///{
-    ///  "examples": [
-    ///    "MerchantPaymentResult"
-    ///  ],
-    ///  "type": "string",
-    ///  "enum": [
-    ///    "MerchantPaymentResult"
-    ///  ]
-    ///}
-    /// ```
-    /// </details>
-    #[derive(
-        ::serde::Deserialize,
-        ::serde::Serialize,
-        Clone,
-        Copy,
-        Debug,
-        Eq,
-        Hash,
-        Ord,
-        PartialEq,
-        PartialOrd
-    )]
-    pub enum UssdActionResultMerchantPaymentResultType {
-        MerchantPaymentResult,
-    }
-    impl ::std::fmt::Display for UssdActionResultMerchantPaymentResultType {
-        fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-            match *self {
-                Self::MerchantPaymentResult => f.write_str("MerchantPaymentResult"),
-            }
-        }
-    }
-    impl ::std::str::FromStr for UssdActionResultMerchantPaymentResultType {
-        type Err = self::error::ConversionError;
-        fn from_str(
-            value: &str,
-        ) -> ::std::result::Result<Self, self::error::ConversionError> {
-            match value {
-                "MerchantPaymentResult" => Ok(Self::MerchantPaymentResult),
-                _ => Err("invalid value".into()),
-            }
-        }
-    }
-    impl ::std::convert::TryFrom<&str> for UssdActionResultMerchantPaymentResultType {
-        type Error = self::error::ConversionError;
-        fn try_from(
-            value: &str,
-        ) -> ::std::result::Result<Self, self::error::ConversionError> {
-            value.parse()
-        }
-    }
-    impl ::std::convert::TryFrom<&::std::string::String>
-    for UssdActionResultMerchantPaymentResultType {
-        type Error = self::error::ConversionError;
-        fn try_from(
-            value: &::std::string::String,
-        ) -> ::std::result::Result<Self, self::error::ConversionError> {
-            value.parse()
-        }
-    }
-    impl ::std::convert::TryFrom<::std::string::String>
-    for UssdActionResultMerchantPaymentResultType {
-        type Error = self::error::ConversionError;
-        fn try_from(
-            value: ::std::string::String,
-        ) -> ::std::result::Result<Self, self::error::ConversionError> {
-            value.parse()
-        }
-    }
-    ///Result returned from the app, to which the session was previously redirected.
-    ///
-    /// <details><summary>JSON schema</summary>
-    ///
-    /// ```json
-    ///{
-    ///  "description": "Result returned from the app, to which the session was previously redirected.",
-    ///  "type": "object",
-    ///  "required": [
-    ///    "resultParams",
-    ///    "type"
-    ///  ],
-    ///  "properties": {
-    ///    "resultParams": {
-    ///      "$ref": "#/components/schemas/UssdActionResult.ReturnFromRedirectResult.ResultParams"
-    ///    },
-    ///    "type": {
-    ///      "examples": [
-    ///        "ReturnFromRedirectResult"
-    ///      ],
-    ///      "type": "string",
-    ///      "enum": [
-    ///        "ReturnFromRedirectResult"
-    ///      ]
-    ///    }
-    ///  }
-    ///}
-    /// ```
-    /// </details>
-    #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
-    pub struct UssdActionResultReturnFromRedirectResult {
-        #[serde(rename = "resultParams")]
-        pub result_params: UssdActionResultReturnFromRedirectResultResultParams,
-        #[serde(rename = "type")]
-        pub type_: UssdActionResultReturnFromRedirectResultType,
-    }
     ///Result of the `return from redirection`. Keys should be considered as result parameter names and their values as result parameter values.
     ///
     /// <details><summary>JSON schema</summary>
@@ -3892,81 +4188,6 @@ pub mod types {
             Self(value)
         }
     }
-    ///`UssdActionResultReturnFromRedirectResultType`
-    ///
-    /// <details><summary>JSON schema</summary>
-    ///
-    /// ```json
-    ///{
-    ///  "examples": [
-    ///    "ReturnFromRedirectResult"
-    ///  ],
-    ///  "type": "string",
-    ///  "enum": [
-    ///    "ReturnFromRedirectResult"
-    ///  ]
-    ///}
-    /// ```
-    /// </details>
-    #[derive(
-        ::serde::Deserialize,
-        ::serde::Serialize,
-        Clone,
-        Copy,
-        Debug,
-        Eq,
-        Hash,
-        Ord,
-        PartialEq,
-        PartialOrd
-    )]
-    pub enum UssdActionResultReturnFromRedirectResultType {
-        ReturnFromRedirectResult,
-    }
-    impl ::std::fmt::Display for UssdActionResultReturnFromRedirectResultType {
-        fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-            match *self {
-                Self::ReturnFromRedirectResult => f.write_str("ReturnFromRedirectResult"),
-            }
-        }
-    }
-    impl ::std::str::FromStr for UssdActionResultReturnFromRedirectResultType {
-        type Err = self::error::ConversionError;
-        fn from_str(
-            value: &str,
-        ) -> ::std::result::Result<Self, self::error::ConversionError> {
-            match value {
-                "ReturnFromRedirectResult" => Ok(Self::ReturnFromRedirectResult),
-                _ => Err("invalid value".into()),
-            }
-        }
-    }
-    impl ::std::convert::TryFrom<&str> for UssdActionResultReturnFromRedirectResultType {
-        type Error = self::error::ConversionError;
-        fn try_from(
-            value: &str,
-        ) -> ::std::result::Result<Self, self::error::ConversionError> {
-            value.parse()
-        }
-    }
-    impl ::std::convert::TryFrom<&::std::string::String>
-    for UssdActionResultReturnFromRedirectResultType {
-        type Error = self::error::ConversionError;
-        fn try_from(
-            value: &::std::string::String,
-        ) -> ::std::result::Result<Self, self::error::ConversionError> {
-            value.parse()
-        }
-    }
-    impl ::std::convert::TryFrom<::std::string::String>
-    for UssdActionResultReturnFromRedirectResultType {
-        type Error = self::error::ConversionError;
-        fn try_from(
-            value: ::std::string::String,
-        ) -> ::std::result::Result<Self, self::error::ConversionError> {
-            value.parse()
-        }
-    }
     ///It indicates which process inside USSD App should be invoked
     ///
     /// <details><summary>JSON schema</summary>
@@ -4006,10 +4227,10 @@ pub mod types {
     ///  "description": "The process control is handed over to (flow continues within the process until the process continues or aborts).",
     ///  "oneOf": [
     ///    {
-    ///      "$ref": "#/components/schemas/UssdProcess.EmbeddedProcess"
+    ///      "$ref": "#/components/schemas/EmbeddedProcess"
     ///    },
     ///    {
-    ///      "$ref": "#/components/schemas/UssdProcess.MerchantPaymentProcess"
+    ///      "$ref": "#/components/schemas/MerchantPaymentProcess"
     ///    }
     ///  ]
     ///}
@@ -4018,107 +4239,18 @@ pub mod types {
     #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
     #[serde(untagged)]
     pub enum UssdProcess {
-        EmbeddedProcess(UssdProcessEmbeddedProcess),
-        MerchantPaymentProcess(UssdProcessMerchantPaymentProcess),
+        EmbeddedProcess(EmbeddedProcess),
+        MerchantPaymentProcess(MerchantPaymentProcess),
     }
-    impl ::std::convert::From<UssdProcessEmbeddedProcess> for UssdProcess {
-        fn from(value: UssdProcessEmbeddedProcess) -> Self {
+    impl ::std::convert::From<EmbeddedProcess> for UssdProcess {
+        fn from(value: EmbeddedProcess) -> Self {
             Self::EmbeddedProcess(value)
         }
     }
-    impl ::std::convert::From<UssdProcessMerchantPaymentProcess> for UssdProcess {
-        fn from(value: UssdProcessMerchantPaymentProcess) -> Self {
+    impl ::std::convert::From<MerchantPaymentProcess> for UssdProcess {
+        fn from(value: MerchantPaymentProcess) -> Self {
             Self::MerchantPaymentProcess(value)
         }
-    }
-    ///Initiate an embedded process. This action causes the Qrios system to hand over control to an external application. The user may be prompted to provide credentials during the embedded process. After the embedded process is complete, the ussdSessionEvent/continue API endpoint is called to deliver the result and return control of the session to the developer application.
-    ///
-    /// <details><summary>JSON schema</summary>
-    ///
-    /// ```json
-    ///{
-    ///  "description": "Initiate an embedded process. This action causes the Qrios system to hand over control to an external application. The user may be prompted to provide credentials during the embedded process. After the embedded process is complete, the ussdSessionEvent/continue API endpoint is called to deliver the result and return control of the session to the developer application.",
-    ///  "type": "object",
-    ///  "required": [
-    ///    "params",
-    ///    "processId"
-    ///  ],
-    ///  "properties": {
-    ///    "params": {
-    ///      "$ref": "#/components/schemas/Map"
-    ///    },
-    ///    "processId": {
-    ///      "description": "embedded process id",
-    ///      "type": "string"
-    ///    }
-    ///  }
-    ///}
-    /// ```
-    /// </details>
-    #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
-    pub struct UssdProcessEmbeddedProcess {
-        pub params: Map,
-        ///embedded process id
-        #[serde(rename = "processId")]
-        pub process_id: ::std::string::String,
-    }
-    ///Initiation of merchant payment process. In this process, the control is handed over to an external USSD merchant payment process. The user will be asked for credentials and the payment will commence. As the process ends, it will call this API to deliver the result and hand control over the session back to the server.
-    ///
-    /// <details><summary>JSON schema</summary>
-    ///
-    /// ```json
-    ///{
-    ///  "description": "Initiation of merchant payment process. In this process, the control is handed over to an external USSD merchant payment process. The user will be asked for credentials and the payment will commence. As the process ends, it will call this API to deliver the result and hand control over the session back to the server.",
-    ///  "type": "object",
-    ///  "required": [
-    ///    "amount",
-    ///    "merchantCode",
-    ///    "operationId",
-    ///    "paymentMode"
-    ///  ],
-    ///  "properties": {
-    ///    "amount": {
-    ///      "examples": [
-    ///        12.34
-    ///      ],
-    ///      "type": "number",
-    ///      "format": "Amount in Naira with at most two decimal places."
-    ///    },
-    ///    "executionMode": {
-    ///      "$ref": "#/components/schemas/MerchantPaymentProcess.ExecutionMode"
-    ///    },
-    ///    "merchantCode": {
-    ///      "description": "Merchant code",
-    ///      "type": "string"
-    ///    },
-    ///    "operationId": {
-    ///      "description": "Merchant payment operation id",
-    ///      "type": "string"
-    ///    },
-    ///    "paymentMode": {
-    ///      "$ref": "#/components/schemas/MerchantPaymentProcess.PaymentMode"
-    ///    }
-    ///  }
-    ///}
-    /// ```
-    /// </details>
-    #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
-    pub struct UssdProcessMerchantPaymentProcess {
-        pub amount: f64,
-        #[serde(
-            rename = "executionMode",
-            default,
-            skip_serializing_if = "::std::option::Option::is_none"
-        )]
-        pub execution_mode: ::std::option::Option<MerchantPaymentProcessExecutionMode>,
-        ///Merchant code
-        #[serde(rename = "merchantCode")]
-        pub merchant_code: ::std::string::String,
-        ///Merchant payment operation id
-        #[serde(rename = "operationId")]
-        pub operation_id: ::std::string::String,
-        #[serde(rename = "paymentMode")]
-        pub payment_mode: MerchantPaymentProcessPaymentMode,
     }
     ///Command issued to the user, along with context data.
     ///
@@ -4334,13 +4466,13 @@ pub mod types {
     ///  "description": "Input provided when starting the session.",
     ///  "oneOf": [
     ///    {
-    ///      "$ref": "#/components/schemas/NewSession.SessionInput.Dial"
+    ///      "$ref": "#/components/schemas/Dial"
     ///    },
     ///    {
-    ///      "$ref": "#/components/schemas/NewSession.SessionInput.Push"
+    ///      "$ref": "#/components/schemas/Push"
     ///    },
     ///    {
-    ///      "$ref": "#/components/schemas/NewSession.SessionInput.Redirect"
+    ///      "$ref": "#/components/schemas/Redirect"
     ///    }
     ///  ]
     ///}
@@ -4349,25 +4481,22 @@ pub mod types {
     #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
     #[serde(untagged)]
     pub enum UssdSessionEventNewSessionSessionInput {
-        Dial(NewSessionSessionInputDial),
-        Push(NewSessionSessionInputPush),
-        Redirect(NewSessionSessionInputRedirect),
+        Dial(Dial),
+        Push(Push),
+        Redirect(Redirect),
     }
-    impl ::std::convert::From<NewSessionSessionInputDial>
-    for UssdSessionEventNewSessionSessionInput {
-        fn from(value: NewSessionSessionInputDial) -> Self {
+    impl ::std::convert::From<Dial> for UssdSessionEventNewSessionSessionInput {
+        fn from(value: Dial) -> Self {
             Self::Dial(value)
         }
     }
-    impl ::std::convert::From<NewSessionSessionInputPush>
-    for UssdSessionEventNewSessionSessionInput {
-        fn from(value: NewSessionSessionInputPush) -> Self {
+    impl ::std::convert::From<Push> for UssdSessionEventNewSessionSessionInput {
+        fn from(value: Push) -> Self {
             Self::Push(value)
         }
     }
-    impl ::std::convert::From<NewSessionSessionInputRedirect>
-    for UssdSessionEventNewSessionSessionInput {
-        fn from(value: NewSessionSessionInputRedirect) -> Self {
+    impl ::std::convert::From<Redirect> for UssdSessionEventNewSessionSessionInput {
+        fn from(value: Redirect) -> Self {
             Self::Redirect(value)
         }
     }
@@ -4379,13 +4508,13 @@ pub mod types {
     ///{
     ///  "oneOf": [
     ///    {
-    ///      "$ref": "#/components/schemas/UssdView.ChooserView"
+    ///      "$ref": "#/components/schemas/ChooserView"
     ///    },
     ///    {
-    ///      "$ref": "#/components/schemas/UssdView.InfoView"
+    ///      "$ref": "#/components/schemas/InfoView"
     ///    },
     ///    {
-    ///      "$ref": "#/components/schemas/UssdView.InputView"
+    ///      "$ref": "#/components/schemas/InputView"
     ///    }
     ///  ]
     ///}
@@ -4394,84 +4523,24 @@ pub mod types {
     #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
     #[serde(untagged)]
     pub enum UssdView {
-        ChooserView(UssdViewChooserView),
-        InfoView(UssdViewInfoView),
-        InputView(UssdViewInputView),
+        ChooserView(ChooserView),
+        InfoView(InfoView),
+        InputView(InputView),
     }
-    impl ::std::convert::From<UssdViewChooserView> for UssdView {
-        fn from(value: UssdViewChooserView) -> Self {
+    impl ::std::convert::From<ChooserView> for UssdView {
+        fn from(value: ChooserView) -> Self {
             Self::ChooserView(value)
         }
     }
-    impl ::std::convert::From<UssdViewInfoView> for UssdView {
-        fn from(value: UssdViewInfoView) -> Self {
+    impl ::std::convert::From<InfoView> for UssdView {
+        fn from(value: InfoView) -> Self {
             Self::InfoView(value)
         }
     }
-    impl ::std::convert::From<UssdViewInputView> for UssdView {
-        fn from(value: UssdViewInputView) -> Self {
+    impl ::std::convert::From<InputView> for UssdView {
+        fn from(value: InputView) -> Self {
             Self::InputView(value)
         }
-    }
-    /**A chooser (menu) view. User can choose one of the chooser items.
-If user picks invalid option (when user input does not match any of the available items), then the user will be asked to try again.
-It will be done internally by the USSD API without involving developer's app.
-It's guaranteed, that the user input sent in next request to the developer's app will match one of the provided items.
-The session will continue when this message is sent.*/
-    ///
-    /// <details><summary>JSON schema</summary>
-    ///
-    /// ```json
-    ///{
-    ///  "description": "A chooser (menu) view. User can choose one of the chooser items.\nIf user picks invalid option (when user input does not match any of the available items), then the user will be asked to try again.\nIt will be done internally by the USSD API without involving developer's app.\nIt's guaranteed, that the user input sent in next request to the developer's app will match one of the provided items.\nThe session will continue when this message is sent.",
-    ///  "type": "object",
-    ///  "required": [
-    ///    "title",
-    ///    "type"
-    ///  ],
-    ///  "properties": {
-    ///    "items": {
-    ///      "description": "Chooser items, each will be presented to user in a new line. All items must have unique access keys.",
-    ///      "type": "array",
-    ///      "items": {
-    ///        "$ref": "#/components/schemas/UssdView.ChooserView.Item"
-    ///      },
-    ///      "minItems": 1
-    ///    },
-    ///    "separator": {
-    ///      "description": "Text, that separates each item's accessKey and label when the ChooserView is rendered",
-    ///      "type": "string",
-    ///      "minLength": 1
-    ///    },
-    ///    "title": {
-    ///      "description": "Text that will be displayed before the chooser items",
-    ///      "type": "string"
-    ///    },
-    ///    "type": {
-    ///      "examples": [
-    ///        "ChooserView"
-    ///      ],
-    ///      "type": "string",
-    ///      "enum": [
-    ///        "ChooserView"
-    ///      ]
-    ///    }
-    ///  }
-    ///}
-    /// ```
-    /// </details>
-    #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
-    pub struct UssdViewChooserView {
-        ///Chooser items, each will be presented to user in a new line. All items must have unique access keys.
-        #[serde(default, skip_serializing_if = "::std::vec::Vec::is_empty")]
-        pub items: ::std::vec::Vec<UssdViewChooserViewItem>,
-        ///Text, that separates each item's accessKey and label when the ChooserView is rendered
-        #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
-        pub separator: ::std::option::Option<UssdViewChooserViewSeparator>,
-        ///Text that will be displayed before the chooser items
-        pub title: ::std::string::String,
-        #[serde(rename = "type")]
-        pub type_: UssdViewChooserViewType,
     }
     ///Represents single chooser view item
     ///
@@ -4659,44 +4728,92 @@ The session will continue when this message is sent.*/
                 })
         }
     }
-    ///Text, that separates each item's accessKey and label when the ChooserView is rendered
+    ///Merchant payment process will use a timeout when finalizing.
     ///
     /// <details><summary>JSON schema</summary>
     ///
     /// ```json
     ///{
-    ///  "description": "Text, that separates each item's accessKey and label when the ChooserView is rendered",
-    ///  "type": "string",
-    ///  "minLength": 1
+    ///  "description": "Merchant payment process will use a timeout when finalizing.",
+    ///  "type": "object",
+    ///  "required": [
+    ///    "millis",
+    ///    "type"
+    ///  ],
+    ///  "properties": {
+    ///    "millis": {
+    ///      "type": "integer",
+    ///      "format": "int64"
+    ///    },
+    ///    "type": {
+    ///      "examples": [
+    ///        "WithBankResponseTimeout"
+    ///      ],
+    ///      "type": "string",
+    ///      "enum": [
+    ///        "WithBankResponseTimeout"
+    ///      ]
+    ///    }
+    ///  }
     ///}
     /// ```
     /// </details>
-    #[derive(::serde::Serialize, Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
-    #[serde(transparent)]
-    pub struct UssdViewChooserViewSeparator(::std::string::String);
-    impl ::std::ops::Deref for UssdViewChooserViewSeparator {
-        type Target = ::std::string::String;
-        fn deref(&self) -> &::std::string::String {
-            &self.0
+    #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+    pub struct WithBankResponseTimeout {
+        pub millis: i64,
+        #[serde(rename = "type")]
+        pub type_: WithBankResponseTimeoutType,
+    }
+    ///`WithBankResponseTimeoutType`
+    ///
+    /// <details><summary>JSON schema</summary>
+    ///
+    /// ```json
+    ///{
+    ///  "examples": [
+    ///    "WithBankResponseTimeout"
+    ///  ],
+    ///  "type": "string",
+    ///  "enum": [
+    ///    "WithBankResponseTimeout"
+    ///  ]
+    ///}
+    /// ```
+    /// </details>
+    #[derive(
+        ::serde::Deserialize,
+        ::serde::Serialize,
+        Clone,
+        Copy,
+        Debug,
+        Eq,
+        Hash,
+        Ord,
+        PartialEq,
+        PartialOrd
+    )]
+    pub enum WithBankResponseTimeoutType {
+        WithBankResponseTimeout,
+    }
+    impl ::std::fmt::Display for WithBankResponseTimeoutType {
+        fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+            match *self {
+                Self::WithBankResponseTimeout => f.write_str("WithBankResponseTimeout"),
+            }
         }
     }
-    impl ::std::convert::From<UssdViewChooserViewSeparator> for ::std::string::String {
-        fn from(value: UssdViewChooserViewSeparator) -> Self {
-            value.0
-        }
-    }
-    impl ::std::str::FromStr for UssdViewChooserViewSeparator {
+    impl ::std::str::FromStr for WithBankResponseTimeoutType {
         type Err = self::error::ConversionError;
         fn from_str(
             value: &str,
         ) -> ::std::result::Result<Self, self::error::ConversionError> {
-            if value.chars().count() < 1usize {
-                return Err("shorter than 1 characters".into());
+            match value {
+                "WithBankResponseTimeout" => Ok(Self::WithBankResponseTimeout),
+                _ => Err("invalid value".into()),
             }
-            Ok(Self(value.to_string()))
         }
     }
-    impl ::std::convert::TryFrom<&str> for UssdViewChooserViewSeparator {
+    impl ::std::convert::TryFrom<&str> for WithBankResponseTimeoutType {
         type Error = self::error::ConversionError;
         fn try_from(
             value: &str,
@@ -4705,7 +4822,7 @@ The session will continue when this message is sent.*/
         }
     }
     impl ::std::convert::TryFrom<&::std::string::String>
-    for UssdViewChooserViewSeparator {
+    for WithBankResponseTimeoutType {
         type Error = self::error::ConversionError;
         fn try_from(
             value: &::std::string::String,
@@ -4713,8 +4830,7 @@ The session will continue when this message is sent.*/
             value.parse()
         }
     }
-    impl ::std::convert::TryFrom<::std::string::String>
-    for UssdViewChooserViewSeparator {
+    impl ::std::convert::TryFrom<::std::string::String> for WithBankResponseTimeoutType {
         type Error = self::error::ConversionError;
         fn try_from(
             value: ::std::string::String,
@@ -4722,115 +4838,25 @@ The session will continue when this message is sent.*/
             value.parse()
         }
     }
-    impl<'de> ::serde::Deserialize<'de> for UssdViewChooserViewSeparator {
-        fn deserialize<D>(deserializer: D) -> ::std::result::Result<Self, D::Error>
-        where
-            D: ::serde::Deserializer<'de>,
-        {
-            ::std::string::String::deserialize(deserializer)?
-                .parse()
-                .map_err(|e: self::error::ConversionError| {
-                    <D::Error as ::serde::de::Error>::custom(e.to_string())
-                })
-        }
-    }
-    ///`UssdViewChooserViewType`
+    ///Merchant payment process will not use a timeout when finalizing.
     ///
     /// <details><summary>JSON schema</summary>
     ///
     /// ```json
     ///{
-    ///  "examples": [
-    ///    "ChooserView"
-    ///  ],
-    ///  "type": "string",
-    ///  "enum": [
-    ///    "ChooserView"
-    ///  ]
-    ///}
-    /// ```
-    /// </details>
-    #[derive(
-        ::serde::Deserialize,
-        ::serde::Serialize,
-        Clone,
-        Copy,
-        Debug,
-        Eq,
-        Hash,
-        Ord,
-        PartialEq,
-        PartialOrd
-    )]
-    pub enum UssdViewChooserViewType {
-        ChooserView,
-    }
-    impl ::std::fmt::Display for UssdViewChooserViewType {
-        fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-            match *self {
-                Self::ChooserView => f.write_str("ChooserView"),
-            }
-        }
-    }
-    impl ::std::str::FromStr for UssdViewChooserViewType {
-        type Err = self::error::ConversionError;
-        fn from_str(
-            value: &str,
-        ) -> ::std::result::Result<Self, self::error::ConversionError> {
-            match value {
-                "ChooserView" => Ok(Self::ChooserView),
-                _ => Err("invalid value".into()),
-            }
-        }
-    }
-    impl ::std::convert::TryFrom<&str> for UssdViewChooserViewType {
-        type Error = self::error::ConversionError;
-        fn try_from(
-            value: &str,
-        ) -> ::std::result::Result<Self, self::error::ConversionError> {
-            value.parse()
-        }
-    }
-    impl ::std::convert::TryFrom<&::std::string::String> for UssdViewChooserViewType {
-        type Error = self::error::ConversionError;
-        fn try_from(
-            value: &::std::string::String,
-        ) -> ::std::result::Result<Self, self::error::ConversionError> {
-            value.parse()
-        }
-    }
-    impl ::std::convert::TryFrom<::std::string::String> for UssdViewChooserViewType {
-        type Error = self::error::ConversionError;
-        fn try_from(
-            value: ::std::string::String,
-        ) -> ::std::result::Result<Self, self::error::ConversionError> {
-            value.parse()
-        }
-    }
-    ///A text-only view; does not take any user input. The session will be closed when this message is sent.
-    ///
-    /// <details><summary>JSON schema</summary>
-    ///
-    /// ```json
-    ///{
-    ///  "description": "A text-only view; does not take any user input. The session will be closed when this message is sent.",
+    ///  "description": "Merchant payment process will not use a timeout when finalizing.",
     ///  "type": "object",
     ///  "required": [
-    ///    "message",
     ///    "type"
     ///  ],
     ///  "properties": {
-    ///    "message": {
-    ///      "description": "Final message that will be displayed to the user",
-    ///      "type": "string"
-    ///    },
     ///    "type": {
     ///      "examples": [
-    ///        "InfoView"
+    ///        "WithoutWaitingForBank"
     ///      ],
     ///      "type": "string",
     ///      "enum": [
-    ///        "InfoView"
+    ///        "WithoutWaitingForBank"
     ///      ]
     ///    }
     ///  }
@@ -4838,24 +4864,22 @@ The session will continue when this message is sent.*/
     /// ```
     /// </details>
     #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
-    pub struct UssdViewInfoView {
-        ///Final message that will be displayed to the user
-        pub message: ::std::string::String,
+    pub struct WithoutWaitingForBank {
         #[serde(rename = "type")]
-        pub type_: UssdViewInfoViewType,
+        pub type_: WithoutWaitingForBankType,
     }
-    ///`UssdViewInfoViewType`
+    ///`WithoutWaitingForBankType`
     ///
     /// <details><summary>JSON schema</summary>
     ///
     /// ```json
     ///{
     ///  "examples": [
-    ///    "InfoView"
+    ///    "WithoutWaitingForBank"
     ///  ],
     ///  "type": "string",
     ///  "enum": [
-    ///    "InfoView"
+    ///    "WithoutWaitingForBank"
     ///  ]
     ///}
     /// ```
@@ -4872,28 +4896,28 @@ The session will continue when this message is sent.*/
         PartialEq,
         PartialOrd
     )]
-    pub enum UssdViewInfoViewType {
-        InfoView,
+    pub enum WithoutWaitingForBankType {
+        WithoutWaitingForBank,
     }
-    impl ::std::fmt::Display for UssdViewInfoViewType {
+    impl ::std::fmt::Display for WithoutWaitingForBankType {
         fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
             match *self {
-                Self::InfoView => f.write_str("InfoView"),
+                Self::WithoutWaitingForBank => f.write_str("WithoutWaitingForBank"),
             }
         }
     }
-    impl ::std::str::FromStr for UssdViewInfoViewType {
+    impl ::std::str::FromStr for WithoutWaitingForBankType {
         type Err = self::error::ConversionError;
         fn from_str(
             value: &str,
         ) -> ::std::result::Result<Self, self::error::ConversionError> {
             match value {
-                "InfoView" => Ok(Self::InfoView),
+                "WithoutWaitingForBank" => Ok(Self::WithoutWaitingForBank),
                 _ => Err("invalid value".into()),
             }
         }
     }
-    impl ::std::convert::TryFrom<&str> for UssdViewInfoViewType {
+    impl ::std::convert::TryFrom<&str> for WithoutWaitingForBankType {
         type Error = self::error::ConversionError;
         fn try_from(
             value: &str,
@@ -4901,7 +4925,7 @@ The session will continue when this message is sent.*/
             value.parse()
         }
     }
-    impl ::std::convert::TryFrom<&::std::string::String> for UssdViewInfoViewType {
+    impl ::std::convert::TryFrom<&::std::string::String> for WithoutWaitingForBankType {
         type Error = self::error::ConversionError;
         fn try_from(
             value: &::std::string::String,
@@ -4909,117 +4933,7 @@ The session will continue when this message is sent.*/
             value.parse()
         }
     }
-    impl ::std::convert::TryFrom<::std::string::String> for UssdViewInfoViewType {
-        type Error = self::error::ConversionError;
-        fn try_from(
-            value: ::std::string::String,
-        ) -> ::std::result::Result<Self, self::error::ConversionError> {
-            value.parse()
-        }
-    }
-    ///A view with text; takes user input. The session will continue when this message is sent.
-    ///
-    /// <details><summary>JSON schema</summary>
-    ///
-    /// ```json
-    ///{
-    ///  "description": "A view with text; takes user input. The session will continue when this message is sent.",
-    ///  "type": "object",
-    ///  "required": [
-    ///    "message",
-    ///    "type"
-    ///  ],
-    ///  "properties": {
-    ///    "message": {
-    ///      "description": "Message that will be displayed to the user, for example asking the user to input some value",
-    ///      "type": "string"
-    ///    },
-    ///    "type": {
-    ///      "examples": [
-    ///        "InputView"
-    ///      ],
-    ///      "type": "string",
-    ///      "enum": [
-    ///        "InputView"
-    ///      ]
-    ///    }
-    ///  }
-    ///}
-    /// ```
-    /// </details>
-    #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
-    pub struct UssdViewInputView {
-        ///Message that will be displayed to the user, for example asking the user to input some value
-        pub message: ::std::string::String,
-        #[serde(rename = "type")]
-        pub type_: UssdViewInputViewType,
-    }
-    ///`UssdViewInputViewType`
-    ///
-    /// <details><summary>JSON schema</summary>
-    ///
-    /// ```json
-    ///{
-    ///  "examples": [
-    ///    "InputView"
-    ///  ],
-    ///  "type": "string",
-    ///  "enum": [
-    ///    "InputView"
-    ///  ]
-    ///}
-    /// ```
-    /// </details>
-    #[derive(
-        ::serde::Deserialize,
-        ::serde::Serialize,
-        Clone,
-        Copy,
-        Debug,
-        Eq,
-        Hash,
-        Ord,
-        PartialEq,
-        PartialOrd
-    )]
-    pub enum UssdViewInputViewType {
-        InputView,
-    }
-    impl ::std::fmt::Display for UssdViewInputViewType {
-        fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-            match *self {
-                Self::InputView => f.write_str("InputView"),
-            }
-        }
-    }
-    impl ::std::str::FromStr for UssdViewInputViewType {
-        type Err = self::error::ConversionError;
-        fn from_str(
-            value: &str,
-        ) -> ::std::result::Result<Self, self::error::ConversionError> {
-            match value {
-                "InputView" => Ok(Self::InputView),
-                _ => Err("invalid value".into()),
-            }
-        }
-    }
-    impl ::std::convert::TryFrom<&str> for UssdViewInputViewType {
-        type Error = self::error::ConversionError;
-        fn try_from(
-            value: &str,
-        ) -> ::std::result::Result<Self, self::error::ConversionError> {
-            value.parse()
-        }
-    }
-    impl ::std::convert::TryFrom<&::std::string::String> for UssdViewInputViewType {
-        type Error = self::error::ConversionError;
-        fn try_from(
-            value: &::std::string::String,
-        ) -> ::std::result::Result<Self, self::error::ConversionError> {
-            value.parse()
-        }
-    }
-    impl ::std::convert::TryFrom<::std::string::String> for UssdViewInputViewType {
+    impl ::std::convert::TryFrom<::std::string::String> for WithoutWaitingForBankType {
         type Error = self::error::ConversionError;
         fn try_from(
             value: ::std::string::String,
@@ -5033,7 +4947,7 @@ The session will continue when this message is sent.*/
 
 This API is *not* exposed by Qrios, but it should be implemented by the developer. Qrios will call this API on developer's side to provide information about USSD sessions and the developer should answer with information regarding what should happen next in the aforementioned sessions.
 
-Version: 1.6.2*/
+Version: 1.6.3*/
 pub struct Client {
     pub(crate) baseurl: String,
     pub(crate) client: reqwest::Client,
@@ -5069,7 +4983,7 @@ impl Client {
 }
 impl ClientInfo<()> for Client {
     fn api_version() -> &'static str {
-        "1.6.2"
+        "1.6.3"
     }
     fn baseurl(&self) -> &str {
         self.baseurl.as_str()
