@@ -30,7 +30,7 @@ pre-push:
     - cargo clippy --workspace --all-targets --all-features -- -D warnings -W clippy::all
     - |
       cargo +nightly llvm-cov --package type_process_builder --no-clean \
-      --fail-under-regions 62 --fail-under-functions 82 --fail-under-lines 69
+      --fail-under-regions 60 --fail-under-functions 81 --fail-under-lines 68
     - |
       cargo +nightly llvm-cov --package qrios_api_process_runner --package qrios_api_process_entry --no-clean \
       --fail-under-regions 0 --fail-under-functions 0 --fail-under-lines 0

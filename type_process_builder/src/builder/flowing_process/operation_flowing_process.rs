@@ -4,7 +4,7 @@ use crate::builder::{
 };
 use crate::param_list::clone_just::CloneJust;
 use crate::param_list::concat::Concat;
-use crate::step::{FailedInputValidationAttempts, Operation};
+use crate::step::{FailedInputValidationAttempts, Operation, OperationOutcome, ProcessMessages};
 use std::marker::PhantomData;
 
 pub struct OperationFlowingProcess<
@@ -18,8 +18,11 @@ pub struct OperationFlowingProcess<
   pub phantom_data: PhantomData<ProcessBeforeProducesToLastStepConsumesIndices>,
 }
 
-impl<ProcessBefore: FlowingProcess, OperationStep: Operation, ProcessBeforeProducesToLastStepConsumesIndices: Sync>
-  FlowingProcess
+impl<
+  ProcessBefore: FlowingProcess,
+  OperationStep: Operation<FinalMessage = <ProcessBefore::Messages as ProcessMessages>::FinalMessage>,
+  ProcessBeforeProducesToLastStepConsumesIndices: Sync,
+> FlowingProcess
   for OperationFlowingProcess<ProcessBefore, OperationStep, ProcessBeforeProducesToLastStepConsumesIndices>
 where
   OperationStep::Produces: ParamList + Concat<ProcessBefore::Produces>,
@@ -60,8 +63,13 @@ where
     process_before_produces: Self::ProcessBeforeProduces,
   ) -> IntermediateRunResult<Self::Produces, Self::Messages> {
     let last_step_consumes = (&process_before_produces).clone_just();
-    let last_step_output = self.last_step.handle(last_step_consumes).await?;
-    Ok(IntermediateRunOutcome::Continue(last_step_output.concat(process_before_produces)))
+    let last_step_outcome = self.last_step.handle(last_step_consumes).await?;
+    Ok(match last_step_outcome {
+      OperationOutcome::Successful(last_step_output) => {
+        IntermediateRunOutcome::Continue(last_step_output.concat(process_before_produces))
+      },
+      OperationOutcome::Finish(a) => IntermediateRunOutcome::Finish(a),
+    })
   }
 
   async fn run_subprocess(

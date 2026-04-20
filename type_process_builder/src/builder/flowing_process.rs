@@ -46,7 +46,10 @@ pub trait FlowingProcess: Sized + Sync {
     subprocess_consumes: Self::SubprocessConsumes,
   ) -> impl Future<Output = IntermediateRunResult<Self::Produces, Self::Messages>> + Send;
 
-  fn then<OperationStep: Operation, ProcessBeforeProducesToLastStepConsumesIndices: Sync>(
+  fn then<
+    OperationStep: Operation<FinalMessage = <Self::Messages as ProcessMessages>::FinalMessage>,
+    ProcessBeforeProducesToLastStepConsumesIndices: Sync,
+  >(
     self,
     step: OperationStep,
   ) -> impl FlowingProcess<

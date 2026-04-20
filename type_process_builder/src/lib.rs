@@ -17,8 +17,8 @@ mod tests {
   use crate::builder::*;
   use crate::param_list::ParamValue;
   use crate::step::{
-    Entry, FailedInputValidationAttempts, Final, Form, FormSplitter, InputValidation, Operation, ProcessMessages,
-    Splitter,
+    Entry, FailedInputValidationAttempts, Final, Form, FormSplitter, InputValidation, Operation, OperationOutcome,
+    ProcessMessages, Splitter,
   };
   use anyhow::anyhow;
   use frunk_core::hlist::HNil;
@@ -110,9 +110,13 @@ mod tests {
   impl Operation for ProduceCaseParam1 {
     type Consumes = HNil;
     type Produces = HList![Case1Param, CommonCaseParam];
+    type FinalMessage = Message;
 
-    async fn handle(&self, _consumes: Self::Consumes) -> anyhow::Result<Self::Produces> {
-      Ok(hlist!(Case1Param, CommonCaseParam))
+    async fn handle(
+      &self,
+      _consumes: Self::Consumes,
+    ) -> anyhow::Result<OperationOutcome<Self::Produces, Self::FinalMessage>> {
+      Ok(OperationOutcome::Successful(hlist!(Case1Param, CommonCaseParam)))
     }
   }
 
@@ -120,9 +124,13 @@ mod tests {
   impl Operation for ProduceCaseParam2 {
     type Consumes = HNil;
     type Produces = HList![Case2Param, CommonCaseParam];
+    type FinalMessage = Message;
 
-    async fn handle(&self, _consumes: Self::Consumes) -> anyhow::Result<Self::Produces> {
-      Ok(hlist!(Case2Param, CommonCaseParam))
+    async fn handle(
+      &self,
+      _consumes: Self::Consumes,
+    ) -> anyhow::Result<OperationOutcome<Self::Produces, Self::FinalMessage>> {
+      Ok(OperationOutcome::Successful(hlist!(Case2Param, CommonCaseParam)))
     }
   }
 

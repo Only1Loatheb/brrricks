@@ -21,10 +21,20 @@ pub trait Entry: Sync {
   ) -> impl Future<Output = anyhow::Result<Self::Produces>> + Send;
 }
 
+#[derive(Debug, PartialEq, Eq)]
+pub enum OperationOutcome<Produced, FinalMessage: Send + Sync> {
+  Successful(Produced),
+  Finish(FinalMessage),
+}
+
 pub trait Operation: Sync {
   type Consumes: ParamList;
   type Produces: ParamList;
-  fn handle(&self, consumes: Self::Consumes) -> impl Future<Output = anyhow::Result<Self::Produces>> + Send;
+  type FinalMessage: Send + Sync;
+  fn handle(
+    &self,
+    consumes: Self::Consumes,
+  ) -> impl Future<Output = anyhow::Result<OperationOutcome<Self::Produces, Self::FinalMessage>>> + Send;
 }
 
 #[derive(PartialEq, Debug, Eq, Clone, PartialOrd, Ord, Hash)]
