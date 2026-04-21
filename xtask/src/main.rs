@@ -24,9 +24,9 @@ fn generate_client_and_server_from_swagger(root: &PathBuf) {
     println!("Swagger unchanged, skipping generation");
     return;
   }
-  fs::write(hash_path, current_hash).expect("failed to write hash");
   generate_qrios_api_axum_server(&root);
   generate_qrios_api_reqwest_server(&root);
+  fs::write(hash_path, current_hash).expect("failed to write hash");
 }
 
 fn update_readme(root: &PathBuf) {
