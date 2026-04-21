@@ -84,7 +84,7 @@ fn update_example_in_readme(readme_path: &Path, example_path: &Path) {
 
   let end = readme.find(end_marker).expect("Missing EXAMPLE_END");
 
-  let new_readme = format!("{}\n{}\n{}", &readme[..start + start_marker.len()], generated_section, &readme[end..],);
+  let new_readme = format!("{}\n\n{}\n\n{}", &readme[..start + start_marker.len()], generated_section, &readme[end..],);
 
   fs::write(readme_path, new_readme).expect("Failed to write README.md");
 }
@@ -152,8 +152,8 @@ fn install_git_hooks() {
     panic!("Failed to cargo install monk");
   }
 
-  let hool_installation = Command::new("monk").arg("install").status().expect("Failed to run install git hooks");
-  if !hool_installation.success() {
+  let hook_installation = Command::new("monk").arg("install").status().expect("Failed to run install git hooks");
+  if !hook_installation.success() {
     panic!("Failed to install git hooks");
   }
 }
