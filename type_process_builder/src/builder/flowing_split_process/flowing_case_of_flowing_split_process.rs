@@ -17,7 +17,7 @@ pub struct FlowingCaseOfFlowingSplitProcess<
   SplitterProducesForOtherCases: Send + Sync,
   ProcessBefore: FlowingSplitProcess<Coproduct<(ThisTag, SplitterProducesForThisCase), SplitterProducesForOtherCases>>,
   ThisCase: FlowingProcess<SubprocessConsumes=<SplitterProducesForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated>,
-  Indices: Sync,
+  Indices: Sync + Send + Send,
 >
 {
   pub split_process_before: ProcessBefore,
@@ -42,7 +42,7 @@ impl<
     SubprocessConsumes=<SplitterProducesForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
     Messages = ProcessBefore::Messages,
   >,
-  ThisIndices: Sync,
+  ThisIndices: Sync + Send,
 >
 FlowingCaseOfFlowingSplitProcess<
   ThisTag,
@@ -90,7 +90,7 @@ FlowingCaseOfFlowingSplitProcess<
       SubprocessConsumes=<SplitterProducesForNextCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
       Messages = ProcessBefore::Messages,
     >,
-    NextIndices: Sync,
+    NextIndices: Sync + Send,
   >(
     self,
     _assumed_tag: NextTag,
@@ -129,7 +129,7 @@ impl<
     SubprocessConsumes=<SplitterProducesForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
     Messages=ProcessBefore::Messages,
   >,
-  Indices: Sync,
+  Indices: Sync + Send + Send,
 > FlowingSplitProcess<SplitterProducesForOtherCases>
 for FlowingCaseOfFlowingSplitProcess<
   ThisTag,
@@ -263,7 +263,7 @@ impl<
   <SplitterProducesForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
     Messages=ProcessBefore::Messages,
   >,
-  Indices: Sync,
+  Indices: Sync + Send + Send,
 > FlowingProcess
 for FlowingCaseOfFlowingSplitProcess<
   ThisTag,

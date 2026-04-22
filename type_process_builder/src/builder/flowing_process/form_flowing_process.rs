@@ -25,8 +25,8 @@ pub struct FormFlowingProcess<
 impl<
   ProcessBefore: FlowingProcess,
   FormStep: Form<Messages = ProcessBefore::Messages>,
-  ProcessBeforeProducesToCreateFormConsumesIndices: Sync,
-  ProcessBeforeProducesToValidateInputConsumesIndices: Sync,
+  ProcessBeforeProducesToCreateFormConsumesIndices: Sync + Send,
+  ProcessBeforeProducesToValidateInputConsumesIndices: Sync + Send,
 > FlowingProcess
   for FormFlowingProcess<
     ProcessBefore,

@@ -83,7 +83,7 @@ FinalizedCaseOfFlowingSplitProcess<
     <SplitterProducesForNextCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
       Messages=ProcessBefore::Messages,
     >,
-    Indices: Sync,
+    Indices: Sync + Send + Send,
   >(
     self,
     _assumed_tag: NextTag,

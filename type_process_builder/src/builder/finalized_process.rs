@@ -9,7 +9,7 @@ use crate::step::{FailedInputValidationAttempts, Final, ProcessMessages};
 use std::future::Future;
 use std::marker::PhantomData;
 
-pub trait FinalizedProcess: Sized + Sync {
+pub trait FinalizedProcess: Sized + Send + Sync {
   // Please specify all associated types at the impl FinalizedProcess side for inference to work.
   type ProcessBeforeProduces: ParamList;
   type SubprocessConsumes: ParamList;
@@ -55,7 +55,7 @@ pub struct FlowingFinalizedProcess<
 impl<
   ProcessBefore: FlowingProcess,
   FinalStep: Final<FinalMessage = <ProcessBefore::Messages as ProcessMessages>::FinalMessage>,
-  ProcessBeforeProducesTransformToFinalConsumesIndices: Sync,
+  ProcessBeforeProducesTransformToFinalConsumesIndices: Sync + Send,
 > FinalizedProcess
   for FlowingFinalizedProcess<ProcessBefore, FinalStep, ProcessBeforeProducesTransformToFinalConsumesIndices>
 where
