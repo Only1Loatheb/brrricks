@@ -22,6 +22,8 @@ qrios_api_process_entry = { path = "../qrios_api_process_entry" }
 frunk_core = "0.4"
 anyhow = "1.0.82"
 sqlx = { version = "0.8", features = ["runtime-tokio"] }
+typenum = "1.19.0"
 tracing-subscriber = "0.3.22"
 axum = "0.8.8"
 serde_json = "1.0.149"
+serde = { version = "1.0.228", features = ["derive"] }

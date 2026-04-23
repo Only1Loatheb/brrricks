@@ -195,53 +195,152 @@ impl<Process: FinalizedProcess<Messages = Messages> + Sync>
 
 #[cfg(test)]
 mod tests {
-  use frunk_core::hlist::HNil;
-  use qrios_api_process_entry::DialedSessionEntry;
-
-  use qrios_api_reqwest_client::types::*;
-
   use crate::{Message, Messages};
+  use frunk_core::hlist::HNil;
+  use frunk_core::{Coprod, HList, hlist};
+  use qrios_api_process_entry::DialedSessionEntry;
+  use serde::{Deserialize, Serialize};
   use tokio::signal;
-  use type_process_builder::builder::FinalizedProcess;
-  use type_process_builder::builder::FlowingProcess;
+  use type_process_builder::builder::*;
+  use type_process_builder::param_list::ParamValue;
   use type_process_builder::step::Final;
+  use type_process_builder::step::*;
+  use typenum::*;
 
   #[ignore]
   #[tokio::test]
   async fn no_op_process_test() {
-    struct NoOpFinalStep;
-    impl Final for NoOpFinalStep {
+    #[derive(Clone, Deserialize, Serialize)]
+    struct Split1Param;
+    impl ParamValue for Split1Param {
+      type UID = U1;
+    }
+
+    #[derive(Clone, Deserialize, Serialize)]
+    struct Split2Param;
+    impl ParamValue for Split2Param {
+      type UID = U2;
+    }
+
+    #[derive(Clone, Deserialize, Serialize)]
+    struct Case1Param;
+    impl ParamValue for Case1Param {
+      type UID = U4;
+    }
+
+    #[derive(Clone, Deserialize, Serialize)]
+    struct CommonCaseParam;
+    impl ParamValue for CommonCaseParam {
+      type UID = U6;
+    }
+
+    struct ProduceCaseParam1;
+    impl Operation for ProduceCaseParam1 {
       type Consumes = HNil;
+      type Produces = HList![Case1Param, CommonCaseParam];
       type FinalMessage = Message;
-      async fn handle(&self, _consumes: Self::Consumes) -> anyhow::Result<Message> {
-        Ok(Message("Good bye".into()))
+
+      async fn handle(
+        &self,
+        _consumes: Self::Consumes,
+      ) -> anyhow::Result<OperationOutcome<Self::Produces, Self::FinalMessage>> {
+        Ok(OperationOutcome::Successful(hlist!(Case1Param, CommonCaseParam)))
       }
     }
 
-    let _process = DialedSessionEntry::<Messages>::new().end(NoOpFinalStep).build("no_op_process", 0);
+    struct FinishAfterInput;
+    impl Form for FinishAfterInput {
+      type CreateFormConsumes = HNil;
+      type ValidateInputConsumes = HNil;
+      type Produces = HList![CommonCaseParam];
+      type Messages = Messages;
 
-    let session = UssdSessionEventNewSession {
-      app_id: "val".into(),
-      client_id: "val".into(),
-      input: UssdSessionEventNewSessionSessionInput::Dial(Dial {
-        type_: DialType::Dial,
-        shortcode_string: "*425*001*123#".to_string(),
-      }),
-      msisdn: "2341234567890".into(),
-      operator: UssdSessionEventNewSessionOperator::Mtn,
-      session_id: "val".into(),
-    };
-    println!("{}", serde_json::to_string(&session).unwrap());
+      async fn create_form(&self, _consumes: Self::CreateFormConsumes) -> anyhow::Result<Message> {
+        Ok(Message("Last number in the process".into()))
+      }
 
-    let a = UssdSessionCommand {
-      action: UssdAction::ShowView(ShowView {
-        type_: ShowViewType::ShowView,
-        view: UssdView::InfoView(InfoView { message: "the message".into(), type_: InfoViewType::InfoView }),
-      }),
-      context_data: "cd".to_string(),
-      session_tag: None,
-    };
-    println!("{}", serde_json::to_string(&a).unwrap());
+      async fn handle_input(
+        &self,
+        _consumes: Self::ValidateInputConsumes,
+        _user_input: String,
+        _failed_input_validation_attempts: FailedInputValidationAttempts,
+      ) -> anyhow::Result<InputValidation<Self::Produces, Messages>> {
+        Ok(InputValidation::Finish(Message("Always finnish".into())))
+      }
+    }
+
+    struct OneInputRetryForm;
+    impl Form for OneInputRetryForm {
+      type CreateFormConsumes = HNil;
+      type ValidateInputConsumes = HNil;
+      type Produces = HList![CommonCaseParam];
+      type Messages = Messages;
+
+      async fn create_form(&self, _consumes: Self::CreateFormConsumes) -> anyhow::Result<Message> {
+        Ok(Message("This will be discarded".into()))
+      }
+
+      async fn handle_input(
+        &self,
+        _consumes: Self::ValidateInputConsumes,
+        _user_input: String,
+        failed_input_validation_attempts: FailedInputValidationAttempts,
+      ) -> anyhow::Result<InputValidation<Self::Produces, Messages>> {
+        match failed_input_validation_attempts.0 {
+          0 => Ok(InputValidation::Retry(Message("This will be accepted".into()))),
+          _ => Ok(InputValidation::Successful(hlist![CommonCaseParam])),
+        }
+      }
+    }
+
+    struct FinalNoConsumes;
+    impl Final for FinalNoConsumes {
+      type Consumes = HNil;
+      type FinalMessage = Message;
+
+      async fn handle(&self, _consumes: Self::Consumes) -> anyhow::Result<Message> {
+        Ok(Message("Empty good bye".into()))
+      }
+    }
+
+    pub struct Case1;
+    pub struct Case2;
+    struct TestFormSplitter;
+    impl FormSplitter for TestFormSplitter {
+      type CreateFormConsumes = HNil;
+      type ValidateInputConsumes = HNil;
+
+      type Produces = Coprod![(Case1, HList![Split1Param]), (Case2, HList![Split2Param])];
+      type Messages = Messages;
+
+      async fn create_form(&self, _consumes: Self::CreateFormConsumes) -> anyhow::Result<Message> {
+        Ok(Message("choose case".into()))
+      }
+
+      async fn handle_input(
+        &self,
+        _consumes: Self::ValidateInputConsumes,
+        user_input: String,
+        failed: FailedInputValidationAttempts,
+      ) -> anyhow::Result<InputValidation<Self::Produces, Messages>> {
+        match (user_input.as_str(), failed.0) {
+          ("retry", 0) => Ok(InputValidation::Retry(Message("retry again".into()))),
+          ("finish", _) => Ok(InputValidation::Finish(Message("finished early".into()))),
+          ("1", _) => Ok(InputValidation::Successful(Self::Produces::inject((Case1, hlist![Split1Param])))),
+          _ => Ok(InputValidation::Successful(Self::Produces::inject((Case2, hlist![Split2Param])))),
+        }
+      }
+    }
+
+    let _process = DialedSessionEntry::<Messages>::new()
+      .show(OneInputRetryForm)
+      .then(ProduceCaseParam1)
+      .show(FinishAfterInput)
+      .show_split(TestFormSplitter)
+      .case_end(Case1, |x| x.end(FinalNoConsumes))
+      .case_end(Case2, |x| x.end(FinalNoConsumes))
+      .build("", 0);
+
     async fn _shutdown_signal() {
       let ctrl_c = async {
         signal::ctrl_c().await.expect("failed to install Ctrl+C handler");
@@ -263,5 +362,40 @@ mod tests {
           _ = terminate => {},
       }
     }
+
+    // use crate::QriosUssdApiService;
+    // use qrios_api_reqwest_client::Client;
+    // use qrios_api_reqwest_client::types::*;
+    // use std::sync::Arc;
+    // use tokio::net::TcpListener;
+    // let app = qrios_api_axum_server::server::new(Arc::new(QriosUssdApiService { process }));
+    // let listener = TcpListener::bind("127.0.0.1:0").await.expect("Failed to bind random port");
+    // let addr = listener.local_addr().expect("Failed to get server local address");
+    // let _server = tokio::spawn(async move {
+    //   axum::serve(listener, app).with_graceful_shutdown(shutdown_signal()).await.expect("Failed to start server");
+    // });
+    //
+    // let resp = Client::new(format!("http://{addr}").as_str())
+    //   .post_ussdsessionevent_new(
+    //     None,
+    //     &UssdSessionEventNewSession {
+    //       app_id: "val".into(),
+    //       client_id: "val".into(),
+    //       input: UssdSessionEventNewSessionSessionInput::Dial(Dial {
+    //         type_: DialType::Dial,
+    //         shortcode_string: "*425*001*123#".to_string(),
+    //       }),
+    //       msisdn: "2341234567890".into(),
+    //       operator: UssdSessionEventNewSessionOperator::Mtn,
+    //       session_id: "val".into(),
+    //     },
+    //   )
+    //   .await
+    //   .expect("Failed to get a response from post_ussdsessionevent_new");
+    // assert!(matches!(
+    //   resp.action.clone(),
+    //   UssdAction::ShowView(ShowView{view: UssdView::InfoView(InfoView{message, ..}), ..}) if
+    //   message == "Hello from rust"
+    // ))
   }
 }
