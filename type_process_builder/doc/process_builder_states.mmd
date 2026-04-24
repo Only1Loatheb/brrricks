@@ -12,6 +12,7 @@ flowchart TD
     classDef default fill: transparent;
     classDef hidden display: none;
     classDef orangeNodeEdge stroke: orange;
+    classDef noEdge stroke: transparent, fill: black;
     Start:::hidden
     FinalizedSplitProcessSubgraph:::hidden
     subgraph FinalizedSplitProcessSubgraph
@@ -25,17 +26,19 @@ flowchart TD
     end
     FinalizedProcess(Finalized Process) -- " build " --> RunnableProcess(Runnable Process)
     Start -- " Entry Step " --> FlowingProcess(Flowing Process)
-    FlowingProcess -- " Operation Step<br>or Form Step " --> FlowingProcess
     FlowingProcess -- " Final Step " --> FinalizedProcess
     FlowingProcess -- " Splitter Step<br>or Form Splitter Step " --> FinalizedSplitProcess
+    Loop:::noEdge
+    Loop(" Operation Step<br>or Form Step ") --- FlowingProcess
+    Loop --> FlowingProcess
+    FinalizedSplitProcess -- " Flowing Process " --> FlowingSplitProcess
     FinalizedSplitProcess -- " Finalized Process " --> finalized_split_cases_final
     finalized_split_cases_final -- " unhandled cases left " --> FinalizedSplitProcess
     finalized_split_cases_final -- " all cases addressed " --> FinalizedProcess
-    FinalizedSplitProcess -- " Flowing Process " --> FlowingSplitProcess
     FlowingSplitProcess -- " Finalized Process<br>or Flowing Process " --> flowing_split_cases
     flowing_split_cases -- " unhandled cases left " --> FlowingSplitProcess
     flowing_split_cases -- " all cases addressed " --> FlowingProcess
-    Start ~~~ FlowingSplitProcess
+    Start ~~~ Loop
     click FlowingSplitProcess "https://github.com/Only1Loatheb/brrricks/blob/master/type_process_builder/src/builder/flowing_split_process.rs"
     click FlowingProcess "https://github.com/Only1Loatheb/brrricks/blob/master/type_process_builder/src/builder/flowing_process.rs"
     click FinalizedSplitProcess "https://github.com/Only1Loatheb/brrricks/blob/master/type_process_builder/src/builder/finalized_split_process.rs"
