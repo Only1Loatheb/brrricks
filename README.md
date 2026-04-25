@@ -2,7 +2,7 @@
 
 Type-safe process modelling library
 
-## Concepts
+## Core concepts
 
 **Step** is a unit of execution. Each step belongs to one of the
 [following archetypes](type_process_builder/src/step.rs): `Entry`, `Operation`, `Form`, `Splitter`, `FormSplitter`, or `Final`.
@@ -12,7 +12,7 @@ early termination paths.
 
 **Parameter** (param) is a value passed between steps and persisted across user interactions within the same session.
 
-## Goals
+## Project goals
 
 Process implemented with this library has the following invariants enforced at **compile-time**:
 
@@ -21,7 +21,40 @@ Process implemented with this library has the following invariants enforced at *
 - every branch introduced by a split step must have a corresponding continuation defined,
 - once a parameter is produced, its value cannot be overwritten in subsequent steps and consumed later.
 
-## Example
+## Simple explanation
+
+Imagine you're creating a _Choose Your Own Adventure_ book:
+
+> “If you pick A, go to page 5. If you pick B, go to page 10.”
+
+This library is like a guide that helps you build that kind of story in a clear and structured way.<br/>
+It helps you organize the steps into a coherent story.<br/>
+Thanks to it, you can be confident that your game is logical, complete, and free from certain kinds of issues.
+
+### How is the story built?
+
+* Create a proper introduction. It will be an **entry** point to the story.
+* Continue the story using various question **forms** and action **operations**.
+* Introduce a **form splitter** to let the reader choose a path, go left or right.
+* Face the reader with consequences of their previous actions.<br/>Decide the story continuation path with a **splitter**.
+* And at the end, there must always be a proper **final**e!
+
+### What does the tool take care of?
+
+* Nothing appears "out of nowhere". The reader must collect an item or witness something before it is required later in the story.
+* The story won't make the reader collect the same item twice or witness the same event more than once.
+* Every choice leads somewhere, there are no missing pages. 
+* Every story always has a proper ending.
+* It’s always clear where the reader left off.
+* The story can include branching paths and decisions.
+
+### What still needs to be decided?
+
+* What the interaction looks like (what the reader sees and what they respond with)
+* What information you want to remember about the user and the system across the interactions (session context)
+* Where that information is stored between the interactions
+
+## Code example
 
 The following flowchart illustrates an example process:
 
@@ -157,7 +190,7 @@ To run the example process in your terminal, execute the following command:
 cargo run
 ```
 
-## Brrricks app session flow
+## Typical USSD service interaction flow
 
 ```mermaid
 sequenceDiagram

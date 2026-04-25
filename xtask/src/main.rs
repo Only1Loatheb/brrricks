@@ -33,7 +33,7 @@ fn update_readme(root: &PathBuf) {
   update_diagram_in_readme(
     &root.join("type_process_builder/doc/brrricks_app_session_flow.mmd"),
     &root.join("README.md"),
-    "## Brrricks app session flow",
+    "## Typical USSD service interaction flow",
   );
   update_diagram_in_readme(
     &root.join("type_process_builder/doc/process_builder_states.mmd"),
