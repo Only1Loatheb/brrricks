@@ -7,8 +7,11 @@ use typenum::Unsigned;
 
 pub mod clone_just;
 pub mod concat;
+pub mod contains;
+pub mod filter;
 pub mod intersect;
 pub mod transform;
+pub mod union;
 
 /// clone (required by run method) should be used in brick instead
 /// Use [typenum::op] to generate UID if the desired typenum const is missing.
