@@ -10,17 +10,22 @@ Type-safe process modelling library
 **Process** is a composition of steps with a defined execution order, including conditional branches and
 early termination paths.
 
-**Parameter** (param) is a value passed between steps and persisted across user interactions within the same session.
+**Parameter** (param) is a value produced by a step and carried forward across subsequent steps within the same process execution.
+Same process execution can span across multiple user interactions.
 
 ## Project goals
 
 Process implemented with this library has the following invariants enforced at **compile-time**:
 
-- each step may only consume parameters that are known to be produced earlier in the process,
+- each step may only consume parameters that are guaranteed to be produced earlier in the process,
 - all execution paths must terminate in a final step,
 - every branch introduced by a split step must have a corresponding continuation defined,
+- once a parameter is produced in every execution path, it cannot be overwritten in subsequent steps if it is consumed later.
+  If a parameter value is present only in a subset of paths, it is removed from the session context
+  to guarantee that downstream steps operate only on parameters that are present in all incoming paths.
+  Removing the parameter from the session context allows reusing it in later in the process,
+  but parameter store implementation is required to remove the parameter from cache if it is removed from the session context.
 
-[//]: # (- once a parameter is produced, its value cannot be overwritten in subsequent steps and consumed later.)
 ## Simple explanation
 
 Imagine you're creating a _Choose Your Own Adventure_ book:
@@ -42,12 +47,12 @@ Thanks to it, you can be confident that your game is logical, complete, and free
 ### What does the tool take care of?
 
 * Nothing appears "out of nowhere". The reader must collect an item or witness something before it is required later in the story.
-* Every choice leads somewhere, there are no missing pages. 
+* Every choice leads somewhere, there are no missing pages.
 * Every story always has a proper ending.
 * It’s always clear where the reader left off.
 * The story can include branching paths and decisions.
+* The story won’t require the reader to collect the same item twice unless it is possible to reach that point in the story without it.
 
-[//]: # (* The story won't make the reader collect the same item twice or witness the same event more than once.)
 ### What still needs to be decided?
 
 * What the interaction looks like (what the reader sees and what they respond with)

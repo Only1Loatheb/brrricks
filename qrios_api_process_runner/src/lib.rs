@@ -10,6 +10,8 @@ use qrios_api_axum_server::apis::developers_app_endpoints::{
 use qrios_api_axum_server::models::*;
 use serde_value::Value;
 use sqlx::PgPool;
+use std::collections::HashSet;
+use std::ops::Not;
 use type_process_builder::builder::{
   FinalizedProcess, ParamUID, PreviousRunYieldedAt, RunOutcome, RunnableProcess, StepIndex,
 };
@@ -90,19 +92,26 @@ impl<Process: FinalizedProcess<Messages = Messages> + Sync>
       get_session_context(&self.pool, &self.get_session_context_query, session_id, &self.ordered_all_unique_param_uids)
         .await
         .map_err(|_| ())?;
+    let already_stored_params = session_context.iter().map(|x| x.0).collect::<HashSet<_>>();
     let run_result = self
       .process
       .resume_run(session_context, previous_run_yielded_at, user_input, failed_input_validation_attempts)
       .await;
     match run_result {
       Ok(RunOutcome::Yield(message, session_context, current_run_yielded_at)) => {
+        let session_context_param_ids = session_context.iter().map(|x| x.0).collect::<HashSet<_>>();
+        let params_to_store =
+          session_context.into_iter().filter(|x| already_stored_params.contains(&x.0).not()).collect::<Vec<_>>();
+        let params_to_remove =
+          already_stored_params.into_iter().filter(|x| session_context_param_ids.contains(x).not()).collect::<Vec<_>>();
         let id = update_session_context(
           &self.pool,
           &self.process,
           session_id,
           current_run_yielded_at,
           FailedInputValidationAttempts(0),
-          &session_context, // you can currently overwrite params with split and later merge
+          params_to_store,
+          params_to_remove,
         )
         .await
         .map_err(|_| ())?;

@@ -153,24 +153,29 @@ pub async fn update_session_context<Process: FinalizedProcess>(
   id: i64,
   current_run_yielded_at: CurrentRunYieldedAt,
   failed_input_validation_attempts: FailedInputValidationAttempts,
-  session_context: &[(u32, Value)],
+  params_to_store: Vec<(u32, Value)>,
+  params_to_remove: Vec<u32>,
 ) -> Result<(), sqlx::Error> {
   let mut assignments =
     vec!["previous_run_yielded_at = $1".to_string(), "failed_input_validation_attempts = $2".to_string()];
 
-  for (i, (col, _)) in session_context.iter().enumerate() {
+  for (i, (col, _)) in params_to_store.iter().enumerate() {
     assignments.push(format!("\"{}\" = ${}", col, i + 3));
+  }
+
+  for col in &params_to_remove {
+    assignments.push(format!("\"{}\" = NULL", col));
   }
 
   let table_name = table_name(process);
 
-  let where_placeholder = session_context.len() + 3;
+  let where_placeholder = params_to_store.len() + 3;
 
   let sql = format!("UPDATE {table_name} SET {} WHERE id = ${};", assignments.join(", "), where_placeholder);
 
   let mut query = sqlx::query(&sql).bind(current_run_yielded_at.0).bind(failed_input_validation_attempts.0 as i16);
 
-  for (_, value) in session_context {
+  for (_, value) in params_to_store {
     query = query.bind(sqlx::types::Json(value));
   }
 
