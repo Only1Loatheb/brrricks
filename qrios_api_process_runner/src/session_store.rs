@@ -163,6 +163,10 @@ pub async fn update_session_context<Process: FinalizedProcess>(
     assignments.push(format!("\"{}\" = ${}", col, i + 3));
   }
 
+  // We need to remove stale value so the column will be interpreted as unset when determining already_stored_params
+  // in the next session interaction.
+  // Clearing params missing from session context is necessary when using the same param in split case and reusing it
+  // after multiple execution path join into common continuation.
   for col in &params_to_remove {
     assignments.push(format!("\"{}\" = NULL", col));
   }
