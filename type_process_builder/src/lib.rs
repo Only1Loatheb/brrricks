@@ -533,6 +533,7 @@ mod tests {
     )
     .await;
     test_process_messages(&process, vec!["*123#", "choose case", "finish", "finished early"]).await;
+    test_process_messages(&process, vec!["*123#", "choose case", "2", "Empty good bye"]).await;
   }
 
   #[tokio::test]
