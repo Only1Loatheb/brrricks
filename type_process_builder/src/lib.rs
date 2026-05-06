@@ -1318,6 +1318,55 @@ mod tests {
     test_process_messages(&process, vec!["*123#", "Empty good bye"]).await;
   }
 
+  #[tokio::test]
+  async fn test_select_flowing_case_after_finalized_case_yield() {
+    let process = ExtractMsisdnOperatorAndShortcodeString
+      .split(SelectSecondOfTwoCases)
+      .case_end(Case1, |x| x.end(FinalNoConsumes))
+      .case_via(Case2, |x| x.show(NoOpForm).then(ProduceCaseParam2))
+      .end(FinalNoConsumes)
+      .build("", 0);
+
+    test_process_messages(&process, vec!["*123#", "Straight to trash", "anything", "Empty good bye"]).await;
+  }
+
+  #[tokio::test]
+  async fn test_retry_in_case_2_then_resume_in_mixed_split() {
+    let process = ExtractMsisdnOperatorAndShortcodeString
+      .split(SelectSecondOfThreeCases)
+      .case_end(Case1, |x| x.end(FinalNoConsumes))
+      .case_via(Case2, |x| x.show(RetryOnceForm).then(ProduceCaseParam2))
+      .case_end(Case3, |x| x.end(FinalNoConsumes))
+      .end(FinalNoConsumes)
+      .build("", 0);
+
+    test_process_messages(&process, vec!["*123#", "Retry once", "retry", "Try again", "accept", "Empty good bye"]).await;
+  }
+
+  #[tokio::test]
+  async fn test_yield_in_case_1_then_resume_in_mixed_split() {
+    let process = ExtractMsisdnOperatorAndShortcodeString
+      .split(SelectFirstOfTwoCases)
+      .case_via(Case1, |x| x.show(NoOpForm).then(ProduceCaseParam1))
+      .case_end(Case2, |x| x.end(FinalNoConsumes))
+      .end(FinalNoConsumes)
+      .build("", 0);
+
+    test_process_messages(&process, vec!["*123#", "Straight to trash", "anything", "Empty good bye"]).await;
+  }
+
+  #[tokio::test]
+  async fn test_retry_in_case_1_then_resume_in_mixed_split() {
+    let process = ExtractMsisdnOperatorAndShortcodeString
+      .split(SelectFirstOfTwoCases)
+      .case_via(Case1, |x| x.show(RetryOnceForm).then(ProduceCaseParam1))
+      .case_end(Case2, |x| x.end(FinalNoConsumes))
+      .end(FinalNoConsumes)
+      .build("", 0);
+
+    test_process_messages(&process, vec!["*123#", "Retry once", "retry", "Try again", "accept", "Empty good bye"]).await;
+  }
+
   async fn test_process_messages(
     process: &RunnableProcess<impl FinalizedProcess<Messages = Messages>>,
     messages: Vec<&str>,
