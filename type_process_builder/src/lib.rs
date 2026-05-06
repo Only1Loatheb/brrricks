@@ -303,6 +303,20 @@ mod tests {
     }
   }
 
+  struct NoOpOperation;
+  impl Operation for NoOpOperation {
+    type Consumes = HNil;
+    type Produces = HNil;
+    type FinalMessage = Message;
+
+    async fn handle(
+      &self,
+      _consumes: Self::Consumes,
+    ) -> anyhow::Result<OperationOutcome<Self::Produces, Self::FinalMessage>> {
+      Ok(OperationOutcome::Successful(HNil))
+    }
+  }
+
   struct FinishEarlyOperation;
   impl Operation for FinishEarlyOperation {
     type Consumes = HNil;
@@ -1401,6 +1415,37 @@ mod tests {
       .build("", 0);
 
     test_process_messages(&process, vec!["*123#", "Retry once", "retry", "Try again", "accept", "Empty good bye"]).await;
+  }
+
+  #[tokio::test]
+  async fn test_nested_split_run_subprocess_new() {
+    let process = ExtractMsisdnOperatorAndShortcodeString
+      .split(SelectFirstOfTwoCases)
+      .case_end(Case1, |x| {
+        x.split(InnerSelectCase2)
+         .case_end(InnerCase1, |y| y.end(FinalNoConsumes))
+         .case_end(InnerCase2, |y| y.end(FinalNoConsumes))
+      })
+      .case_end(Case2, |x| x.end(FinalNoConsumes))
+      .build("", 0);
+
+    test_process_messages(&process, vec!["*123#", "Empty good bye"]).await;
+  }
+
+  #[tokio::test]
+  async fn test_nested_flowing_split_resume_run_new() {
+    let process = ExtractMsisdnOperatorAndShortcodeString
+      .split(SelectFirstOfTwoCases)
+      .case_via(Case1, |x| {
+        x.split(InnerSelectCase2)
+         .case_via(InnerCase1, |y| y.show(NoOpForm))
+         .case_via(InnerCase2, |y| y)
+      })
+      .case_via(Case2, |x| x.then(NoOpOperation))
+      .end(FinalNoConsumes)
+      .build("", 0);
+
+    test_process_messages(&process, vec!["*123#", "Straight to trash", "any", "Empty good bye"]).await;
   }
 
   async fn test_process_messages(
