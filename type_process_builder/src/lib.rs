@@ -302,6 +302,20 @@ mod tests {
     }
   }
 
+  struct FinishOperation;
+  impl Operation for FinishOperation {
+    type Consumes = HNil;
+    type Produces = HNil;
+    type FinalMessage = Message;
+
+    async fn handle(
+      &self,
+      _consumes: Self::Consumes,
+    ) -> anyhow::Result<OperationOutcome<Self::Produces, Self::FinalMessage>> {
+      Ok(OperationOutcome::Finish(Message("Operation finished".into())))
+    }
+  }
+
   fn session_init_value() -> SessionContext {
     vec![(0, Value::String("2340000000000".into())), (1, Value::String("MTN".into()))]
   }
@@ -558,6 +572,56 @@ mod tests {
       "Always finnish",
     ];
     test_process_messages(&process, messages).await;
+  }
+
+  #[tokio::test]
+  async fn test_operation_finish() {
+    let process = ExtractMsisdnOperatorAndShortcodeString.then(FinishOperation).end(FinalNoConsumes).build("", 0);
+    test_process_messages(&process, vec!["*123#", "Operation finished"]).await;
+  }
+
+  #[tokio::test]
+  async fn test_nested_split_retry_and_finish() {
+    let process = ExtractMsisdnOperatorAndShortcodeString
+      .split(SelectCase2)
+      .case_end(Case1, |x| x.end(FinalNoConsumes))
+      .case_end(Case2, |x| {
+        x.show_split(TestFormSplitter)
+          .case_end(Case1, |x| x.show(OneInputRetryForm).end(FinalNoConsumes))
+          .case_end(Case2, |x| x.end(FinalNoConsumes))
+      })
+      .build("", 0);
+
+    // Test retry inside nested split
+    test_process_messages(
+      &process,
+      vec![
+        "*123#",
+        "choose case",
+        "1",
+        "This will be discarded",
+        "10",
+        "This will be accepted",
+        "20",
+        "Empty good bye",
+      ],
+    )
+    .await;
+
+    // Test finish inside nested split
+    test_process_messages(&process, vec!["*123#", "choose case", "finish", "finished early"]).await;
+  }
+
+  #[tokio::test]
+  async fn test_three_case_split_next() {
+    let process = ExtractMsisdnOperatorAndShortcodeString
+      .split(SelectCase3)
+      .case_end(Case1, |x| x.end(FinalNoConsumes))
+      .case_end(Case2, |x| x.end(FinalNoConsumes))
+      .case_end(Case3, |x| x.end(FinalNoConsumes))
+      .build("", 0);
+
+    test_process_messages(&process, vec!["*123#", "Empty good bye"]).await;
   }
 
   async fn test_process_messages(
