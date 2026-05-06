@@ -201,6 +201,16 @@ mod tests {
     }
   }
 
+  struct InnerSelectCase1;
+  impl Splitter for InnerSelectCase1 {
+    type Consumes = HNil;
+    type Produces = Coprod![(InnerCase1, HNil), (InnerCase2, HNil)];
+
+    async fn handle(&self, _consumes: Self::Consumes) -> anyhow::Result<Self::Produces> {
+      Ok(Self::Produces::inject((InnerCase1, HNil)))
+    }
+  }
+
   struct SelectFirstOfThreeCases;
   impl Splitter for SelectFirstOfThreeCases {
     type Consumes = HNil;
@@ -1437,10 +1447,24 @@ mod tests {
     let process = ExtractMsisdnOperatorAndShortcodeString
       .split(SelectFirstOfTwoCases)
       .case_via(Case1, |x| {
-        x.split(InnerSelectCase2)
+        x.split(InnerSelectCase1)
          .case_via(InnerCase1, |y| y.show(NoOpForm))
          .case_via(InnerCase2, |y| y)
       })
+      .case_via(Case2, |x| x.then(NoOpOperation))
+      .end(FinalNoConsumes)
+      .build("", 0);
+
+    test_process_messages(&process, vec!["*123#", "Straight to trash", "any", "Empty good bye"]).await;
+  }
+
+  #[tokio::test]
+  async fn test_subprocess_resume() {
+    let process = ExtractMsisdnOperatorAndShortcodeString
+      .show(NoOpForm)
+      .then(NoOpOperation)
+      .split(SelectSecondOfTwoCases)
+      .case_via(Case1, |x| x)
       .case_via(Case2, |x| x.then(NoOpOperation))
       .end(FinalNoConsumes)
       .build("", 0);
