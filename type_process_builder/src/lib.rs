@@ -1171,6 +1171,36 @@ mod tests {
     test_process_messages(&process, vec!["*123#", "Retry once", "retry", "Try again", "accept", "Empty good bye"]).await;
   }
 
+  #[tokio::test]
+  async fn test_runnable_process_metadata() {
+    let process = ExtractMsisdnOperatorAndShortcodeString
+      .end(FinalNoConsumes)
+      .build("test_process", 123);
+
+    assert_eq!(process.get_name(), "test_process");
+    assert_eq!(process.get_version(), 123);
+  }
+
+  #[tokio::test]
+  async fn test_operation_finish_early() {
+    let process = ExtractMsisdnOperatorAndShortcodeString
+      .then(FinishEarlyOperation)
+      .end(FinalNoConsumes)
+      .build("", 0);
+
+    test_process_messages(&process, vec!["*123#", "Operation finished"]).await;
+  }
+
+  #[tokio::test]
+  async fn test_form_finish_early() {
+    let process = ExtractMsisdnOperatorAndShortcodeString
+      .show(FinishEarlyForm)
+      .end(FinalNoConsumes)
+      .build("", 0);
+
+    test_process_messages(&process, vec!["*123#", "Finish early form", "any", "Form finished"]).await;
+  }
+
   async fn test_process_messages(
     process: &RunnableProcess<impl FinalizedProcess<Messages = Messages>>,
     messages: Vec<&str>,
