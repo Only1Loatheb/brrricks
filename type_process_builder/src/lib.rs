@@ -1367,6 +1367,42 @@ mod tests {
     test_process_messages(&process, vec!["*123#", "Retry once", "retry", "Try again", "accept", "Empty good bye"]).await;
   }
 
+  #[tokio::test]
+  async fn test_yield_in_case_1_finalized_then_resume_in_mixed_split() {
+    let process = ExtractMsisdnOperatorAndShortcodeString
+      .split(SelectFirstOfTwoCases)
+      .case_end(Case1, |x| x.show(NoOpForm).end(FinalNoConsumes))
+      .case_via(Case2, |x| x.then(ProduceCaseParam2))
+      .end(FinalNoConsumes)
+      .build("", 0);
+
+    test_process_messages(&process, vec!["*123#", "Straight to trash", "anything", "Empty good bye"]).await;
+  }
+
+  #[tokio::test]
+  async fn test_finish_in_case_1_finalized_mixed_split() {
+    let process = ExtractMsisdnOperatorAndShortcodeString
+      .split(SelectFirstOfTwoCases)
+      .case_end(Case1, |x| x.then(FinishOperation).end(FinalNoConsumes))
+      .case_via(Case2, |x| x.then(ProduceCaseParam2))
+      .end(FinalNoConsumes)
+      .build("", 0);
+
+    test_process_messages(&process, vec!["*123#", "Operation finished"]).await;
+  }
+
+  #[tokio::test]
+  async fn test_retry_in_case_1_finalized_mixed_split() {
+    let process = ExtractMsisdnOperatorAndShortcodeString
+      .split(SelectFirstOfTwoCases)
+      .case_end(Case1, |x| x.show(RetryOnceForm).end(FinalNoConsumes))
+      .case_via(Case2, |x| x.then(ProduceCaseParam2))
+      .end(FinalNoConsumes)
+      .build("", 0);
+
+    test_process_messages(&process, vec!["*123#", "Retry once", "retry", "Try again", "accept", "Empty good bye"]).await;
+  }
+
   async fn test_process_messages(
     process: &RunnableProcess<impl FinalizedProcess<Messages = Messages>>,
     messages: Vec<&str>,
