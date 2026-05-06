@@ -258,6 +258,21 @@ mod tests {
     }
   }
 
+  struct SelectSecondOfFourCases;
+  impl Splitter for SelectSecondOfFourCases {
+    type Consumes = HNil;
+    type Produces = Coprod![
+      (Case1, HList![Split1Param, CommonSplitParam]),
+      (Case2, HList![Split2Param, CommonSplitParam]),
+      (Case3, HList![Split2Param, CommonSplitParam]),
+      (Case4, HList![Split2Param, CommonSplitParam]),
+    ];
+
+    async fn handle(&self, _consumes: Self::Consumes) -> anyhow::Result<Self::Produces> {
+      Ok(Self::Produces::inject((Case2, hlist!(Split2Param, CommonSplitParam))))
+    }
+  }
+
   struct SelectThirdOfFourCases;
   impl Splitter for SelectThirdOfFourCases {
     type Consumes = HNil;
@@ -270,6 +285,56 @@ mod tests {
 
     async fn handle(&self, _consumes: Self::Consumes) -> anyhow::Result<Self::Produces> {
       Ok(Self::Produces::inject((Case3, hlist!(Split2Param, CommonSplitParam))))
+    }
+  }
+
+  struct SelectFourthOfFourCases;
+  impl Splitter for SelectFourthOfFourCases {
+    type Consumes = HNil;
+    type Produces = Coprod![
+      (Case1, HList![Split1Param, CommonSplitParam]),
+      (Case2, HList![Split2Param, CommonSplitParam]),
+      (Case3, HList![Split2Param, CommonSplitParam]),
+      (Case4, HList![Split2Param, CommonSplitParam]),
+    ];
+
+    async fn handle(&self, _consumes: Self::Consumes) -> anyhow::Result<Self::Produces> {
+      Ok(Self::Produces::inject((Case4, hlist!(Split2Param, CommonSplitParam))))
+    }
+  }
+
+  struct FinishEarlyOperation;
+  impl Operation for FinishEarlyOperation {
+    type Consumes = HNil;
+    type Produces = HNil;
+    type FinalMessage = Message;
+
+    async fn handle(
+      &self,
+      _consumes: Self::Consumes,
+    ) -> anyhow::Result<OperationOutcome<Self::Produces, Self::FinalMessage>> {
+      Ok(OperationOutcome::Finish(Message("Operation finished".into())))
+    }
+  }
+
+  struct FinishEarlyForm;
+  impl Form for FinishEarlyForm {
+    type CreateFormConsumes = HNil;
+    type ValidateInputConsumes = HNil;
+    type Produces = HNil;
+    type Messages = Messages;
+
+    async fn create_form(&self, _consumes: Self::CreateFormConsumes) -> anyhow::Result<Message> {
+      Ok(Message("Finish early form".into()))
+    }
+
+    async fn handle_input(
+      &self,
+      _consumes: Self::ValidateInputConsumes,
+      _user_input: String,
+      _failed_attempts: FailedInputValidationAttempts,
+    ) -> anyhow::Result<InputValidation<Self::Produces, Messages>> {
+      Ok(InputValidation::Finish(Message("Form finished".into())))
     }
   }
 
@@ -1038,6 +1103,58 @@ mod tests {
       .build("", 0);
 
     test_process_messages(&process, vec!["*123#", "Operation finished"]).await;
+  }
+
+  #[tokio::test]
+  async fn test_select_finalized_case_after_flowing_case() {
+    let process = ExtractMsisdnOperatorAndShortcodeString
+      .split(SelectSecondOfTwoCases)
+      .case_via(Case1, |x| x.then(ProduceCaseParam1))
+      .case_end(Case2, |x| x.end(FinalNoConsumes))
+      .end(FinalNoConsumes)
+      .build("", 0);
+
+    test_process_messages(&process, vec!["*123#", "Empty good bye"]).await;
+  }
+
+  #[tokio::test]
+  async fn test_select_finalized_case_after_flowing_case_yield() {
+    let process = ExtractMsisdnOperatorAndShortcodeString
+      .split(SelectSecondOfTwoCases)
+      .case_via(Case1, |x| x.show(NoOpForm).then(ProduceCaseParam1))
+      .case_end(Case2, |x| x.end(FinalNoConsumes))
+      .end(FinalNoConsumes)
+      .build("", 0);
+
+    test_process_messages(&process, vec!["*123#", "Empty good bye"]).await;
+  }
+
+  #[tokio::test]
+  async fn test_select_case_4_after_flow_after_final() {
+    let process = ExtractMsisdnOperatorAndShortcodeString
+      .split(SelectFourthOfFourCases)
+      .case_end(Case1, |x| x.end(FinalNoConsumes))
+      .case_via(Case2, |x| x.then(ProduceCaseParam1))
+      .case_end(Case3, |x| x.end(FinalNoConsumes))
+      .case_via(Case4, |x| x.then(ProduceCaseParam1))
+      .end(FinalNoConsumes)
+      .build("", 0);
+
+    test_process_messages(&process, vec!["*123#", "Empty good bye"]).await;
+  }
+
+  #[tokio::test]
+  async fn test_select_fourth_case_in_complex_mixed_split() {
+    let process = ExtractMsisdnOperatorAndShortcodeString
+      .split(SelectFourthOfFourCases)
+      .case_end(Case1, |x| x.end(FinalNoConsumes))
+      .case_via(Case2, |x| x.then(ProduceCaseParam1))
+      .case_via(Case3, |x| x.then(ProduceCaseParam2))
+      .case_end(Case4, |x| x.end(FinalNoConsumes))
+      .end(FinalNoConsumes)
+      .build("", 0);
+
+    test_process_messages(&process, vec!["*123#", "Empty good bye"]).await;
   }
 
   #[tokio::test]
