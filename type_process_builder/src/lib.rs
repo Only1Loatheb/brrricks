@@ -1008,16 +1008,8 @@ mod tests {
       .case_end(Case3, |x| x.end(FinalNoConsumes))
       .build("", 0);
 
-    let messages = vec![
-      "*123#",
-      "Retry once",
-      "retry",
-      "Try again",
-      "accept",
-      "Straight to trash",
-      "anything",
-      "Empty good bye",
-    ];
+    let messages =
+      vec!["*123#", "Retry once", "retry", "Try again", "accept", "Straight to trash", "anything", "Empty good bye"];
     test_process_messages(&process, messages).await;
   }
 
@@ -1042,7 +1034,8 @@ mod tests {
       .case_end(Case3, |x| x.end(FinalNoConsumes))
       .build("", 0);
 
-    test_process_messages(&process, vec!["*123#", "Retry once", "retry", "Try again", "accept", "Empty good bye"]).await;
+    test_process_messages(&process, vec!["*123#", "Retry once", "retry", "Try again", "accept", "Empty good bye"])
+      .await;
   }
 
   #[tokio::test]
@@ -1112,7 +1105,8 @@ mod tests {
       .end(FinalNoConsumes)
       .build("", 0);
 
-    test_process_messages(&process, vec!["*123#", "Retry once", "retry", "Try again", "accept", "Empty good bye"]).await;
+    test_process_messages(&process, vec!["*123#", "Retry once", "retry", "Try again", "accept", "Empty good bye"])
+      .await;
   }
 
   #[tokio::test]
@@ -1192,14 +1186,13 @@ mod tests {
       .end(FinalNoConsumes)
       .build("", 0);
 
-    test_process_messages(&process, vec!["*123#", "Retry once", "retry", "Try again", "accept", "Empty good bye"]).await;
+    test_process_messages(&process, vec!["*123#", "Retry once", "retry", "Try again", "accept", "Empty good bye"])
+      .await;
   }
 
   #[tokio::test]
   async fn test_runnable_process_metadata() {
-    let process = ExtractMsisdnOperatorAndShortcodeString
-      .end(FinalNoConsumes)
-      .build("test_process", 123);
+    let process = ExtractMsisdnOperatorAndShortcodeString.end(FinalNoConsumes).build("test_process", 123);
 
     assert_eq!(process.get_name(), "test_process");
     assert_eq!(process.get_version(), 123);
@@ -1207,20 +1200,14 @@ mod tests {
 
   #[tokio::test]
   async fn test_operation_finish_early() {
-    let process = ExtractMsisdnOperatorAndShortcodeString
-      .then(FinishEarlyOperation)
-      .end(FinalNoConsumes)
-      .build("", 0);
+    let process = ExtractMsisdnOperatorAndShortcodeString.then(FinishEarlyOperation).end(FinalNoConsumes).build("", 0);
 
     test_process_messages(&process, vec!["*123#", "Operation finished"]).await;
   }
 
   #[tokio::test]
   async fn test_form_finish_early() {
-    let process = ExtractMsisdnOperatorAndShortcodeString
-      .show(FinishEarlyForm)
-      .end(FinalNoConsumes)
-      .build("", 0);
+    let process = ExtractMsisdnOperatorAndShortcodeString.show(FinishEarlyForm).end(FinalNoConsumes).build("", 0);
 
     test_process_messages(&process, vec!["*123#", "Finish early form", "any", "Form finished"]).await;
   }
@@ -1364,7 +1351,8 @@ mod tests {
       .end(FinalNoConsumes)
       .build("", 0);
 
-    test_process_messages(&process, vec!["*123#", "Retry once", "retry", "Try again", "accept", "Empty good bye"]).await;
+    test_process_messages(&process, vec!["*123#", "Retry once", "retry", "Try again", "accept", "Empty good bye"])
+      .await;
   }
 
   #[tokio::test]
@@ -1388,7 +1376,8 @@ mod tests {
       .end(FinalNoConsumes)
       .build("", 0);
 
-    test_process_messages(&process, vec!["*123#", "Retry once", "retry", "Try again", "accept", "Empty good bye"]).await;
+    test_process_messages(&process, vec!["*123#", "Retry once", "retry", "Try again", "accept", "Empty good bye"])
+      .await;
   }
 
   #[tokio::test]
@@ -1424,7 +1413,8 @@ mod tests {
       .end(FinalNoConsumes)
       .build("", 0);
 
-    test_process_messages(&process, vec!["*123#", "Retry once", "retry", "Try again", "accept", "Empty good bye"]).await;
+    test_process_messages(&process, vec!["*123#", "Retry once", "retry", "Try again", "accept", "Empty good bye"])
+      .await;
   }
 
   #[tokio::test]
@@ -1433,8 +1423,8 @@ mod tests {
       .split(SelectFirstOfTwoCases)
       .case_end(Case1, |x| {
         x.split(InnerSelectCase2)
-         .case_end(InnerCase1, |y| y.end(FinalNoConsumes))
-         .case_end(InnerCase2, |y| y.end(FinalNoConsumes))
+          .case_end(InnerCase1, |y| y.end(FinalNoConsumes))
+          .case_end(InnerCase2, |y| y.end(FinalNoConsumes))
       })
       .case_end(Case2, |x| x.end(FinalNoConsumes))
       .build("", 0);
@@ -1447,9 +1437,7 @@ mod tests {
     let process = ExtractMsisdnOperatorAndShortcodeString
       .split(SelectFirstOfTwoCases)
       .case_via(Case1, |x| {
-        x.split(InnerSelectCase1)
-         .case_via(InnerCase1, |y| y.show(NoOpForm))
-         .case_via(InnerCase2, |y| y)
+        x.split(InnerSelectCase1).case_via(InnerCase1, |y| y.show(NoOpForm)).case_via(InnerCase2, |y| y)
       })
       .case_via(Case2, |x| x.then(NoOpOperation))
       .end(FinalNoConsumes)
@@ -1470,6 +1458,21 @@ mod tests {
       .build("", 0);
 
     test_process_messages(&process, vec!["*123#", "Straight to trash", "any", "Empty good bye"]).await;
+  }
+
+  #[tokio::test]
+  async fn test_nested_finalized_split() {
+    let process = ExtractMsisdnOperatorAndShortcodeString
+      .split(SelectFirstOfTwoCases)
+      .case_end(Case1, |x| {
+        x.split(SelectFirstOfTwoCases)
+          .case_end(Case1, |y| y.end(FinalNoConsumes))
+          .case_end(Case2, |y| y.end(FinalNoConsumes))
+      })
+      .case_end(Case2, |x| x.end(FinalNoConsumes))
+      .build("", 0);
+
+    test_process_messages(&process, vec!["*123#", "Empty good bye"]).await;
   }
 
   async fn test_process_messages(
