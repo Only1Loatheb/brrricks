@@ -1266,6 +1266,58 @@ mod tests {
     test_process_messages(&process, vec!["*123#", "Straight to trash", "any", "Empty good bye"]).await;
   }
 
+  #[tokio::test]
+  async fn test_four_case_mixed_split_select_1() {
+    let process = ExtractMsisdnOperatorAndShortcodeString
+      .split(SelectFirstOfFourCases)
+      .case_via(Case1, |x| x.then(ProduceCaseParam1))
+      .case_end(Case2, |x| x.end(FinalNoConsumes))
+      .case_via(Case3, |x| x.then(ProduceCaseParam1))
+      .case_end(Case4, |x| x.end(FinalNoConsumes))
+      .end(FinalNoConsumes)
+      .build("", 0);
+    test_process_messages(&process, vec!["*123#", "Empty good bye"]).await;
+  }
+
+  #[tokio::test]
+  async fn test_four_case_mixed_split_select_2() {
+    let process = ExtractMsisdnOperatorAndShortcodeString
+      .split(SelectSecondOfFourCases)
+      .case_via(Case1, |x| x.then(ProduceCaseParam1))
+      .case_end(Case2, |x| x.end(FinalNoConsumes))
+      .case_via(Case3, |x| x.then(ProduceCaseParam1))
+      .case_end(Case4, |x| x.end(FinalNoConsumes))
+      .end(FinalNoConsumes)
+      .build("", 0);
+    test_process_messages(&process, vec!["*123#", "Empty good bye"]).await;
+  }
+
+  #[tokio::test]
+  async fn test_four_case_mixed_split_select_3() {
+    let process = ExtractMsisdnOperatorAndShortcodeString
+      .split(SelectThirdOfFourCases)
+      .case_via(Case1, |x| x.then(ProduceCaseParam1))
+      .case_end(Case2, |x| x.end(FinalNoConsumes))
+      .case_via(Case3, |x| x.then(ProduceCaseParam1))
+      .case_end(Case4, |x| x.end(FinalNoConsumes))
+      .end(FinalNoConsumes)
+      .build("", 0);
+    test_process_messages(&process, vec!["*123#", "Empty good bye"]).await;
+  }
+
+  #[tokio::test]
+  async fn test_four_case_mixed_split_select_4() {
+    let process = ExtractMsisdnOperatorAndShortcodeString
+      .split(SelectFourthOfFourCases)
+      .case_via(Case1, |x| x.then(ProduceCaseParam1))
+      .case_end(Case2, |x| x.end(FinalNoConsumes))
+      .case_via(Case3, |x| x.then(ProduceCaseParam1))
+      .case_end(Case4, |x| x.end(FinalNoConsumes))
+      .end(FinalNoConsumes)
+      .build("", 0);
+    test_process_messages(&process, vec!["*123#", "Empty good bye"]).await;
+  }
+
   async fn test_process_messages(
     process: &RunnableProcess<impl FinalizedProcess<Messages = Messages>>,
     messages: Vec<&str>,
