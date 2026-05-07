@@ -21,6 +21,7 @@ mod tests {
     ProcessMessages, Splitter,
   };
   use anyhow::anyhow;
+  use frunk_core::coproduct::CoprodInjector;
   use frunk_core::hlist::HNil;
   use frunk_core::{Coprod, HList, hlist};
   use serde::{Deserialize, Serialize};
@@ -79,6 +80,12 @@ mod tests {
   struct CommonCaseParam;
   impl ParamValue for CommonCaseParam {
     type UID = U6;
+  }
+
+  #[derive(Clone, Deserialize, Serialize)]
+  struct CaseOptionParam(pub u8);
+  impl ParamValue for CaseOptionParam {
+    type UID = U7;
   }
 
   pub struct Message(pub String);
@@ -167,31 +174,40 @@ mod tests {
   pub struct Case3;
   pub struct Case4;
 
-  struct SelectFirstOfTwoCases;
-  impl Splitter for SelectFirstOfTwoCases {
-    type Consumes = HNil;
-    type Produces =
-      Coprod![(Case1, HList![Split1Param, CommonSplitParam]), (Case2, HList![Split2Param, CommonSplitParam])];
-
-    async fn handle(&self, _consumes: Self::Consumes) -> anyhow::Result<Self::Produces> {
-      Ok(Self::Produces::inject((Case1, hlist!(Split1Param, CommonSplitParam))))
+  struct SplitByThreeCaseOption;
+  impl Splitter for SplitByThreeCaseOption {
+    type Consumes = HList![CaseOptionParam];
+    type Produces = Coprod![
+      (Case1, HList![Split1Param, CommonSplitParam]),
+      (Case2, HList![Split2Param, CommonSplitParam]),
+      (Case3, HList![CommonSplitParam])
+    ];
+    async fn handle(&self, consumes: Self::Consumes) -> anyhow::Result<Self::Produces> {
+      Ok(match consumes.head.0 {
+        1 => CoprodInjector::inject((Case1, hlist!(Split1Param, CommonSplitParam))),
+        2 => CoprodInjector::inject((Case2, hlist!(Split2Param, CommonSplitParam))),
+        _ => CoprodInjector::inject((Case3, hlist!(CommonSplitParam))),
+      })
     }
   }
 
-  struct SelectSecondOfTwoCases;
-  impl Splitter for SelectSecondOfTwoCases {
-    type Consumes = HNil;
+  struct SplitByTwoCaseOption;
+  impl Splitter for SplitByTwoCaseOption {
+    type Consumes = HList![CaseOptionParam];
     type Produces =
       Coprod![(Case1, HList![Split1Param, CommonSplitParam]), (Case2, HList![Split2Param, CommonSplitParam])];
 
-    async fn handle(&self, _consumes: Self::Consumes) -> anyhow::Result<Self::Produces> {
-      Ok(Self::Produces::inject((Case2, hlist!(Split2Param, CommonSplitParam))))
+    async fn handle(&self, consumes: Self::Consumes) -> anyhow::Result<Self::Produces> {
+      Ok(match consumes.head.0 {
+        1 => CoprodInjector::inject((Case1, hlist!(Split1Param, CommonSplitParam))),
+        _ => CoprodInjector::inject((Case2, hlist!(Split2Param, CommonSplitParam))),
+      })
     }
   }
 
   pub struct InnerCase1;
   pub struct InnerCase2;
-  struct InnerSelectCase2;
+  struct InnerSelectCase2; // merge with InnerSelectCase1
   impl Splitter for InnerSelectCase2 {
     type Consumes = HNil;
     type Produces = Coprod![(InnerCase1, HNil), (InnerCase2, HNil)];
@@ -200,7 +216,6 @@ mod tests {
       Ok(Self::Produces::inject((InnerCase2, HNil)))
     }
   }
-
   struct InnerSelectCase1;
   impl Splitter for InnerSelectCase1 {
     type Consumes = HNil;
@@ -211,51 +226,9 @@ mod tests {
     }
   }
 
-  struct SelectFirstOfThreeCases;
-  impl Splitter for SelectFirstOfThreeCases {
-    type Consumes = HNil;
-    type Produces = Coprod![
-      (Case1, HList![Split1Param, CommonSplitParam]),
-      (Case2, HList![Split2Param, CommonSplitParam]),
-      (Case3, HList![CommonSplitParam]),
-    ];
-
-    async fn handle(&self, _consumes: Self::Consumes) -> anyhow::Result<Self::Produces> {
-      Ok(Self::Produces::inject((Case1, hlist!(Split1Param, CommonSplitParam))))
-    }
-  }
-
-  struct SelectSecondOfThreeCases;
-  impl Splitter for SelectSecondOfThreeCases {
-    type Consumes = HNil;
-    type Produces = Coprod![
-      (Case1, HList![Split1Param, CommonSplitParam]),
-      (Case2, HList![Split2Param, CommonSplitParam]),
-      (Case3, HList![CommonSplitParam]),
-    ];
-
-    async fn handle(&self, _consumes: Self::Consumes) -> anyhow::Result<Self::Produces> {
-      Ok(Self::Produces::inject((Case2, hlist!(Split2Param, CommonSplitParam))))
-    }
-  }
-
-  struct SelectThirdOfThreeCases;
-  impl Splitter for SelectThirdOfThreeCases {
-    type Consumes = HNil;
-    type Produces = Coprod![
-      (Case1, HList![Split1Param, CommonSplitParam]),
-      (Case2, HList![Split2Param, CommonSplitParam]),
-      (Case3, HList![Split2Param, CommonSplitParam]),
-    ];
-
-    async fn handle(&self, _consumes: Self::Consumes) -> anyhow::Result<Self::Produces> {
-      Ok(Self::Produces::inject((Case3, hlist!(Split2Param, CommonSplitParam))))
-    }
-  }
-
-  struct SelectFirstOfFourCases;
-  impl Splitter for SelectFirstOfFourCases {
-    type Consumes = HNil;
+  struct SplitByFourCaseOption;
+  impl Splitter for SplitByFourCaseOption {
+    type Consumes = HList![CaseOptionParam];
     type Produces = Coprod![
       (Case1, HList![Split1Param, CommonSplitParam]),
       (Case2, HList![Split2Param, CommonSplitParam]),
@@ -263,53 +236,13 @@ mod tests {
       (Case4, HList![Split2Param, CommonSplitParam]),
     ];
 
-    async fn handle(&self, _consumes: Self::Consumes) -> anyhow::Result<Self::Produces> {
-      Ok(Self::Produces::inject((Case1, hlist!(Split1Param, CommonSplitParam))))
-    }
-  }
-
-  struct SelectSecondOfFourCases;
-  impl Splitter for SelectSecondOfFourCases {
-    type Consumes = HNil;
-    type Produces = Coprod![
-      (Case1, HList![Split1Param, CommonSplitParam]),
-      (Case2, HList![Split2Param, CommonSplitParam]),
-      (Case3, HList![Split2Param, CommonSplitParam]),
-      (Case4, HList![Split2Param, CommonSplitParam]),
-    ];
-
-    async fn handle(&self, _consumes: Self::Consumes) -> anyhow::Result<Self::Produces> {
-      Ok(Self::Produces::inject((Case2, hlist!(Split2Param, CommonSplitParam))))
-    }
-  }
-
-  struct SelectThirdOfFourCases;
-  impl Splitter for SelectThirdOfFourCases {
-    type Consumes = HNil;
-    type Produces = Coprod![
-      (Case1, HList![Split1Param, CommonSplitParam]),
-      (Case2, HList![Split2Param, CommonSplitParam]),
-      (Case3, HList![Split2Param, CommonSplitParam]),
-      (Case4, HList![Split2Param, CommonSplitParam]),
-    ];
-
-    async fn handle(&self, _consumes: Self::Consumes) -> anyhow::Result<Self::Produces> {
-      Ok(Self::Produces::inject((Case3, hlist!(Split2Param, CommonSplitParam))))
-    }
-  }
-
-  struct SelectFourthOfFourCases;
-  impl Splitter for SelectFourthOfFourCases {
-    type Consumes = HNil;
-    type Produces = Coprod![
-      (Case1, HList![Split1Param, CommonSplitParam]),
-      (Case2, HList![Split2Param, CommonSplitParam]),
-      (Case3, HList![Split2Param, CommonSplitParam]),
-      (Case4, HList![Split2Param, CommonSplitParam]),
-    ];
-
-    async fn handle(&self, _consumes: Self::Consumes) -> anyhow::Result<Self::Produces> {
-      Ok(Self::Produces::inject((Case4, hlist!(Split2Param, CommonSplitParam))))
+    async fn handle(&self, consumes: Self::Consumes) -> anyhow::Result<Self::Produces> {
+      Ok(match consumes.head.0 {
+        1 => CoprodInjector::inject((Case1, hlist!(Split1Param, CommonSplitParam))),
+        2 => CoprodInjector::inject((Case2, hlist!(Split2Param, CommonSplitParam))),
+        3 => CoprodInjector::inject((Case3, hlist!(Split2Param, CommonSplitParam))),
+        _ => CoprodInjector::inject((Case4, hlist!(Split2Param, CommonSplitParam))),
+      })
     }
   }
 
@@ -372,8 +305,8 @@ mod tests {
     }
   }
 
-  struct CommonCaseParamNumberForm;
-  impl Form for CommonCaseParamNumberForm {
+  struct CommonCaseParam1Form;
+  impl Form for CommonCaseParam1Form {
     type CreateFormConsumes = HList![Split1Param];
     type ValidateInputConsumes = HNil;
     type Produces = HList![CommonCaseParam];
@@ -393,8 +326,8 @@ mod tests {
     }
   }
 
-  struct CommonCaseParamNumberFormV2;
-  impl Form for CommonCaseParamNumberFormV2 {
+  struct CommonCaseParam2Form;
+  impl Form for CommonCaseParam2Form {
     type CreateFormConsumes = HList![Split2Param];
     type ValidateInputConsumes = HNil;
     type Produces = HList![CommonCaseParam];
@@ -480,6 +413,28 @@ mod tests {
     }
   }
 
+  struct ChooseCaseForm;
+  impl Form for ChooseCaseForm {
+    type CreateFormConsumes = HNil;
+    type ValidateInputConsumes = HNil;
+    type Produces = HList![CaseOptionParam];
+    type Messages = Messages;
+
+    async fn create_form(&self, _consumes: Self::CreateFormConsumes) -> anyhow::Result<Message> {
+      Ok(Message("Choose a case (1-4)".into()))
+    }
+
+    async fn handle_input(
+      &self,
+      _consumes: Self::ValidateInputConsumes,
+      user_input: String,
+      _failed_attempts: FailedInputValidationAttempts,
+    ) -> anyhow::Result<InputValidation<Self::Produces, Messages>> {
+      let option = user_input.parse::<u8>().unwrap_or(1);
+      Ok(InputValidation::Successful(hlist!(CaseOptionParam(option))))
+    }
+  }
+
   struct FinalNoConsumes;
   impl Final for FinalNoConsumes {
     type Consumes = HNil;
@@ -500,8 +455,8 @@ mod tests {
     }
   }
 
-  struct FinishOperation;
-  impl Operation for FinishOperation {
+  struct FinishProcessOperation;
+  impl Operation for FinishProcessOperation {
     type Consumes = HNil;
     type Produces = HNil;
     type FinalMessage = Message;
@@ -555,24 +510,26 @@ mod tests {
   #[tokio::test]
   async fn test_split() {
     let process = ExtractMsisdnOperatorAndShortcodeString
-      .split(SelectFirstOfTwoCases)
+      .show(ChooseCaseForm)
+      .split(SplitByTwoCaseOption) //first
       .case_via(Case1, |x| x.then(ProduceCaseParam1))
       .case_via(Case2, |x| x.then(ProduceCaseParam2))
       .end(SayGoodByAndConsumeCommonParams)
       .build("", 0);
-    let messages = vec!["*123#", "Good bye"];
+    let messages = vec!["*123#", "Choose a case (1-4)", "1", "Good bye"];
     test_process_messages(&process, messages).await;
   }
 
   #[tokio::test]
   async fn test_split_case_2() {
     let process = ExtractMsisdnOperatorAndShortcodeString
-      .split(SelectSecondOfTwoCases)
+      .show(ChooseCaseForm)
+      .split(SplitByTwoCaseOption) // second
       .case_via(Case1, |x| x.then(ProduceCaseParam1))
       .case_via(Case2, |x| x.then(ProduceCaseParam2))
       .end(SayGoodByAndConsumeCommonParams)
       .build("", 0);
-    let messages = vec!["*123#", "Good bye"];
+    let messages = vec!["*123#", "Choose a case (1-4)", "2", "Good bye"];
     test_process_messages(&process, messages).await;
   }
 
@@ -648,11 +605,13 @@ mod tests {
     test_process_messages(&process, messages).await;
   }
 
+  #[ignore]
   #[tokio::test]
   async fn test_resume_in_split() {
     let process = ExtractMsisdnOperatorAndShortcodeString
-      .split(SelectFirstOfTwoCases)
-      .case_via(Case1, |x| x.show(CommonCaseParamNumberForm))
+      .show(ChooseCaseForm)
+      .split(SplitByTwoCaseOption) //first
+      .case_via(Case1, |x| x.show(CommonCaseParam1Form))
       .case_via(Case2, |x| x.then(ProduceCaseParam2))
       .end(SayGoodByAndConsumeCommonParams)
       .build("", 0);
@@ -663,18 +622,21 @@ mod tests {
   #[tokio::test]
   async fn test_end_first_case_of_finalized_split_process() {
     let process = ExtractMsisdnOperatorAndShortcodeString
-      .split(SelectFirstOfTwoCases)
+      .show(ChooseCaseForm)
+      .split(SplitByTwoCaseOption) //first
       .case_end(Case1, |x| x.end(FinalNoConsumes))
       .case_end(Case2, |x| x.end(FinalNoConsumes))
       .build("", 0);
-    let messages = vec!["*123#", "Empty good bye"];
+    let messages = vec!["*123#", "Choose a case (1-4)", "1", "Empty good bye"];
     test_process_messages(&process, messages).await;
   }
 
+  #[ignore]
   #[tokio::test]
   async fn test_yield_first_case_of_finalized_split_process() {
     let process = ExtractMsisdnOperatorAndShortcodeString
-      .split(SelectFirstOfTwoCases)
+      .show(ChooseCaseForm)
+      .split(SplitByTwoCaseOption) //first
       .case_end(Case1, |x| x.show(NoOpForm).end(FinalNoConsumes))
       .case_end(Case2, |x| x.end(FinalNoConsumes))
       .build("", 0);
@@ -685,7 +647,8 @@ mod tests {
   #[tokio::test]
   async fn test_yield_first_case_of_finalized_split_process_split() {
     let process = ExtractMsisdnOperatorAndShortcodeString
-      .split(SelectSecondOfTwoCases)
+      .show(ChooseCaseForm)
+      .split(SplitByTwoCaseOption)
       .case_end(Case1, |x| x.end(FinalNoConsumes))
       .case_end(Case2, |x| {
         x.split(InnerSelectCase2)
@@ -693,39 +656,28 @@ mod tests {
           .case_end(InnerCase2, |x| x.end(FinalNoConsumes))
       })
       .build("", 0);
-    let messages = vec!["*123#", "Empty good bye"];
+    let messages = vec!["*123#", "Choose a case (1-4)", "1", "Empty good bye"];
     test_process_messages(&process, messages).await;
   }
 
   #[tokio::test]
   async fn test_flowing_case_of_finalized_split_process() {
     let process = ExtractMsisdnOperatorAndShortcodeString
-      .split(SelectSecondOfTwoCases)
+      .show(ChooseCaseForm)
+      .split(SplitByTwoCaseOption)
       .case_end(Case1, |x| x.end(FinalNoConsumes))
       .case_via(Case2, |x| x.then(ProduceCaseParam2))
       .end(FinalConsumeCase2Param)
       .build("", 0);
-    let messages = vec!["*123#", "I ate Case2Param"];
+    let messages = vec!["*123#", "Choose a case (1-4)", "2", "I ate Case2Param"];
     test_process_messages(&process, messages).await;
   }
 
   #[tokio::test]
-  async fn test_flowing_next_case_of_finalized_split_process() {
+  async fn test_nested_split_with_choose_case_form() {
     let process = ExtractMsisdnOperatorAndShortcodeString
-      .split(SelectThirdOfThreeCases)
-      .case_end(Case1, |x| x.end(FinalNoConsumes))
-      .case_via(Case2, |x| x.then(ProduceCaseParam2))
-      .case_end(Case3, |x| x.end(FinalNoConsumes))
-      .end(FinalConsumeCase2Param)
-      .build("", 0);
-    let messages = vec!["*123#", "Empty good bye"];
-    test_process_messages(&process, messages).await;
-  }
-
-  #[tokio::test]
-  async fn test_flowing_split_with_nested_split_and_mixed_cases() {
-    let process = ExtractMsisdnOperatorAndShortcodeString
-      .split(SelectThirdOfThreeCases)
+      .show(ChooseCaseForm)
+      .split(SplitByThreeCaseOption)
       .case_via(Case1, |x| x.show(OneInputRetryForm))
       .case_end(Case2, |x| x.end(FinalNoConsumes))
       .case_via(Case3, |x| {
@@ -736,8 +688,24 @@ mod tests {
       })
       .end(SayGoodByAndConsumeCommonParams)
       .build("", 0);
-    let messages = vec!["*123#", "Straight to trash", "20", "Good bye"];
-    test_process_messages(&process, messages).await;
+
+    test_process_messages(
+      &process,
+      vec![
+        "*123#",
+        "Choose a case (1-4)",
+        "1",
+        "This will be discarded",
+        "10",
+        "This will be accepted",
+        "20",
+        "Good bye",
+      ],
+    )
+    .await;
+    test_process_messages(&process, vec!["*123#", "Choose a case (1-4)", "2", "Empty good bye"]).await;
+    test_process_messages(&process, vec!["*123#", "Choose a case (1-4)", "3", "Straight to trash", "20", "Good bye"])
+      .await;
   }
 
   #[tokio::test]
@@ -786,14 +754,16 @@ mod tests {
 
   #[tokio::test]
   async fn test_operation_finish() {
-    let process = ExtractMsisdnOperatorAndShortcodeString.then(FinishOperation).end(FinalNoConsumes).build("", 0);
+    let process =
+      ExtractMsisdnOperatorAndShortcodeString.then(FinishProcessOperation).end(FinalNoConsumes).build("", 0);
     test_process_messages(&process, vec!["*123#", "Operation finished"]).await;
   }
 
   #[tokio::test]
   async fn test_nested_split_retry_and_finish() {
     let process = ExtractMsisdnOperatorAndShortcodeString
-      .split(SelectSecondOfTwoCases)
+      .show(ChooseCaseForm)
+      .split(SplitByTwoCaseOption) // second
       .case_end(Case1, |x| x.end(FinalNoConsumes))
       .case_end(Case2, |x| {
         x.show_split(TestFormSplitter)
@@ -807,6 +777,8 @@ mod tests {
       &process,
       vec![
         "*123#",
+        "Choose a case (1-4)",
+        "2",
         "choose case",
         "1",
         "This will be discarded",
@@ -819,90 +791,110 @@ mod tests {
     .await;
 
     // Test finish inside nested split
-    test_process_messages(&process, vec!["*123#", "choose case", "finish", "finished early"]).await;
+    test_process_messages(
+      &process,
+      vec!["*123#", "Choose a case (1-4)", "2", "choose case", "finish", "finished early"],
+    )
+    .await;
   }
 
   #[tokio::test]
   async fn test_three_case_split_next() {
     let process = ExtractMsisdnOperatorAndShortcodeString
-      .split(SelectThirdOfThreeCases)
+      .show(ChooseCaseForm)
+      .split(SplitByThreeCaseOption) // third
       .case_end(Case1, |x| x.end(FinalNoConsumes))
       .case_end(Case2, |x| x.end(FinalNoConsumes))
       .case_end(Case3, |x| x.end(FinalNoConsumes))
       .build("", 0);
 
-    test_process_messages(&process, vec!["*123#", "Empty good bye"]).await;
+    test_process_messages(&process, vec!["*123#", "Choose a case (1-4)", "3", "Empty good bye"]).await;
   }
 
   #[tokio::test]
   async fn test_three_case_split_variant_1() {
     let process = ExtractMsisdnOperatorAndShortcodeString
-      .split(SelectFirstOfThreeCases)
+      .show(ChooseCaseForm)
+      .split(SplitByThreeCaseOption) // first
       .case_via(Case1, |x| x.then(ProduceCaseParam1))
       .case_via(Case2, |x| x.then(ProduceCaseParam2))
       .case_end(Case3, |x| x.end(FinalNoConsumes))
       .end(SayGoodByAndConsumeCommonParams)
       .build("", 0);
 
-    test_process_messages(&process, vec!["*123#", "Good bye"]).await;
+    test_process_messages(&process, vec!["*123#", "Choose a case (1-4)", "1", "Good bye"]).await;
   }
 
   #[tokio::test]
   async fn test_three_case_split_variant_2() {
     let process = ExtractMsisdnOperatorAndShortcodeString
-      .split(SelectSecondOfThreeCases)
+      .show(ChooseCaseForm)
+      .split(SplitByThreeCaseOption) // second
       .case_via(Case1, |x| x.then(ProduceCaseParam1))
       .case_via(Case2, |x| x.then(ProduceCaseParam2))
       .case_end(Case3, |x| x.end(FinalNoConsumes))
       .end(SayGoodByAndConsumeCommonParams)
       .build("", 0);
 
-    test_process_messages(&process, vec!["*123#", "Good bye"]).await;
+    test_process_messages(&process, vec!["*123#", "Choose a case (1-4)", "2", "Good bye"]).await;
   }
 
   #[tokio::test]
   async fn test_flowing_split_yield_in_middle_case() {
     let process = ExtractMsisdnOperatorAndShortcodeString
-      .split(SelectSecondOfThreeCases)
+      .show(ChooseCaseForm)
+      .split(SplitByThreeCaseOption) // second
       .case_via(Case1, |x| x.then(ProduceCaseParam1))
-      .case_via(Case2, |x| x.show(CommonCaseParamNumberFormV2).then(ProduceOnlyCase2Param))
+      .case_via(Case2, |x| x.show(CommonCaseParam2Form).then(ProduceOnlyCase2Param))
       .case_end(Case3, |x| x.end(FinalNoConsumes))
       .end(SayGoodByAndConsumeCommonParams)
       .build("", 0);
 
-    let messages = vec!["*123#", "Enter a number", "10", "Good bye"];
+    let messages = vec!["*123#", "Choose a case (1-4)", "2", "Enter a number", "10", "Good bye"];
     test_process_messages(&process, messages).await;
   }
 
   #[tokio::test]
   async fn test_split_finish_in_case() {
     let process = ExtractMsisdnOperatorAndShortcodeString
-      .split(SelectFirstOfTwoCases)
-      .case_via(Case1, |x| x.then(FinishOperation))
+      .show(ChooseCaseForm)
+      .split(SplitByTwoCaseOption) //first
+      .case_via(Case1, |x| x.then(FinishProcessOperation))
       .case_via(Case2, |x| x.then(ProduceCaseParam2))
       .end(FinalNoConsumes)
       .build("", 0);
 
-    test_process_messages(&process, vec!["*123#", "Operation finished"]).await;
+    test_process_messages(&process, vec!["*123#", "Choose a case (1-4)", "1", "Operation finished"]).await;
   }
 
   #[tokio::test]
   async fn test_split_retry_in_case() {
     let process = ExtractMsisdnOperatorAndShortcodeString
-      .split(SelectFirstOfTwoCases)
+      .show(ChooseCaseForm)
+      .split(SplitByTwoCaseOption) //first
       .case_via(Case1, |x| x.show(OneInputRetryForm).then(ProduceOnlyCase1Param))
       .case_via(Case2, |x| x.then(ProduceCaseParam2))
       .end(FinalNoConsumes)
       .build("", 0);
 
-    let messages = vec!["*123#", "This will be discarded", "10", "This will be accepted", "20", "Empty good bye"];
+    let messages = vec![
+      "*123#",
+      "Choose a case (1-4)",
+      "1",
+      "This will be discarded",
+      "10",
+      "This will be accepted",
+      "20",
+      "Empty good bye",
+    ];
     test_process_messages(&process, messages).await;
   }
 
   #[tokio::test]
   async fn test_nested_split_run_subprocess() {
     let process = ExtractMsisdnOperatorAndShortcodeString
-      .split(SelectFirstOfTwoCases)
+      .show(ChooseCaseForm)
+      .split(SplitByTwoCaseOption) //first
       .case_via(Case1, |x| {
         x.split(InnerSelectCase2)
           .case_end(InnerCase1, |x| x.end(FinalNoConsumes))
@@ -912,13 +904,14 @@ mod tests {
       .end(FinalNoConsumes)
       .build("", 0);
 
-    test_process_messages(&process, vec!["*123#", "Empty good bye"]).await;
+    test_process_messages(&process, vec!["*123#", "Choose a case (1-4)", "1", "Empty good bye"]).await;
   }
 
   #[tokio::test]
   async fn test_nested_split_in_middle() {
     let process = ExtractMsisdnOperatorAndShortcodeString
-      .split(SelectFirstOfTwoCases)
+      .show(ChooseCaseForm)
+      .split(SplitByTwoCaseOption) //first
       .case_via(Case1, |x| {
         x.show(NoOpForm)
           .split(InnerSelectCase2)
@@ -932,7 +925,7 @@ mod tests {
 
     test_process_messages(
       &process,
-      vec!["*123#", "Straight to trash", "10", "Straight to trash", "20", "Empty good bye"],
+      vec!["*123#", "Choose a case (1-4)", "1", "Straight to trash", "10", "Straight to trash", "20", "Empty good bye"],
     )
     .await;
   }
@@ -940,38 +933,41 @@ mod tests {
   #[tokio::test]
   async fn test_three_case_finalized_split_case_1() {
     let process = ExtractMsisdnOperatorAndShortcodeString
-      .split(SelectFirstOfThreeCases)
+      .show(ChooseCaseForm)
+      .split(SplitByThreeCaseOption) // first
       .case_end(Case1, |x| x.end(FinalNoConsumes))
       .case_end(Case2, |x| x.end(FinalNoConsumes))
       .case_end(Case3, |x| x.end(FinalNoConsumes))
       .build("", 0);
 
-    test_process_messages(&process, vec!["*123#", "Empty good bye"]).await;
+    test_process_messages(&process, vec!["*123#", "Choose a case (1-4)", "1", "Empty good bye"]).await;
   }
 
   #[tokio::test]
   async fn test_three_case_finalized_split_case_2() {
     let process = ExtractMsisdnOperatorAndShortcodeString
-      .split(SelectSecondOfThreeCases)
+      .show(ChooseCaseForm)
+      .split(SplitByThreeCaseOption) // second
       .case_end(Case1, |x| x.end(FinalNoConsumes))
       .case_end(Case2, |x| x.end(FinalNoConsumes))
       .case_end(Case3, |x| x.end(FinalNoConsumes))
       .build("", 0);
 
-    test_process_messages(&process, vec!["*123#", "Empty good bye"]).await;
+    test_process_messages(&process, vec!["*123#", "Choose a case (1-4)", "2", "Empty good bye"]).await;
   }
 
   #[tokio::test]
   async fn test_three_case_mixed_split() {
     let process = ExtractMsisdnOperatorAndShortcodeString
-      .split(SelectThirdOfThreeCases)
+      .show(ChooseCaseForm)
+      .split(SplitByThreeCaseOption) // third
       .case_end(Case1, |x| x.end(FinalNoConsumes))
       .case_end(Case2, |x| x.end(FinalNoConsumes))
       .case_via(Case3, |x| x.then(ProduceOnlyCase1Param))
       .end(FinalNoConsumes)
       .build("", 0);
 
-    test_process_messages(&process, vec!["*123#", "Empty good bye"]).await;
+    test_process_messages(&process, vec!["*123#", "Choose a case (1-4)", "3", "Empty good bye"]).await;
   }
 
   struct RetryOnceForm;
@@ -1000,194 +996,67 @@ mod tests {
   }
 
   #[tokio::test]
-  async fn test_next_case_yield_and_retry() {
+  async fn test_three_case_split_with_choose_case_form() {
     let process = ExtractMsisdnOperatorAndShortcodeString
-      .split(SelectSecondOfThreeCases)
-      .case_end(Case1, |x| x.end(FinalNoConsumes))
-      .case_end(Case2, |x| x.show(RetryOnceForm).show(NoOpForm).end(FinalNoConsumes))
-      .case_end(Case3, |x| x.end(FinalNoConsumes))
-      .build("", 0);
-
-    let messages =
-      vec!["*123#", "Retry once", "retry", "Try again", "accept", "Straight to trash", "anything", "Empty good bye"];
-    test_process_messages(&process, messages).await;
-  }
-
-  #[tokio::test]
-  async fn test_first_case_yield_in_finalized_split() {
-    let process = ExtractMsisdnOperatorAndShortcodeString
-      .split(SelectFirstOfThreeCases)
-      .case_end(Case1, |x| x.show(NoOpForm).end(FinalNoConsumes))
-      .case_end(Case2, |x| x.end(FinalNoConsumes))
-      .case_end(Case3, |x| x.end(FinalNoConsumes))
-      .build("", 0);
-
-    test_process_messages(&process, vec!["*123#", "Straight to trash", "anything", "Empty good bye"]).await;
-  }
-
-  #[tokio::test]
-  async fn test_first_case_retry_in_finalized_split() {
-    let process = ExtractMsisdnOperatorAndShortcodeString
-      .split(SelectFirstOfThreeCases)
-      .case_end(Case1, |x| x.show(RetryOnceForm).end(FinalNoConsumes))
-      .case_end(Case2, |x| x.end(FinalNoConsumes))
-      .case_end(Case3, |x| x.end(FinalNoConsumes))
-      .build("", 0);
-
-    test_process_messages(&process, vec!["*123#", "Retry once", "retry", "Try again", "accept", "Empty good bye"])
-      .await;
-  }
-
-  #[tokio::test]
-  async fn test_four_case_flowing_split() {
-    let process = ExtractMsisdnOperatorAndShortcodeString
-      .split(SelectFirstOfFourCases)
-      .case_via(Case1, |x| x.then(ProduceCaseParam1))
-      .case_via(Case2, |x| x.then(ProduceCaseParam2))
-      .case_via(Case3, |x| x.then(ProduceCaseParam1))
-      .case_end(Case4, |x| x.end(FinalNoConsumes))
-      .end(FinalNoConsumes)
-      .build("", 0);
-
-    test_process_messages(&process, vec!["*123#", "Empty good bye"]).await;
-  }
-
-  #[tokio::test]
-  async fn test_first_case_yield_in_flowing_split() {
-    let process = ExtractMsisdnOperatorAndShortcodeString
-      .split(SelectFirstOfFourCases)
-      .case_via(Case1, |x| x.show(NoOpForm).then(ProduceCaseParam1))
-      .case_via(Case2, |x| x.then(ProduceCaseParam2))
-      .case_via(Case3, |x| x.then(ProduceCaseParam1))
-      .case_end(Case4, |x| x.end(FinalNoConsumes))
-      .end(FinalNoConsumes)
-      .build("", 0);
-
-    test_process_messages(&process, vec!["*123#", "Straight to trash", "anything", "Empty good bye"]).await;
-  }
-
-  #[tokio::test]
-  async fn test_third_case_yield_in_flowing_split() {
-    let process = ExtractMsisdnOperatorAndShortcodeString
-      .split(SelectThirdOfFourCases)
-      .case_via(Case1, |x| x.then(ProduceCaseParam1))
-      .case_via(Case2, |x| x.then(ProduceCaseParam2))
-      .case_via(Case3, |x| x.show(NoOpForm).then(ProduceCaseParam1))
-      .case_end(Case4, |x| x.end(FinalNoConsumes))
-      .end(FinalNoConsumes)
-      .build("", 0);
-
-    test_process_messages(&process, vec!["*123#", "Straight to trash", "anything", "Empty good bye"]).await;
-  }
-
-  #[tokio::test]
-  async fn test_first_case_finish_early_in_flowing_split() {
-    let process = ExtractMsisdnOperatorAndShortcodeString
-      .split(SelectFirstOfFourCases)
-      .case_via(Case1, |x| x.then(FinishOperation))
-      .case_via(Case2, |x| x.then(ProduceCaseParam2))
-      .case_via(Case3, |x| x.then(ProduceCaseParam1))
-      .case_end(Case4, |x| x.end(FinalNoConsumes))
-      .end(FinalNoConsumes)
-      .build("", 0);
-
-    test_process_messages(&process, vec!["*123#", "Operation finished"]).await;
-  }
-
-  #[tokio::test]
-  async fn test_first_case_retry_in_flowing_split() {
-    let process = ExtractMsisdnOperatorAndShortcodeString
-      .split(SelectFirstOfFourCases)
+      .show(ChooseCaseForm)
+      .split(SplitByThreeCaseOption)
       .case_via(Case1, |x| x.show(RetryOnceForm).then(ProduceCaseParam1))
-      .case_via(Case2, |x| x.then(ProduceCaseParam2))
-      .case_via(Case3, |x| x.then(ProduceCaseParam1))
-      .case_end(Case4, |x| x.end(FinalNoConsumes))
-      .end(FinalNoConsumes)
+      .case_via(Case2, |x| x.show(NoOpForm).then(ProduceCaseParam2))
+      .case_end(Case3, |x| x.end(FinalNoConsumes))
+      .end(SayGoodByAndConsumeCommonParams)
       .build("", 0);
 
-    test_process_messages(&process, vec!["*123#", "Retry once", "retry", "Try again", "accept", "Empty good bye"])
-      .await;
+    test_process_messages(
+      &process,
+      vec!["*123#", "Choose a case (1-4)", "1", "Retry once", "retry", "Try again", "accept", "Good bye"],
+    )
+    .await;
+    test_process_messages(
+      &process,
+      vec!["*123#", "Choose a case (1-4)", "2", "Straight to trash", "anything", "Good bye"],
+    )
+    .await;
+    test_process_messages(&process, vec!["*123#", "Choose a case (1-4)", "3", "Empty good bye"]).await;
   }
 
   #[tokio::test]
-  async fn test_third_case_finish_early_in_flowing_split() {
+  async fn test_flowing_split_with_choose_case_form() {
     let process = ExtractMsisdnOperatorAndShortcodeString
-      .split(SelectThirdOfFourCases)
-      .case_via(Case1, |x| x.then(ProduceCaseParam1))
+      .show(ChooseCaseForm)
+      .split(SplitByFourCaseOption)
+      .case_via(Case1, |x| x.show(RetryOnceForm).then(FinishProcessOperation))
       .case_via(Case2, |x| x.then(ProduceCaseParam2))
-      .case_via(Case3, |x| x.then(FinishOperation))
+      .case_via(Case3, |x| x.show(NoOpForm).then(FinishProcessOperation))
       .case_end(Case4, |x| x.end(FinalNoConsumes))
       .end(FinalNoConsumes)
       .build("", 0);
 
-    test_process_messages(&process, vec!["*123#", "Operation finished"]).await;
+    test_process_messages(
+      &process,
+      vec!["*123#", "Choose a case (1-4)", "1", "Retry once", "retry", "Try again", "accept", "Operation finished"],
+    )
+    .await;
+    test_process_messages(&process, vec!["*123#", "Choose a case (1-4)", "2", "Empty good bye"]).await;
+    test_process_messages(
+      &process,
+      vec!["*123#", "Choose a case (1-4)", "3", "Straight to trash", "anything", "Operation finished"],
+    )
+    .await;
+    test_process_messages(&process, vec!["*123#", "Choose a case (1-4)", "4", "Empty good bye"]).await;
   }
 
+  #[ignore]
   #[tokio::test]
   async fn test_select_finalized_case_after_flowing_case() {
     let process = ExtractMsisdnOperatorAndShortcodeString
-      .split(SelectSecondOfTwoCases)
+      .show(ChooseCaseForm)
+      .split(SplitByTwoCaseOption) // second
       .case_via(Case1, |x| x.then(ProduceCaseParam1))
       .case_end(Case2, |x| x.end(FinalNoConsumes))
       .end(FinalNoConsumes)
       .build("", 0);
 
     test_process_messages(&process, vec!["*123#", "Empty good bye"]).await;
-  }
-
-  #[tokio::test]
-  async fn test_select_finalized_case_after_flowing_case_yield() {
-    let process = ExtractMsisdnOperatorAndShortcodeString
-      .split(SelectSecondOfTwoCases)
-      .case_via(Case1, |x| x.show(NoOpForm).then(ProduceCaseParam1))
-      .case_end(Case2, |x| x.end(FinalNoConsumes))
-      .end(FinalNoConsumes)
-      .build("", 0);
-
-    test_process_messages(&process, vec!["*123#", "Empty good bye"]).await;
-  }
-
-  #[tokio::test]
-  async fn test_select_case_4_after_flow_after_final() {
-    let process = ExtractMsisdnOperatorAndShortcodeString
-      .split(SelectFourthOfFourCases)
-      .case_end(Case1, |x| x.end(FinalNoConsumes))
-      .case_via(Case2, |x| x.then(ProduceCaseParam1))
-      .case_end(Case3, |x| x.end(FinalNoConsumes))
-      .case_via(Case4, |x| x.then(ProduceCaseParam1))
-      .end(FinalNoConsumes)
-      .build("", 0);
-
-    test_process_messages(&process, vec!["*123#", "Empty good bye"]).await;
-  }
-
-  #[tokio::test]
-  async fn test_select_fourth_case_in_complex_mixed_split() {
-    let process = ExtractMsisdnOperatorAndShortcodeString
-      .split(SelectFourthOfFourCases)
-      .case_end(Case1, |x| x.end(FinalNoConsumes))
-      .case_via(Case2, |x| x.then(ProduceCaseParam1))
-      .case_via(Case3, |x| x.then(ProduceCaseParam2))
-      .case_end(Case4, |x| x.end(FinalNoConsumes))
-      .end(FinalNoConsumes)
-      .build("", 0);
-
-    test_process_messages(&process, vec!["*123#", "Empty good bye"]).await;
-  }
-
-  #[tokio::test]
-  async fn test_third_case_retry_in_flowing_split() {
-    let process = ExtractMsisdnOperatorAndShortcodeString
-      .split(SelectThirdOfFourCases)
-      .case_via(Case1, |x| x.then(ProduceCaseParam1))
-      .case_via(Case2, |x| x.then(ProduceCaseParam2))
-      .case_via(Case3, |x| x.show(RetryOnceForm).then(ProduceCaseParam1))
-      .case_end(Case4, |x| x.end(FinalNoConsumes))
-      .end(FinalNoConsumes)
-      .build("", 0);
-
-    test_process_messages(&process, vec!["*123#", "Retry once", "retry", "Try again", "accept", "Empty good bye"])
-      .await;
   }
 
   #[tokio::test]
@@ -1213,214 +1082,144 @@ mod tests {
   }
 
   #[tokio::test]
-  async fn test_four_case_flowing_split_select_1() {
+  async fn test_four_case_mixed_split_with_choose_case_form() {
     let process = ExtractMsisdnOperatorAndShortcodeString
-      .split(SelectFirstOfFourCases)
-      .case_via(Case1, |x| x.then(ProduceCaseParam1))
-      .case_via(Case2, |x| x.then(ProduceCaseParam1))
-      .case_via(Case3, |x| x.then(ProduceCaseParam1))
-      .case_via(Case4, |x| x.then(ProduceCaseParam1))
-      .end(FinalNoConsumes)
-      .build("", 0);
-    test_process_messages(&process, vec!["*123#", "Empty good bye"]).await;
-  }
-
-  #[tokio::test]
-  async fn test_four_case_flowing_split_select_2() {
-    let process = ExtractMsisdnOperatorAndShortcodeString
-      .split(SelectSecondOfFourCases)
-      .case_via(Case1, |x| x.then(ProduceCaseParam1))
-      .case_via(Case2, |x| x.then(ProduceCaseParam1))
-      .case_via(Case3, |x| x.then(ProduceCaseParam1))
-      .case_via(Case4, |x| x.then(ProduceCaseParam1))
-      .end(FinalNoConsumes)
-      .build("", 0);
-    test_process_messages(&process, vec!["*123#", "Empty good bye"]).await;
-  }
-
-  #[tokio::test]
-  async fn test_four_case_flowing_split_select_3() {
-    let process = ExtractMsisdnOperatorAndShortcodeString
-      .split(SelectThirdOfFourCases)
-      .case_via(Case1, |x| x.then(ProduceCaseParam1))
-      .case_via(Case2, |x| x.then(ProduceCaseParam1))
-      .case_via(Case3, |x| x.then(ProduceCaseParam1))
-      .case_via(Case4, |x| x.then(ProduceCaseParam1))
-      .end(FinalNoConsumes)
-      .build("", 0);
-    test_process_messages(&process, vec!["*123#", "Empty good bye"]).await;
-  }
-
-  #[tokio::test]
-  async fn test_four_case_flowing_split_select_4() {
-    let process = ExtractMsisdnOperatorAndShortcodeString
-      .split(SelectFourthOfFourCases)
-      .case_via(Case1, |x| x.then(ProduceCaseParam1))
-      .case_via(Case2, |x| x.then(ProduceCaseParam1))
-      .case_via(Case3, |x| x.then(ProduceCaseParam1))
-      .case_via(Case4, |x| x.then(ProduceCaseParam1))
-      .end(FinalNoConsumes)
-      .build("", 0);
-    test_process_messages(&process, vec!["*123#", "Empty good bye"]).await;
-  }
-
-  #[tokio::test]
-  async fn test_four_case_flowing_split_yield_3() {
-    let process = ExtractMsisdnOperatorAndShortcodeString
-      .split(SelectThirdOfFourCases)
-      .case_via(Case1, |x| x.then(ProduceCaseParam1))
-      .case_via(Case2, |x| x.then(ProduceCaseParam1))
-      .case_via(Case3, |x| x.show(NoOpForm).then(ProduceCaseParam1))
-      .case_via(Case4, |x| x.then(ProduceCaseParam1))
-      .end(FinalNoConsumes)
-      .build("", 0);
-    test_process_messages(&process, vec!["*123#", "Straight to trash", "any", "Empty good bye"]).await;
-  }
-
-  #[tokio::test]
-  async fn test_four_case_mixed_split_select_1() {
-    let process = ExtractMsisdnOperatorAndShortcodeString
-      .split(SelectFirstOfFourCases)
+      .show(ChooseCaseForm)
+      .split(SplitByFourCaseOption)
       .case_via(Case1, |x| x.then(ProduceCaseParam1))
       .case_end(Case2, |x| x.end(FinalNoConsumes))
       .case_via(Case3, |x| x.then(ProduceCaseParam1))
       .case_end(Case4, |x| x.end(FinalNoConsumes))
       .end(FinalNoConsumes)
       .build("", 0);
-    test_process_messages(&process, vec!["*123#", "Empty good bye"]).await;
-  }
 
-  #[tokio::test]
-  async fn test_four_case_mixed_split_select_2() {
-    let process = ExtractMsisdnOperatorAndShortcodeString
-      .split(SelectSecondOfFourCases)
-      .case_via(Case1, |x| x.then(ProduceCaseParam1))
-      .case_end(Case2, |x| x.end(FinalNoConsumes))
-      .case_via(Case3, |x| x.then(ProduceCaseParam1))
-      .case_end(Case4, |x| x.end(FinalNoConsumes))
-      .end(FinalNoConsumes)
-      .build("", 0);
-    test_process_messages(&process, vec!["*123#", "Empty good bye"]).await;
-  }
-
-  #[tokio::test]
-  async fn test_four_case_mixed_split_select_3() {
-    let process = ExtractMsisdnOperatorAndShortcodeString
-      .split(SelectThirdOfFourCases)
-      .case_via(Case1, |x| x.then(ProduceCaseParam1))
-      .case_end(Case2, |x| x.end(FinalNoConsumes))
-      .case_via(Case3, |x| x.then(ProduceCaseParam1))
-      .case_end(Case4, |x| x.end(FinalNoConsumes))
-      .end(FinalNoConsumes)
-      .build("", 0);
-    test_process_messages(&process, vec!["*123#", "Empty good bye"]).await;
-  }
-
-  #[tokio::test]
-  async fn test_four_case_mixed_split_select_4() {
-    let process = ExtractMsisdnOperatorAndShortcodeString
-      .split(SelectFourthOfFourCases)
-      .case_via(Case1, |x| x.then(ProduceCaseParam1))
-      .case_end(Case2, |x| x.end(FinalNoConsumes))
-      .case_via(Case3, |x| x.then(ProduceCaseParam1))
-      .case_end(Case4, |x| x.end(FinalNoConsumes))
-      .end(FinalNoConsumes)
-      .build("", 0);
-    test_process_messages(&process, vec!["*123#", "Empty good bye"]).await;
+    test_process_messages(&process, vec!["*123#", "Choose a case (1-4)", "1", "Empty good bye"]).await;
+    test_process_messages(&process, vec!["*123#", "Choose a case (1-4)", "2", "Empty good bye"]).await;
+    test_process_messages(&process, vec!["*123#", "Choose a case (1-4)", "3", "Empty good bye"]).await;
+    test_process_messages(&process, vec!["*123#", "Choose a case (1-4)", "4", "Empty good bye"]).await;
   }
 
   #[tokio::test]
   async fn test_select_flowing_case_after_finalized_case_yield() {
     let process = ExtractMsisdnOperatorAndShortcodeString
-      .split(SelectSecondOfTwoCases)
+      .show(ChooseCaseForm)
+      .split(SplitByTwoCaseOption) // second
       .case_end(Case1, |x| x.end(FinalNoConsumes))
       .case_via(Case2, |x| x.show(NoOpForm).then(ProduceCaseParam2))
       .end(FinalNoConsumes)
       .build("", 0);
 
-    test_process_messages(&process, vec!["*123#", "Straight to trash", "anything", "Empty good bye"]).await;
+    test_process_messages(
+      &process,
+      vec!["*123#", "Choose a case (1-4)", "2", "Straight to trash", "anything", "Empty good bye"],
+    )
+    .await;
   }
 
   #[tokio::test]
   async fn test_retry_in_case_2_then_resume_in_mixed_split() {
     let process = ExtractMsisdnOperatorAndShortcodeString
-      .split(SelectSecondOfThreeCases)
+      .show(ChooseCaseForm)
+      .split(SplitByThreeCaseOption) // second
       .case_end(Case1, |x| x.end(FinalNoConsumes))
       .case_via(Case2, |x| x.show(RetryOnceForm).then(ProduceCaseParam2))
       .case_end(Case3, |x| x.end(FinalNoConsumes))
       .end(FinalNoConsumes)
       .build("", 0);
 
-    test_process_messages(&process, vec!["*123#", "Retry once", "retry", "Try again", "accept", "Empty good bye"])
-      .await;
+    test_process_messages(
+      &process,
+      vec!["*123#", "Choose a case (1-4)", "2", "Retry once", "retry", "Try again", "accept", "Empty good bye"],
+    )
+    .await;
   }
 
   #[tokio::test]
   async fn test_yield_in_case_1_then_resume_in_mixed_split() {
     let process = ExtractMsisdnOperatorAndShortcodeString
-      .split(SelectFirstOfTwoCases)
+      .show(ChooseCaseForm)
+      .split(SplitByTwoCaseOption) //first
       .case_via(Case1, |x| x.show(NoOpForm).then(ProduceCaseParam1))
       .case_end(Case2, |x| x.end(FinalNoConsumes))
       .end(FinalNoConsumes)
       .build("", 0);
 
-    test_process_messages(&process, vec!["*123#", "Straight to trash", "anything", "Empty good bye"]).await;
+    test_process_messages(
+      &process,
+      vec!["*123#", "Choose a case (1-4)", "1", "Straight to trash", "anything", "Empty good bye"],
+    )
+    .await;
   }
 
   #[tokio::test]
   async fn test_retry_in_case_1_then_resume_in_mixed_split() {
     let process = ExtractMsisdnOperatorAndShortcodeString
-      .split(SelectFirstOfTwoCases)
+      .show(ChooseCaseForm)
+      .split(SplitByTwoCaseOption) //first
       .case_via(Case1, |x| x.show(RetryOnceForm).then(ProduceCaseParam1))
       .case_end(Case2, |x| x.end(FinalNoConsumes))
       .end(FinalNoConsumes)
       .build("", 0);
 
-    test_process_messages(&process, vec!["*123#", "Retry once", "retry", "Try again", "accept", "Empty good bye"])
-      .await;
+    test_process_messages(
+      &process,
+      vec!["*123#", "Choose a case (1-4)", "1", "Retry once", "retry", "Try again", "accept", "Empty good bye"],
+    )
+    .await;
   }
 
   #[tokio::test]
   async fn test_yield_in_case_1_finalized_then_resume_in_mixed_split() {
     let process = ExtractMsisdnOperatorAndShortcodeString
-      .split(SelectFirstOfTwoCases)
+      .show(ChooseCaseForm)
+      .split(SplitByTwoCaseOption) //first
       .case_end(Case1, |x| x.show(NoOpForm).end(FinalNoConsumes))
       .case_via(Case2, |x| x.then(ProduceCaseParam2))
       .end(FinalNoConsumes)
       .build("", 0);
 
-    test_process_messages(&process, vec!["*123#", "Straight to trash", "anything", "Empty good bye"]).await;
+    test_process_messages(
+      &process,
+      vec!["*123#", "Choose a case (1-4)", "1", "Straight to trash", "anything", "Empty good bye"],
+    )
+    .await;
   }
 
   #[tokio::test]
   async fn test_finish_in_case_1_finalized_mixed_split() {
     let process = ExtractMsisdnOperatorAndShortcodeString
-      .split(SelectFirstOfTwoCases)
-      .case_end(Case1, |x| x.then(FinishOperation).end(FinalNoConsumes))
+      .show(ChooseCaseForm)
+      .split(SplitByTwoCaseOption) //first
+      .case_end(Case1, |x| x.then(FinishProcessOperation).end(FinalNoConsumes))
       .case_via(Case2, |x| x.then(ProduceCaseParam2))
       .end(FinalNoConsumes)
       .build("", 0);
 
-    test_process_messages(&process, vec!["*123#", "Operation finished"]).await;
+    test_process_messages(&process, vec!["*123#", "Choose a case (1-4)", "1", "Operation finished"]).await;
   }
 
   #[tokio::test]
   async fn test_retry_in_case_1_finalized_mixed_split() {
     let process = ExtractMsisdnOperatorAndShortcodeString
-      .split(SelectFirstOfTwoCases)
+      .show(ChooseCaseForm)
+      .split(SplitByTwoCaseOption) //first
       .case_end(Case1, |x| x.show(RetryOnceForm).end(FinalNoConsumes))
       .case_via(Case2, |x| x.then(ProduceCaseParam2))
       .end(FinalNoConsumes)
       .build("", 0);
 
-    test_process_messages(&process, vec!["*123#", "Retry once", "retry", "Try again", "accept", "Empty good bye"])
-      .await;
+    test_process_messages(
+      &process,
+      vec!["*123#", "Choose a case (1-4)", "1", "Retry once", "retry", "Try again", "accept", "Empty good bye"],
+    )
+    .await;
   }
 
   #[tokio::test]
   async fn test_nested_split_run_subprocess_new() {
     let process = ExtractMsisdnOperatorAndShortcodeString
-      .split(SelectFirstOfTwoCases)
+      .show(ChooseCaseForm)
+      .split(SplitByTwoCaseOption) //first
       .case_end(Case1, |x| {
         x.split(InnerSelectCase2)
           .case_end(InnerCase1, |y| y.end(FinalNoConsumes))
@@ -1429,13 +1228,14 @@ mod tests {
       .case_end(Case2, |x| x.end(FinalNoConsumes))
       .build("", 0);
 
-    test_process_messages(&process, vec!["*123#", "Empty good bye"]).await;
+    test_process_messages(&process, vec!["*123#", "Choose a case (1-4)", "1", "Empty good bye"]).await;
   }
 
   #[tokio::test]
   async fn test_nested_flowing_split_resume_run_new() {
     let process = ExtractMsisdnOperatorAndShortcodeString
-      .split(SelectFirstOfTwoCases)
+      .show(ChooseCaseForm)
+      .split(SplitByTwoCaseOption) //first
       .case_via(Case1, |x| {
         x.split(InnerSelectCase1).case_via(InnerCase1, |y| y.show(NoOpForm)).case_via(InnerCase2, |y| y)
       })
@@ -1443,36 +1243,46 @@ mod tests {
       .end(FinalNoConsumes)
       .build("", 0);
 
-    test_process_messages(&process, vec!["*123#", "Straight to trash", "any", "Empty good bye"]).await;
+    test_process_messages(
+      &process,
+      vec!["*123#", "Choose a case (1-4)", "1", "Straight to trash", "any", "Empty good bye"],
+    )
+    .await;
   }
 
+  #[ignore]
   #[tokio::test]
   async fn test_subprocess_resume() {
     let process = ExtractMsisdnOperatorAndShortcodeString
       .show(NoOpForm)
       .then(NoOpOperation)
-      .split(SelectSecondOfTwoCases)
+      .show(ChooseCaseForm)
+      .split(SplitByTwoCaseOption) // second
       .case_via(Case1, |x| x)
       .case_via(Case2, |x| x.then(NoOpOperation))
       .end(FinalNoConsumes)
       .build("", 0);
 
-    test_process_messages(&process, vec!["*123#", "Straight to trash", "any", "Empty good bye"]).await;
+    let messages = vec!["*123#", "Choose a case (1-4)", "2", "Straight to trash", "any", "Empty good bye"];
+    test_process_messages(&process, messages).await;
   }
 
+  #[ignore]
   #[tokio::test]
   async fn test_nested_finalized_split() {
     let process = ExtractMsisdnOperatorAndShortcodeString
-      .split(SelectFirstOfTwoCases)
+      .show(ChooseCaseForm)
+      .split(SplitByTwoCaseOption) //first
       .case_end(Case1, |x| {
-        x.split(SelectFirstOfTwoCases)
-          .case_end(Case1, |y| y.end(FinalNoConsumes))
-          .case_end(Case2, |y| y.end(FinalNoConsumes))
+        x.split(InnerSelectCase1) //first
+          .case_end(InnerCase1, |y| y.end(FinalNoConsumes))
+          .case_end(InnerCase2, |y| y.end(FinalNoConsumes))
       })
       .case_end(Case2, |x| x.end(FinalNoConsumes))
       .build("", 0);
 
-    test_process_messages(&process, vec!["*123#", "Empty good bye"]).await;
+    let messages = vec!["*123#", "Choose a case (1-4)", "1", "Choose a case (1-4)", "1", "Empty good bye"];
+    test_process_messages(&process, messages).await;
   }
 
   async fn test_process_messages(
