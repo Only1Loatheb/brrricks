@@ -421,7 +421,7 @@ mod tests {
     type Messages = Messages;
 
     async fn create_form(&self, _consumes: Self::CreateFormConsumes) -> anyhow::Result<Message> {
-      Ok(Message("Choose a case (1-4)".into()))
+      Ok(Message("Choose a case".into()))
     }
 
     async fn handle_input(
@@ -516,7 +516,7 @@ mod tests {
       .case_via(Case2, |x| x.then(ProduceCaseParam2))
       .end(SayGoodByAndConsumeCommonParams)
       .build("", 0);
-    let messages = vec!["*123#", "Choose a case (1-4)", "1", "Good bye"];
+    let messages = vec!["*123#", "Choose a case", "1", "Good bye"];
     test_process_messages(&process, messages).await;
   }
 
@@ -529,7 +529,7 @@ mod tests {
       .case_via(Case2, |x| x.then(ProduceCaseParam2))
       .end(SayGoodByAndConsumeCommonParams)
       .build("", 0);
-    let messages = vec!["*123#", "Choose a case (1-4)", "2", "Good bye"];
+    let messages = vec!["*123#", "Choose a case", "2", "Good bye"];
     test_process_messages(&process, messages).await;
   }
 
@@ -605,7 +605,6 @@ mod tests {
     test_process_messages(&process, messages).await;
   }
 
-  #[ignore]
   #[tokio::test]
   async fn test_resume_in_split() {
     let process = ExtractMsisdnOperatorAndShortcodeString
@@ -615,7 +614,7 @@ mod tests {
       .case_via(Case2, |x| x.then(ProduceCaseParam2))
       .end(SayGoodByAndConsumeCommonParams)
       .build("", 0);
-    let messages = vec!["*123#", "Enter a number", "a number", "Good bye"];
+    let messages = vec!["*123#", "Choose a case", "1", "Enter a number", "a number", "Good bye"];
     test_process_messages(&process, messages).await;
   }
 
@@ -627,11 +626,10 @@ mod tests {
       .case_end(Case1, |x| x.end(FinalNoConsumes))
       .case_end(Case2, |x| x.end(FinalNoConsumes))
       .build("", 0);
-    let messages = vec!["*123#", "Choose a case (1-4)", "1", "Empty good bye"];
+    let messages = vec!["*123#", "Choose a case", "1", "Empty good bye"];
     test_process_messages(&process, messages).await;
   }
 
-  #[ignore]
   #[tokio::test]
   async fn test_yield_first_case_of_finalized_split_process() {
     let process = ExtractMsisdnOperatorAndShortcodeString
@@ -640,7 +638,7 @@ mod tests {
       .case_end(Case1, |x| x.show(NoOpForm).end(FinalNoConsumes))
       .case_end(Case2, |x| x.end(FinalNoConsumes))
       .build("", 0);
-    let messages = vec!["*123#", "Straight to trash", "10", "Empty good bye"];
+    let messages = vec!["*123#", "Choose a case", "1", "Straight to trash", "10", "Empty good bye"];
     test_process_messages(&process, messages).await;
   }
 
@@ -656,7 +654,7 @@ mod tests {
           .case_end(InnerCase1, |x| x.end(FinalNoConsumes))
       })
       .build("", 0);
-    let messages = vec!["*123#", "Choose a case (1-4)", "1", "Empty good bye"];
+    let messages = vec!["*123#", "Choose a case", "1", "Empty good bye"];
     test_process_messages(&process, messages).await;
   }
 
@@ -669,7 +667,7 @@ mod tests {
       .case_via(Case2, |x| x.then(ProduceCaseParam2))
       .end(FinalConsumeCase2Param)
       .build("", 0);
-    let messages = vec!["*123#", "Choose a case (1-4)", "2", "I ate Case2Param"];
+    let messages = vec!["*123#", "Choose a case", "2", "I ate Case2Param"];
     test_process_messages(&process, messages).await;
   }
 
@@ -691,21 +689,11 @@ mod tests {
 
     test_process_messages(
       &process,
-      vec![
-        "*123#",
-        "Choose a case (1-4)",
-        "1",
-        "This will be discarded",
-        "10",
-        "This will be accepted",
-        "20",
-        "Good bye",
-      ],
+      vec!["*123#", "Choose a case", "1", "This will be discarded", "10", "This will be accepted", "20", "Good bye"],
     )
     .await;
-    test_process_messages(&process, vec!["*123#", "Choose a case (1-4)", "2", "Empty good bye"]).await;
-    test_process_messages(&process, vec!["*123#", "Choose a case (1-4)", "3", "Straight to trash", "20", "Good bye"])
-      .await;
+    test_process_messages(&process, vec!["*123#", "Choose a case", "2", "Empty good bye"]).await;
+    test_process_messages(&process, vec!["*123#", "Choose a case", "3", "Straight to trash", "20", "Good bye"]).await;
   }
 
   #[tokio::test]
@@ -777,7 +765,7 @@ mod tests {
       &process,
       vec![
         "*123#",
-        "Choose a case (1-4)",
+        "Choose a case",
         "2",
         "choose case",
         "1",
@@ -791,11 +779,8 @@ mod tests {
     .await;
 
     // Test finish inside nested split
-    test_process_messages(
-      &process,
-      vec!["*123#", "Choose a case (1-4)", "2", "choose case", "finish", "finished early"],
-    )
-    .await;
+    test_process_messages(&process, vec!["*123#", "Choose a case", "2", "choose case", "finish", "finished early"])
+      .await;
   }
 
   #[tokio::test]
@@ -808,7 +793,7 @@ mod tests {
       .case_end(Case3, |x| x.end(FinalNoConsumes))
       .build("", 0);
 
-    test_process_messages(&process, vec!["*123#", "Choose a case (1-4)", "3", "Empty good bye"]).await;
+    test_process_messages(&process, vec!["*123#", "Choose a case", "3", "Empty good bye"]).await;
   }
 
   #[tokio::test]
@@ -822,7 +807,7 @@ mod tests {
       .end(SayGoodByAndConsumeCommonParams)
       .build("", 0);
 
-    test_process_messages(&process, vec!["*123#", "Choose a case (1-4)", "1", "Good bye"]).await;
+    test_process_messages(&process, vec!["*123#", "Choose a case", "1", "Good bye"]).await;
   }
 
   #[tokio::test]
@@ -836,7 +821,7 @@ mod tests {
       .end(SayGoodByAndConsumeCommonParams)
       .build("", 0);
 
-    test_process_messages(&process, vec!["*123#", "Choose a case (1-4)", "2", "Good bye"]).await;
+    test_process_messages(&process, vec!["*123#", "Choose a case", "2", "Good bye"]).await;
   }
 
   #[tokio::test]
@@ -850,7 +835,7 @@ mod tests {
       .end(SayGoodByAndConsumeCommonParams)
       .build("", 0);
 
-    let messages = vec!["*123#", "Choose a case (1-4)", "2", "Enter a number", "10", "Good bye"];
+    let messages = vec!["*123#", "Choose a case", "2", "Enter a number", "10", "Good bye"];
     test_process_messages(&process, messages).await;
   }
 
@@ -864,7 +849,7 @@ mod tests {
       .end(FinalNoConsumes)
       .build("", 0);
 
-    test_process_messages(&process, vec!["*123#", "Choose a case (1-4)", "1", "Operation finished"]).await;
+    test_process_messages(&process, vec!["*123#", "Choose a case", "1", "Operation finished"]).await;
   }
 
   #[tokio::test]
@@ -879,7 +864,7 @@ mod tests {
 
     let messages = vec![
       "*123#",
-      "Choose a case (1-4)",
+      "Choose a case",
       "1",
       "This will be discarded",
       "10",
@@ -904,7 +889,7 @@ mod tests {
       .end(FinalNoConsumes)
       .build("", 0);
 
-    test_process_messages(&process, vec!["*123#", "Choose a case (1-4)", "1", "Empty good bye"]).await;
+    test_process_messages(&process, vec!["*123#", "Choose a case", "1", "Empty good bye"]).await;
   }
 
   #[tokio::test]
@@ -925,7 +910,7 @@ mod tests {
 
     test_process_messages(
       &process,
-      vec!["*123#", "Choose a case (1-4)", "1", "Straight to trash", "10", "Straight to trash", "20", "Empty good bye"],
+      vec!["*123#", "Choose a case", "1", "Straight to trash", "10", "Straight to trash", "20", "Empty good bye"],
     )
     .await;
   }
@@ -940,7 +925,7 @@ mod tests {
       .case_end(Case3, |x| x.end(FinalNoConsumes))
       .build("", 0);
 
-    test_process_messages(&process, vec!["*123#", "Choose a case (1-4)", "1", "Empty good bye"]).await;
+    test_process_messages(&process, vec!["*123#", "Choose a case", "1", "Empty good bye"]).await;
   }
 
   #[tokio::test]
@@ -953,7 +938,7 @@ mod tests {
       .case_end(Case3, |x| x.end(FinalNoConsumes))
       .build("", 0);
 
-    test_process_messages(&process, vec!["*123#", "Choose a case (1-4)", "2", "Empty good bye"]).await;
+    test_process_messages(&process, vec!["*123#", "Choose a case", "2", "Empty good bye"]).await;
   }
 
   #[tokio::test]
@@ -967,7 +952,7 @@ mod tests {
       .end(FinalNoConsumes)
       .build("", 0);
 
-    test_process_messages(&process, vec!["*123#", "Choose a case (1-4)", "3", "Empty good bye"]).await;
+    test_process_messages(&process, vec!["*123#", "Choose a case", "3", "Empty good bye"]).await;
   }
 
   struct RetryOnceForm;
@@ -1008,15 +993,12 @@ mod tests {
 
     test_process_messages(
       &process,
-      vec!["*123#", "Choose a case (1-4)", "1", "Retry once", "retry", "Try again", "accept", "Good bye"],
+      vec!["*123#", "Choose a case", "1", "Retry once", "retry", "Try again", "accept", "Good bye"],
     )
     .await;
-    test_process_messages(
-      &process,
-      vec!["*123#", "Choose a case (1-4)", "2", "Straight to trash", "anything", "Good bye"],
-    )
-    .await;
-    test_process_messages(&process, vec!["*123#", "Choose a case (1-4)", "3", "Empty good bye"]).await;
+    test_process_messages(&process, vec!["*123#", "Choose a case", "2", "Straight to trash", "anything", "Good bye"])
+      .await;
+    test_process_messages(&process, vec!["*123#", "Choose a case", "3", "Empty good bye"]).await;
   }
 
   #[tokio::test]
@@ -1033,19 +1015,18 @@ mod tests {
 
     test_process_messages(
       &process,
-      vec!["*123#", "Choose a case (1-4)", "1", "Retry once", "retry", "Try again", "accept", "Operation finished"],
+      vec!["*123#", "Choose a case", "1", "Retry once", "retry", "Try again", "accept", "Operation finished"],
     )
     .await;
-    test_process_messages(&process, vec!["*123#", "Choose a case (1-4)", "2", "Empty good bye"]).await;
+    test_process_messages(&process, vec!["*123#", "Choose a case", "2", "Empty good bye"]).await;
     test_process_messages(
       &process,
-      vec!["*123#", "Choose a case (1-4)", "3", "Straight to trash", "anything", "Operation finished"],
+      vec!["*123#", "Choose a case", "3", "Straight to trash", "anything", "Operation finished"],
     )
     .await;
-    test_process_messages(&process, vec!["*123#", "Choose a case (1-4)", "4", "Empty good bye"]).await;
+    test_process_messages(&process, vec!["*123#", "Choose a case", "4", "Empty good bye"]).await;
   }
 
-  #[ignore]
   #[tokio::test]
   async fn test_select_finalized_case_after_flowing_case() {
     let process = ExtractMsisdnOperatorAndShortcodeString
@@ -1056,7 +1037,7 @@ mod tests {
       .end(FinalNoConsumes)
       .build("", 0);
 
-    test_process_messages(&process, vec!["*123#", "Empty good bye"]).await;
+    test_process_messages(&process, vec!["*123#", "Choose a case", "2", "Empty good bye"]).await;
   }
 
   #[tokio::test]
@@ -1093,10 +1074,10 @@ mod tests {
       .end(FinalNoConsumes)
       .build("", 0);
 
-    test_process_messages(&process, vec!["*123#", "Choose a case (1-4)", "1", "Empty good bye"]).await;
-    test_process_messages(&process, vec!["*123#", "Choose a case (1-4)", "2", "Empty good bye"]).await;
-    test_process_messages(&process, vec!["*123#", "Choose a case (1-4)", "3", "Empty good bye"]).await;
-    test_process_messages(&process, vec!["*123#", "Choose a case (1-4)", "4", "Empty good bye"]).await;
+    test_process_messages(&process, vec!["*123#", "Choose a case", "1", "Empty good bye"]).await;
+    test_process_messages(&process, vec!["*123#", "Choose a case", "2", "Empty good bye"]).await;
+    test_process_messages(&process, vec!["*123#", "Choose a case", "3", "Empty good bye"]).await;
+    test_process_messages(&process, vec!["*123#", "Choose a case", "4", "Empty good bye"]).await;
   }
 
   #[tokio::test]
@@ -1111,7 +1092,7 @@ mod tests {
 
     test_process_messages(
       &process,
-      vec!["*123#", "Choose a case (1-4)", "2", "Straight to trash", "anything", "Empty good bye"],
+      vec!["*123#", "Choose a case", "2", "Straight to trash", "anything", "Empty good bye"],
     )
     .await;
   }
@@ -1129,7 +1110,7 @@ mod tests {
 
     test_process_messages(
       &process,
-      vec!["*123#", "Choose a case (1-4)", "2", "Retry once", "retry", "Try again", "accept", "Empty good bye"],
+      vec!["*123#", "Choose a case", "2", "Retry once", "retry", "Try again", "accept", "Empty good bye"],
     )
     .await;
   }
@@ -1146,7 +1127,7 @@ mod tests {
 
     test_process_messages(
       &process,
-      vec!["*123#", "Choose a case (1-4)", "1", "Straight to trash", "anything", "Empty good bye"],
+      vec!["*123#", "Choose a case", "1", "Straight to trash", "anything", "Empty good bye"],
     )
     .await;
   }
@@ -1163,7 +1144,7 @@ mod tests {
 
     test_process_messages(
       &process,
-      vec!["*123#", "Choose a case (1-4)", "1", "Retry once", "retry", "Try again", "accept", "Empty good bye"],
+      vec!["*123#", "Choose a case", "1", "Retry once", "retry", "Try again", "accept", "Empty good bye"],
     )
     .await;
   }
@@ -1180,7 +1161,7 @@ mod tests {
 
     test_process_messages(
       &process,
-      vec!["*123#", "Choose a case (1-4)", "1", "Straight to trash", "anything", "Empty good bye"],
+      vec!["*123#", "Choose a case", "1", "Straight to trash", "anything", "Empty good bye"],
     )
     .await;
   }
@@ -1195,7 +1176,7 @@ mod tests {
       .end(FinalNoConsumes)
       .build("", 0);
 
-    test_process_messages(&process, vec!["*123#", "Choose a case (1-4)", "1", "Operation finished"]).await;
+    test_process_messages(&process, vec!["*123#", "Choose a case", "1", "Operation finished"]).await;
   }
 
   #[tokio::test]
@@ -1210,7 +1191,7 @@ mod tests {
 
     test_process_messages(
       &process,
-      vec!["*123#", "Choose a case (1-4)", "1", "Retry once", "retry", "Try again", "accept", "Empty good bye"],
+      vec!["*123#", "Choose a case", "1", "Retry once", "retry", "Try again", "accept", "Empty good bye"],
     )
     .await;
   }
@@ -1228,7 +1209,7 @@ mod tests {
       .case_end(Case2, |x| x.end(FinalNoConsumes))
       .build("", 0);
 
-    test_process_messages(&process, vec!["*123#", "Choose a case (1-4)", "1", "Empty good bye"]).await;
+    test_process_messages(&process, vec!["*123#", "Choose a case", "1", "Empty good bye"]).await;
   }
 
   #[tokio::test]
@@ -1245,14 +1226,10 @@ mod tests {
       .end(FinalNoConsumes)
       .build("", 0);
 
-    test_process_messages(
-      &process,
-      vec!["*123#", "Choose a case (1-4)", "1", "Straight to trash", "any", "Empty good bye"],
-    )
-    .await;
+    test_process_messages(&process, vec!["*123#", "Choose a case", "1", "Straight to trash", "any", "Empty good bye"])
+      .await;
   }
 
-  #[ignore]
   #[tokio::test]
   async fn test_subprocess_resume() {
     let process = ExtractMsisdnOperatorAndShortcodeString
@@ -1265,11 +1242,10 @@ mod tests {
       .end(FinalNoConsumes)
       .build("", 0);
 
-    let messages = vec!["*123#", "Choose a case (1-4)", "2", "Straight to trash", "any", "Empty good bye"];
+    let messages = vec!["*123#", "Straight to trash", "trash me babe", "Choose a case", "2", "Empty good bye"];
     test_process_messages(&process, messages).await;
   }
 
-  #[ignore]
   #[tokio::test]
   async fn test_nested_finalized_split() {
     let process = ExtractMsisdnOperatorAndShortcodeString
@@ -1283,7 +1259,7 @@ mod tests {
       .case_end(Case2, |x| x.end(FinalNoConsumes))
       .build("", 0);
 
-    let messages = vec!["*123#", "Choose a case (1-4)", "1", "Choose a case (1-4)", "1", "Empty good bye"];
+    let messages = vec!["*123#", "Choose a case", "1", "Empty good bye"];
     test_process_messages(&process, messages).await;
   }
 
