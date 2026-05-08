@@ -516,21 +516,8 @@ mod tests {
       .case_via(Case2, |x| x.then(ProduceCaseParam2))
       .end(SayGoodByAndConsumeCommonParams)
       .build("", 0);
-    let messages = vec!["*123#", "Choose a case", "1", "Good bye"];
-    test_process_messages(&process, messages).await;
-  }
-
-  #[tokio::test]
-  async fn test_split_case_2() {
-    let process = ExtractMsisdnOperatorAndShortcodeString
-      .show(ChooseCaseForm)
-      .split(SplitByTwoCaseOption)
-      .case_via(Case1, |x| x.then(ProduceCaseParam1))
-      .case_via(Case2, |x| x.then(ProduceCaseParam2))
-      .end(SayGoodByAndConsumeCommonParams)
-      .build("", 0);
-    let messages = vec!["*123#", "Choose a case", "2", "Good bye"];
-    test_process_messages(&process, messages).await;
+    test_process_messages(&process, vec!["*123#", "Choose a case", "1", "Good bye"]).await;
+    test_process_messages(&process, vec!["*123#", "Choose a case", "2", "Good bye"]).await;
   }
 
   #[tokio::test]
@@ -741,13 +728,6 @@ mod tests {
   }
 
   #[tokio::test]
-  async fn test_operation_finish() {
-    let process =
-      ExtractMsisdnOperatorAndShortcodeString.then(FinishProcessOperation).end(FinalNoConsumes).build("", 0);
-    test_process_messages(&process, vec!["*123#", "Operation finished"]).await;
-  }
-
-  #[tokio::test]
   async fn test_nested_split_retry_and_finish() {
     let process = ExtractMsisdnOperatorAndShortcodeString
       .show(ChooseCaseForm)
@@ -784,19 +764,6 @@ mod tests {
   }
 
   #[tokio::test]
-  async fn test_three_case_split_next() {
-    let process = ExtractMsisdnOperatorAndShortcodeString
-      .show(ChooseCaseForm)
-      .split(SplitByThreeCaseOption)
-      .case_end(Case1, |x| x.end(FinalNoConsumes))
-      .case_end(Case2, |x| x.end(FinalNoConsumes))
-      .case_end(Case3, |x| x.end(FinalNoConsumes))
-      .build("", 0);
-
-    test_process_messages(&process, vec!["*123#", "Choose a case", "3", "Empty good bye"]).await;
-  }
-
-  #[tokio::test]
   async fn test_three_case_split_variant_1() {
     let process = ExtractMsisdnOperatorAndShortcodeString
       .show(ChooseCaseForm)
@@ -808,19 +775,6 @@ mod tests {
       .build("", 0);
 
     test_process_messages(&process, vec!["*123#", "Choose a case", "1", "Good bye"]).await;
-  }
-
-  #[tokio::test]
-  async fn test_three_case_split_variant_2() {
-    let process = ExtractMsisdnOperatorAndShortcodeString
-      .show(ChooseCaseForm)
-      .split(SplitByThreeCaseOption)
-      .case_via(Case1, |x| x.then(ProduceCaseParam1))
-      .case_via(Case2, |x| x.then(ProduceCaseParam2))
-      .case_end(Case3, |x| x.end(FinalNoConsumes))
-      .end(SayGoodByAndConsumeCommonParams)
-      .build("", 0);
-
     test_process_messages(&process, vec!["*123#", "Choose a case", "2", "Good bye"]).await;
   }
 
@@ -926,19 +880,8 @@ mod tests {
       .build("", 0);
 
     test_process_messages(&process, vec!["*123#", "Choose a case", "1", "Empty good bye"]).await;
-  }
-
-  #[tokio::test]
-  async fn test_three_case_finalized_split_case_2() {
-    let process = ExtractMsisdnOperatorAndShortcodeString
-      .show(ChooseCaseForm)
-      .split(SplitByThreeCaseOption)
-      .case_end(Case1, |x| x.end(FinalNoConsumes))
-      .case_end(Case2, |x| x.end(FinalNoConsumes))
-      .case_end(Case3, |x| x.end(FinalNoConsumes))
-      .build("", 0);
-
     test_process_messages(&process, vec!["*123#", "Choose a case", "2", "Empty good bye"]).await;
+    test_process_messages(&process, vec!["*123#", "Choose a case", "3", "Empty good bye"]).await;
   }
 
   #[tokio::test]
@@ -963,7 +906,7 @@ mod tests {
     type Messages = Messages;
 
     async fn create_form(&self, _consumes: Self::CreateFormConsumes) -> anyhow::Result<Message> {
-      Ok(Message("Retry once".into()))
+      Ok(Message("Fancy a retry?".into()))
     }
 
     async fn handle_input(
@@ -993,7 +936,7 @@ mod tests {
 
     test_process_messages(
       &process,
-      vec!["*123#", "Choose a case", "1", "Retry once", "retry", "Try again", "accept", "Good bye"],
+      vec!["*123#", "Choose a case", "1", "Fancy a retry?", "retry", "Try again", "accept", "Good bye"],
     )
     .await;
     test_process_messages(&process, vec!["*123#", "Choose a case", "2", "Straight to trash", "anything", "Good bye"])
@@ -1015,7 +958,7 @@ mod tests {
 
     test_process_messages(
       &process,
-      vec!["*123#", "Choose a case", "1", "Retry once", "retry", "Try again", "accept", "Operation finished"],
+      vec!["*123#", "Choose a case", "1", "Fancy a retry?", "retry", "Try again", "accept", "Operation finished"],
     )
     .await;
     test_process_messages(&process, vec!["*123#", "Choose a case", "2", "Empty good bye"]).await;
@@ -1051,7 +994,6 @@ mod tests {
   #[tokio::test]
   async fn test_operation_finish_early() {
     let process = ExtractMsisdnOperatorAndShortcodeString.then(FinishEarlyOperation).end(FinalNoConsumes).build("", 0);
-
     test_process_messages(&process, vec!["*123#", "Operation finished"]).await;
   }
 
@@ -1110,7 +1052,7 @@ mod tests {
 
     test_process_messages(
       &process,
-      vec!["*123#", "Choose a case", "2", "Retry once", "retry", "Try again", "accept", "Empty good bye"],
+      vec!["*123#", "Choose a case", "2", "Fancy a retry?", "retry", "Try again", "accept", "Empty good bye"],
     )
     .await;
   }
@@ -1144,24 +1086,7 @@ mod tests {
 
     test_process_messages(
       &process,
-      vec!["*123#", "Choose a case", "1", "Retry once", "retry", "Try again", "accept", "Empty good bye"],
-    )
-    .await;
-  }
-
-  #[tokio::test]
-  async fn test_yield_in_case_1_finalized_then_resume_in_mixed_split() {
-    let process = ExtractMsisdnOperatorAndShortcodeString
-      .show(ChooseCaseForm)
-      .split(SplitByTwoCaseOption)
-      .case_end(Case1, |x| x.show(NoOpForm).end(FinalNoConsumes))
-      .case_via(Case2, |x| x.then(ProduceCaseParam2))
-      .end(FinalNoConsumes)
-      .build("", 0);
-
-    test_process_messages(
-      &process,
-      vec!["*123#", "Choose a case", "1", "Straight to trash", "anything", "Empty good bye"],
+      vec!["*123#", "Choose a case", "1", "Fancy a retry?", "retry", "Try again", "accept", "Empty good bye"],
     )
     .await;
   }
@@ -1185,15 +1110,21 @@ mod tests {
       .show(ChooseCaseForm)
       .split(SplitByTwoCaseOption)
       .case_end(Case1, |x| x.show(RetryOnceForm).end(FinalNoConsumes))
-      .case_via(Case2, |x| x.then(ProduceCaseParam2))
+      .case_via(Case2, |x| x.then(FinishProcessOperation).then(ProduceCaseParam2))
       .end(FinalNoConsumes)
       .build("", 0);
 
     test_process_messages(
       &process,
-      vec!["*123#", "Choose a case", "1", "Retry once", "retry", "Try again", "accept", "Empty good bye"],
+      vec!["*123#", "Choose a case", "1", "Fancy a retry?", "retry", "Try again", "accept", "Empty good bye"],
     )
     .await;
+    test_process_messages(
+      &process,
+      vec!["*123#", "Choose a case", "1", "Fancy a retry?", "anything", "Empty good bye"],
+    )
+    .await;
+    test_process_messages(&process, vec!["*123#", "Choose a case", "2", "Operation finished"]).await;
   }
 
   #[tokio::test]
@@ -1203,8 +1134,8 @@ mod tests {
       .split(SplitByTwoCaseOption)
       .case_end(Case1, |x| {
         x.split(InnerSelectCase(PhantomData::<B1>))
-          .case_end(InnerCase0, |y| y.end(FinalNoConsumes))
-          .case_end(InnerCase1, |y| y.end(FinalNoConsumes))
+          .case_end(InnerCase0, |x| x.end(FinalNoConsumes))
+          .case_end(InnerCase1, |x| x.end(FinalNoConsumes))
       })
       .case_end(Case2, |x| x.end(FinalNoConsumes))
       .build("", 0);
@@ -1219,8 +1150,8 @@ mod tests {
       .split(SplitByTwoCaseOption)
       .case_via(Case1, |x| {
         x.split(InnerSelectCase(PhantomData::<B0>))
-          .case_via(InnerCase0, |y| y.show(NoOpForm))
-          .case_via(InnerCase1, |y| y)
+          .case_via(InnerCase0, |x| x.show(NoOpForm))
+          .case_via(InnerCase1, |x| x)
       })
       .case_via(Case2, |x| x.then(NoOpOperation))
       .end(FinalNoConsumes)
@@ -1253,8 +1184,8 @@ mod tests {
       .split(SplitByTwoCaseOption)
       .case_end(Case1, |x| {
         x.split(InnerSelectCase(PhantomData::<B0>))
-          .case_end(InnerCase0, |y| y.end(FinalNoConsumes))
-          .case_end(InnerCase1, |y| y.end(FinalNoConsumes))
+          .case_end(InnerCase0, |x| x.end(FinalNoConsumes))
+          .case_end(InnerCase1, |x| x.end(FinalNoConsumes))
       })
       .case_end(Case2, |x| x.end(FinalNoConsumes))
       .build("", 0);
