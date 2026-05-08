@@ -12,6 +12,7 @@ pub mod step;
 #[cfg_attr(not(feature = "docs"), doc = "")]
 pub mod documentation_diagrams {}
 
+#[cfg_attr(coverage_nightly, coverage(off))]
 #[cfg(test)]
 mod tests {
   use crate::builder::*;
