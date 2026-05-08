@@ -21,11 +21,11 @@ mod tests {
     ProcessMessages, Splitter,
   };
   use anyhow::anyhow;
-  use frunk_core::coproduct::CoprodInjector;
   use frunk_core::hlist::HNil;
   use frunk_core::{Coprod, HList, hlist};
   use serde::{Deserialize, Serialize};
   use serde_value::Value;
+  use std::marker::PhantomData;
   use typenum::*;
 
   #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -184,9 +184,9 @@ mod tests {
     ];
     async fn handle(&self, consumes: Self::Consumes) -> anyhow::Result<Self::Produces> {
       Ok(match consumes.head.0 {
-        1 => CoprodInjector::inject((Case1, hlist!(Split1Param, CommonSplitParam))),
-        2 => CoprodInjector::inject((Case2, hlist!(Split2Param, CommonSplitParam))),
-        _ => CoprodInjector::inject((Case3, hlist!(CommonSplitParam))),
+        1 => Self::Produces::inject((Case1, hlist!(Split1Param, CommonSplitParam))),
+        2 => Self::Produces::inject((Case2, hlist!(Split2Param, CommonSplitParam))),
+        _ => Self::Produces::inject((Case3, hlist!(CommonSplitParam))),
       })
     }
   }
@@ -199,27 +199,27 @@ mod tests {
 
     async fn handle(&self, consumes: Self::Consumes) -> anyhow::Result<Self::Produces> {
       Ok(match consumes.head.0 {
-        1 => CoprodInjector::inject((Case1, hlist!(Split1Param, CommonSplitParam))),
-        _ => CoprodInjector::inject((Case2, hlist!(Split2Param, CommonSplitParam))),
+        1 => Self::Produces::inject((Case1, hlist!(Split1Param, CommonSplitParam))),
+        _ => Self::Produces::inject((Case2, hlist!(Split2Param, CommonSplitParam))),
       })
     }
   }
 
+  pub struct InnerCase0;
   pub struct InnerCase1;
-  pub struct InnerCase2;
-  struct InnerSelectCase2; // merge with InnerSelectCase1
-  impl Splitter for InnerSelectCase2 {
+  struct InnerSelectCase<CaseIndex: Bit>(PhantomData<CaseIndex>);
+  impl Splitter for InnerSelectCase<B0> {
     type Consumes = HNil;
-    type Produces = Coprod![(InnerCase1, HNil), (InnerCase2, HNil)];
+    type Produces = Coprod![(InnerCase0, HNil), (InnerCase1, HNil)];
 
     async fn handle(&self, _consumes: Self::Consumes) -> anyhow::Result<Self::Produces> {
-      Ok(Self::Produces::inject((InnerCase2, HNil)))
+      Ok(Self::Produces::inject((InnerCase0, HNil)))
     }
   }
-  struct InnerSelectCase1;
-  impl Splitter for InnerSelectCase1 {
+
+  impl Splitter for InnerSelectCase<B1> {
     type Consumes = HNil;
-    type Produces = Coprod![(InnerCase1, HNil), (InnerCase2, HNil)];
+    type Produces = Coprod![(InnerCase0, HNil), (InnerCase1, HNil)];
 
     async fn handle(&self, _consumes: Self::Consumes) -> anyhow::Result<Self::Produces> {
       Ok(Self::Produces::inject((InnerCase1, HNil)))
@@ -238,10 +238,10 @@ mod tests {
 
     async fn handle(&self, consumes: Self::Consumes) -> anyhow::Result<Self::Produces> {
       Ok(match consumes.head.0 {
-        1 => CoprodInjector::inject((Case1, hlist!(Split1Param, CommonSplitParam))),
-        2 => CoprodInjector::inject((Case2, hlist!(Split2Param, CommonSplitParam))),
-        3 => CoprodInjector::inject((Case3, hlist!(Split2Param, CommonSplitParam))),
-        _ => CoprodInjector::inject((Case4, hlist!(Split2Param, CommonSplitParam))),
+        1 => Self::Produces::inject((Case1, hlist!(Split1Param, CommonSplitParam))),
+        2 => Self::Produces::inject((Case2, hlist!(Split2Param, CommonSplitParam))),
+        3 => Self::Produces::inject((Case3, hlist!(Split2Param, CommonSplitParam))),
+        _ => Self::Produces::inject((Case4, hlist!(Split2Param, CommonSplitParam))),
       })
     }
   }
@@ -511,7 +511,7 @@ mod tests {
   async fn test_split() {
     let process = ExtractMsisdnOperatorAndShortcodeString
       .show(ChooseCaseForm)
-      .split(SplitByTwoCaseOption) //first
+      .split(SplitByTwoCaseOption)
       .case_via(Case1, |x| x.then(ProduceCaseParam1))
       .case_via(Case2, |x| x.then(ProduceCaseParam2))
       .end(SayGoodByAndConsumeCommonParams)
@@ -524,7 +524,7 @@ mod tests {
   async fn test_split_case_2() {
     let process = ExtractMsisdnOperatorAndShortcodeString
       .show(ChooseCaseForm)
-      .split(SplitByTwoCaseOption) // second
+      .split(SplitByTwoCaseOption)
       .case_via(Case1, |x| x.then(ProduceCaseParam1))
       .case_via(Case2, |x| x.then(ProduceCaseParam2))
       .end(SayGoodByAndConsumeCommonParams)
@@ -610,7 +610,7 @@ mod tests {
   async fn test_resume_in_split() {
     let process = ExtractMsisdnOperatorAndShortcodeString
       .show(ChooseCaseForm)
-      .split(SplitByTwoCaseOption) //first
+      .split(SplitByTwoCaseOption)
       .case_via(Case1, |x| x.show(CommonCaseParam1Form))
       .case_via(Case2, |x| x.then(ProduceCaseParam2))
       .end(SayGoodByAndConsumeCommonParams)
@@ -623,7 +623,7 @@ mod tests {
   async fn test_end_first_case_of_finalized_split_process() {
     let process = ExtractMsisdnOperatorAndShortcodeString
       .show(ChooseCaseForm)
-      .split(SplitByTwoCaseOption) //first
+      .split(SplitByTwoCaseOption)
       .case_end(Case1, |x| x.end(FinalNoConsumes))
       .case_end(Case2, |x| x.end(FinalNoConsumes))
       .build("", 0);
@@ -636,7 +636,7 @@ mod tests {
   async fn test_yield_first_case_of_finalized_split_process() {
     let process = ExtractMsisdnOperatorAndShortcodeString
       .show(ChooseCaseForm)
-      .split(SplitByTwoCaseOption) //first
+      .split(SplitByTwoCaseOption)
       .case_end(Case1, |x| x.show(NoOpForm).end(FinalNoConsumes))
       .case_end(Case2, |x| x.end(FinalNoConsumes))
       .build("", 0);
@@ -651,9 +651,9 @@ mod tests {
       .split(SplitByTwoCaseOption)
       .case_end(Case1, |x| x.end(FinalNoConsumes))
       .case_end(Case2, |x| {
-        x.split(InnerSelectCase2)
+        x.split(InnerSelectCase(PhantomData::<B1>))
+          .case_end(InnerCase0, |x| x.end(FinalNoConsumes))
           .case_end(InnerCase1, |x| x.end(FinalNoConsumes))
-          .case_end(InnerCase2, |x| x.end(FinalNoConsumes))
       })
       .build("", 0);
     let messages = vec!["*123#", "Choose a case (1-4)", "1", "Empty good bye"];
@@ -681,9 +681,9 @@ mod tests {
       .case_via(Case1, |x| x.show(OneInputRetryForm))
       .case_end(Case2, |x| x.end(FinalNoConsumes))
       .case_via(Case3, |x| {
-        x.split(InnerSelectCase2)
-          .case_end(InnerCase1, |x| x.end(FinalNoConsumes))
-          .case_via(InnerCase2, |x| x.show(NoOpForm))
+        x.split(InnerSelectCase(PhantomData::<B1>))
+          .case_end(InnerCase0, |x| x.end(FinalNoConsumes))
+          .case_via(InnerCase1, |x| x.show(NoOpForm))
           .then(ProduceCaseParam2)
       })
       .end(SayGoodByAndConsumeCommonParams)
@@ -763,7 +763,7 @@ mod tests {
   async fn test_nested_split_retry_and_finish() {
     let process = ExtractMsisdnOperatorAndShortcodeString
       .show(ChooseCaseForm)
-      .split(SplitByTwoCaseOption) // second
+      .split(SplitByTwoCaseOption)
       .case_end(Case1, |x| x.end(FinalNoConsumes))
       .case_end(Case2, |x| {
         x.show_split(TestFormSplitter)
@@ -802,7 +802,7 @@ mod tests {
   async fn test_three_case_split_next() {
     let process = ExtractMsisdnOperatorAndShortcodeString
       .show(ChooseCaseForm)
-      .split(SplitByThreeCaseOption) // third
+      .split(SplitByThreeCaseOption)
       .case_end(Case1, |x| x.end(FinalNoConsumes))
       .case_end(Case2, |x| x.end(FinalNoConsumes))
       .case_end(Case3, |x| x.end(FinalNoConsumes))
@@ -815,7 +815,7 @@ mod tests {
   async fn test_three_case_split_variant_1() {
     let process = ExtractMsisdnOperatorAndShortcodeString
       .show(ChooseCaseForm)
-      .split(SplitByThreeCaseOption) // first
+      .split(SplitByThreeCaseOption)
       .case_via(Case1, |x| x.then(ProduceCaseParam1))
       .case_via(Case2, |x| x.then(ProduceCaseParam2))
       .case_end(Case3, |x| x.end(FinalNoConsumes))
@@ -829,7 +829,7 @@ mod tests {
   async fn test_three_case_split_variant_2() {
     let process = ExtractMsisdnOperatorAndShortcodeString
       .show(ChooseCaseForm)
-      .split(SplitByThreeCaseOption) // second
+      .split(SplitByThreeCaseOption)
       .case_via(Case1, |x| x.then(ProduceCaseParam1))
       .case_via(Case2, |x| x.then(ProduceCaseParam2))
       .case_end(Case3, |x| x.end(FinalNoConsumes))
@@ -843,7 +843,7 @@ mod tests {
   async fn test_flowing_split_yield_in_middle_case() {
     let process = ExtractMsisdnOperatorAndShortcodeString
       .show(ChooseCaseForm)
-      .split(SplitByThreeCaseOption) // second
+      .split(SplitByThreeCaseOption)
       .case_via(Case1, |x| x.then(ProduceCaseParam1))
       .case_via(Case2, |x| x.show(CommonCaseParam2Form).then(ProduceOnlyCase2Param))
       .case_end(Case3, |x| x.end(FinalNoConsumes))
@@ -858,7 +858,7 @@ mod tests {
   async fn test_split_finish_in_case() {
     let process = ExtractMsisdnOperatorAndShortcodeString
       .show(ChooseCaseForm)
-      .split(SplitByTwoCaseOption) //first
+      .split(SplitByTwoCaseOption)
       .case_via(Case1, |x| x.then(FinishProcessOperation))
       .case_via(Case2, |x| x.then(ProduceCaseParam2))
       .end(FinalNoConsumes)
@@ -871,7 +871,7 @@ mod tests {
   async fn test_split_retry_in_case() {
     let process = ExtractMsisdnOperatorAndShortcodeString
       .show(ChooseCaseForm)
-      .split(SplitByTwoCaseOption) //first
+      .split(SplitByTwoCaseOption)
       .case_via(Case1, |x| x.show(OneInputRetryForm).then(ProduceOnlyCase1Param))
       .case_via(Case2, |x| x.then(ProduceCaseParam2))
       .end(FinalNoConsumes)
@@ -894,11 +894,11 @@ mod tests {
   async fn test_nested_split_run_subprocess() {
     let process = ExtractMsisdnOperatorAndShortcodeString
       .show(ChooseCaseForm)
-      .split(SplitByTwoCaseOption) //first
+      .split(SplitByTwoCaseOption)
       .case_via(Case1, |x| {
-        x.split(InnerSelectCase2)
-          .case_end(InnerCase1, |x| x.end(FinalNoConsumes))
-          .case_via(InnerCase2, |x| x.then(ProduceCaseParam2))
+        x.split(InnerSelectCase(PhantomData::<B1>))
+          .case_end(InnerCase0, |x| x.end(FinalNoConsumes))
+          .case_via(InnerCase1, |x| x.then(ProduceCaseParam2))
       })
       .case_via(Case2, |x| x.then(ProduceCaseParam2))
       .end(FinalNoConsumes)
@@ -911,12 +911,12 @@ mod tests {
   async fn test_nested_split_in_middle() {
     let process = ExtractMsisdnOperatorAndShortcodeString
       .show(ChooseCaseForm)
-      .split(SplitByTwoCaseOption) //first
+      .split(SplitByTwoCaseOption)
       .case_via(Case1, |x| {
         x.show(NoOpForm)
-          .split(InnerSelectCase2)
-          .case_end(InnerCase1, |x| x.end(FinalNoConsumes))
-          .case_via(InnerCase2, |x| x.show(NoOpForm))
+          .split(InnerSelectCase(PhantomData::<B1>))
+          .case_end(InnerCase0, |x| x.end(FinalNoConsumes))
+          .case_via(InnerCase1, |x| x.show(NoOpForm))
           .then(ProduceOnlyCase1Param)
       })
       .case_via(Case2, |x| x.then(ProduceOnlyCase1Param))
@@ -934,7 +934,7 @@ mod tests {
   async fn test_three_case_finalized_split_case_1() {
     let process = ExtractMsisdnOperatorAndShortcodeString
       .show(ChooseCaseForm)
-      .split(SplitByThreeCaseOption) // first
+      .split(SplitByThreeCaseOption)
       .case_end(Case1, |x| x.end(FinalNoConsumes))
       .case_end(Case2, |x| x.end(FinalNoConsumes))
       .case_end(Case3, |x| x.end(FinalNoConsumes))
@@ -947,7 +947,7 @@ mod tests {
   async fn test_three_case_finalized_split_case_2() {
     let process = ExtractMsisdnOperatorAndShortcodeString
       .show(ChooseCaseForm)
-      .split(SplitByThreeCaseOption) // second
+      .split(SplitByThreeCaseOption)
       .case_end(Case1, |x| x.end(FinalNoConsumes))
       .case_end(Case2, |x| x.end(FinalNoConsumes))
       .case_end(Case3, |x| x.end(FinalNoConsumes))
@@ -960,7 +960,7 @@ mod tests {
   async fn test_three_case_mixed_split() {
     let process = ExtractMsisdnOperatorAndShortcodeString
       .show(ChooseCaseForm)
-      .split(SplitByThreeCaseOption) // third
+      .split(SplitByThreeCaseOption)
       .case_end(Case1, |x| x.end(FinalNoConsumes))
       .case_end(Case2, |x| x.end(FinalNoConsumes))
       .case_via(Case3, |x| x.then(ProduceOnlyCase1Param))
@@ -1050,7 +1050,7 @@ mod tests {
   async fn test_select_finalized_case_after_flowing_case() {
     let process = ExtractMsisdnOperatorAndShortcodeString
       .show(ChooseCaseForm)
-      .split(SplitByTwoCaseOption) // second
+      .split(SplitByTwoCaseOption)
       .case_via(Case1, |x| x.then(ProduceCaseParam1))
       .case_end(Case2, |x| x.end(FinalNoConsumes))
       .end(FinalNoConsumes)
@@ -1103,7 +1103,7 @@ mod tests {
   async fn test_select_flowing_case_after_finalized_case_yield() {
     let process = ExtractMsisdnOperatorAndShortcodeString
       .show(ChooseCaseForm)
-      .split(SplitByTwoCaseOption) // second
+      .split(SplitByTwoCaseOption)
       .case_end(Case1, |x| x.end(FinalNoConsumes))
       .case_via(Case2, |x| x.show(NoOpForm).then(ProduceCaseParam2))
       .end(FinalNoConsumes)
@@ -1120,7 +1120,7 @@ mod tests {
   async fn test_retry_in_case_2_then_resume_in_mixed_split() {
     let process = ExtractMsisdnOperatorAndShortcodeString
       .show(ChooseCaseForm)
-      .split(SplitByThreeCaseOption) // second
+      .split(SplitByThreeCaseOption)
       .case_end(Case1, |x| x.end(FinalNoConsumes))
       .case_via(Case2, |x| x.show(RetryOnceForm).then(ProduceCaseParam2))
       .case_end(Case3, |x| x.end(FinalNoConsumes))
@@ -1138,7 +1138,7 @@ mod tests {
   async fn test_yield_in_case_1_then_resume_in_mixed_split() {
     let process = ExtractMsisdnOperatorAndShortcodeString
       .show(ChooseCaseForm)
-      .split(SplitByTwoCaseOption) //first
+      .split(SplitByTwoCaseOption)
       .case_via(Case1, |x| x.show(NoOpForm).then(ProduceCaseParam1))
       .case_end(Case2, |x| x.end(FinalNoConsumes))
       .end(FinalNoConsumes)
@@ -1155,7 +1155,7 @@ mod tests {
   async fn test_retry_in_case_1_then_resume_in_mixed_split() {
     let process = ExtractMsisdnOperatorAndShortcodeString
       .show(ChooseCaseForm)
-      .split(SplitByTwoCaseOption) //first
+      .split(SplitByTwoCaseOption)
       .case_via(Case1, |x| x.show(RetryOnceForm).then(ProduceCaseParam1))
       .case_end(Case2, |x| x.end(FinalNoConsumes))
       .end(FinalNoConsumes)
@@ -1172,7 +1172,7 @@ mod tests {
   async fn test_yield_in_case_1_finalized_then_resume_in_mixed_split() {
     let process = ExtractMsisdnOperatorAndShortcodeString
       .show(ChooseCaseForm)
-      .split(SplitByTwoCaseOption) //first
+      .split(SplitByTwoCaseOption)
       .case_end(Case1, |x| x.show(NoOpForm).end(FinalNoConsumes))
       .case_via(Case2, |x| x.then(ProduceCaseParam2))
       .end(FinalNoConsumes)
@@ -1189,7 +1189,7 @@ mod tests {
   async fn test_finish_in_case_1_finalized_mixed_split() {
     let process = ExtractMsisdnOperatorAndShortcodeString
       .show(ChooseCaseForm)
-      .split(SplitByTwoCaseOption) //first
+      .split(SplitByTwoCaseOption)
       .case_end(Case1, |x| x.then(FinishProcessOperation).end(FinalNoConsumes))
       .case_via(Case2, |x| x.then(ProduceCaseParam2))
       .end(FinalNoConsumes)
@@ -1202,7 +1202,7 @@ mod tests {
   async fn test_retry_in_case_1_finalized_mixed_split() {
     let process = ExtractMsisdnOperatorAndShortcodeString
       .show(ChooseCaseForm)
-      .split(SplitByTwoCaseOption) //first
+      .split(SplitByTwoCaseOption)
       .case_end(Case1, |x| x.show(RetryOnceForm).end(FinalNoConsumes))
       .case_via(Case2, |x| x.then(ProduceCaseParam2))
       .end(FinalNoConsumes)
@@ -1219,11 +1219,11 @@ mod tests {
   async fn test_nested_split_run_subprocess_new() {
     let process = ExtractMsisdnOperatorAndShortcodeString
       .show(ChooseCaseForm)
-      .split(SplitByTwoCaseOption) //first
+      .split(SplitByTwoCaseOption)
       .case_end(Case1, |x| {
-        x.split(InnerSelectCase2)
+        x.split(InnerSelectCase(PhantomData::<B1>))
+          .case_end(InnerCase0, |y| y.end(FinalNoConsumes))
           .case_end(InnerCase1, |y| y.end(FinalNoConsumes))
-          .case_end(InnerCase2, |y| y.end(FinalNoConsumes))
       })
       .case_end(Case2, |x| x.end(FinalNoConsumes))
       .build("", 0);
@@ -1235,9 +1235,11 @@ mod tests {
   async fn test_nested_flowing_split_resume_run_new() {
     let process = ExtractMsisdnOperatorAndShortcodeString
       .show(ChooseCaseForm)
-      .split(SplitByTwoCaseOption) //first
+      .split(SplitByTwoCaseOption)
       .case_via(Case1, |x| {
-        x.split(InnerSelectCase1).case_via(InnerCase1, |y| y.show(NoOpForm)).case_via(InnerCase2, |y| y)
+        x.split(InnerSelectCase(PhantomData::<B0>))
+          .case_via(InnerCase0, |y| y.show(NoOpForm))
+          .case_via(InnerCase1, |y| y)
       })
       .case_via(Case2, |x| x.then(NoOpOperation))
       .end(FinalNoConsumes)
@@ -1257,7 +1259,7 @@ mod tests {
       .show(NoOpForm)
       .then(NoOpOperation)
       .show(ChooseCaseForm)
-      .split(SplitByTwoCaseOption) // second
+      .split(SplitByTwoCaseOption)
       .case_via(Case1, |x| x)
       .case_via(Case2, |x| x.then(NoOpOperation))
       .end(FinalNoConsumes)
@@ -1272,11 +1274,11 @@ mod tests {
   async fn test_nested_finalized_split() {
     let process = ExtractMsisdnOperatorAndShortcodeString
       .show(ChooseCaseForm)
-      .split(SplitByTwoCaseOption) //first
+      .split(SplitByTwoCaseOption)
       .case_end(Case1, |x| {
-        x.split(InnerSelectCase1) //first
+        x.split(InnerSelectCase(PhantomData::<B0>))
+          .case_end(InnerCase0, |y| y.end(FinalNoConsumes))
           .case_end(InnerCase1, |y| y.end(FinalNoConsumes))
-          .case_end(InnerCase2, |y| y.end(FinalNoConsumes))
       })
       .case_end(Case2, |x| x.end(FinalNoConsumes))
       .build("", 0);
