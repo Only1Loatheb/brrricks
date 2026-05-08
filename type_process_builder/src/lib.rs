@@ -1059,23 +1059,6 @@ mod tests {
   }
 
   #[tokio::test]
-  async fn test_yield_in_case_1_then_resume_in_mixed_split() {
-    let process = ExtractMsisdnOperatorAndShortcodeString
-      .show(ChooseCaseForm)
-      .split(SplitByTwoCaseOption)
-      .case_via(Case1, |x| x.show(NoOpForm).then(ProduceCaseParam1))
-      .case_end(Case2, |x| x.end(FinalNoConsumes))
-      .end(FinalNoConsumes)
-      .build("", 0);
-
-    test_process_messages(
-      &process,
-      vec!["*123#", "Choose a case", "1", "Straight to trash", "anything", "Empty good bye"],
-    )
-    .await;
-  }
-
-  #[tokio::test]
   async fn test_retry_in_case_1_then_resume_in_mixed_split() {
     let process = ExtractMsisdnOperatorAndShortcodeString
       .show(ChooseCaseForm)
@@ -1088,6 +1071,11 @@ mod tests {
     test_process_messages(
       &process,
       vec!["*123#", "Choose a case", "1", "Fancy a retry?", "retry", "Try again", "accept", "Empty good bye"],
+    )
+    .await;
+    test_process_messages(
+      &process,
+      vec!["*123#", "Choose a case", "1", "Fancy a retry?", "anything", "Empty good bye"],
     )
     .await;
   }
