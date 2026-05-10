@@ -35,8 +35,8 @@ impl<
       Produces = Coproduct<(Tag, SplitterProducesForFirstCase), SplitterProducesForOtherCases>,
       Messages = ProcessBefore::Messages,
     >,
-  ProcessBeforeProducesToCreateFormConsumesIndices: Sync,
-  ProcessBeforeProducesToValidateInputConsumesIndices: Sync,
+  ProcessBeforeProducesToCreateFormConsumesIndices: Sync + Send,
+  ProcessBeforeProducesToValidateInputConsumesIndices: Sync + Send,
 > SplitProcess<SplitterProducesForOtherCases>
   for SplitProcessFormSplitter<
     Tag,

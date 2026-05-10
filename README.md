@@ -302,6 +302,8 @@ To run `xtask` in your terminal, execute the following command in the repository
 cargo xtask
 ```
 
+Some integration tests require Docker to be running on your machine to start containers for external dependencies (e.g., Postgres).
+
 [//]: # (todo Redirect)
 
 [//]: # (todo ReturnFromRedirect)

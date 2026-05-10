@@ -21,7 +21,7 @@ use std::future::Future;
 /// Well you can work around this `limitation` by providing the indices explicitly
 /// or replaceing [Concat] with [intersect::Intersect] in the implementation.
 /// Don't do that. The params should be immutable to avoid the need to overwrite them with every session context save.
-pub trait FlowingProcess: Sized + Sync {
+pub trait FlowingProcess: Sized + Send + Sync {
   // Please specify all associated types at the impl FlowingProcess side for inference to work.
   type ProcessBeforeProduces: ParamList;
   type Produces: ParamList;
@@ -48,7 +48,7 @@ pub trait FlowingProcess: Sized + Sync {
 
   fn then<
     OperationStep: Operation<FinalMessage = <Self::Messages as ProcessMessages>::FinalMessage>,
-    ProcessBeforeProducesToLastStepConsumesIndices: Sync,
+    ProcessBeforeProducesToLastStepConsumesIndices: Sync + Send,
   >(
     self,
     step: OperationStep,
@@ -72,8 +72,8 @@ pub trait FlowingProcess: Sized + Sync {
 
   fn show<
     FormStep: Form<Messages = Self::Messages>,
-    ProcessBeforeProducesToCreateFormConsumesIndices: Sync,
-    ProcessBeforeProducesToValidateInputConsumesIndices: Sync,
+    ProcessBeforeProducesToCreateFormConsumesIndices: Sync + Send,
+    ProcessBeforeProducesToValidateInputConsumesIndices: Sync + Send,
   >(
     self,
     step: FormStep,
@@ -103,7 +103,7 @@ pub trait FlowingProcess: Sized + Sync {
     SplitterProducesForFirstCase: ParamList + Concat<Self::Produces>,
     SplitterProducesForOtherCases: Send + Sync,
     SplitterStep: Splitter<Produces = Coproduct<(Tag, SplitterProducesForFirstCase), SplitterProducesForOtherCases>>,
-    ProcessBeforeProducesToSplitterStepConsumesIndices: Sync,
+    ProcessBeforeProducesToSplitterStepConsumesIndices: Sync + Send,
   >(
     self,
     step: SplitterStep,
@@ -141,8 +141,8 @@ pub trait FlowingProcess: Sized + Sync {
         Produces = Coproduct<(Tag, SplitterProducesForFirstCase), SplitterProducesForOtherCases>,
         Messages = Self::Messages,
       >,
-    ProcessBeforeProducesToCreateFormConsumesIndices: Sync,
-    ProcessBeforeProducesToValidateInputConsumesIndices: Sync,
+    ProcessBeforeProducesToCreateFormConsumesIndices: Sync + Send,
+    ProcessBeforeProducesToValidateInputConsumesIndices: Sync + Send,
   >(
     self,
     step: SplitterStep,
@@ -178,7 +178,7 @@ pub trait FlowingProcess: Sized + Sync {
 
   fn end<
     FinalStep: Final<FinalMessage = <Self::Messages as ProcessMessages>::FinalMessage>,
-    ProcessBeforeProducesToLastStepConsumesIndices: Sync,
+    ProcessBeforeProducesToLastStepConsumesIndices: Sync + Send,
   >(
     self,
     step: FinalStep,

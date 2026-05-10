@@ -16,7 +16,7 @@ use std::future::Future;
 /// We could remove an unnecessary option of implementing a linear proces with a series of splits with single case,
 /// but sometimes the need arises to have a select form with one option that is different from input form.
 /// We at least remove an illegal state of unfinalized finalized split process.
-pub trait SplitProcess<SplitterProducesForOtherCases: Send + Sync>: Sized + Sync {
+pub trait SplitProcess<SplitterProducesForOtherCases: Send + Sync>: Sized + Send + Sync {
   // Please specify all associated types at the impl SplitProcess side for inference to work.
   type ProcessBeforeSplitProduces: ParamList;
   type SplitterProducesForFirstCase: ParamList + Concat<Self::ProcessBeforeSplitProduces>;

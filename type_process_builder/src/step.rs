@@ -11,7 +11,7 @@ pub trait ProcessMessages: Send + Sync {
   type FinalMessage: Send + Sync;
 }
 
-pub trait Entry: Sync {
+pub trait Entry: Send + Sync {
   type Produces: ParamList;
   type Messages: ProcessMessages;
   fn handle(
@@ -27,7 +27,7 @@ pub enum OperationOutcome<Produced, FinalMessage: Send + Sync> {
   Finish(FinalMessage),
 }
 
-pub trait Operation: Sync {
+pub trait Operation: Send + Sync {
   type Consumes: ParamList;
   type Produces: ParamList;
   type FinalMessage: Send + Sync;
@@ -47,7 +47,7 @@ pub enum InputValidation<Produced, Messages: ProcessMessages> {
   Finish(Messages::FinalMessage),
 }
 
-pub trait Form: Sync {
+pub trait Form: Send + Sync {
   type CreateFormConsumes: ParamList;
   type ValidateInputConsumes: ParamList;
   type Produces: ParamList;
@@ -72,7 +72,7 @@ impl<Tag: Send + Sync, ThisCase: ParamList, OtherCase: Send + Sync> SplitterOutp
 
 /// Works with at least two cases.
 /// If you want single option form, just produce link form with a single link using Form step
-pub trait Splitter: Sync {
+pub trait Splitter: Send + Sync {
   type Consumes: ParamList;
   type Produces: SplitterOutput;
   fn handle(&self, consumes: Self::Consumes) -> impl Future<Output = anyhow::Result<Self::Produces>> + Send;
@@ -80,7 +80,7 @@ pub trait Splitter: Sync {
 
 /// Works with at least two cases.
 /// Just produce link form with a single link using Form step
-pub trait FormSplitter: Sync {
+pub trait FormSplitter: Send + Sync {
   type CreateFormConsumes: ParamList;
   type ValidateInputConsumes: ParamList;
   type Produces: SplitterOutput;
@@ -97,7 +97,7 @@ pub trait FormSplitter: Sync {
   ) -> impl Future<Output = anyhow::Result<InputValidation<Self::Produces, Self::Messages>>> + Send;
 }
 
-pub trait Final: Sync {
+pub trait Final: Send + Sync {
   type Consumes: ParamList;
   type FinalMessage: Send + Sync;
   fn handle(&self, consumes: Self::Consumes) -> impl Future<Output = anyhow::Result<Self::FinalMessage>> + Send;

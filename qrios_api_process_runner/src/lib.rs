@@ -125,7 +125,8 @@ impl<Process: FinalizedProcess<Messages = Messages> + Sync>
         delete_session_context(&self.pool, &self.process, session_id).await.map_err(|_| ())?;
         Ok(UssdView::InfoView(InfoView { message: message.0, r_type: "InfoView".into() }))
       },
-      Err(_) => {
+      Err(e) => {
+        tracing::error!("Resume session failed: {:?}", e);
         delete_session_context(&self.pool, &self.process, session_id).await.map_err(|_| ())?;
         Err(())
       },
@@ -183,7 +184,10 @@ impl<Process: FinalizedProcess<Messages = Messages> + Sync>
       Ok(RunOutcome::Finish(message)) => {
         Ok((i64::MAX, UssdView::InfoView(InfoView { message: message.0, r_type: "InfoView".into() })))
       },
-      Err(_) => Err(()),
+      Err(e) => {
+        tracing::error!("New session failed: {:?}", e);
+        Err(())
+      },
     }
     .map(|(id, ussd_view)| {
       PostUssdsessioneventNewResponse::Status200_SessionStartHasBeenSuccessfullyHandledByTheDeveloper(
@@ -204,80 +208,73 @@ mod tests {
   use frunk_core::{Coprod, HList, hlist};
   use qrios_api_process_entry::DialedSessionEntry;
   use serde::{Deserialize, Serialize};
-  use tokio::signal;
   use type_process_builder::builder::*;
   use type_process_builder::param_list::ParamValue;
   use type_process_builder::step::Final;
   use type_process_builder::step::*;
   use typenum::*;
 
-  #[ignore]
   #[tokio::test]
-  async fn no_op_process_test() {
+  async fn session_store_test() {
+    use crate::QriosUssdApiService;
+    use qrios_api_reqwest_client::Client;
+    use sqlx::PgPool;
+    use std::sync::Arc;
+    use testcontainers::runners::AsyncRunner;
+    use testcontainers_modules::postgres::Postgres;
+    use tokio::net::TcpListener;
+    let _ = tracing_subscriber::fmt::try_init();
+
+    let node = Postgres::default().start().await.unwrap();
+    let port = node.get_host_port_ipv4(5432).await.unwrap();
+    let connection_string = format!("postgres://postgres:postgres@127.0.0.1:{port}/postgres");
+    let pool = PgPool::connect(&connection_string).await.unwrap();
+
+    sqlx::query("CREATE SCHEMA session_store").execute(&pool).await.expect("Failed to create schema");
+
     #[derive(Clone, Deserialize, Serialize)]
-    struct Split1Param;
-    impl ParamValue for Split1Param {
+    struct FormOutput;
+    impl ParamValue for FormOutput {
       type UID = U1;
     }
 
     #[derive(Clone, Deserialize, Serialize)]
-    struct Split2Param;
-    impl ParamValue for Split2Param {
+    struct OperationOutput;
+    impl ParamValue for OperationOutput {
       type UID = U2;
     }
 
     #[derive(Clone, Deserialize, Serialize)]
-    struct Case1Param;
-    impl ParamValue for Case1Param {
-      type UID = U4;
+    struct SplitCase1Output;
+    impl ParamValue for SplitCase1Output {
+      type UID = U3;
     }
 
     #[derive(Clone, Deserialize, Serialize)]
-    struct CommonCaseParam;
-    impl ParamValue for CommonCaseParam {
-      type UID = U6;
+    struct SplitCase2Output;
+    impl ParamValue for SplitCase2Output {
+      type UID = U4;
     }
 
-    struct ProduceCaseParam1;
-    impl Operation for ProduceCaseParam1 {
+    struct ProduceParamOperation;
+    impl Operation for ProduceParamOperation {
       type Consumes = HNil;
-      type Produces = HList![Case1Param, CommonCaseParam];
+      type Produces = HList![OperationOutput];
       type FinalMessage = Message;
 
       async fn handle(
         &self,
         _consumes: Self::Consumes,
       ) -> anyhow::Result<OperationOutcome<Self::Produces, Self::FinalMessage>> {
-        Ok(OperationOutcome::Successful(hlist!(Case1Param, CommonCaseParam)))
+        Ok(OperationOutcome::Successful(hlist!(OperationOutput)))
       }
     }
 
-    struct FinishAfterInput;
-    impl Form for FinishAfterInput {
+    struct AskForInputTwiceForm;
+    impl Form for AskForInputTwiceForm {
       type CreateFormConsumes = HNil;
       type ValidateInputConsumes = HNil;
-      type Produces = HList![CommonCaseParam];
-      type Messages = Messages;
-
-      async fn create_form(&self, _consumes: Self::CreateFormConsumes) -> anyhow::Result<Message> {
-        Ok(Message("Last number in the process".into()))
-      }
-
-      async fn handle_input(
-        &self,
-        _consumes: Self::ValidateInputConsumes,
-        _user_input: String,
-        _failed_input_validation_attempts: FailedInputValidationAttempts,
-      ) -> anyhow::Result<InputValidation<Self::Produces, Messages>> {
-        Ok(InputValidation::Finish(Message("Always finnish".into())))
-      }
-    }
-
-    struct OneInputRetryForm;
-    impl Form for OneInputRetryForm {
-      type CreateFormConsumes = HNil;
-      type ValidateInputConsumes = HNil;
-      type Produces = HList![CommonCaseParam];
+      type Produces = HList![FormOutput];
       type Messages = Messages;
 
       async fn create_form(&self, _consumes: Self::CreateFormConsumes) -> anyhow::Result<Message> {
@@ -292,14 +289,24 @@ mod tests {
       ) -> anyhow::Result<InputValidation<Self::Produces, Messages>> {
         match failed_input_validation_attempts.0 {
           0 => Ok(InputValidation::Retry(Message("This will be accepted".into()))),
-          _ => Ok(InputValidation::Successful(hlist![CommonCaseParam])),
+          _ => Ok(InputValidation::Successful(hlist![FormOutput])),
         }
       }
     }
 
-    struct FinalNoConsumes;
-    impl Final for FinalNoConsumes {
-      type Consumes = HNil;
+    struct ConsumeCase1Final;
+    impl Final for ConsumeCase1Final {
+      type Consumes = HList![SplitCase1Output];
+      type FinalMessage = Message;
+
+      async fn handle(&self, _consumes: Self::Consumes) -> anyhow::Result<Message> {
+        Ok(Message("Empty good bye".into()))
+      }
+    }
+
+    struct ConsumeCase2Final;
+    impl Final for ConsumeCase2Final {
+      type Consumes = HList![SplitCase2Output];
       type FinalMessage = Message;
 
       async fn handle(&self, _consumes: Self::Consumes) -> anyhow::Result<Message> {
@@ -314,7 +321,7 @@ mod tests {
       type CreateFormConsumes = HNil;
       type ValidateInputConsumes = HNil;
 
-      type Produces = Coprod![(Case1, HList![Split1Param]), (Case2, HList![Split2Param])];
+      type Produces = Coprod![(Case1, HList![SplitCase1Output]), (Case2, HList![SplitCase2Output])];
       type Messages = Messages;
 
       async fn create_form(&self, _consumes: Self::CreateFormConsumes) -> anyhow::Result<Message> {
@@ -330,76 +337,159 @@ mod tests {
         match (user_input.as_str(), failed.0) {
           ("retry", 0) => Ok(InputValidation::Retry(Message("retry again".into()))),
           ("finish", _) => Ok(InputValidation::Finish(Message("finished early".into()))),
-          ("1", _) => Ok(InputValidation::Successful(Self::Produces::inject((Case1, hlist![Split1Param])))),
-          _ => Ok(InputValidation::Successful(Self::Produces::inject((Case2, hlist![Split2Param])))),
+          ("1", _) => Ok(InputValidation::Successful(Self::Produces::inject((Case1, hlist![SplitCase1Output])))),
+          _ => Ok(InputValidation::Successful(Self::Produces::inject((Case2, hlist![SplitCase2Output])))),
         }
       }
     }
 
-    let _process = DialedSessionEntry::<Messages>::new()
-      .show(OneInputRetryForm)
-      .then(ProduceCaseParam1)
-      .show(FinishAfterInput)
+    let process = DialedSessionEntry::<Messages>::new()
+      .show(AskForInputTwiceForm)
+      .then(ProduceParamOperation)
       .show_split(TestFormSplitter)
-      .case_end(Case1, |x| x.end(FinalNoConsumes))
-      .case_end(Case2, |x| x.end(FinalNoConsumes))
-      .build("", 0);
+      .case_end(Case1, |x| x.end(ConsumeCase1Final))
+      .case_end(Case2, |x| x.end(ConsumeCase2Final))
+      .build("test_process", 1);
 
-    async fn _shutdown_signal() {
-      let ctrl_c = async {
-        signal::ctrl_c().await.expect("failed to install Ctrl+C handler");
-      };
+    let service = QriosUssdApiService::new(process, pool).await.expect("Failed to create service");
+    let app = qrios_api_axum_server::server::new(Arc::new(service));
+    let listener = TcpListener::bind("127.0.0.1:0").await.expect("Failed to bind random port");
+    let addr = listener.local_addr().expect("Failed to get server local address");
+    let server = tokio::spawn(async move {
+      axum::serve(listener, app).await.expect("Failed to start server");
+    });
 
-      #[cfg(unix)]
-      let terminate = async {
-        signal::unix::signal(signal::unix::SignalKind::terminate())
-          .expect("failed to install signal handler")
-          .recv()
-          .await;
-      };
+    let client = Client::new(format!("http://{addr}").as_str());
 
-      #[cfg(not(unix))]
-      let terminate = std::future::pending::<()>();
+    let resp = client
+      .post_ussdsessionevent_new(
+        None,
+        &qrios_api_reqwest_client::types::UssdSessionEventNewSession {
+          app_id: "test_app".into(),
+          client_id: "test_client".into(),
+          input: qrios_api_reqwest_client::types::UssdSessionEventNewSessionSessionInput::Dial(
+            qrios_api_reqwest_client::types::Dial {
+              type_: qrios_api_reqwest_client::types::DialType::Dial,
+              shortcode_string: "*123#".to_string(),
+            },
+          ),
+          msisdn: "2341234567890".into(),
+          operator: qrios_api_reqwest_client::types::UssdSessionEventNewSessionOperator::Mtn,
+          session_id: "test_session_1".into(),
+        },
+      )
+      .await
+      .expect("Failed to get a response from post_ussdsessionevent_new");
 
-      tokio::select! {
-          _ = ctrl_c => {},
-          _ = terminate => {},
-      }
+    match &resp.action {
+      qrios_api_reqwest_client::types::UssdAction::ShowView(qrios_api_reqwest_client::types::ShowView {
+        view:
+          qrios_api_reqwest_client::types::UssdView::InputView(qrios_api_reqwest_client::types::InputView {
+            message, ..
+          }),
+        ..
+      }) => {
+        assert_eq!(message, "This will be discarded");
+      },
+      _ => panic!("Expected InputView, got {:?}", &resp.action),
     }
 
-    // use crate::QriosUssdApiService;
-    // use qrios_api_reqwest_client::Client;
-    // use qrios_api_reqwest_client::types::*;
-    // use std::sync::Arc;
-    // use tokio::net::TcpListener;
-    // let app = qrios_api_axum_server::server::new(Arc::new(QriosUssdApiService { process }));
-    // let listener = TcpListener::bind("127.0.0.1:0").await.expect("Failed to bind random port");
-    // let addr = listener.local_addr().expect("Failed to get server local address");
-    // let _server = tokio::spawn(async move {
-    //   axum::serve(listener, app).with_graceful_shutdown(shutdown_signal()).await.expect("Failed to start server");
-    // });
-    //
-    // let resp = Client::new(format!("http://{addr}").as_str())
-    //   .post_ussdsessionevent_new(
-    //     None,
-    //     &UssdSessionEventNewSession {
-    //       app_id: "val".into(),
-    //       client_id: "val".into(),
-    //       input: UssdSessionEventNewSessionSessionInput::Dial(Dial {
-    //         type_: DialType::Dial,
-    //         shortcode_string: "*425*001*123#".to_string(),
-    //       }),
-    //       msisdn: "2341234567890".into(),
-    //       operator: UssdSessionEventNewSessionOperator::Mtn,
-    //       session_id: "val".into(),
-    //     },
-    //   )
-    //   .await
-    //   .expect("Failed to get a response from post_ussdsessionevent_new");
-    // assert!(matches!(
-    //   resp.action.clone(),
-    //   UssdAction::ShowView(ShowView{view: UssdView::InfoView(InfoView{message, ..}), ..}) if
-    //   message == "Hello from rust"
-    // ))
+    let resp = client
+      .post_ussdsessionevent_continue(
+        None,
+        &qrios_api_reqwest_client::types::ContinueSession {
+          app_id: "test_app".into(),
+          client_id: "test_client".into(),
+          context_data: resp.context_data.clone(),
+          result: qrios_api_reqwest_client::types::UssdActionResult::InputResult(
+            qrios_api_reqwest_client::types::InputResult {
+              type_: qrios_api_reqwest_client::types::InputResultType::InputResult,
+              value: "some input".into(),
+            },
+          ),
+          session_id: "test_session_1".into(),
+        },
+      )
+      .await
+      .expect("Failed to get a response from post_ussdsessionevent_continue (1)");
+
+    match &resp.action {
+      qrios_api_reqwest_client::types::UssdAction::ShowView(qrios_api_reqwest_client::types::ShowView {
+        view:
+          qrios_api_reqwest_client::types::UssdView::InputView(qrios_api_reqwest_client::types::InputView {
+            message, ..
+          }),
+        ..
+      }) => {
+        assert_eq!(message, "This will be accepted");
+      },
+      _ => panic!("Expected InputView (Retry), got {:?}", resp.action),
+    }
+
+    let resp = client
+      .post_ussdsessionevent_continue(
+        None,
+        &qrios_api_reqwest_client::types::ContinueSession {
+          app_id: "test_app".into(),
+          client_id: "test_client".into(),
+          context_data: resp.context_data.clone(),
+          result: qrios_api_reqwest_client::types::UssdActionResult::InputResult(
+            qrios_api_reqwest_client::types::InputResult {
+              type_: qrios_api_reqwest_client::types::InputResultType::InputResult,
+              value: "some input 2".into(),
+            },
+          ),
+          session_id: "test_session_1".into(),
+        },
+      )
+      .await
+      .expect("Failed to get a response from post_ussdsessionevent_continue (2)");
+
+    match &resp.action {
+      qrios_api_reqwest_client::types::UssdAction::ShowView(qrios_api_reqwest_client::types::ShowView {
+        view:
+          qrios_api_reqwest_client::types::UssdView::InputView(qrios_api_reqwest_client::types::InputView {
+            message, ..
+          }),
+        ..
+      }) => {
+        assert_eq!(message, "choose case");
+      },
+      _ => panic!("Expected InputView (FinishAfterInput), got {:?}", resp.action),
+    }
+
+    let resp = client
+      .post_ussdsessionevent_continue(
+        None,
+        &qrios_api_reqwest_client::types::ContinueSession {
+          app_id: "test_app".into(),
+          client_id: "test_client".into(),
+          context_data: resp.context_data.clone(),
+          result: qrios_api_reqwest_client::types::UssdActionResult::InputResult(
+            qrios_api_reqwest_client::types::InputResult {
+              type_: qrios_api_reqwest_client::types::InputResultType::InputResult,
+              value: "final input".into(),
+            },
+          ),
+          session_id: "test_session_1".into(),
+        },
+      )
+      .await
+      .expect("Failed to get a response from post_ussdsessionevent_continue (3)");
+
+    match &resp.action {
+      qrios_api_reqwest_client::types::UssdAction::ShowView(qrios_api_reqwest_client::types::ShowView {
+        view:
+          qrios_api_reqwest_client::types::UssdView::InfoView(qrios_api_reqwest_client::types::InfoView {
+            message, ..
+          }),
+        ..
+      }) => {
+        assert_eq!(message, "Empty good bye");
+      },
+      _ => panic!("Expected InfoView (Finish), got {:?}", resp.action),
+    }
+
+    server.abort();
   }
 }

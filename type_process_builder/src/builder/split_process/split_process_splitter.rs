@@ -28,7 +28,7 @@ impl<
   SplitterProducesForFirstCase: ParamList + Concat<ProcessBefore::Produces>,
   SplitterProducesForOtherCases: Send + Sync,
   SplitterStep: Splitter<Produces = Coproduct<(Tag, SplitterProducesForFirstCase), SplitterProducesForOtherCases>>,
-  ProcessBeforeProducesToSplitterStepConsumesIndices: Sync,
+  ProcessBeforeProducesToSplitterStepConsumesIndices: Sync + Send,
 > SplitProcess<SplitterProducesForOtherCases>
   for SplitProcessSplitter<
     Tag,

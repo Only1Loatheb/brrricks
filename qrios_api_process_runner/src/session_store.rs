@@ -21,7 +21,7 @@ pub async fn create_session_context_table<Process: FinalizedProcess>(
   let mut sql = format!(
     r#"
     CREATE TABLE IF NOT EXISTS {table_name} (
-      id BIGINT PRIMARY KEY,
+      id BIGSERIAL PRIMARY KEY,
       previous_run_yielded_at INTEGER,
       failed_input_validation_attempts SMALLINT,{columns}"#,
   );

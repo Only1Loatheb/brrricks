@@ -21,7 +21,7 @@ pub struct OperationFlowingProcess<
 impl<
   ProcessBefore: FlowingProcess,
   OperationStep: Operation<FinalMessage = <ProcessBefore::Messages as ProcessMessages>::FinalMessage>,
-  ProcessBeforeProducesToLastStepConsumesIndices: Sync,
+  ProcessBeforeProducesToLastStepConsumesIndices: Sync + Send,
 > FlowingProcess
   for OperationFlowingProcess<ProcessBefore, OperationStep, ProcessBeforeProducesToLastStepConsumesIndices>
 where
