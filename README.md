@@ -20,7 +20,7 @@ Process implemented with this library has the following invariants enforced at *
 - each step may only consume parameters that are guaranteed to be produced earlier in the process,
 - all execution paths must terminate in a final step,
 - every branch introduced by a split step must have a corresponding continuation defined,
-- once a parameter is produced in every execution path, it cannot be overwritten in subsequent steps if it is consumed later.
+- once a parameter is produced in every execution path, it cannot be overwritten in subsequent steps.
   If a parameter value is present only in a subset of paths, it is removed from the session context
   to guarantee that downstream steps operate only on parameters that are present in all incoming paths.
   Removing the parameter from the session context allows reusing it in later in the process,

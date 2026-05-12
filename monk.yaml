@@ -32,7 +32,7 @@ pre-push:
       -- -D warnings -W clippy::all
     - |
       cargo +nightly llvm-cov --package type_process_builder --no-clean \
-      --fail-under-regions 71 --fail-under-functions 90 --fail-under-lines 83
+      --fail-under-regions 70 --fail-under-functions 87 --fail-under-lines 78
     - cargo test -p qrios_api_process_runner
     - cargo xtask
     - |

@@ -17,10 +17,6 @@ use crate::step::{FailedInputValidationAttempts, Final, Form, FormSplitter, Oper
 use frunk_core::coproduct::Coproduct;
 use std::future::Future;
 
-/// Param value overlap is prevented by making reading them cumbersome <https://github.com/lloydmeta/frunk/issues/187>
-/// Well you can work around this `limitation` by providing the indices explicitly
-/// or replaceing [Concat] with [intersect::Intersect] in the implementation.
-/// Don't do that. The params should be immutable to avoid the need to overwrite them with every session context save.
 pub trait FlowingProcess: Sized + Send + Sync {
   // Please specify all associated types at the impl FlowingProcess side for inference to work.
   type ProcessBeforeProduces: ParamList;

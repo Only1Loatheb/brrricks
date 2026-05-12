@@ -89,6 +89,18 @@ mod tests {
     type UID = U7;
   }
 
+  #[derive(Clone, Deserialize, Serialize)]
+  struct InnerSplit1Param;
+  impl ParamValue for InnerSplit1Param {
+    type UID = U8;
+  }
+
+  #[derive(Clone, Deserialize, Serialize)]
+  struct InnerSplit2Param;
+  impl ParamValue for InnerSplit2Param {
+    type UID = U9;
+  }
+
   pub struct Message(pub String);
 
   struct Messages;
@@ -373,7 +385,7 @@ mod tests {
   impl Form for FinishAfterInput {
     type CreateFormConsumes = HNil;
     type ValidateInputConsumes = HNil;
-    type Produces = HList![CommonCaseParam];
+    type Produces = HNil;
     type Messages = Messages;
 
     async fn create_form(&self, _consumes: Self::CreateFormConsumes) -> anyhow::Result<Message> {
@@ -497,6 +509,33 @@ mod tests {
         ("finish", _) => Ok(InputValidation::Finish(Message("finished early".into()))),
         ("1", _) => Ok(InputValidation::Successful(Self::Produces::inject((Case1, hlist![Split1Param])))),
         _ => Ok(InputValidation::Successful(Self::Produces::inject((Case2, hlist![Split2Param])))),
+      }
+    }
+  }
+
+  struct InnerFormSplitter;
+  impl FormSplitter for InnerFormSplitter {
+    type CreateFormConsumes = HNil;
+    type ValidateInputConsumes = HNil;
+
+    type Produces = Coprod![(Case1, HList![InnerSplit1Param]), (Case2, HList![InnerSplit2Param])];
+    type Messages = Messages;
+
+    async fn create_form(&self, _consumes: Self::CreateFormConsumes) -> anyhow::Result<Message> {
+      Ok(Message("choose case".into()))
+    }
+
+    async fn handle_input(
+      &self,
+      _consumes: Self::ValidateInputConsumes,
+      user_input: String,
+      failed: FailedInputValidationAttempts,
+    ) -> anyhow::Result<InputValidation<Self::Produces, Messages>> {
+      match (user_input.as_str(), failed.0) {
+        ("retry", 0) => Ok(InputValidation::Retry(Message("retry again".into()))),
+        ("finish", _) => Ok(InputValidation::Finish(Message("finished early".into()))),
+        ("1", _) => Ok(InputValidation::Successful(Self::Produces::inject((Case1, hlist![InnerSplit1Param])))),
+        _ => Ok(InputValidation::Successful(Self::Produces::inject((Case2, hlist![InnerSplit2Param])))),
       }
     }
   }
@@ -708,7 +747,6 @@ mod tests {
   async fn test_form_splitter_passthrough_with_multi_step_process_before() {
     let process = ExtractMsisdnOperatorAndShortcodeString
       .show(OneInputRetryForm)
-      .then(ProduceCaseParam1)
       .show(FinishAfterInput)
       .show_split(TestFormSplitter)
       .case_end(Case1, |x| x.end(FinalNoConsumes))
@@ -735,7 +773,7 @@ mod tests {
       .split(SplitByTwoCaseOption)
       .case_end(Case1, |x| x.end(FinalNoConsumes))
       .case_end(Case2, |x| {
-        x.show_split(TestFormSplitter)
+        x.show_split(InnerFormSplitter)
           .case_end(Case1, |x| x.show(OneInputRetryForm).end(FinalNoConsumes))
           .case_end(Case2, |x| x.end(FinalNoConsumes))
       })
@@ -1151,22 +1189,6 @@ mod tests {
   }
 
   #[tokio::test]
-  async fn test_subprocess_resume() {
-    let process = ExtractMsisdnOperatorAndShortcodeString
-      .show(NoOpForm)
-      .then(NoOpOperation)
-      .show(ChooseCaseForm)
-      .split(SplitByTwoCaseOption)
-      .case_via(Case1, |x| x)
-      .case_via(Case2, |x| x.then(NoOpOperation))
-      .end(FinalNoConsumes)
-      .build("", 0);
-
-    let messages = vec!["*123#", "Straight to trash", "trash me babe", "Choose a case", "2", "Empty good bye"];
-    test_process_messages(&process, messages).await;
-  }
-
-  #[tokio::test]
   async fn test_nested_finalized_split() {
     let process = ExtractMsisdnOperatorAndShortcodeString
       .show(ChooseCaseForm)
@@ -1180,6 +1202,22 @@ mod tests {
       .build("", 0);
 
     let messages = vec!["*123#", "Choose a case", "1", "Empty good bye"];
+    test_process_messages(&process, messages).await;
+  }
+
+  #[tokio::test]
+  async fn test_subprocess_resume() {
+    let process = ExtractMsisdnOperatorAndShortcodeString
+      .show(NoOpForm)
+      .then(NoOpOperation)
+      .show(ChooseCaseForm)
+      .split(SplitByTwoCaseOption)
+      .case_via(Case1, |x| x)
+      .case_via(Case2, |x| x.then(NoOpOperation))
+      .end(FinalNoConsumes)
+      .build("", 0);
+
+    let messages = vec!["*123#", "Straight to trash", "trash me babe", "Choose a case", "2", "Empty good bye"];
     test_process_messages(&process, messages).await;
   }
 

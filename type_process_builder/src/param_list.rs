@@ -1,9 +1,10 @@
 use crate::builder::{ParamUID, SessionContext};
+use crate::param_list::intersect::Contains;
 use frunk_core::hlist::{HCons, HList, HNil};
 use serde::Serialize;
 use serde::de::DeserializeOwned;
 use serde_value::{DeserializerError, SerializerError, to_value};
-use typenum::Unsigned;
+use typenum::{B0, Same, Unsigned};
 
 pub mod clone_just;
 pub mod concat;
@@ -26,6 +27,7 @@ pub trait ParamList: HList + Clone + Send + Sync {
   fn _serialize(&self, serialize_map: &mut SessionContext) -> Result<(), SerializerError>;
 
   // https://serde.rs/deserialize-map.html
+  // todo: We should only deserialize values required in further part of the process up to the next interaction, but I don't know what they are.
   fn deserialize(session_context: SessionContext) -> Result<Self, DeserializerError> {
     Self::_deserialize(session_context)
   }
@@ -47,7 +49,12 @@ impl ParamList for HNil {
   fn all_param_uids(_acc: &mut Vec<ParamUID>) {}
 }
 
-impl<Head: ParamValue, Tail: ParamList> ParamList for HCons<Head, Tail> {
+/// The `where` clause prevents the same [`ParamValue`] from being duplicated in a [`ParamList`].
+/// Because uniqueness is checked by `UID`, this also guarantees that two different [`ParamValue`] types cannot share the same `UID` within the list.
+impl<Head: ParamValue, Tail: ParamList + Contains<Head>> ParamList for HCons<Head, Tail>
+where
+  <Tail as Contains<Head>>::IsContained: Same<B0>,
+{
   fn _serialize(&self, session_context: &mut SessionContext) -> Result<(), SerializerError> {
     self.tail._serialize(session_context)?;
     session_context.push((Head::UID::U32, to_value(&self.head)?));

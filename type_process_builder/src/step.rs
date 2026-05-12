@@ -1,5 +1,3 @@
-// Should only pass params required in further part of the process, but I don't know what they are.
-// todo Make all the methods generic over Serializer
 use crate::builder::ParamUID;
 use crate::param_list::ParamList;
 use frunk_core::coproduct::Coproduct;
@@ -11,6 +9,7 @@ pub trait ProcessMessages: Send + Sync {
   type FinalMessage: Send + Sync;
 }
 
+// we could make all the methods generic over Serializer instead of using serde_value::Value
 pub trait Entry: Send + Sync {
   type Produces: ParamList;
   type Messages: ProcessMessages;

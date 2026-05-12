@@ -46,9 +46,6 @@ impl<
     ProcessBefore,
     ThisCase,
   >
-where
-  ProcessBefore::SplitterProducesForFirstCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
-  ThisCase::Produces: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
 {
   pub fn case_end<
     NextCase: FinalizedProcess<SubprocessConsumes=<SplitterProducesForNextCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated>,
@@ -131,8 +128,6 @@ impl<
     ProcessBefore,
     ThisCase,
   >
-where
-  ProcessBefore::SplitterProducesForFirstCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
 {
   type ProcessBeforeSplitProduces = ProcessBefore::ProcessBeforeSplitProduces;
   type SplitterProducesForThisCase = ProcessBefore::SplitterProducesForFirstCase;

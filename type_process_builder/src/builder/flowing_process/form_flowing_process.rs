@@ -65,7 +65,6 @@ where
         IntermediateRunOutcome::RetryUserInput(a) => Ok(IntermediateRunOutcome::RetryUserInput(a)),
       }
     } else {
-      // fixme deserialize only values required only up to the next interaction
       let process_before_produces = ProcessBefore::Produces::deserialize(previous_run_produced)?;
       let last_step_consumes = (&process_before_produces).clone_just();
       match self.form_step.handle_input(last_step_consumes, user_input, failed_input_validation_attempts).await? {
