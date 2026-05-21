@@ -8,7 +8,6 @@ use qrios_api_axum_server::apis::developers_app_endpoints::{
   PostUssdsessioneventNewResponse,
 };
 use qrios_api_axum_server::models::*;
-use serde_value::Value;
 use sqlx::PgPool;
 use std::collections::HashSet;
 use std::ops::Not;
@@ -155,7 +154,8 @@ impl<Process: FinalizedProcess<Messages = Messages> + Sync>
       UssdSessionEventNewSessionSessionInput::Push(_) => todo!(),
       UssdSessionEventNewSessionSessionInput::Redirect(_) => todo!(),
     };
-    let init_session_context = vec![(0, Value::String(body.msisdn.clone())), (1, Value::String(body.operator.clone()))];
+    let init_session_context =
+      vec![(0, postcard::to_allocvec(&body.msisdn).unwrap()), (1, postcard::to_allocvec(&body.operator).unwrap())];
     let run_result = self
       .process
       .resume_run(

@@ -25,7 +25,6 @@ mod tests {
   use frunk_core::hlist::HNil;
   use frunk_core::{Coprod, HList, hlist};
   use serde::{Deserialize, Serialize};
-  use serde_value::Value;
   use std::marker::PhantomData;
   use typenum::*;
 
@@ -116,13 +115,15 @@ mod tests {
 
     #[cfg_attr(coverage_nightly, coverage(off))]
     async fn handle(&self, mut consumes: SessionContext, initial_input: String) -> anyhow::Result<HList![EntryParam]> {
-      let operator = consumes.pop().ok_or_else(|| anyhow!("Admin error or error on frontend."))?.1;
+      let operator_value = consumes.pop().ok_or_else(|| anyhow!("Admin error or error on frontend."))?.1;
       let msisdn_value = consumes.pop().ok_or_else(|| anyhow!("Admin error or error on frontend."))?.1;
-      let msisdn = match msisdn_value {
-        Value::String(string) => string.parse::<u64>().map_err(|_| anyhow!("Admin error on frontend.")),
-        _ => Err(anyhow!("Admin error on frontend.")),
-      }?;
-      Ok(hlist!(EntryParam(Msisdn(msisdn), Operator::deserialize(operator)?, ShortcodeString(initial_input))))
+      let msisdn_str: String = postcard::from_bytes(&msisdn_value).map_err(|_| anyhow!("Admin error on frontend."))?;
+      let msisdn = msisdn_str.parse::<u64>().map_err(|_| anyhow!("Admin error on frontend."))?;
+      Ok(hlist!(EntryParam(
+        Msisdn(msisdn),
+        postcard::from_bytes(&operator_value).map_err(|_| anyhow!("Admin error or error on frontend."))?,
+        ShortcodeString(initial_input)
+      )))
     }
   }
 
@@ -483,7 +484,10 @@ mod tests {
   }
 
   fn session_init_value() -> SessionContext {
-    vec![(0, Value::String("2340000000000".into())), (1, Value::String("MTN".into()))]
+    vec![
+      (0, postcard::to_allocvec(&"2340000000000".to_string()).unwrap()),
+      (1, postcard::to_allocvec(&Operator::MTN).unwrap()),
+    ]
   }
 
   struct TestFormSplitter;

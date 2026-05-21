@@ -1,7 +1,6 @@
 use anyhow::anyhow;
 use frunk_core::{HList, hlist};
 use serde::{Deserialize, Serialize};
-use serde_value::Value;
 use std::marker::PhantomData;
 use std::ops::Not;
 use type_process_builder::builder::ParamUID;
@@ -62,15 +61,17 @@ impl<Messages: ProcessMessages> Entry for DialedSessionEntry<Messages> {
 
   async fn handle(
     &self,
-    mut consumes: Vec<(ParamUID, Value)>,
+    mut consumes: Vec<(ParamUID, Vec<u8>)>,
     shortcode_string: String,
   ) -> anyhow::Result<Self::Produces> {
-    let operator = consumes.pop().ok_or_else(|| anyhow!("Admin error or error on frontend."))?.1;
+    let operator_value = consumes.pop().ok_or_else(|| anyhow!("Admin error or error on frontend."))?.1;
     let msisdn_value = consumes.pop().ok_or_else(|| anyhow!("Admin error or error on frontend."))?.1;
-    let msisdn = match msisdn_value {
-      Value::String(string) => Msisdn::from_string(string).ok_or_else(|| anyhow!("Admin error on frontend.")),
-      _ => Err(anyhow!("Admin error on frontend.")),
-    }?;
-    Ok(hlist!(DialedSessionEntryParam(msisdn, Operator::deserialize(operator)?, ShortcodeString(shortcode_string))))
+    let msisdn_str: String = postcard::from_bytes(&msisdn_value).map_err(|_| anyhow!("Admin error on frontend."))?;
+    let msisdn = Msisdn::from_string(msisdn_str).ok_or_else(|| anyhow!("Admin error on frontend."))?;
+    Ok(hlist!(DialedSessionEntryParam(
+      msisdn,
+      postcard::from_bytes(&operator_value).map_err(|_| anyhow!("Admin error or error on frontend."))?,
+      ShortcodeString(shortcode_string)
+    )))
   }
 }

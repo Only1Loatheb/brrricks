@@ -1,7 +1,6 @@
 use crate::builder::ParamUID;
 use crate::param_list::ParamList;
 use frunk_core::coproduct::Coproduct;
-use serde_value::Value;
 use std::future::Future;
 
 pub trait ProcessMessages: Send + Sync {
@@ -9,13 +8,13 @@ pub trait ProcessMessages: Send + Sync {
   type FinalMessage: Send + Sync;
 }
 
-// we could make all the methods generic over Serializer instead of using serde_value::Value
+// we could make all the methods generic over Serializer instead of using raw Vec<u8>
 pub trait Entry: Send + Sync {
   type Produces: ParamList;
   type Messages: ProcessMessages;
   fn handle(
     &self,
-    consumes: Vec<(ParamUID, Value)>,
+    consumes: Vec<(ParamUID, Vec<u8>)>,
     initial_input: String,
   ) -> impl Future<Output = anyhow::Result<Self::Produces>> + Send;
 }

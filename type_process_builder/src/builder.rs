@@ -18,7 +18,6 @@ pub use flowing_split_process::flowing_case_of_finalized_split_process::*;
 pub use flowing_split_process::flowing_case_of_flowing_split_process::*;
 pub use flowing_split_process::*;
 pub use runnable_process::*;
-use serde_value::Value;
 pub use split_process::*;
 
 pub type StepIndex = i32;
@@ -33,7 +32,7 @@ pub(crate) const WILL_BE_RENUMBERED: i32 = i32::MAX;
 
 pub type ParamUID = u32;
 
-pub(crate) type SessionContext = Vec<(ParamUID, Value)>;
+pub(crate) type SessionContext = Vec<(ParamUID, Vec<u8>)>;
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum IntermediateRunOutcome<Produced: ParamList, Messages: ProcessMessages> {

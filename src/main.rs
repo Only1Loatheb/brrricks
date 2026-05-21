@@ -4,7 +4,6 @@ use crate::standard_io_process_runner::{Message, Messages, standard_io_process_r
 use frunk_core::hlist::HNil;
 use frunk_core::{Coprod, HList, hlist, hlist_pat};
 use serde::{Deserialize, Serialize};
-use serde_value::Value;
 use type_process_builder::builder::*;
 use type_process_builder::step::{Entry, FailedInputValidationAttempts, Final, Form, FormSplitter, InputValidation};
 use typenum::*;
@@ -28,7 +27,7 @@ impl Entry for ShortcodeStringEntry {
 
   async fn handle(
     &self,
-    _consumes: Vec<(ParamUID, Value)>,
+    _consumes: Vec<(ParamUID, Vec<u8>)>,
     shortcode_string: String,
   ) -> anyhow::Result<HList![ShortcodeString]> {
     Ok(hlist!(ShortcodeString(shortcode_string)))

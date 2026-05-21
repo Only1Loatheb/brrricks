@@ -7,6 +7,6 @@ edition = "2024"
 serde = { version = "1.0", features = ["derive"] }
 typenum = "1.0"
 type_process_builder = { path = "../type_process_builder" }
-serde-value = "0.7"
+postcard = { version = "1.0", features = ["alloc"] }
 frunk_core = "0.4"
 anyhow = "1.0"

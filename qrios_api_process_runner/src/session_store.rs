@@ -1,4 +1,3 @@
-use serde_value::Value;
 use sqlx::{Executor, PgPool, Row};
 use type_process_builder::builder::{
   CurrentRunYieldedAt, FinalizedProcess, ParamUID, PreviousRunYieldedAt, RunnableProcess,
@@ -40,7 +39,7 @@ pub async fn create_session_context<Process: FinalizedProcess>(
   process: &RunnableProcess<Process>,
   current_run_yielded_at: CurrentRunYieldedAt,
   failed_input_validation_attempts: FailedInputValidationAttempts,
-  session_context: &[(u32, Value)],
+  session_context: &[(u32, Vec<u8>)],
 ) -> Result<i64, sqlx::Error> {
   let mut columns = vec!["previous_run_yielded_at".to_string(), "failed_input_validation_attempts".to_string()];
   let mut placeholders = vec!["$1".to_string(), "$2".to_string()];
@@ -93,7 +92,7 @@ pub async fn get_session_context(
   sql: &GetSessionContextQuery,
   session_id: i64,
   ordered_all_unique_param_uids: &[ParamUID],
-) -> Result<(PreviousRunYieldedAt, FailedInputValidationAttempts, Vec<(u32, Value)>), sqlx::Error> {
+) -> Result<(PreviousRunYieldedAt, FailedInputValidationAttempts, Vec<(u32, Vec<u8>)>), sqlx::Error> {
   let row = sqlx::query(&sql.0).bind(session_id).fetch_one(pool).await?;
 
   let previous_run_yielded_at = PreviousRunYieldedAt(row.try_get(0)?);
@@ -101,7 +100,7 @@ pub async fn get_session_context(
 
   let mut session_context = Vec::with_capacity(ordered_all_unique_param_uids.len());
   for idx_and_param_uid in ordered_all_unique_param_uids.iter().enumerate() {
-    if let Ok(value) = row.try_get::<sqlx::types::Json<Value>, _>(idx_and_param_uid.0 + 2) {
+    if let Ok(value) = row.try_get::<sqlx::types::Json<Vec<u8>>, _>(idx_and_param_uid.0 + 2) {
       session_context.push((*idx_and_param_uid.1, value.0));
     }
   }
@@ -153,7 +152,7 @@ pub async fn update_session_context<Process: FinalizedProcess>(
   id: i64,
   current_run_yielded_at: CurrentRunYieldedAt,
   failed_input_validation_attempts: FailedInputValidationAttempts,
-  params_to_store: Vec<(u32, Value)>,
+  params_to_store: Vec<(u32, Vec<u8>)>,
   params_to_remove: Vec<u32>,
 ) -> Result<(), sqlx::Error> {
   let mut assignments =
