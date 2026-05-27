@@ -172,7 +172,7 @@ impl<Process: FinalizedProcess<Messages = Messages> + Sync>
           &self.process,
           current_run_yielded_at,
           FailedInputValidationAttempts(0),
-          &session_context,
+          session_context,
         )
         .await
         .map_err(|_| ())?;
