@@ -205,6 +205,7 @@ impl<Process: FinalizedProcess<Messages = Messages> + Sync>
 mod tests {
   use crate::{Message, Messages};
   use frunk_core::hlist::HNil;
+  use frunk_core::traits::ToRef;
   use frunk_core::{Coprod, HList, hlist};
   use qrios_api_process_entry::DialedSessionEntry;
   use serde::{Deserialize, Serialize};
@@ -277,13 +278,16 @@ mod tests {
       type Produces = HList![FormOutput];
       type Messages = Messages;
 
-      async fn create_form(&self, _consumes: Self::CreateFormConsumes) -> anyhow::Result<Message> {
+      async fn create_form<'a>(
+        &self,
+        _consumes: <Self::CreateFormConsumes as ToRef<'a>>::Output,
+      ) -> anyhow::Result<Message> {
         Ok(Message("This will be discarded".into()))
       }
 
-      async fn handle_input(
+      async fn handle_input<'a>(
         &self,
-        _consumes: Self::ValidateInputConsumes,
+        _consumes: <Self::ValidateInputConsumes as ToRef<'a>>::Output,
         _user_input: String,
         failed_input_validation_attempts: FailedInputValidationAttempts,
       ) -> anyhow::Result<InputValidation<Self::Produces, Messages>> {

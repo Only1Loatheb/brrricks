@@ -23,6 +23,7 @@ mod tests {
   };
   use anyhow::anyhow;
   use frunk_core::hlist::HNil;
+  use frunk_core::traits::ToRef;
   use frunk_core::{Coprod, HList, hlist};
   use serde::{Deserialize, Serialize};
   use std::marker::PhantomData;
@@ -295,13 +296,16 @@ mod tests {
     type Produces = HNil;
     type Messages = Messages;
 
-    async fn create_form(&self, _consumes: Self::CreateFormConsumes) -> anyhow::Result<Message> {
+    async fn create_form<'a>(
+      &self,
+      _consumes: <Self::CreateFormConsumes as ToRef<'a>>::Output,
+    ) -> anyhow::Result<Message> {
       Ok(Message("Finish early form".into()))
     }
 
-    async fn handle_input(
+    async fn handle_input<'a>(
       &self,
-      _consumes: Self::ValidateInputConsumes,
+      _consumes: <Self::ValidateInputConsumes as ToRef<'a>>::Output,
       _user_input: String,
       _failed_attempts: FailedInputValidationAttempts,
     ) -> anyhow::Result<InputValidation<Self::Produces, Messages>> {
@@ -326,13 +330,16 @@ mod tests {
     type Produces = HList![CommonCaseParam];
     type Messages = Messages;
 
-    async fn create_form(&self, _consumes: Self::CreateFormConsumes) -> anyhow::Result<Message> {
+    async fn create_form<'a>(
+      &self,
+      _consumes: <Self::CreateFormConsumes as ToRef<'a>>::Output,
+    ) -> anyhow::Result<Message> {
       Ok(Message("Enter a number".into()))
     }
 
-    async fn handle_input(
+    async fn handle_input<'a>(
       &self,
-      _consumes: Self::ValidateInputConsumes,
+      _consumes: <Self::ValidateInputConsumes as ToRef<'a>>::Output,
       _user_input: String,
       _failed_input_validation_attempts: FailedInputValidationAttempts,
     ) -> anyhow::Result<InputValidation<Self::Produces, Messages>> {
@@ -347,13 +354,16 @@ mod tests {
     type Produces = HList![CommonCaseParam];
     type Messages = Messages;
 
-    async fn create_form(&self, _consumes: Self::CreateFormConsumes) -> anyhow::Result<Message> {
+    async fn create_form<'a>(
+      &self,
+      _consumes: <Self::CreateFormConsumes as ToRef<'a>>::Output,
+    ) -> anyhow::Result<Message> {
       Ok(Message("Enter a number".into()))
     }
 
-    async fn handle_input(
+    async fn handle_input<'a>(
       &self,
-      _consumes: Self::ValidateInputConsumes,
+      _consumes: <Self::ValidateInputConsumes as ToRef<'a>>::Output,
       _user_input: String,
       _failed_input_validation_attempts: FailedInputValidationAttempts,
     ) -> anyhow::Result<InputValidation<Self::Produces, Messages>> {
@@ -368,13 +378,16 @@ mod tests {
     type Produces = HNil;
     type Messages = Messages;
 
-    async fn create_form(&self, _consumes: Self::CreateFormConsumes) -> anyhow::Result<Message> {
+    async fn create_form<'a>(
+      &self,
+      _consumes: <Self::CreateFormConsumes as ToRef<'a>>::Output,
+    ) -> anyhow::Result<Message> {
       Ok(Message("Straight to trash".into()))
     }
 
-    async fn handle_input(
+    async fn handle_input<'a>(
       &self,
-      _consumes: Self::ValidateInputConsumes,
+      _consumes: <Self::ValidateInputConsumes as ToRef<'a>>::Output,
       _user_input: String,
       _failed_input_validation_attempts: FailedInputValidationAttempts,
     ) -> anyhow::Result<InputValidation<Self::Produces, Messages>> {
@@ -389,13 +402,16 @@ mod tests {
     type Produces = HNil;
     type Messages = Messages;
 
-    async fn create_form(&self, _consumes: Self::CreateFormConsumes) -> anyhow::Result<Message> {
+    async fn create_form<'a>(
+      &self,
+      _consumes: <Self::CreateFormConsumes as ToRef<'a>>::Output,
+    ) -> anyhow::Result<Message> {
       Ok(Message("Last number in the process".into()))
     }
 
-    async fn handle_input(
+    async fn handle_input<'a>(
       &self,
-      _consumes: Self::ValidateInputConsumes,
+      _consumes: <Self::ValidateInputConsumes as ToRef<'a>>::Output,
       _user_input: String,
       _failed_input_validation_attempts: FailedInputValidationAttempts,
     ) -> anyhow::Result<InputValidation<Self::Produces, Messages>> {
@@ -410,13 +426,16 @@ mod tests {
     type Produces = HList![CommonCaseParam];
     type Messages = Messages;
 
-    async fn create_form(&self, _consumes: Self::CreateFormConsumes) -> anyhow::Result<Message> {
+    async fn create_form<'a>(
+      &self,
+      _consumes: <Self::CreateFormConsumes as ToRef<'a>>::Output,
+    ) -> anyhow::Result<Message> {
       Ok(Message("This will be discarded".into()))
     }
 
-    async fn handle_input(
+    async fn handle_input<'a>(
       &self,
-      _consumes: Self::ValidateInputConsumes,
+      _consumes: <Self::ValidateInputConsumes as ToRef<'a>>::Output,
       _user_input: String,
       failed_input_validation_attempts: FailedInputValidationAttempts,
     ) -> anyhow::Result<InputValidation<Self::Produces, Messages>> {
@@ -434,13 +453,16 @@ mod tests {
     type Produces = HList![CaseOptionParam];
     type Messages = Messages;
 
-    async fn create_form(&self, _consumes: Self::CreateFormConsumes) -> anyhow::Result<Message> {
+    async fn create_form<'a>(
+      &self,
+      _consumes: <Self::CreateFormConsumes as ToRef<'a>>::Output,
+    ) -> anyhow::Result<Message> {
       Ok(Message("Choose a case".into()))
     }
 
-    async fn handle_input(
+    async fn handle_input<'a>(
       &self,
-      _consumes: Self::ValidateInputConsumes,
+      _consumes: <Self::ValidateInputConsumes as ToRef<'a>>::Output,
       user_input: String,
       _failed_attempts: FailedInputValidationAttempts,
     ) -> anyhow::Result<InputValidation<Self::Produces, Messages>> {
@@ -948,13 +970,16 @@ mod tests {
     type Produces = HNil;
     type Messages = Messages;
 
-    async fn create_form(&self, _consumes: Self::CreateFormConsumes) -> anyhow::Result<Message> {
+    async fn create_form<'a>(
+      &self,
+      _consumes: <Self::CreateFormConsumes as ToRef<'a>>::Output,
+    ) -> anyhow::Result<Message> {
       Ok(Message("Fancy a retry?".into()))
     }
 
-    async fn handle_input(
+    async fn handle_input<'a>(
       &self,
-      _consumes: Self::ValidateInputConsumes,
+      _consumes: <Self::ValidateInputConsumes as ToRef<'a>>::Output,
       user_input: String,
       _failed_input_validation_attempts: FailedInputValidationAttempts,
     ) -> anyhow::Result<InputValidation<Self::Produces, Messages>> {

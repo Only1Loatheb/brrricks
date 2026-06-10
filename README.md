@@ -79,6 +79,7 @@ mod standard_io_process_runner;
 
 use crate::standard_io_process_runner::{Message, Messages, standard_io_process_runner};
 use frunk_core::hlist::HNil;
+use frunk_core::traits::ToRef;
 use frunk_core::{Coprod, HList, hlist, hlist_pat};
 use serde::{Deserialize, Serialize};
 use type_process_builder::builder::*;
@@ -145,13 +146,16 @@ impl Form for AmountForm {
   type Produces = HList![Amount];
   type Messages = Messages;
 
-  async fn create_form(&self, _consumes: Self::CreateFormConsumes) -> anyhow::Result<Message> {
+  async fn create_form<'a>(
+    &self,
+    _consumes: <Self::CreateFormConsumes as ToRef<'a>>::Output,
+  ) -> anyhow::Result<Message> {
     Ok(Message("Enter a number".into()))
   }
 
-  async fn handle_input(
+  async fn handle_input<'a>(
     &self,
-    _consumes: Self::ValidateInputConsumes,
+    _consumes: <Self::ValidateInputConsumes as ToRef<'a>>::Output,
     user_input: String,
     _failed_input_validation_attempts: FailedInputValidationAttempts,
   ) -> anyhow::Result<InputValidation<Self::Produces, Messages>> {

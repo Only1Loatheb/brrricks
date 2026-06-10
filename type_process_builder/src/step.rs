@@ -1,6 +1,7 @@
 use crate::builder::ParamUID;
 use crate::param_list::ParamList;
 use frunk_core::coproduct::Coproduct;
+use frunk_core::traits::ToRef;
 use std::future::Future;
 
 pub trait ProcessMessages: Send + Sync {
@@ -46,17 +47,17 @@ pub enum InputValidation<Produced, Messages: ProcessMessages> {
 }
 
 pub trait Form: Send + Sync {
-  type CreateFormConsumes: ParamList;
-  type ValidateInputConsumes: ParamList;
+  type CreateFormConsumes: ParamList + for<'a> ToRef<'a>;
+  type ValidateInputConsumes: ParamList + for<'a> ToRef<'a>;
   type Produces: ParamList;
   type Messages: ProcessMessages;
-  fn create_form(
+  fn create_form<'a>(
     &self,
-    consumes: Self::CreateFormConsumes,
+    consumes: <Self::CreateFormConsumes as ToRef<'a>>::Output,
   ) -> impl Future<Output = anyhow::Result<<Self::Messages as ProcessMessages>::FormMessage>> + Send;
-  fn handle_input(
+  fn handle_input<'a>(
     &self,
-    consumes: Self::ValidateInputConsumes,
+    consumes: <Self::ValidateInputConsumes as ToRef<'a>>::Output,
     user_input: String,
     failed_input_validation_attempts: FailedInputValidationAttempts,
   ) -> impl Future<Output = anyhow::Result<InputValidation<Self::Produces, Self::Messages>>> + Send;

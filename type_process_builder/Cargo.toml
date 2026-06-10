@@ -10,12 +10,11 @@ docs = ["dep:simple-mermaid"]
 serde = "1.0"
 anyhow = "1.0" # should be this error
 frunk_core = "0.4"
-postcard = "1.0"
+postcard = { version = "1.0", features = ["alloc"] }
 simple-mermaid = { version = "0.2.0", optional = true }
 typenum = "1.0"
 
 [dev-dependencies]
-postcard = { version = "1.0", features = ["alloc"] }
 serde = { version = "1.0", features = ["derive"] }
 tokio = { version = "1.0", features = ["macros", "rt"] }
 

@@ -1,8 +1,8 @@
+use crate::builder::borrow_just::BorrowJust;
 use crate::builder::{
   CurrentRunYieldedAt, FlowingProcess, IntermediateRunOutcome, IntermediateRunResult, ParamList, ParamUID,
   PreviousRunYieldedAt, SessionContext, StepIndex,
 };
-use crate::param_list::clone_just::CloneJust;
 use crate::param_list::concat::Concat;
 use crate::step::{FailedInputValidationAttempts, Form, InputValidation};
 use std::marker::PhantomData;
@@ -37,9 +37,9 @@ impl<
 where
   FormStep::Produces: Concat<ProcessBefore::Produces>,
   for<'a> &'a ProcessBefore::Produces:
-    CloneJust<FormStep::CreateFormConsumes, ProcessBeforeProducesToCreateFormConsumesIndices>,
+    BorrowJust<'a, FormStep::CreateFormConsumes, ProcessBeforeProducesToCreateFormConsumesIndices>,
   for<'a> &'a ProcessBefore::Produces:
-    CloneJust<FormStep::ValidateInputConsumes, ProcessBeforeProducesToValidateInputConsumesIndices>,
+    BorrowJust<'a, FormStep::ValidateInputConsumes, ProcessBeforeProducesToValidateInputConsumesIndices>,
 {
   type ProcessBeforeProduces = ProcessBefore::Produces;
   type Produces = <FormStep::Produces as Concat<ProcessBefore::Produces>>::Concatenated;
@@ -66,7 +66,10 @@ where
       }
     } else {
       let process_before_produces = ProcessBefore::Produces::deserialize(previous_run_produced)?;
-      let last_step_consumes = (&process_before_produces).clone_just();
+      let last_step_consumes =
+        <&ProcessBefore::Produces as BorrowJust<'_, FormStep::ValidateInputConsumes, _>>::borrow_just(
+          &process_before_produces,
+        );
       match self.form_step.handle_input(last_step_consumes, user_input, failed_input_validation_attempts).await? {
         InputValidation::Successful(a) => Ok(IntermediateRunOutcome::Continue(a.concat(process_before_produces))),
         InputValidation::Retry(a) => Ok(IntermediateRunOutcome::RetryUserInput(a)),
@@ -79,7 +82,9 @@ where
     &self,
     process_before_produces: Self::ProcessBeforeProduces,
   ) -> IntermediateRunResult<Self::Produces, Self::Messages> {
-    let last_step_consumes = (&process_before_produces).clone_just();
+    let last_step_consumes = <&ProcessBefore::Produces as BorrowJust<'_, FormStep::CreateFormConsumes, _>>::borrow_just(
+      &process_before_produces,
+    );
     Ok(IntermediateRunOutcome::Yield(
       self.form_step.create_form(last_step_consumes).await?,
       process_before_produces.serialize()?,

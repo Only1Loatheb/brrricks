@@ -3,6 +3,7 @@ pub mod form_flowing_process;
 pub mod operation_flowing_process;
 pub mod subprocess;
 
+use crate::builder::borrow_just::BorrowJust;
 use crate::builder::finalized_process::{FinalizedProcess, FlowingFinalizedProcess};
 use crate::builder::form_flowing_process::FormFlowingProcess;
 use crate::builder::operation_flowing_process::OperationFlowingProcess;
@@ -82,9 +83,9 @@ pub trait FlowingProcess: Sized + Send + Sync {
   where
     FormStep::Produces: ParamList + Concat<Self::Produces>,
     for<'a> &'a Self::Produces:
-      CloneJust<FormStep::CreateFormConsumes, ProcessBeforeProducesToCreateFormConsumesIndices>,
+      BorrowJust<'a, FormStep::CreateFormConsumes, ProcessBeforeProducesToCreateFormConsumesIndices>,
     for<'a> &'a Self::Produces:
-      CloneJust<FormStep::ValidateInputConsumes, ProcessBeforeProducesToValidateInputConsumesIndices>,
+      BorrowJust<'a, FormStep::ValidateInputConsumes, ProcessBeforeProducesToValidateInputConsumesIndices>,
   {
     FormFlowingProcess {
       process_before: self,
