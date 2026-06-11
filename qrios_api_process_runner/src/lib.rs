@@ -263,9 +263,9 @@ mod tests {
       type Produces = HList![OperationOutput];
       type FinalMessage = Message;
 
-      async fn handle(
+      async fn handle<'a>(
         &self,
-        _consumes: Self::Consumes,
+        _consumes: <Self::Consumes as ToRef<'a>>::Output,
       ) -> anyhow::Result<OperationOutcome<Self::Produces, Self::FinalMessage>> {
         Ok(OperationOutcome::Successful(hlist!(OperationOutput)))
       }

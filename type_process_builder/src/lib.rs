@@ -134,9 +134,9 @@ mod tests {
     type Produces = HList![Case1Param, CommonCaseParam];
     type FinalMessage = Message;
 
-    async fn handle(
+    async fn handle<'a>(
       &self,
-      _consumes: Self::Consumes,
+      _consumes: <Self::Consumes as ToRef<'a>>::Output,
     ) -> anyhow::Result<OperationOutcome<Self::Produces, Self::FinalMessage>> {
       Ok(OperationOutcome::Successful(hlist!(Case1Param, CommonCaseParam)))
     }
@@ -148,9 +148,9 @@ mod tests {
     type Produces = HList![Case2Param, CommonCaseParam];
     type FinalMessage = Message;
 
-    async fn handle(
+    async fn handle<'a>(
       &self,
-      _consumes: Self::Consumes,
+      _consumes: <Self::Consumes as ToRef<'a>>::Output,
     ) -> anyhow::Result<OperationOutcome<Self::Produces, Self::FinalMessage>> {
       Ok(OperationOutcome::Successful(hlist!(Case2Param, CommonCaseParam)))
     }
@@ -162,9 +162,9 @@ mod tests {
     type Produces = HList![Case2Param];
     type FinalMessage = Message;
 
-    async fn handle(
+    async fn handle<'a>(
       &self,
-      _consumes: Self::Consumes,
+      _consumes: <Self::Consumes as ToRef<'a>>::Output,
     ) -> anyhow::Result<OperationOutcome<Self::Produces, Self::FinalMessage>> {
       Ok(OperationOutcome::Successful(hlist!(Case2Param)))
     }
@@ -176,9 +176,9 @@ mod tests {
     type Produces = HList![Case1Param];
     type FinalMessage = Message;
 
-    async fn handle(
+    async fn handle<'a>(
       &self,
-      _consumes: Self::Consumes,
+      _consumes: <Self::Consumes as ToRef<'a>>::Output,
     ) -> anyhow::Result<OperationOutcome<Self::Produces, Self::FinalMessage>> {
       Ok(OperationOutcome::Successful(hlist!(Case1Param)))
     }
@@ -267,7 +267,7 @@ mod tests {
     type Produces = HNil;
     type FinalMessage = Message;
 
-    async fn handle(
+    async fn handle<'a>(
       &self,
       _consumes: Self::Consumes,
     ) -> anyhow::Result<OperationOutcome<Self::Produces, Self::FinalMessage>> {
@@ -281,9 +281,9 @@ mod tests {
     type Produces = HNil;
     type FinalMessage = Message;
 
-    async fn handle(
+    async fn handle<'a>(
       &self,
-      _consumes: Self::Consumes,
+      _consumes: <Self::Consumes as ToRef<'a>>::Output,
     ) -> anyhow::Result<OperationOutcome<Self::Produces, Self::FinalMessage>> {
       Ok(OperationOutcome::Finish(Message("Operation finished".into())))
     }
@@ -497,9 +497,9 @@ mod tests {
     type Produces = HNil;
     type FinalMessage = Message;
 
-    async fn handle(
+    async fn handle<'a>(
       &self,
-      _consumes: Self::Consumes,
+      _consumes: <Self::Consumes as ToRef<'a>>::Output,
     ) -> anyhow::Result<OperationOutcome<Self::Produces, Self::FinalMessage>> {
       Ok(OperationOutcome::Finish(Message("Operation finished".into())))
     }

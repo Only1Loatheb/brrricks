@@ -27,12 +27,12 @@ pub enum OperationOutcome<Produced, FinalMessage: Send + Sync> {
 }
 
 pub trait Operation: Send + Sync {
-  type Consumes: ParamList;
+  type Consumes: ParamList + for<'a> ToRef<'a>;
   type Produces: ParamList;
   type FinalMessage: Send + Sync;
   fn handle(
     &self,
-    consumes: Self::Consumes,
+    consumes: <Self::Consumes as ToRef>::Output,
   ) -> impl Future<Output = anyhow::Result<OperationOutcome<Self::Produces, Self::FinalMessage>>> + Send;
 }
 
@@ -51,13 +51,13 @@ pub trait Form: Send + Sync {
   type ValidateInputConsumes: ParamList + for<'a> ToRef<'a>;
   type Produces: ParamList;
   type Messages: ProcessMessages;
-  fn create_form<'a>(
+  fn create_form(
     &self,
-    consumes: <Self::CreateFormConsumes as ToRef<'a>>::Output,
+    consumes: <Self::CreateFormConsumes as ToRef>::Output,
   ) -> impl Future<Output = anyhow::Result<<Self::Messages as ProcessMessages>::FormMessage>> + Send;
-  fn handle_input<'a>(
+  fn handle_input(
     &self,
-    consumes: <Self::ValidateInputConsumes as ToRef<'a>>::Output,
+    consumes: <Self::ValidateInputConsumes as ToRef>::Output,
     user_input: String,
     failed_input_validation_attempts: FailedInputValidationAttempts,
   ) -> impl Future<Output = anyhow::Result<InputValidation<Self::Produces, Self::Messages>>> + Send;

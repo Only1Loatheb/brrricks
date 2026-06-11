@@ -2,7 +2,7 @@ use crate::builder::{
   FlowingProcess, IntermediateRunOutcome, IntermediateRunResult, ParamList, ParamUID, PreviousRunYieldedAt,
   SessionContext, StepIndex,
 };
-use crate::param_list::clone_just::CloneJust;
+use crate::param_list::borrow_just::BorrowJust;
 use crate::param_list::concat::Concat;
 use crate::step::{FailedInputValidationAttempts, Operation, OperationOutcome, ProcessMessages};
 use std::marker::PhantomData;
@@ -27,7 +27,7 @@ impl<
 where
   OperationStep::Produces: ParamList + Concat<ProcessBefore::Produces>,
   for<'a> &'a ProcessBefore::Produces:
-    CloneJust<OperationStep::Consumes, ProcessBeforeProducesToLastStepConsumesIndices>,
+    BorrowJust<'a, OperationStep::Consumes, ProcessBeforeProducesToLastStepConsumesIndices>,
 {
   type ProcessBeforeProduces = ProcessBefore::Produces;
   type Produces = <OperationStep::Produces as Concat<ProcessBefore::Produces>>::Concatenated;
@@ -62,7 +62,7 @@ where
     &self,
     process_before_produces: Self::ProcessBeforeProduces,
   ) -> IntermediateRunResult<Self::Produces, Self::Messages> {
-    let last_step_consumes = (&process_before_produces).clone_just();
+    let last_step_consumes = (&process_before_produces).borrow_just();
     let last_step_outcome = self.last_step.handle(last_step_consumes).await?;
     Ok(match last_step_outcome {
       OperationOutcome::Successful(last_step_output) => {

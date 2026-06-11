@@ -57,7 +57,7 @@ pub trait FlowingProcess: Sized + Send + Sync {
   >
   where
     OperationStep::Produces: ParamList + Concat<Self::Produces>,
-    for<'a> &'a Self::Produces: CloneJust<OperationStep::Consumes, ProcessBeforeProducesToLastStepConsumesIndices>,
+    for<'a> &'a Self::Produces: BorrowJust<'a, OperationStep::Consumes, ProcessBeforeProducesToLastStepConsumesIndices>,
   {
     OperationFlowingProcess {
       process_before: self,
