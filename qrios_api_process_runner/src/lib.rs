@@ -328,13 +328,16 @@ mod tests {
       type Produces = Coprod![(Case1, HList![SplitCase1Output]), (Case2, HList![SplitCase2Output])];
       type Messages = Messages;
 
-      async fn create_form(&self, _consumes: Self::CreateFormConsumes) -> anyhow::Result<Message> {
+      async fn create_form<'a>(
+        &self,
+        _consumes: <Self::CreateFormConsumes as ToRef<'a>>::Output,
+      ) -> anyhow::Result<Message> {
         Ok(Message("choose case".into()))
       }
 
-      async fn handle_input(
+      async fn handle_input<'a>(
         &self,
-        _consumes: Self::ValidateInputConsumes,
+        _consumes: <Self::ValidateInputConsumes as ToRef<'a>>::Output,
         user_input: String,
         failed: FailedInputValidationAttempts,
       ) -> anyhow::Result<InputValidation<Self::Produces, Messages>> {

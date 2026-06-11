@@ -121,13 +121,16 @@ impl FormSplitter for SelectAmountSource {
   type Produces = Coprod![(PredefinedAmount, HList![Amount]), (CustomAmount, HNil)];
   type Messages = Messages;
 
-  async fn create_form(&self, _consumes: Self::CreateFormConsumes) -> anyhow::Result<Message> {
+  async fn create_form<'a>(
+    &self,
+    _consumes: <Self::CreateFormConsumes as ToRef<'a>>::Output,
+  ) -> anyhow::Result<Message> {
     Ok(Message("Enter 1 for 100 or 2 for custom amount ".into()))
   }
 
-  async fn handle_input(
+  async fn handle_input<'a>(
     &self,
-    _consumes: Self::ValidateInputConsumes,
+    _consumes: <Self::ValidateInputConsumes as ToRef<'a>>::Output,
     user_input: String,
     _failed_input_validation_attempts: FailedInputValidationAttempts,
   ) -> anyhow::Result<InputValidation<Self::Produces, Messages>> {

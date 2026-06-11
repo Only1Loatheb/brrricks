@@ -2,7 +2,7 @@ use crate::builder::{
   FlowingProcess, IntermediateFinalizedSplitOutcome, IntermediateFinalizedSplitResult, IntermediateRunOutcome,
   ParamList, ParamUID, PreviousRunYieldedAt, SessionContext, SplitProcess, StepIndex,
 };
-use crate::param_list::clone_just::CloneJust;
+use crate::param_list::borrow_just::BorrowJust;
 use crate::param_list::concat::Concat;
 use crate::step::{FailedInputValidationAttempts, Splitter};
 use frunk_core::coproduct::Coproduct;
@@ -40,7 +40,7 @@ impl<
   >
 where
   for<'a> &'a ProcessBefore::Produces:
-    CloneJust<SplitterStep::Consumes, ProcessBeforeProducesToSplitterStepConsumesIndices>,
+    BorrowJust<'a, SplitterStep::Consumes, ProcessBeforeProducesToSplitterStepConsumesIndices>,
 {
   type ProcessBeforeSplitProduces = ProcessBefore::Produces;
   type SplitterProducesForFirstCase = SplitterProducesForFirstCase;
@@ -86,7 +86,7 @@ where
     Coproduct<Self::SplitterProducesForFirstCase, SplitterProducesForOtherCases>,
     Self::Messages,
   > {
-    let splitter_step_consumes = (&process_before_split_produced).clone_just();
+    let splitter_step_consumes = (&process_before_split_produced).borrow_just();
     let splitter_produces_to_other_cases = match self.splitter.handle(splitter_step_consumes).await? {
       Coproduct::Inl(a) => Coproduct::Inl(a.1),
       Coproduct::Inr(b) => Coproduct::Inr(b),

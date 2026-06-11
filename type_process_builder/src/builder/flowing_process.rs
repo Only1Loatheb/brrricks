@@ -11,7 +11,6 @@ use crate::builder::split_process_form_splitter::SplitProcessFormSplitter;
 use crate::builder::split_process_splitter::SplitProcessSplitter;
 use crate::builder::*;
 use crate::param_list::ParamList;
-use crate::param_list::clone_just::CloneJust;
 use crate::param_list::concat::Concat;
 use crate::param_list::transform::TransformTo;
 use crate::step::{FailedInputValidationAttempts, Final, Form, FormSplitter, Operation, Splitter};
@@ -113,7 +112,8 @@ pub trait FlowingProcess: Sized + Send + Sync {
     Messages = Self::Messages,
   >
   where
-    for<'a> &'a Self::Produces: CloneJust<SplitterStep::Consumes, ProcessBeforeProducesToSplitterStepConsumesIndices>,
+    for<'a> &'a Self::Produces:
+      BorrowJust<'a, SplitterStep::Consumes, ProcessBeforeProducesToSplitterStepConsumesIndices>,
   {
     SplitProcessSplitter::<
       Tag,
@@ -153,9 +153,9 @@ pub trait FlowingProcess: Sized + Send + Sync {
   >
   where
     for<'a> &'a Self::Produces:
-      CloneJust<SplitterStep::CreateFormConsumes, ProcessBeforeProducesToCreateFormConsumesIndices>,
+      BorrowJust<'a, SplitterStep::CreateFormConsumes, ProcessBeforeProducesToCreateFormConsumesIndices>,
     for<'a> &'a Self::Produces:
-      CloneJust<SplitterStep::ValidateInputConsumes, ProcessBeforeProducesToValidateInputConsumesIndices>,
+      BorrowJust<'a, SplitterStep::ValidateInputConsumes, ProcessBeforeProducesToValidateInputConsumesIndices>,
   {
     SplitProcessFormSplitter::<
       Tag,

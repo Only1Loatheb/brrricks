@@ -1,4 +1,3 @@
-#![cfg_attr(coverage_nightly, feature(coverage_attribute))]
 #[allow(clippy::result_unit_err)]
 pub mod builder;
 pub mod param_list;
@@ -12,7 +11,6 @@ pub mod step;
 #[cfg_attr(not(feature = "docs"), doc = "")]
 pub mod documentation_diagrams {}
 
-#[cfg_attr(coverage_nightly, coverage(off))]
 #[cfg(test)]
 mod tests {
   use crate::builder::*;
@@ -114,7 +112,6 @@ mod tests {
     type Produces = HList![EntryParam];
     type Messages = Messages;
 
-    #[cfg_attr(coverage_nightly, coverage(off))]
     async fn handle(&self, mut consumes: SessionContext, initial_input: String) -> anyhow::Result<HList![EntryParam]> {
       let operator_value = consumes.pop().ok_or_else(|| anyhow!("Admin error or error on frontend."))?.1;
       let msisdn_value = consumes.pop().ok_or_else(|| anyhow!("Admin error or error on frontend."))?.1;
@@ -197,7 +194,7 @@ mod tests {
       (Case2, HList![Split2Param, CommonSplitParam]),
       (Case3, HList![CommonSplitParam])
     ];
-    async fn handle(&self, consumes: Self::Consumes) -> anyhow::Result<Self::Produces> {
+    async fn handle<'a>(&self, consumes: <Self::Consumes as ToRef<'a>>::Output) -> anyhow::Result<Self::Produces> {
       Ok(match consumes.head.0 {
         1 => Self::Produces::inject((Case1, hlist!(Split1Param, CommonSplitParam))),
         2 => Self::Produces::inject((Case2, hlist!(Split2Param, CommonSplitParam))),
@@ -212,7 +209,7 @@ mod tests {
     type Produces =
       Coprod![(Case1, HList![Split1Param, CommonSplitParam]), (Case2, HList![Split2Param, CommonSplitParam])];
 
-    async fn handle(&self, consumes: Self::Consumes) -> anyhow::Result<Self::Produces> {
+    async fn handle<'a>(&self, consumes: <Self::Consumes as ToRef<'a>>::Output) -> anyhow::Result<Self::Produces> {
       Ok(match consumes.head.0 {
         1 => Self::Produces::inject((Case1, hlist!(Split1Param, CommonSplitParam))),
         _ => Self::Produces::inject((Case2, hlist!(Split2Param, CommonSplitParam))),
@@ -227,7 +224,7 @@ mod tests {
     type Consumes = HNil;
     type Produces = Coprod![(InnerCase0, HNil), (InnerCase1, HNil)];
 
-    async fn handle(&self, _consumes: Self::Consumes) -> anyhow::Result<Self::Produces> {
+    async fn handle<'a>(&self, _consumes: <Self::Consumes as ToRef<'a>>::Output) -> anyhow::Result<Self::Produces> {
       Ok(Self::Produces::inject((InnerCase0, HNil)))
     }
   }
@@ -236,7 +233,7 @@ mod tests {
     type Consumes = HNil;
     type Produces = Coprod![(InnerCase0, HNil), (InnerCase1, HNil)];
 
-    async fn handle(&self, _consumes: Self::Consumes) -> anyhow::Result<Self::Produces> {
+    async fn handle<'a>(&self, _consumes: <Self::Consumes as ToRef<'a>>::Output) -> anyhow::Result<Self::Produces> {
       Ok(Self::Produces::inject((InnerCase1, HNil)))
     }
   }
@@ -251,7 +248,7 @@ mod tests {
       (Case4, HList![Split2Param, CommonSplitParam]),
     ];
 
-    async fn handle(&self, consumes: Self::Consumes) -> anyhow::Result<Self::Produces> {
+    async fn handle<'a>(&self, consumes: <Self::Consumes as ToRef<'a>>::Output) -> anyhow::Result<Self::Produces> {
       Ok(match consumes.head.0 {
         1 => Self::Produces::inject((Case1, hlist!(Split1Param, CommonSplitParam))),
         2 => Self::Produces::inject((Case2, hlist!(Split2Param, CommonSplitParam))),
@@ -520,13 +517,16 @@ mod tests {
     type Produces = Coprod![(Case1, HList![Split1Param]), (Case2, HList![Split2Param])];
     type Messages = Messages;
 
-    async fn create_form(&self, _consumes: Self::CreateFormConsumes) -> anyhow::Result<Message> {
+    async fn create_form<'a>(
+      &self,
+      _consumes: <Self::CreateFormConsumes as ToRef<'a>>::Output,
+    ) -> anyhow::Result<Message> {
       Ok(Message("choose case".into()))
     }
 
-    async fn handle_input(
+    async fn handle_input<'a>(
       &self,
-      _consumes: Self::ValidateInputConsumes,
+      _consumes: <Self::ValidateInputConsumes as ToRef<'a>>::Output,
       user_input: String,
       failed: FailedInputValidationAttempts,
     ) -> anyhow::Result<InputValidation<Self::Produces, Messages>> {
@@ -547,13 +547,16 @@ mod tests {
     type Produces = Coprod![(Case1, HList![InnerSplit1Param]), (Case2, HList![InnerSplit2Param])];
     type Messages = Messages;
 
-    async fn create_form(&self, _consumes: Self::CreateFormConsumes) -> anyhow::Result<Message> {
+    async fn create_form<'a>(
+      &self,
+      _consumes: <Self::CreateFormConsumes as ToRef<'a>>::Output,
+    ) -> anyhow::Result<Message> {
       Ok(Message("choose case".into()))
     }
 
-    async fn handle_input(
+    async fn handle_input<'a>(
       &self,
-      _consumes: Self::ValidateInputConsumes,
+      _consumes: <Self::ValidateInputConsumes as ToRef<'a>>::Output,
       user_input: String,
       failed: FailedInputValidationAttempts,
     ) -> anyhow::Result<InputValidation<Self::Produces, Messages>> {
@@ -591,7 +594,6 @@ mod tests {
     let process = ExtractMsisdnOperatorAndShortcodeString.show(FinishAfterInput).end(FinalNoConsumes).build("", 0);
     test_process_messages(&process, vec!["*123#", "Last number in the process", "10", "Always finnish"]).await;
 
-    #[cfg_attr(coverage_nightly, coverage(off))]
     async fn test_return_error_on_param_missing_from_init_value(
       process: &RunnableProcess<impl FinalizedProcess<Messages = Messages>>,
       messages: Vec<&str>,
@@ -610,7 +612,6 @@ mod tests {
     }
     test_return_error_on_param_missing_from_init_value(&process, vec!["*123#"]).await;
 
-    #[cfg_attr(coverage_nightly, coverage(off))]
     async fn test_return_error_on_param_missing_from_context(
       process: &RunnableProcess<impl FinalizedProcess<Messages = Messages>>,
       messages: Vec<&str>,

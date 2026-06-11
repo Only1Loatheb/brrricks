@@ -72,25 +72,28 @@ impl<Tag: Send + Sync, ThisCase: ParamList, OtherCase: Send + Sync> SplitterOutp
 /// Works with at least two cases.
 /// If you want single option form, just produce link form with a single link using Form step
 pub trait Splitter: Send + Sync {
-  type Consumes: ParamList;
+  type Consumes: ParamList + for<'a> ToRef<'a>;
   type Produces: SplitterOutput;
-  fn handle(&self, consumes: Self::Consumes) -> impl Future<Output = anyhow::Result<Self::Produces>> + Send;
+  fn handle(
+    &self,
+    consumes: <Self::Consumes as ToRef>::Output,
+  ) -> impl Future<Output = anyhow::Result<Self::Produces>> + Send;
 }
 
 /// Works with at least two cases.
 /// Just produce link form with a single link using Form step
 pub trait FormSplitter: Send + Sync {
-  type CreateFormConsumes: ParamList;
-  type ValidateInputConsumes: ParamList;
+  type CreateFormConsumes: ParamList + for<'a> ToRef<'a>;
+  type ValidateInputConsumes: ParamList + for<'a> ToRef<'a>;
   type Produces: SplitterOutput;
   type Messages: ProcessMessages;
   fn create_form(
     &self,
-    consumes: Self::CreateFormConsumes,
+    consumes: <Self::CreateFormConsumes as ToRef>::Output,
   ) -> impl Future<Output = anyhow::Result<<Self::Messages as ProcessMessages>::FormMessage>> + Send;
   fn handle_input(
     &self,
-    consumes: Self::ValidateInputConsumes,
+    consumes: <Self::ValidateInputConsumes as ToRef>::Output,
     user_input: String,
     failed_input_validation_attempts: FailedInputValidationAttempts,
   ) -> impl Future<Output = anyhow::Result<InputValidation<Self::Produces, Self::Messages>>> + Send;

@@ -31,7 +31,7 @@ pre-push:
       cargo clippy --all-targets --all-features -p bricks -p type_process_builder -p qrios_api_process_runner -p qrios_api_process_entry \
       -- -D warnings -W clippy::all
     - |
-      cargo +nightly llvm-cov --package type_process_builder \
+      cargo llvm-cov --package type_process_builder \
       --fail-under-regions 60 --fail-under-functions 74 --fail-under-lines 67
     - cargo test -p qrios_api_process_runner
     - cargo xtask

@@ -2,7 +2,7 @@ use crate::builder::{
   CurrentRunYieldedAt, FlowingProcess, IntermediateFinalizedSplitOutcome, IntermediateFinalizedSplitResult,
   IntermediateRunOutcome, ParamList, ParamUID, PreviousRunYieldedAt, SessionContext, SplitProcess, StepIndex,
 };
-use crate::param_list::clone_just::CloneJust;
+use crate::param_list::borrow_just::BorrowJust;
 use crate::param_list::concat::Concat;
 use crate::step::{FailedInputValidationAttempts, FormSplitter, InputValidation};
 use frunk_core::coproduct::Coproduct;
@@ -49,9 +49,9 @@ impl<
   >
 where
   for<'a> &'a ProcessBefore::Produces:
-    CloneJust<SplitterStep::CreateFormConsumes, ProcessBeforeProducesToCreateFormConsumesIndices>,
+    BorrowJust<'a, SplitterStep::CreateFormConsumes, ProcessBeforeProducesToCreateFormConsumesIndices>,
   for<'a> &'a ProcessBefore::Produces:
-    CloneJust<SplitterStep::ValidateInputConsumes, ProcessBeforeProducesToValidateInputConsumesIndices>,
+    BorrowJust<'a, SplitterStep::ValidateInputConsumes, ProcessBeforeProducesToValidateInputConsumesIndices>,
 {
   type ProcessBeforeSplitProduces = ProcessBefore::Produces;
   type SplitterProducesForFirstCase = SplitterProducesForFirstCase;
@@ -85,7 +85,10 @@ where
       }
     } else {
       let process_before_split_produced = ProcessBefore::Produces::deserialize(previous_run_produced)?;
-      let last_step_consumes = (&process_before_split_produced).clone_just();
+      let last_step_consumes =
+        <&ProcessBefore::Produces as BorrowJust<'_, SplitterStep::ValidateInputConsumes, _>>::borrow_just(
+          &process_before_split_produced,
+        );
       match self.splitter.handle_input(last_step_consumes, user_input, failed_input_validation_attempts).await? {
         InputValidation::Successful(splitter_produces) => {
           let splitter_produces_to_other_cases = match splitter_produces {
@@ -111,7 +114,10 @@ where
     Coproduct<Self::SplitterProducesForFirstCase, SplitterProducesForOtherCases>,
     Self::Messages,
   > {
-    let splitter_step_consumes = (&process_before_split_produced).clone_just();
+    let splitter_step_consumes =
+      <&ProcessBefore::Produces as BorrowJust<'_, SplitterStep::CreateFormConsumes, _>>::borrow_just(
+        &process_before_split_produced,
+      );
     Ok(IntermediateFinalizedSplitOutcome::Yield(
       self.splitter.create_form(splitter_step_consumes).await?,
       process_before_split_produced.serialize()?,
