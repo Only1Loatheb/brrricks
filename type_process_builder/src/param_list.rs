@@ -11,13 +11,12 @@ pub mod concat;
 pub mod intersect;
 pub mod transform;
 
-/// clone (required by run method) should be used in brick instead
 /// Use [typenum::op] to generate UID if the desired typenum const is missing.
-pub trait ParamValue: Clone + Serialize + DeserializeOwned + Send + Sync {
+pub trait ParamValue: Serialize + DeserializeOwned + Send + Sync {
   type UID: Unsigned;
 }
 
-pub trait ParamList: HList + Clone + Send + Sync {
+pub trait ParamList: HList + Send + Sync {
   // https://serde.rs/impl-serialize.html#serializing-a-sequence-or-map
   fn serialize(&self) -> anyhow::Result<SessionContext> {
     let mut session_context = Vec::with_capacity(self.len());

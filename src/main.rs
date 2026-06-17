@@ -9,13 +9,13 @@ use type_process_builder::builder::*;
 use type_process_builder::step::{Entry, FailedInputValidationAttempts, Final, Form, FormSplitter, InputValidation};
 use typenum::*;
 
-#[derive(Clone, Deserialize, Serialize)]
+#[derive(Deserialize, Serialize)]
 struct ShortcodeString(String);
 impl ParamValue for ShortcodeString {
   type UID = U0;
 }
 
-#[derive(Clone, Deserialize, Serialize)]
+#[derive(Deserialize, Serialize)]
 struct Amount(u32);
 impl ParamValue for Amount {
   type UID = U1;

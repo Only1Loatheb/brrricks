@@ -27,73 +27,73 @@ mod tests {
   use std::marker::PhantomData;
   use typenum::*;
 
-  #[derive(Clone, Debug, Deserialize, Serialize)]
+  #[derive(Deserialize, Serialize)]
   struct Msisdn(pub u64);
 
   #[allow(clippy::upper_case_acronyms)]
-  #[derive(Clone, Debug, Deserialize, Serialize)]
+  #[derive(Deserialize, Serialize)]
   enum Operator {
     MTN,
   }
 
-  #[derive(Clone, Deserialize, Serialize)]
+  #[derive(Deserialize, Serialize)]
   struct ShortcodeString(String);
 
-  #[derive(Clone, Deserialize, Serialize)]
+  #[derive(Deserialize, Serialize)]
   struct EntryParam(Msisdn, Operator, ShortcodeString);
   impl ParamValue for EntryParam {
     type UID = U0;
   }
 
-  #[derive(Clone, Deserialize, Serialize)]
+  #[derive(Deserialize, Serialize)]
   struct Split1Param;
   impl ParamValue for Split1Param {
     type UID = U1;
   }
 
-  #[derive(Clone, Deserialize, Serialize)]
+  #[derive(Deserialize, Serialize)]
   struct Split2Param;
   impl ParamValue for Split2Param {
     type UID = U2;
   }
 
-  #[derive(Clone, Deserialize, Serialize)]
+  #[derive(Deserialize, Serialize)]
   struct CommonSplitParam;
   impl ParamValue for CommonSplitParam {
     type UID = U3;
   }
 
-  #[derive(Clone, Deserialize, Serialize)]
+  #[derive(Deserialize, Serialize)]
   struct Case1Param;
   impl ParamValue for Case1Param {
     type UID = U4;
   }
 
-  #[derive(Clone, Deserialize, Serialize)]
+  #[derive(Deserialize, Serialize)]
   struct Case2Param;
   impl ParamValue for Case2Param {
     type UID = U5;
   }
 
-  #[derive(Clone, Deserialize, Serialize)]
+  #[derive(Deserialize, Serialize)]
   struct CommonCaseParam;
   impl ParamValue for CommonCaseParam {
     type UID = U6;
   }
 
-  #[derive(Clone, Deserialize, Serialize)]
+  #[derive(Deserialize, Serialize)]
   struct CaseOptionParam(pub u8);
   impl ParamValue for CaseOptionParam {
     type UID = U7;
   }
 
-  #[derive(Clone, Deserialize, Serialize)]
+  #[derive(Deserialize, Serialize)]
   struct InnerSplit1Param;
   impl ParamValue for InnerSplit1Param {
     type UID = U8;
   }
 
-  #[derive(Clone, Deserialize, Serialize)]
+  #[derive(Deserialize, Serialize)]
   struct InnerSplit2Param;
   impl ParamValue for InnerSplit2Param {
     type UID = U9;

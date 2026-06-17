@@ -233,25 +233,25 @@ mod tests {
 
     sqlx::query("CREATE SCHEMA session_store").execute(&pool).await.expect("Failed to create schema");
 
-    #[derive(Clone, Deserialize, Serialize)]
+    #[derive(Deserialize, Serialize)]
     struct FormOutput;
     impl ParamValue for FormOutput {
       type UID = U1;
     }
 
-    #[derive(Clone, Deserialize, Serialize)]
+    #[derive(Deserialize, Serialize)]
     struct OperationOutput;
     impl ParamValue for OperationOutput {
       type UID = U2;
     }
 
-    #[derive(Clone, Deserialize, Serialize)]
+    #[derive(Deserialize, Serialize)]
     struct SplitCase1Output;
     impl ParamValue for SplitCase1Output {
       type UID = U3;
     }
 
-    #[derive(Clone, Deserialize, Serialize)]
+    #[derive(Deserialize, Serialize)]
     struct SplitCase2Output;
     impl ParamValue for SplitCase2Output {
       type UID = U4;
