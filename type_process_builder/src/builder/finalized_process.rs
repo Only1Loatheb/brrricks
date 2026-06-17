@@ -1,11 +1,12 @@
 use crate::builder::flowing_process::FlowingProcess;
 use crate::builder::runnable_process::RunnableProcess;
 use crate::builder::{
-  IntermediateRunOutcome, ParamUID, PreviousRunYieldedAt, RunOutcome, RunResult, SessionContext, StepIndex,
+  IntermediateRunOutcome, ParamUID, PreviousRunYieldedAt, RawFormContext, RunOutcome, RunResult, SessionContext,
+  StepIndex,
 };
 use crate::param_list::ParamList;
 use crate::param_list::transform::TransformTo;
-use crate::step::{FailedInputValidationAttempts, Final, ProcessMessages};
+use crate::step::{Final, ProcessMessages};
 use std::future::Future;
 use std::marker::PhantomData;
 
@@ -20,7 +21,7 @@ pub trait FinalizedProcess: Sized + Send + Sync {
     previous_run_produced: SessionContext,
     previous_run_yielded_at: PreviousRunYieldedAt,
     user_input: String,
-    failed_input_validation_attempts: FailedInputValidationAttempts,
+    form_context: RawFormContext,
   ) -> impl Future<Output = RunResult<Self::Messages>> + Send;
 
   fn continue_run(
@@ -71,12 +72,10 @@ where
     previous_run_produced: SessionContext,
     previous_run_yielded_at: PreviousRunYieldedAt,
     user_input: String,
-    failed_input_validation_attempts: FailedInputValidationAttempts,
+    form_context: RawFormContext,
   ) -> RunResult<Self::Messages> {
-    let outcome = self
-      .process_before
-      .resume_run(previous_run_produced, previous_run_yielded_at, user_input, failed_input_validation_attempts)
-      .await?;
+    let outcome =
+      self.process_before.resume_run(previous_run_produced, previous_run_yielded_at, user_input, form_context).await?;
     match outcome {
       IntermediateRunOutcome::Continue(val) => self.continue_run(val).await,
       IntermediateRunOutcome::Yield(a, b, c) => Ok(RunOutcome::Yield(a, b, c)),

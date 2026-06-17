@@ -13,10 +13,11 @@ pub mod documentation_diagrams {}
 
 #[cfg(test)]
 mod tests {
+  use std::convert::Infallible;
   use crate::builder::*;
   use crate::param_list::ParamValue;
   use crate::step::{
-    Entry, FailedInputValidationAttempts, Final, Form, FormSplitter, InputValidation, Operation, OperationOutcome,
+    Entry, Final, Form, FormSplitter, InputValidation, Operation, OperationOutcome,
     ProcessMessages, Splitter,
   };
   use anyhow::anyhow;
@@ -286,11 +287,15 @@ mod tests {
     }
   }
 
+  #[derive(Serialize, Deserialize)]
+  struct EmptyContext;
+
   struct FinishEarlyForm;
   impl Form for FinishEarlyForm {
     type CreateFormConsumes = HNil;
     type ValidateInputConsumes = HNil;
     type Produces = HNil;
+    type Context = EmptyContext;
     type Messages = Messages;
 
     async fn create_form<'a>(
@@ -304,7 +309,7 @@ mod tests {
       &self,
       _consumes: <Self::ValidateInputConsumes as ToRef<'a>>::Output,
       _user_input: String,
-      _failed_attempts: FailedInputValidationAttempts,
+      _form_context: Self::Context,
     ) -> anyhow::Result<InputValidation<Self::Produces, Messages>> {
       Ok(InputValidation::Finish(Message("Form finished".into())))
     }
@@ -325,6 +330,7 @@ mod tests {
     type CreateFormConsumes = HList![Split1Param];
     type ValidateInputConsumes = HNil;
     type Produces = HList![CommonCaseParam];
+    type Context = EmptyContext;
     type Messages = Messages;
 
     async fn create_form<'a>(
@@ -338,7 +344,7 @@ mod tests {
       &self,
       _consumes: <Self::ValidateInputConsumes as ToRef<'a>>::Output,
       _user_input: String,
-      _failed_input_validation_attempts: FailedInputValidationAttempts,
+      _form_context: RawFormContext,
     ) -> anyhow::Result<InputValidation<Self::Produces, Messages>> {
       Ok(InputValidation::Successful(hlist![CommonCaseParam]))
     }
@@ -362,7 +368,7 @@ mod tests {
       &self,
       _consumes: <Self::ValidateInputConsumes as ToRef<'a>>::Output,
       _user_input: String,
-      _failed_input_validation_attempts: FailedInputValidationAttempts,
+      _form_context: RawFormContext,
     ) -> anyhow::Result<InputValidation<Self::Produces, Messages>> {
       Ok(InputValidation::Successful(hlist![CommonCaseParam]))
     }
@@ -386,7 +392,7 @@ mod tests {
       &self,
       _consumes: <Self::ValidateInputConsumes as ToRef<'a>>::Output,
       _user_input: String,
-      _failed_input_validation_attempts: FailedInputValidationAttempts,
+      _form_context: RawFormContext,
     ) -> anyhow::Result<InputValidation<Self::Produces, Messages>> {
       Ok(InputValidation::Successful(HNil))
     }
@@ -410,7 +416,7 @@ mod tests {
       &self,
       _consumes: <Self::ValidateInputConsumes as ToRef<'a>>::Output,
       _user_input: String,
-      _failed_input_validation_attempts: FailedInputValidationAttempts,
+      _form_context: RawFormContext,
     ) -> anyhow::Result<InputValidation<Self::Produces, Messages>> {
       Ok(InputValidation::Finish(Message("Always finnish".into())))
     }
@@ -434,9 +440,9 @@ mod tests {
       &self,
       _consumes: <Self::ValidateInputConsumes as ToRef<'a>>::Output,
       _user_input: String,
-      failed_input_validation_attempts: FailedInputValidationAttempts,
+      form_context: FormContext,
     ) -> anyhow::Result<InputValidation<Self::Produces, Messages>> {
-      match failed_input_validation_attempts.0 {
+      match form_context.0 {
         0 => Ok(InputValidation::Retry(Message("This will be accepted".into()))),
         _ => Ok(InputValidation::Successful(hlist![CommonCaseParam])),
       }
@@ -461,7 +467,7 @@ mod tests {
       &self,
       _consumes: <Self::ValidateInputConsumes as ToRef<'a>>::Output,
       user_input: String,
-      _failed_attempts: FailedInputValidationAttempts,
+      _form_context: Self::FormContext,
     ) -> anyhow::Result<InputValidation<Self::Produces, Messages>> {
       let option = user_input.parse::<u8>().unwrap_or(1);
       Ok(InputValidation::Successful(hlist!(CaseOptionParam(option))))
@@ -528,7 +534,7 @@ mod tests {
       &self,
       _consumes: <Self::ValidateInputConsumes as ToRef<'a>>::Output,
       user_input: String,
-      failed: FailedInputValidationAttempts,
+      failed: FormContext,
     ) -> anyhow::Result<InputValidation<Self::Produces, Messages>> {
       match (user_input.as_str(), failed.0) {
         ("retry", 0) => Ok(InputValidation::Retry(Message("retry again".into()))),
@@ -558,7 +564,7 @@ mod tests {
       &self,
       _consumes: <Self::ValidateInputConsumes as ToRef<'a>>::Output,
       user_input: String,
-      failed: FailedInputValidationAttempts,
+      failed: FormContext,
     ) -> anyhow::Result<InputValidation<Self::Produces, Messages>> {
       match (user_input.as_str(), failed.0) {
         ("retry", 0) => Ok(InputValidation::Retry(Message("retry again".into()))),
@@ -605,7 +611,7 @@ mod tests {
           init_value,
           PreviousRunYieldedAt(StepIndex::MIN),
           messages[0].into(),
-          FailedInputValidationAttempts(0),
+          FormContext(0),
         )
         .await;
       assert!(run_outcome.is_err_and(|x| format!("{x}") == "Admin error or error on frontend."))
@@ -622,7 +628,7 @@ mod tests {
           session_init_value(),
           PreviousRunYieldedAt(StepIndex::MIN),
           messages[messages_index].into(),
-          FailedInputValidationAttempts(0),
+          FormContext(0),
         )
         .await
         .expect("Test failed");
@@ -636,7 +642,7 @@ mod tests {
               value,
               PreviousRunYieldedAt(yielded_at.0),
               messages[messages_index].into(),
-              FailedInputValidationAttempts(0),
+              FormContext(0),
             )
             .await;
           assert!(run_outcome.is_err_and(|x| format!("{x}") == "Missing key: 0"))
@@ -982,7 +988,7 @@ mod tests {
       &self,
       _consumes: <Self::ValidateInputConsumes as ToRef<'a>>::Output,
       user_input: String,
-      _failed_input_validation_attempts: FailedInputValidationAttempts,
+      _form_context: RawFormContext,
     ) -> anyhow::Result<InputValidation<Self::Produces, Messages>> {
       if user_input == "retry" {
         Ok(InputValidation::Retry(Message("Try again".into())))
@@ -1257,7 +1263,7 @@ mod tests {
   ) {
     let mut previous_run_produced = session_init_value();
     let mut previous_run_yielded_at = PreviousRunYieldedAt(StepIndex::MIN);
-    let mut failed_attempts = FailedInputValidationAttempts(0);
+    let mut failed_attempts = FormContext(0);
     let mut messages_index = 0;
     // run ordered_all_unique_param_uids in tests to check what code is reachable and it does not panic
     let _ = process.ordered_all_unique_param_uids();
@@ -1276,12 +1282,12 @@ mod tests {
         RunOutcome::Yield(msg, value, yielded_at) => {
           previous_run_produced = value;
           previous_run_yielded_at = PreviousRunYieldedAt(yielded_at.0);
-          failed_attempts = FailedInputValidationAttempts(0);
+          failed_attempts = FormContext(0);
 
           assert_eq!(msg.0, messages[messages_index])
         },
         RunOutcome::RetryUserInput(msg) => {
-          failed_attempts = FailedInputValidationAttempts(failed_attempts.0 + 1);
+          failed_attempts = FormContext(failed_attempts.0 + 1);
 
           assert_eq!(msg.0, messages[messages_index])
         },

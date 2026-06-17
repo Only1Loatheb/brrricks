@@ -1,8 +1,5 @@
 use sqlx::{Executor, PgPool, Row};
-use type_process_builder::builder::{
-  CurrentRunYieldedAt, FinalizedProcess, ParamUID, PreviousRunYieldedAt, RunnableProcess,
-};
-use type_process_builder::step::FailedInputValidationAttempts;
+use type_process_builder::builder::{CurrentRunYieldedAt, FinalizedProcess, ParamUID, PreviousRunYieldedAt, RawFormContext, RunnableProcess, SessionContext};
 
 pub async fn create_session_context_table<Process: FinalizedProcess>(
   pool: &PgPool,
@@ -21,7 +18,7 @@ pub async fn create_session_context_table<Process: FinalizedProcess>(
     CREATE TABLE IF NOT EXISTS {table_name} (
       id BIGSERIAL PRIMARY KEY,
       previous_run_yielded_at INTEGER NOT NULL,
-      failed_input_validation_attempts SMALLINT NOT NULL{param_columns})"#,
+      form_context BYTEA{param_columns})"#,
   );
 
   pool.execute(sql.as_str()).await?;
@@ -33,10 +30,10 @@ pub async fn create_session_context<Process: FinalizedProcess>(
   pool: &PgPool,
   process: &RunnableProcess<Process>,
   current_run_yielded_at: CurrentRunYieldedAt,
-  failed_input_validation_attempts: FailedInputValidationAttempts,
-  session_context: Vec<(u32, Vec<u8>)>,
+  form_context: RawFormContext,
+  session_context: SessionContext,
 ) -> Result<i64, sqlx::Error> {
-  let mut columns = vec!["previous_run_yielded_at".to_string(), "failed_input_validation_attempts".to_string()];
+  let mut columns = vec!["previous_run_yielded_at".to_string(), "form_context".to_string()];
   let mut placeholders = vec!["$1".to_string(), "$2".to_string()];
 
   for (i, (col, _)) in session_context.iter().enumerate() {
@@ -48,7 +45,7 @@ pub async fn create_session_context<Process: FinalizedProcess>(
   let sql =
     format!("INSERT INTO {table_name} ({}) VALUES ({}) RETURNING id;", columns.join(", "), placeholders.join(", "));
 
-  let mut query = sqlx::query(&sql).bind(current_run_yielded_at.0).bind(failed_input_validation_attempts.0 as i16);
+  let mut query = sqlx::query(&sql).bind(current_run_yielded_at.0).bind(form_context);
 
   for (_, value) in session_context {
     query = query.bind(value);
@@ -61,7 +58,7 @@ use sqlx::postgres::PgQueryResult;
 
 pub struct GetSessionContextQuery(String);
 /// Builds:
-/// SELECT "previous_run_yielded_at","failed_input_validation_attempts","0","1","2"
+/// SELECT "previous_run_yielded_at","form_context","0","1","2"
 /// FROM session_store.process_version
 /// WHERE id = $1
 pub fn build_get_session_context_query<Process: FinalizedProcess>(
@@ -70,7 +67,7 @@ pub fn build_get_session_context_query<Process: FinalizedProcess>(
 ) -> GetSessionContextQuery {
   let mut sql = String::with_capacity(64 + ordered_all_unique_param_uids.len() * 8);
 
-  sql.push_str("SELECT \"previous_run_yielded_at\",\"failed_input_validation_attempts\"");
+  sql.push_str("SELECT \"previous_run_yielded_at\",\"form_context\"");
   for uid in ordered_all_unique_param_uids {
     sql.push_str(&format!(",\"{uid}\""));
   }
@@ -85,11 +82,11 @@ pub async fn get_session_context(
   sql: &GetSessionContextQuery,
   session_id: i64,
   ordered_all_unique_param_uids: &[ParamUID],
-) -> Result<(PreviousRunYieldedAt, FailedInputValidationAttempts, Vec<(u32, Vec<u8>)>), sqlx::Error> {
+) -> Result<(PreviousRunYieldedAt,RawFormContext, SessionContext), sqlx::Error> {
   let row = sqlx::query(&sql.0).bind(session_id).fetch_one(pool).await?;
 
   let previous_run_yielded_at = PreviousRunYieldedAt(row.try_get(0)?);
-  let failed_input_validation_attempts = FailedInputValidationAttempts(row.try_get::<i16, _>(1)? as u8);
+  let form_context = row.try_get::<Vec<u8>, _>(1)?;
 
   let mut session_context = Vec::with_capacity(ordered_all_unique_param_uids.len());
   for idx_and_param_uid in ordered_all_unique_param_uids.iter().enumerate() {
@@ -98,7 +95,7 @@ pub async fn get_session_context(
     }
   }
 
-  Ok((previous_run_yielded_at, failed_input_validation_attempts, session_context))
+  Ok((previous_run_yielded_at, form_context, session_context))
 }
 
 pub async fn delete_session_context<Process: FinalizedProcess>(
@@ -131,7 +128,7 @@ pub async fn increment_failed_input_validation_attempts<Process: FinalizedProces
   let sql = format!(
     r#"
       UPDATE {table_name}
-      SET failed_input_validation_attempts = failed_input_validation_attempts + 1
+      SET form_context = form_context + 1
       WHERE id = $1
     "#
   );
@@ -144,12 +141,12 @@ pub async fn update_session_context<Process: FinalizedProcess>(
   process: &RunnableProcess<Process>,
   id: i64,
   current_run_yielded_at: CurrentRunYieldedAt,
-  failed_input_validation_attempts: FailedInputValidationAttempts,
-  params_to_store: Vec<(u32, Vec<u8>)>,
+  form_context: RawFormContext,
+  params_to_store: SessionContext,
   params_to_remove: Vec<u32>,
 ) -> Result<(), sqlx::Error> {
   let mut assignments =
-    vec!["previous_run_yielded_at = $1".to_string(), "failed_input_validation_attempts = $2".to_string()];
+    vec!["previous_run_yielded_at = $1".to_string(), "form_context = $2".to_string()];
 
   for (i, (col, _)) in params_to_store.iter().enumerate() {
     assignments.push(format!("\"{}\" = ${}", col, i + 3));
@@ -169,7 +166,7 @@ pub async fn update_session_context<Process: FinalizedProcess>(
 
   let sql = format!("UPDATE {table_name} SET {} WHERE id = ${};", assignments.join(", "), where_placeholder);
 
-  let mut query = sqlx::query(&sql).bind(current_run_yielded_at.0).bind(failed_input_validation_attempts.0 as i16);
+  let mut query = sqlx::query(&sql).bind(current_run_yielded_at.0).bind(form_context);
 
   for (_, value) in params_to_store {
     query = query.bind(value);

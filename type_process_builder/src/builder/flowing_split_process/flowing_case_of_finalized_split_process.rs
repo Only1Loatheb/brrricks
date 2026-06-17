@@ -1,12 +1,6 @@
 use crate::builder::subprocess::{Subprocess, subprocess};
-use crate::builder::{
-  FinalizedCaseOfFlowingSplitProcess, FinalizedProcess, FinalizedSplitProcess, FlowingCaseOfFlowingSplitProcess,
-  FlowingProcess, FlowingSplitProcess, IntermediateFinalizedSplitOutcome, IntermediateFlowingSplitOutcome,
-  IntermediateFlowingSplitResult, IntermediateRunOutcome, IntermediateRunResult, ParamList, ParamUID,
-  PreviousRunYieldedAt, SessionContext, StepIndex, WILL_BE_RENUMBERED,
-};
+use crate::builder::{FinalizedCaseOfFlowingSplitProcess, FinalizedProcess, FinalizedSplitProcess, FlowingCaseOfFlowingSplitProcess, FlowingProcess, FlowingSplitProcess, IntermediateFinalizedSplitOutcome, IntermediateFlowingSplitOutcome, IntermediateFlowingSplitResult, IntermediateRunOutcome, IntermediateRunResult, ParamList, ParamUID, PreviousRunYieldedAt, RawFormContext, SessionContext, StepIndex, WILL_BE_RENUMBERED};
 use crate::param_list::concat::Concat;
-use crate::step::FailedInputValidationAttempts;
 use frunk_core::coproduct::{CNil, Coproduct};
 use std::marker::PhantomData;
 
@@ -145,13 +139,13 @@ for FlowingCaseOfFinalizedSplitProcess<
     previous_run_produced: SessionContext,
     previous_run_yielded_at: PreviousRunYieldedAt,
     user_input: String,
-    failed_input_validation_attempts: FailedInputValidationAttempts,
+    form_context: RawFormContext,
   ) -> IntermediateFlowingSplitResult<Self::ProcessBeforeSplitProduces, SplitterProducesForOtherCases,
     Self::EveryFlowingCaseProduces, Self::Messages> {
     if previous_run_yielded_at.0 < self.case_index {
       let process_before_output = self
         .split_process_before
-        .resume_run(previous_run_produced, previous_run_yielded_at, user_input, failed_input_validation_attempts)
+        .resume_run(previous_run_produced, previous_run_yielded_at, user_input, form_context)
         .await?;
       match process_before_output {
         IntermediateFinalizedSplitOutcome::GoToCase {
@@ -173,7 +167,7 @@ for FlowingCaseOfFinalizedSplitProcess<
         previous_run_produced,
         previous_run_yielded_at,
         user_input,
-        failed_input_validation_attempts,
+        form_context,
       ).await? {
         IntermediateRunOutcome::Continue(a) => Ok(IntermediateFlowingSplitOutcome::Continue(a)),
         IntermediateRunOutcome::Yield(a, b, c) => Ok(IntermediateFlowingSplitOutcome::Yield(a, b, c)),
@@ -270,12 +264,12 @@ for FlowingCaseOfFinalizedSplitProcess<
     previous_run_produced: SessionContext,
     previous_run_yielded_at: PreviousRunYieldedAt,
     user_input: String,
-    failed_input_validation_attempts: FailedInputValidationAttempts,
+    form_context: RawFormContext,
   ) -> IntermediateRunResult<Self::Produces, Self::Messages> {
     if previous_run_yielded_at.0 < self.case_index {
       let process_before_output = self
         .split_process_before
-        .resume_run(previous_run_produced, previous_run_yielded_at, user_input, failed_input_validation_attempts)
+        .resume_run(previous_run_produced, previous_run_yielded_at, user_input, form_context)
         .await?;
       match process_before_output {
         IntermediateFinalizedSplitOutcome::GoToCase {
@@ -302,7 +296,7 @@ for FlowingCaseOfFinalizedSplitProcess<
         previous_run_produced,
         previous_run_yielded_at,
         user_input,
-        failed_input_validation_attempts,
+        form_context,
       ).await? {
         IntermediateRunOutcome::Continue(a) => Ok(IntermediateRunOutcome::Continue(a)),
         IntermediateRunOutcome::Yield(a, b, c) => Ok(IntermediateRunOutcome::Yield(a, b, c)),

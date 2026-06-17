@@ -6,7 +6,7 @@ use frunk_core::traits::ToRef;
 use frunk_core::{Coprod, HList, hlist, hlist_pat};
 use serde::{Deserialize, Serialize};
 use type_process_builder::builder::*;
-use type_process_builder::step::{Entry, FailedInputValidationAttempts, Final, Form, FormSplitter, InputValidation};
+use type_process_builder::step::{Entry, Final, Form, FormSplitter, InputValidation};
 use typenum::*;
 
 #[derive(Deserialize, Serialize)]
@@ -55,7 +55,7 @@ impl FormSplitter for SelectAmountSource {
     &self,
     _consumes: <Self::ValidateInputConsumes as ToRef<'a>>::Output,
     user_input: String,
-    _failed_input_validation_attempts: FailedInputValidationAttempts,
+    _form_context: RawFormContext,
   ) -> anyhow::Result<InputValidation<Self::Produces, Messages>> {
     Ok(match user_input.as_str() {
       "1" => InputValidation::Successful(Self::Produces::inject((PredefinedAmount, hlist!(Amount(100))))),
@@ -65,11 +65,15 @@ impl FormSplitter for SelectAmountSource {
   }
 }
 
+#[derive(Serialize, Deserialize)]
+struct EmptyContext;
+
 struct AmountForm;
 impl Form for AmountForm {
   type CreateFormConsumes = HNil;
   type ValidateInputConsumes = HNil;
   type Produces = HList![Amount];
+  type Context = EmptyContext;
   type Messages = Messages;
 
   async fn create_form<'a>(
@@ -83,7 +87,7 @@ impl Form for AmountForm {
     &self,
     _consumes: <Self::ValidateInputConsumes as ToRef<'a>>::Output,
     user_input: String,
-    _failed_input_validation_attempts: FailedInputValidationAttempts,
+    _form_context: RawFormContext,
   ) -> anyhow::Result<InputValidation<Self::Produces, Messages>> {
     match user_input.parse::<u32>() {
       Ok(value) => Ok(InputValidation::Successful(hlist![Amount(value)])),

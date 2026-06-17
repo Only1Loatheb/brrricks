@@ -32,7 +32,9 @@ pub(crate) const WILL_BE_RENUMBERED: i32 = i32::MAX;
 
 pub type ParamUID = u32;
 
-pub(crate) type SessionContext = Vec<(ParamUID, Vec<u8>)>;
+pub type SessionContext = Vec<(ParamUID, Vec<u8>)>;
+
+pub type RawFormContext = Vec<u8>;
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum IntermediateRunOutcome<Produced: ParamList, Messages: ProcessMessages> {

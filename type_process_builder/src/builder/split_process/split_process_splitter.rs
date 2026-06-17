@@ -1,10 +1,7 @@
-use crate::builder::{
-  FlowingProcess, IntermediateFinalizedSplitOutcome, IntermediateFinalizedSplitResult, IntermediateRunOutcome,
-  ParamList, ParamUID, PreviousRunYieldedAt, SessionContext, SplitProcess, StepIndex,
-};
+use crate::builder::{FlowingProcess, IntermediateFinalizedSplitOutcome, IntermediateFinalizedSplitResult, IntermediateRunOutcome, ParamList, ParamUID, PreviousRunYieldedAt, RawFormContext, SessionContext, SplitProcess, StepIndex};
 use crate::param_list::borrow_just::BorrowJust;
 use crate::param_list::concat::Concat;
-use crate::step::{FailedInputValidationAttempts, Splitter};
+use crate::step::{Splitter};
 use frunk_core::coproduct::Coproduct;
 use std::marker::PhantomData;
 
@@ -53,7 +50,7 @@ where
     previous_run_produced: SessionContext,
     previous_run_yielded_at: PreviousRunYieldedAt,
     user_input: String,
-    failed_input_validation_attempts: FailedInputValidationAttempts,
+    form_context: RawFormContext,
   ) -> IntermediateFinalizedSplitResult<
     Self::ProcessBeforeSplitProduces,
     Coproduct<Self::SplitterProducesForFirstCase, SplitterProducesForOtherCases>,
@@ -62,7 +59,7 @@ where
     if previous_run_yielded_at.0 < self.step_index {
       let process_before_output = self
         .process_before
-        .resume_run(previous_run_produced, previous_run_yielded_at, user_input, failed_input_validation_attempts)
+        .resume_run(previous_run_produced, previous_run_yielded_at, user_input, form_context)
         .await?;
       match process_before_output {
         IntermediateRunOutcome::Continue(process_before_split_produced) => {

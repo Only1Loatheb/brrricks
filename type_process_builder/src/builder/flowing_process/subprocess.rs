@@ -1,8 +1,5 @@
-use crate::builder::{
-  FlowingProcess, IntermediateRunOutcome, IntermediateRunResult, ParamList, ParamUID, PreviousRunYieldedAt,
-  SessionContext, StepIndex,
-};
-use crate::step::{FailedInputValidationAttempts, ProcessMessages};
+use crate::builder::{FlowingProcess, IntermediateRunOutcome, IntermediateRunResult, ParamList, ParamUID, PreviousRunYieldedAt, RawFormContext, SessionContext, StepIndex};
+use crate::step::{ProcessMessages};
 use std::marker::PhantomData;
 
 pub struct Subprocess<ProcessBeforeProduces, Messages> {
@@ -22,7 +19,7 @@ impl<ProcessBeforeProduces: ParamList, Messages: ProcessMessages> FlowingProcess
     previous_run_produced: SessionContext,
     _previous_run_yielded_at: PreviousRunYieldedAt,
     _user_input: String,
-    _failed_input_validation_attempts: FailedInputValidationAttempts,
+    _form_context: RawFormContext,
   ) -> IntermediateRunResult<Self::Produces, Self::Messages> {
     let process_before_produces = ProcessBeforeProduces::deserialize(previous_run_produced)?;
     self.continue_run(process_before_produces).await

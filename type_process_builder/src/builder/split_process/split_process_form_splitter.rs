@@ -1,10 +1,7 @@
-use crate::builder::{
-  CurrentRunYieldedAt, FlowingProcess, IntermediateFinalizedSplitOutcome, IntermediateFinalizedSplitResult,
-  IntermediateRunOutcome, ParamList, ParamUID, PreviousRunYieldedAt, SessionContext, SplitProcess, StepIndex,
-};
+use crate::builder::{CurrentRunYieldedAt, FlowingProcess, IntermediateFinalizedSplitOutcome, IntermediateFinalizedSplitResult, IntermediateRunOutcome, ParamList, ParamUID, PreviousRunYieldedAt, RawFormContext, SessionContext, SplitProcess, StepIndex};
 use crate::param_list::borrow_just::BorrowJust;
 use crate::param_list::concat::Concat;
-use crate::step::{FailedInputValidationAttempts, FormSplitter, InputValidation};
+use crate::step::{FormSplitter, InputValidation};
 use frunk_core::coproduct::Coproduct;
 use std::marker::PhantomData;
 
@@ -64,7 +61,7 @@ where
     previous_run_produced: SessionContext,
     previous_run_yielded_at: PreviousRunYieldedAt,
     user_input: String,
-    failed_input_validation_attempts: FailedInputValidationAttempts,
+    form_context: RawFormContext,
   ) -> IntermediateFinalizedSplitResult<
     Self::ProcessBeforeSplitProduces,
     Coproduct<Self::SplitterProducesForFirstCase, SplitterProducesForOtherCases>,
@@ -73,7 +70,7 @@ where
     if previous_run_yielded_at.0 < self.step_index {
       let process_before_output = self
         .process_before
-        .resume_run(previous_run_produced, previous_run_yielded_at, user_input, failed_input_validation_attempts)
+        .resume_run(previous_run_produced, previous_run_yielded_at, user_input, form_context)
         .await?;
       match process_before_output {
         IntermediateRunOutcome::Continue(process_before_split_produced) => {
@@ -89,7 +86,8 @@ where
         <&ProcessBefore::Produces as BorrowJust<'_, SplitterStep::ValidateInputConsumes, _>>::borrow_just(
           &process_before_split_produced,
         );
-      match self.splitter.handle_input(last_step_consumes, user_input, failed_input_validation_attempts).await? {
+      let context: SplitterStep::Context = postcard::from_bytes(&form_context)?;
+      match self.splitter.handle_input(last_step_consumes, user_input, context).await? {
         InputValidation::Successful(splitter_produces) => {
           let splitter_produces_to_other_cases = match splitter_produces {
             Coproduct::Inl(a) => Coproduct::Inl(a.1),

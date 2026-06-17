@@ -1,7 +1,7 @@
 use std::io;
 use std::io::Write;
 use type_process_builder::builder::{FinalizedProcess, PreviousRunYieldedAt, RunOutcome, RunnableProcess, StepIndex};
-use type_process_builder::step::{FailedInputValidationAttempts, ProcessMessages};
+use type_process_builder::step::{ProcessMessages};
 
 pub(crate) struct Message(pub String);
 
@@ -16,7 +16,7 @@ pub(crate) async fn standard_io_process_runner(
 ) -> io::Result<()> {
   let mut previous_run_produced = Vec::new();
   let mut previous_run_yielded_at = PreviousRunYieldedAt(StepIndex::MIN);
-  let mut failed_attempts = FailedInputValidationAttempts(0);
+  let mut failed_attempts = FormContext(0);
 
   print!("Enter a shortcode");
   loop {
@@ -35,11 +35,11 @@ pub(crate) async fn standard_io_process_runner(
       RunOutcome::Yield(msg, value, yielded_at) => {
         previous_run_produced = value;
         previous_run_yielded_at = PreviousRunYieldedAt(yielded_at.0);
-        failed_attempts = FailedInputValidationAttempts(0);
+        failed_attempts = FormContext(0);
         println!("yielded: {}", msg.0);
       },
       RunOutcome::RetryUserInput(msg) => {
-        failed_attempts = FailedInputValidationAttempts(failed_attempts.0 + 1);
+        failed_attempts = FormContext(failed_attempts.0 + 1);
         println!("retry: {}", msg.0);
       },
       RunOutcome::Finish(msg) => {

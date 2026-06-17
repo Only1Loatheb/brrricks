@@ -1,6 +1,5 @@
 use crate::builder::finalized_process::FinalizedProcess;
-use crate::builder::{ParamUID, PreviousRunYieldedAt, RunResult, SessionContext, StepIndex};
-use crate::step::FailedInputValidationAttempts;
+use crate::builder::{ParamUID, PreviousRunYieldedAt, RawFormContext, RunResult, SessionContext, StepIndex};
 use std::collections::HashSet;
 
 pub struct RunnableProcess<UnderlyingProcess: FinalizedProcess> {
@@ -20,11 +19,11 @@ impl<UnderlyingProcess: FinalizedProcess> RunnableProcess<UnderlyingProcess> {
     previous_run_produced: SessionContext,
     previous_run_yielded_at: PreviousRunYieldedAt,
     user_input: String,
-    failed_input_validation_attempts: FailedInputValidationAttempts,
+    form_context: RawFormContext,
   ) -> RunResult<UnderlyingProcess::Messages> {
     self
       .finalized_process
-      .resume_run(previous_run_produced, previous_run_yielded_at, user_input, failed_input_validation_attempts)
+      .resume_run(previous_run_produced, previous_run_yielded_at, user_input, form_context)
       .await
   }
 

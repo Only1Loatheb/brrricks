@@ -13,7 +13,7 @@ use crate::builder::*;
 use crate::param_list::ParamList;
 use crate::param_list::concat::Concat;
 use crate::param_list::transform::TransformTo;
-use crate::step::{FailedInputValidationAttempts, Final, Form, FormSplitter, Operation, Splitter};
+use crate::step::{Final, Form, FormSplitter, Operation, Splitter};
 use frunk_core::coproduct::Coproduct;
 use std::future::Future;
 
@@ -29,7 +29,7 @@ pub trait FlowingProcess: Sized + Send + Sync {
     previous_run_produced: SessionContext,
     previous_run_yielded_at: PreviousRunYieldedAt,
     user_input: String,
-    failed_input_validation_attempts: FailedInputValidationAttempts,
+    form_context: RawFormContext,
   ) -> impl Future<Output = IntermediateRunResult<Self::Produces, Self::Messages>> + Send;
 
   fn continue_run(

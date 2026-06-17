@@ -1,10 +1,7 @@
 use crate::builder::borrow_just::BorrowJust;
-use crate::builder::{
-  CurrentRunYieldedAt, FlowingProcess, IntermediateRunOutcome, IntermediateRunResult, ParamList, ParamUID,
-  PreviousRunYieldedAt, SessionContext, StepIndex,
-};
+use crate::builder::{CurrentRunYieldedAt, FlowingProcess, IntermediateRunOutcome, IntermediateRunResult, ParamList, ParamUID, PreviousRunYieldedAt, RawFormContext, SessionContext, StepIndex};
 use crate::param_list::concat::Concat;
-use crate::step::{FailedInputValidationAttempts, Form, InputValidation};
+use crate::step::{Form, InputValidation};
 use std::marker::PhantomData;
 
 pub struct FormFlowingProcess<
@@ -51,12 +48,12 @@ where
     previous_run_produced: SessionContext,
     previous_run_yielded_at: PreviousRunYieldedAt,
     user_input: String,
-    failed_input_validation_attempts: FailedInputValidationAttempts,
+    form_context: RawFormContext,
   ) -> IntermediateRunResult<Self::Produces, Self::Messages> {
     if previous_run_yielded_at.0 < self.step_index {
       let process_before_output = self
         .process_before
-        .resume_run(previous_run_produced, previous_run_yielded_at, user_input, failed_input_validation_attempts)
+        .resume_run(previous_run_produced, previous_run_yielded_at, user_input, form_context)
         .await?;
       match process_before_output {
         IntermediateRunOutcome::Continue(process_before_produces) => self.continue_run(process_before_produces).await,
@@ -70,7 +67,8 @@ where
         <&ProcessBefore::Produces as BorrowJust<'_, FormStep::ValidateInputConsumes, _>>::borrow_just(
           &process_before_produces,
         );
-      match self.form_step.handle_input(last_step_consumes, user_input, failed_input_validation_attempts).await? {
+      let context: FormStep::Context = postcard::from_bytes(&form_context)?;
+      match self.form_step.handle_input(last_step_consumes, user_input, context).await? {
         InputValidation::Successful(a) => Ok(IntermediateRunOutcome::Continue(a.concat(process_before_produces))),
         InputValidation::Retry(a) => Ok(IntermediateRunOutcome::RetryUserInput(a)),
         InputValidation::Finish(a) => Ok(IntermediateRunOutcome::Finish(a)),

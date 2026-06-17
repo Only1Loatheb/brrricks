@@ -14,7 +14,7 @@ use std::ops::Not;
 use type_process_builder::builder::{
   FinalizedProcess, ParamUID, PreviousRunYieldedAt, RunOutcome, RunnableProcess, StepIndex,
 };
-use type_process_builder::step::{FailedInputValidationAttempts, ProcessMessages};
+use type_process_builder::step::{ProcessMessages};
 
 pub struct Message(pub String);
 
@@ -87,14 +87,14 @@ impl<Process: FinalizedProcess<Messages = Messages> + Sync>
       UssdActionResult::ReturnFromRedirectResult(_) => todo!(),
     };
     let session_id = body.context_data.parse::<i64>().map_err(|_| ())?;
-    let (previous_run_yielded_at, failed_input_validation_attempts, session_context) =
+    let (previous_run_yielded_at, form_context, session_context) =
       get_session_context(&self.pool, &self.get_session_context_query, session_id, &self.ordered_all_unique_param_uids)
         .await
         .map_err(|_| ())?;
     let already_stored_params = session_context.iter().map(|x| x.0).collect::<HashSet<_>>();
     let run_result = self
       .process
-      .resume_run(session_context, previous_run_yielded_at, user_input, failed_input_validation_attempts)
+      .resume_run(session_context, previous_run_yielded_at, user_input, form_context)
       .await;
     match run_result {
       Ok(RunOutcome::Yield(message, session_context, current_run_yielded_at)) => {
@@ -108,7 +108,7 @@ impl<Process: FinalizedProcess<Messages = Messages> + Sync>
           &self.process,
           session_id,
           current_run_yielded_at,
-          FailedInputValidationAttempts(0),
+          FormContext(0),
           params_to_store,
           params_to_remove,
         )
@@ -162,7 +162,7 @@ impl<Process: FinalizedProcess<Messages = Messages> + Sync>
         init_session_context,
         PreviousRunYieldedAt(StepIndex::MIN),
         shortcode_string,
-        FailedInputValidationAttempts(0),
+        FormContext(0),
       )
       .await;
     match run_result {
@@ -171,7 +171,7 @@ impl<Process: FinalizedProcess<Messages = Messages> + Sync>
           &self.pool,
           &self.process,
           current_run_yielded_at,
-          FailedInputValidationAttempts(0),
+          FormContext(0),
           session_context,
         )
         .await
@@ -276,6 +276,7 @@ mod tests {
       type CreateFormConsumes = HNil;
       type ValidateInputConsumes = HNil;
       type Produces = HList![FormOutput];
+      type Context = u16;
       type Messages = Messages;
 
       async fn create_form<'a>(
@@ -289,9 +290,9 @@ mod tests {
         &self,
         _consumes: <Self::ValidateInputConsumes as ToRef<'a>>::Output,
         _user_input: String,
-        failed_input_validation_attempts: FailedInputValidationAttempts,
+        form_context: Self::Context,
       ) -> anyhow::Result<InputValidation<Self::Produces, Messages>> {
-        match failed_input_validation_attempts.0 {
+        match form_context {
           0 => Ok(InputValidation::Retry(Message("This will be accepted".into()))),
           _ => Ok(InputValidation::Successful(hlist![FormOutput])),
         }
@@ -324,8 +325,8 @@ mod tests {
     impl FormSplitter for TestFormSplitter {
       type CreateFormConsumes = HNil;
       type ValidateInputConsumes = HNil;
-
       type Produces = Coprod![(Case1, HList![SplitCase1Output]), (Case2, HList![SplitCase2Output])];
+      type Context = u16;
       type Messages = Messages;
 
       async fn create_form<'a>(
@@ -339,9 +340,9 @@ mod tests {
         &self,
         _consumes: <Self::ValidateInputConsumes as ToRef<'a>>::Output,
         user_input: String,
-        failed: FailedInputValidationAttempts,
+        failed: u16,
       ) -> anyhow::Result<InputValidation<Self::Produces, Messages>> {
-        match (user_input.as_str(), failed.0) {
+        match (user_input.as_str(), failed) {
           ("retry", 0) => Ok(InputValidation::Retry(Message("retry again".into()))),
           ("finish", _) => Ok(InputValidation::Finish(Message("finished early".into()))),
           ("1", _) => Ok(InputValidation::Successful(Self::Produces::inject((Case1, hlist![SplitCase1Output])))),

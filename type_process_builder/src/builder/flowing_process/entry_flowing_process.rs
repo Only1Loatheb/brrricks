@@ -1,6 +1,6 @@
 use crate::builder::*;
 use crate::param_list::ParamList;
-use crate::step::{Entry, FailedInputValidationAttempts};
+use crate::step::Entry;
 use frunk_core::hlist::HNil;
 
 impl<EntryStep: Entry> FlowingProcess for EntryStep {
@@ -14,7 +14,7 @@ impl<EntryStep: Entry> FlowingProcess for EntryStep {
     previous_run_produced: SessionContext,
     _: PreviousRunYieldedAt,
     user_input: String,
-    _failed_input_validation_attempts: FailedInputValidationAttempts,
+    _form_context: RawFormContext,
   ) -> IntermediateRunResult<Self::Produces, Self::Messages> {
     let result: EntryStep::Produces = EntryStep::handle(self, previous_run_produced, user_input).await?;
     Ok(IntermediateRunOutcome::Continue(result))
