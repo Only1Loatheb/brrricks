@@ -1,5 +1,5 @@
 use sqlx::{Executor, PgPool, Row};
-use type_process_builder::builder::{CurrentRunYieldedAt, FinalizedProcess, ParamUID, PreviousRunYieldedAt, RawFormContext, RunnableProcess, SessionContext};
+use type_process_builder::builder::{CurrentRunYieldedAt, FinalizedProcess, ParamUID, PreviousRunYieldedAt, MaybeFormContext, RunnableProcess, SessionContext};
 
 pub async fn create_session_context_table<Process: FinalizedProcess>(
   pool: &PgPool,
@@ -30,7 +30,7 @@ pub async fn create_session_context<Process: FinalizedProcess>(
   pool: &PgPool,
   process: &RunnableProcess<Process>,
   current_run_yielded_at: CurrentRunYieldedAt,
-  form_context: RawFormContext,
+  form_context: MaybeFormContext,
   session_context: SessionContext,
 ) -> Result<i64, sqlx::Error> {
   let mut columns = vec!["previous_run_yielded_at".to_string(), "form_context".to_string()];
@@ -82,7 +82,7 @@ pub async fn get_session_context(
   sql: &GetSessionContextQuery,
   session_id: i64,
   ordered_all_unique_param_uids: &[ParamUID],
-) -> Result<(PreviousRunYieldedAt,RawFormContext, SessionContext), sqlx::Error> {
+) -> Result<(PreviousRunYieldedAt, MaybeFormContext, SessionContext), sqlx::Error> {
   let row = sqlx::query(&sql.0).bind(session_id).fetch_one(pool).await?;
 
   let previous_run_yielded_at = PreviousRunYieldedAt(row.try_get(0)?);
@@ -141,7 +141,7 @@ pub async fn update_session_context<Process: FinalizedProcess>(
   process: &RunnableProcess<Process>,
   id: i64,
   current_run_yielded_at: CurrentRunYieldedAt,
-  form_context: RawFormContext,
+  form_context: MaybeFormContext,
   params_to_store: SessionContext,
   params_to_remove: Vec<u32>,
 ) -> Result<(), sqlx::Error> {

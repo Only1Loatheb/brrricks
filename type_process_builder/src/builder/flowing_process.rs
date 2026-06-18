@@ -29,7 +29,7 @@ pub trait FlowingProcess: Sized + Send + Sync {
     previous_run_produced: SessionContext,
     previous_run_yielded_at: PreviousRunYieldedAt,
     user_input: String,
-    form_context: RawFormContext,
+    form_context: MaybeFormContext,
   ) -> impl Future<Output = IntermediateRunResult<Self::Produces, Self::Messages>> + Send;
 
   fn continue_run(

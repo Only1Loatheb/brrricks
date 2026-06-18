@@ -1,7 +1,11 @@
 use crate::builder::borrow_just::BorrowJust;
-use crate::builder::{CurrentRunYieldedAt, FlowingProcess, IntermediateRunOutcome, IntermediateRunResult, ParamList, ParamUID, PreviousRunYieldedAt, RawFormContext, SessionContext, StepIndex};
+use crate::builder::{
+  CurrentRunYieldedAt, FlowingProcess, MaybeFormContext, IntermediateRunOutcome, IntermediateRunResult, ParamList, ParamUID,
+  PreviousRunYieldedAt, SessionContext, StepIndex,
+};
 use crate::param_list::concat::Concat;
 use crate::step::{Form, InputValidation};
+use anyhow::anyhow;
 use std::marker::PhantomData;
 
 pub struct FormFlowingProcess<
@@ -48,7 +52,7 @@ where
     previous_run_produced: SessionContext,
     previous_run_yielded_at: PreviousRunYieldedAt,
     user_input: String,
-    form_context: RawFormContext,
+    form_context: MaybeFormContext,
   ) -> IntermediateRunResult<Self::Produces, Self::Messages> {
     if previous_run_yielded_at.0 < self.step_index {
       let process_before_output = self
@@ -59,7 +63,7 @@ where
         IntermediateRunOutcome::Continue(process_before_produces) => self.continue_run(process_before_produces).await,
         IntermediateRunOutcome::Yield(a, b, c) => Ok(IntermediateRunOutcome::Yield(a, b, c)),
         IntermediateRunOutcome::Finish(a) => Ok(IntermediateRunOutcome::Finish(a)),
-        IntermediateRunOutcome::RetryUserInput(a) => Ok(IntermediateRunOutcome::RetryUserInput(a)),
+        IntermediateRunOutcome::RetryUserInput(a, b) => Ok(IntermediateRunOutcome::RetryUserInput(a, b)),
       }
     } else {
       let process_before_produces = ProcessBefore::Produces::deserialize(previous_run_produced)?;
@@ -67,10 +71,10 @@ where
         <&ProcessBefore::Produces as BorrowJust<'_, FormStep::ValidateInputConsumes, _>>::borrow_just(
           &process_before_produces,
         );
-      let context: FormStep::Context = postcard::from_bytes(&form_context)?;
+      let context: FormStep::Context = postcard::from_bytes(&form_context.ok_or(anyhow!("Missing FormContext"))?)?;
       match self.form_step.handle_input(last_step_consumes, user_input, context).await? {
         InputValidation::Successful(a) => Ok(IntermediateRunOutcome::Continue(a.concat(process_before_produces))),
-        InputValidation::Retry(a) => Ok(IntermediateRunOutcome::RetryUserInput(a)),
+        InputValidation::Retry(a) => Ok(IntermediateRunOutcome::RetryUserInput(a, todo!())),
         InputValidation::Finish(a) => Ok(IntermediateRunOutcome::Finish(a)),
       }
     }
@@ -99,7 +103,7 @@ where
       IntermediateRunOutcome::Continue(process_before_produces) => self.continue_run(process_before_produces).await,
       IntermediateRunOutcome::Yield(a, b, c) => Ok(IntermediateRunOutcome::Yield(a, b, c)),
       IntermediateRunOutcome::Finish(a) => Ok(IntermediateRunOutcome::Finish(a)),
-      IntermediateRunOutcome::RetryUserInput(a) => Ok(IntermediateRunOutcome::RetryUserInput(a)),
+      IntermediateRunOutcome::RetryUserInput(a, b) => Ok(IntermediateRunOutcome::RetryUserInput(a, b)),
     }
   }
 

@@ -1,9 +1,10 @@
-use crate::builder::{CurrentRunYieldedAt, FlowingProcess, IntermediateFinalizedSplitOutcome, IntermediateFinalizedSplitResult, IntermediateRunOutcome, ParamList, ParamUID, PreviousRunYieldedAt, RawFormContext, SessionContext, SplitProcess, StepIndex};
+use crate::builder::{CurrentRunYieldedAt, FlowingProcess, IntermediateFinalizedSplitOutcome, IntermediateFinalizedSplitResult, IntermediateRunOutcome, ParamList, ParamUID, PreviousRunYieldedAt, MaybeFormContext, SessionContext, SplitProcess, StepIndex};
 use crate::param_list::borrow_just::BorrowJust;
 use crate::param_list::concat::Concat;
 use crate::step::{FormSplitter, InputValidation};
 use frunk_core::coproduct::Coproduct;
 use std::marker::PhantomData;
+use anyhow::anyhow;
 
 pub struct SplitProcessFormSplitter<
   Tag: Send + Sync,
@@ -61,7 +62,7 @@ where
     previous_run_produced: SessionContext,
     previous_run_yielded_at: PreviousRunYieldedAt,
     user_input: String,
-    form_context: RawFormContext,
+    form_context: MaybeFormContext,
   ) -> IntermediateFinalizedSplitResult<
     Self::ProcessBeforeSplitProduces,
     Coproduct<Self::SplitterProducesForFirstCase, SplitterProducesForOtherCases>,
@@ -78,7 +79,7 @@ where
         },
         IntermediateRunOutcome::Yield(a, b, c) => Ok(IntermediateFinalizedSplitOutcome::Yield(a, b, c)),
         IntermediateRunOutcome::Finish(a) => Ok(IntermediateFinalizedSplitOutcome::Finish(a)),
-        IntermediateRunOutcome::RetryUserInput(a) => Ok(IntermediateFinalizedSplitOutcome::RetryUserInput(a)),
+        IntermediateRunOutcome::RetryUserInput(a, b) => Ok(IntermediateFinalizedSplitOutcome::RetryUserInput(a, b)),
       }
     } else {
       let process_before_split_produced = ProcessBefore::Produces::deserialize(previous_run_produced)?;
@@ -86,7 +87,7 @@ where
         <&ProcessBefore::Produces as BorrowJust<'_, SplitterStep::ValidateInputConsumes, _>>::borrow_just(
           &process_before_split_produced,
         );
-      let context: SplitterStep::Context = postcard::from_bytes(&form_context)?;
+      let context: SplitterStep::Context = postcard::from_bytes(&form_context.ok_or(anyhow!("Missing FormContext"))?)?;
       match self.splitter.handle_input(last_step_consumes, user_input, context).await? {
         InputValidation::Successful(splitter_produces) => {
           let splitter_produces_to_other_cases = match splitter_produces {
@@ -98,7 +99,7 @@ where
             splitter_produces_to_other_cases,
           })
         },
-        InputValidation::Retry(a) => Ok(IntermediateFinalizedSplitOutcome::RetryUserInput(a)),
+        InputValidation::Retry(a) => Ok(IntermediateFinalizedSplitOutcome::RetryUserInput(a, todo!())),
         InputValidation::Finish(a) => Ok(IntermediateFinalizedSplitOutcome::Finish(a)),
       }
     }
@@ -138,7 +139,7 @@ where
       },
       IntermediateRunOutcome::Yield(a, b, c) => Ok(IntermediateFinalizedSplitOutcome::Yield(a, b, c)),
       IntermediateRunOutcome::Finish(a) => Ok(IntermediateFinalizedSplitOutcome::Finish(a)),
-      IntermediateRunOutcome::RetryUserInput(a) => Ok(IntermediateFinalizedSplitOutcome::RetryUserInput(a)),
+      IntermediateRunOutcome::RetryUserInput(a, b) => Ok(IntermediateFinalizedSplitOutcome::RetryUserInput(a, b)),
     }
   }
 

@@ -1,5 +1,5 @@
 use crate::builder::subprocess::{Subprocess, subprocess};
-use crate::builder::{FinalizedProcess, FlowingCaseOfFlowingSplitProcess, FlowingProcess, FlowingSplitProcess, IntermediateFlowingSplitOutcome, IntermediateFlowingSplitResult, IntermediateRunOutcome, IntermediateRunResult, ParamList, ParamUID, PreviousRunYieldedAt, RawFormContext, RunOutcome, SessionContext, StepIndex, WILL_BE_RENUMBERED};
+use crate::builder::{FinalizedProcess, FlowingCaseOfFlowingSplitProcess, FlowingProcess, FlowingSplitProcess, IntermediateFlowingSplitOutcome, IntermediateFlowingSplitResult, IntermediateRunOutcome, IntermediateRunResult, ParamList, ParamUID, PreviousRunYieldedAt, MaybeFormContext, RunOutcome, SessionContext, StepIndex, WILL_BE_RENUMBERED};
 use crate::param_list::concat::Concat;
 use frunk_core::coproduct::{CNil, Coproduct};
 use std::marker::PhantomData;
@@ -136,7 +136,7 @@ for FinalizedCaseOfFlowingSplitProcess<
     previous_run_produced: SessionContext,
     previous_run_yielded_at: PreviousRunYieldedAt,
     user_input: String,
-    form_context: RawFormContext,
+    form_context: MaybeFormContext,
   ) -> IntermediateFlowingSplitResult<Self::ProcessBeforeSplitProduces, SplitterProducesForOtherCases,
     Self::EveryFlowingCaseProduces, Self::Messages> {
     if previous_run_yielded_at.0 < self.case_index {
@@ -158,7 +158,8 @@ for FinalizedCaseOfFlowingSplitProcess<
         }
         IntermediateFlowingSplitOutcome::Yield(a, b, c) => Ok(IntermediateFlowingSplitOutcome::Yield(a, b, c)),
         IntermediateFlowingSplitOutcome::Finish(a) => Ok(IntermediateFlowingSplitOutcome::Finish(a)),
-        IntermediateFlowingSplitOutcome::RetryUserInput(a) => Ok(IntermediateFlowingSplitOutcome::RetryUserInput(a)),
+        IntermediateFlowingSplitOutcome::RetryUserInput(a, b) => Ok(IntermediateFlowingSplitOutcome::RetryUserInput
+          (a, b)),
       }
     } else {
       match self.this_case.resume_run(
@@ -169,7 +170,7 @@ for FinalizedCaseOfFlowingSplitProcess<
       ).await? {
         RunOutcome::Yield(a, b, c) => Ok(IntermediateFlowingSplitOutcome::Yield(a, b, c)),
         RunOutcome::Finish(a) => Ok(IntermediateFlowingSplitOutcome::Finish(a)),
-        RunOutcome::RetryUserInput(a) => Ok(IntermediateFlowingSplitOutcome::RetryUserInput(a)),
+        RunOutcome::RetryUserInput(a, b) => Ok(IntermediateFlowingSplitOutcome::RetryUserInput(a, b)),
       }
     }
   }
@@ -189,7 +190,7 @@ for FinalizedCaseOfFlowingSplitProcess<
         match self.this_case.run_subprocess(this_case_consumes).await? {
           RunOutcome::Yield(a, b, c) => Ok(IntermediateFlowingSplitOutcome::Yield(a, b, c)),
           RunOutcome::Finish(a) => Ok(IntermediateFlowingSplitOutcome::Finish(a)),
-          RunOutcome::RetryUserInput(a) => Ok(IntermediateFlowingSplitOutcome::RetryUserInput(a)),
+          RunOutcome::RetryUserInput(a, b) => Ok(IntermediateFlowingSplitOutcome::RetryUserInput(a, b)),
         }
       }
       Coproduct::Inr(splitter_produces_to_other_cases) => Ok(IntermediateFlowingSplitOutcome::GoToCase {
@@ -216,7 +217,8 @@ for FinalizedCaseOfFlowingSplitProcess<
       }
       IntermediateFlowingSplitOutcome::Yield(a, b, c) => Ok(IntermediateFlowingSplitOutcome::Yield(a, b, c)),
       IntermediateFlowingSplitOutcome::Finish(a) => Ok(IntermediateFlowingSplitOutcome::Finish(a)),
-      IntermediateFlowingSplitOutcome::RetryUserInput(a) => Ok(IntermediateFlowingSplitOutcome::RetryUserInput(a)),
+      IntermediateFlowingSplitOutcome::RetryUserInput(a, b) => Ok(IntermediateFlowingSplitOutcome::RetryUserInput(a,
+                                                                                                                  b)),
     }
   }
 
@@ -255,7 +257,7 @@ for FinalizedCaseOfFlowingSplitProcess<ThisTag, SplitterProducesForThisCase, CNi
     previous_run_produced: SessionContext,
     previous_run_yielded_at: PreviousRunYieldedAt,
     user_input: String,
-    form_context: RawFormContext,
+    form_context: MaybeFormContext,
   ) -> IntermediateRunResult<Self::Produces, Self::Messages> {
     if previous_run_yielded_at.0 < self.case_index {
       let process_before_output = self
@@ -273,14 +275,14 @@ for FinalizedCaseOfFlowingSplitProcess<ThisTag, SplitterProducesForThisCase, CNi
             match self.this_case.run_subprocess(this_case_consumes).await? {
               RunOutcome::Yield(a, b, c) => Ok(IntermediateRunOutcome::Yield(a, b, c)),
               RunOutcome::Finish(a) => Ok(IntermediateRunOutcome::Finish(a)),
-              RunOutcome::RetryUserInput(a) => Ok(IntermediateRunOutcome::RetryUserInput(a)),
+              RunOutcome::RetryUserInput(a, b) => Ok(IntermediateRunOutcome::RetryUserInput(a, b)),
             }
           }
           Coproduct::Inr(c_nil) => match c_nil {},
         },
         IntermediateFlowingSplitOutcome::Yield(a, b, c) => Ok(IntermediateRunOutcome::Yield(a, b, c)),
         IntermediateFlowingSplitOutcome::Finish(a) => Ok(IntermediateRunOutcome::Finish(a)),
-        IntermediateFlowingSplitOutcome::RetryUserInput(a) => Ok(IntermediateRunOutcome::RetryUserInput(a)),
+        IntermediateFlowingSplitOutcome::RetryUserInput(a, b) => Ok(IntermediateRunOutcome::RetryUserInput(a, b)),
       }
     } else {
       match self.this_case.resume_run(
@@ -291,17 +293,17 @@ for FinalizedCaseOfFlowingSplitProcess<ThisTag, SplitterProducesForThisCase, CNi
       ).await? {
         RunOutcome::Yield(a, b, c) => Ok(IntermediateRunOutcome::Yield(a, b, c)),
         RunOutcome::Finish(a) => Ok(IntermediateRunOutcome::Finish(a)),
-        RunOutcome::RetryUserInput(a) => Ok(IntermediateRunOutcome::RetryUserInput(a)),
+        RunOutcome::RetryUserInput(a, b) => Ok(IntermediateRunOutcome::RetryUserInput(a, b)),
       }
     }
   }
 
   async fn continue_run(&self, this_case_consumes: Self::ProcessBeforeProduces) ->
   IntermediateRunResult<Self::Produces, Self::Messages> {
-    match self.this_case.run_subprocess(this_case_consumes).await? { // is it reasonable?
+    match self.this_case.run_subprocess(this_case_consumes).await? {
       RunOutcome::Yield(a, b, c) => Ok(IntermediateRunOutcome::Yield(a, b, c)),
       RunOutcome::Finish(a) => Ok(IntermediateRunOutcome::Finish(a)),
-      RunOutcome::RetryUserInput(a) => Ok(IntermediateRunOutcome::RetryUserInput(a)),
+      RunOutcome::RetryUserInput(a, b) => Ok(IntermediateRunOutcome::RetryUserInput(a, b)),
     }
   }
 
@@ -315,7 +317,7 @@ for FinalizedCaseOfFlowingSplitProcess<ThisTag, SplitterProducesForThisCase, CNi
       } => { match splitter_produces_to_other_cases {} }
       IntermediateFlowingSplitOutcome::Yield(a, b, c) => Ok(IntermediateRunOutcome::Yield(a, b, c)),
       IntermediateFlowingSplitOutcome::Finish(a) => Ok(IntermediateRunOutcome::Finish(a)),
-      IntermediateFlowingSplitOutcome::RetryUserInput(a) => Ok(IntermediateRunOutcome::RetryUserInput(a)),
+      IntermediateFlowingSplitOutcome::RetryUserInput(a, b) => Ok(IntermediateRunOutcome::RetryUserInput(a, b)),
     }
   }
 

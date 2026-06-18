@@ -1,4 +1,4 @@
-use crate::builder::{FlowingProcess, IntermediateRunOutcome, IntermediateRunResult, ParamList, ParamUID, PreviousRunYieldedAt, RawFormContext, SessionContext, StepIndex};
+use crate::builder::{FlowingProcess, IntermediateRunOutcome, IntermediateRunResult, ParamList, ParamUID, PreviousRunYieldedAt, MaybeFormContext, SessionContext, StepIndex};
 use crate::param_list::borrow_just::BorrowJust;
 use crate::param_list::concat::Concat;
 use crate::step::{Operation, OperationOutcome, ProcessMessages};
@@ -36,7 +36,7 @@ where
     previous_run_produced: SessionContext,
     previous_run_yielded_at: PreviousRunYieldedAt,
     user_input: String,
-    form_context: RawFormContext,
+    form_context: MaybeFormContext,
   ) -> IntermediateRunResult<Self::Produces, Self::Messages> {
     if previous_run_yielded_at.0 < self.step_index {
       let process_before_output = self
@@ -47,7 +47,7 @@ where
         IntermediateRunOutcome::Continue(process_before_produces) => self.continue_run(process_before_produces).await,
         IntermediateRunOutcome::Yield(a, b, c) => Ok(IntermediateRunOutcome::Yield(a, b, c)),
         IntermediateRunOutcome::Finish(a) => Ok(IntermediateRunOutcome::Finish(a)),
-        IntermediateRunOutcome::RetryUserInput(a) => Ok(IntermediateRunOutcome::RetryUserInput(a)),
+        IntermediateRunOutcome::RetryUserInput(a, b) => Ok(IntermediateRunOutcome::RetryUserInput(a, b)),
       }
     } else {
       let process_before_produces = ProcessBefore::Produces::deserialize(previous_run_produced)?;
@@ -78,7 +78,7 @@ where
       IntermediateRunOutcome::Continue(process_before_produces) => self.continue_run(process_before_produces).await,
       IntermediateRunOutcome::Yield(a, b, c) => Ok(IntermediateRunOutcome::Yield(a, b, c)),
       IntermediateRunOutcome::Finish(a) => Ok(IntermediateRunOutcome::Finish(a)),
-      IntermediateRunOutcome::RetryUserInput(a) => Ok(IntermediateRunOutcome::RetryUserInput(a)),
+      IntermediateRunOutcome::RetryUserInput(a, b) => Ok(IntermediateRunOutcome::RetryUserInput(a, b)),
     }
   }
 

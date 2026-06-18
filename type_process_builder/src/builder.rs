@@ -34,14 +34,15 @@ pub type ParamUID = u32;
 
 pub type SessionContext = Vec<(ParamUID, Vec<u8>)>;
 
-pub type RawFormContext = Vec<u8>;
+pub type FormContext = Vec<u8>;
+pub type MaybeFormContext = Option<FormContext>;
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum IntermediateRunOutcome<Produced: ParamList, Messages: ProcessMessages> {
   Continue(Produced),
   Yield(Messages::FormMessage, SessionContext, CurrentRunYieldedAt),
   Finish(Messages::FinalMessage),
-  RetryUserInput(Messages::FormMessage),
+  RetryUserInput(Messages::FormMessage, FormContext),
 }
 
 pub type IntermediateRunResult<Produced, Messages> = anyhow::Result<IntermediateRunOutcome<Produced, Messages>>;
@@ -58,7 +59,7 @@ pub enum IntermediateFinalizedSplitOutcome<
   },
   Yield(Messages::FormMessage, SessionContext, CurrentRunYieldedAt),
   Finish(Messages::FinalMessage),
-  RetryUserInput(Messages::FormMessage),
+  RetryUserInput(Messages::FormMessage, FormContext),
 }
 
 pub type IntermediateFinalizedSplitResult<ProcessBeforeSplitProduced, SplitterProducesForOtherCases, Messages> =
@@ -80,7 +81,7 @@ pub enum IntermediateFlowingSplitOutcome<
   },
   Yield(Messages::FormMessage, SessionContext, CurrentRunYieldedAt),
   Finish(Messages::FinalMessage),
-  RetryUserInput(Messages::FormMessage),
+  RetryUserInput(Messages::FormMessage, FormContext),
 }
 
 pub type IntermediateFlowingSplitResult<
@@ -101,7 +102,7 @@ pub type IntermediateFlowingSplitResult<
 pub enum RunOutcome<Messages: ProcessMessages> {
   Yield(Messages::FormMessage, SessionContext, CurrentRunYieldedAt),
   Finish(Messages::FinalMessage),
-  RetryUserInput(Messages::FormMessage),
+  RetryUserInput(Messages::FormMessage, FormContext),
 }
 
 pub type RunResult<Messages> = anyhow::Result<RunOutcome<Messages>>;

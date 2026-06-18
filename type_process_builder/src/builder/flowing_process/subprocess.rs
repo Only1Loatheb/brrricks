@@ -1,4 +1,4 @@
-use crate::builder::{FlowingProcess, IntermediateRunOutcome, IntermediateRunResult, ParamList, ParamUID, PreviousRunYieldedAt, RawFormContext, SessionContext, StepIndex};
+use crate::builder::{FlowingProcess, IntermediateRunOutcome, IntermediateRunResult, ParamList, ParamUID, PreviousRunYieldedAt, MaybeFormContext, SessionContext, StepIndex};
 use crate::step::{ProcessMessages};
 use std::marker::PhantomData;
 
@@ -19,7 +19,7 @@ impl<ProcessBeforeProduces: ParamList, Messages: ProcessMessages> FlowingProcess
     previous_run_produced: SessionContext,
     _previous_run_yielded_at: PreviousRunYieldedAt,
     _user_input: String,
-    _form_context: RawFormContext,
+    _form_context: MaybeFormContext,
   ) -> IntermediateRunResult<Self::Produces, Self::Messages> {
     let process_before_produces = ProcessBeforeProduces::deserialize(previous_run_produced)?;
     self.continue_run(process_before_produces).await

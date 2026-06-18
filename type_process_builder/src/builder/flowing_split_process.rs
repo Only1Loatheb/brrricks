@@ -3,7 +3,7 @@ pub mod first_case_of_flowing_split_process;
 pub mod flowing_case_of_finalized_split_process;
 pub mod flowing_case_of_flowing_split_process;
 
-use crate::builder::{IntermediateFlowingSplitResult, ParamUID, PreviousRunYieldedAt, RawFormContext, SessionContext, StepIndex};
+use crate::builder::{IntermediateFlowingSplitResult, ParamUID, PreviousRunYieldedAt, MaybeFormContext, SessionContext, StepIndex};
 use crate::param_list::ParamList;
 use crate::param_list::concat::Concat;
 use crate::step::{ProcessMessages};
@@ -26,7 +26,7 @@ pub trait FlowingSplitProcess<SplitterProducesForOtherCases>: Sized + Send + Syn
     previous_run_produced: SessionContext,
     previous_run_yielded_at: PreviousRunYieldedAt,
     user_input: String,
-    form_context: RawFormContext,
+    form_context: MaybeFormContext,
   ) -> impl Future<
     Output = IntermediateFlowingSplitResult<
       Self::ProcessBeforeSplitProduces,

@@ -1,5 +1,5 @@
 use crate::builder::subprocess::{Subprocess, subprocess};
-use crate::builder::{FinalizedCaseOfFlowingSplitProcess, FinalizedProcess, FlowingCaseOfFlowingSplitProcess, FlowingProcess, FlowingSplitProcess, IntermediateFinalizedSplitOutcome, IntermediateFlowingSplitOutcome, IntermediateFlowingSplitResult, IntermediateRunOutcome, ParamList, ParamUID, PreviousRunYieldedAt, RawFormContext, SessionContext, SplitProcess, StepIndex, WILL_BE_RENUMBERED};
+use crate::builder::{FinalizedCaseOfFlowingSplitProcess, FinalizedProcess, FlowingCaseOfFlowingSplitProcess, FlowingProcess, FlowingSplitProcess, IntermediateFinalizedSplitOutcome, IntermediateFlowingSplitOutcome, IntermediateFlowingSplitResult, IntermediateRunOutcome, ParamList, ParamUID, PreviousRunYieldedAt, MaybeFormContext, SessionContext, SplitProcess, StepIndex, WILL_BE_RENUMBERED};
 use crate::param_list::concat::Concat;
 use frunk_core::coproduct::Coproduct;
 use std::marker::PhantomData;
@@ -134,7 +134,7 @@ impl<
     previous_run_produced: SessionContext,
     previous_run_yielded_at: PreviousRunYieldedAt,
     user_input: String,
-    form_context: RawFormContext,
+    form_context: MaybeFormContext,
   ) -> IntermediateFlowingSplitResult<
     ProcessBefore::ProcessBeforeSplitProduces,
     SplitterProducesForOtherCases,
@@ -153,7 +153,7 @@ impl<
         } => self.continue_run(process_before_split_produced, splitter_produces_to_other_cases).await,
         IntermediateFinalizedSplitOutcome::Yield(a, b, c) => Ok(IntermediateFlowingSplitOutcome::Yield(a, b, c)),
         IntermediateFinalizedSplitOutcome::Finish(a) => Ok(IntermediateFlowingSplitOutcome::Finish(a)),
-        IntermediateFinalizedSplitOutcome::RetryUserInput(a) => Ok(IntermediateFlowingSplitOutcome::RetryUserInput(a)),
+        IntermediateFinalizedSplitOutcome::RetryUserInput(a, b) => Ok(IntermediateFlowingSplitOutcome::RetryUserInput(a, b)),
       }
     } else {
       match self
@@ -164,7 +164,7 @@ impl<
         IntermediateRunOutcome::Continue(a) => Ok(IntermediateFlowingSplitOutcome::Continue(a)),
         IntermediateRunOutcome::Yield(a, b, c) => Ok(IntermediateFlowingSplitOutcome::Yield(a, b, c)),
         IntermediateRunOutcome::Finish(a) => Ok(IntermediateFlowingSplitOutcome::Finish(a)),
-        IntermediateRunOutcome::RetryUserInput(a) => Ok(IntermediateFlowingSplitOutcome::RetryUserInput(a)),
+        IntermediateRunOutcome::RetryUserInput(a, b) => Ok(IntermediateFlowingSplitOutcome::RetryUserInput(a, b)),
       }
     }
   }
@@ -189,7 +189,7 @@ impl<
           IntermediateRunOutcome::Continue(a) => Ok(IntermediateFlowingSplitOutcome::Continue(a)),
           IntermediateRunOutcome::Yield(a, b, c) => Ok(IntermediateFlowingSplitOutcome::Yield(a, b, c)),
           IntermediateRunOutcome::Finish(a) => Ok(IntermediateFlowingSplitOutcome::Finish(a)),
-          IntermediateRunOutcome::RetryUserInput(a) => Ok(IntermediateFlowingSplitOutcome::RetryUserInput(a)),
+          IntermediateRunOutcome::RetryUserInput(a, b) => Ok(IntermediateFlowingSplitOutcome::RetryUserInput(a, b)),
         }
       },
       Coproduct::Inr(splitter_produces_to_other_cases) => Ok(IntermediateFlowingSplitOutcome::GoToCase {
@@ -216,7 +216,7 @@ impl<
       } => self.continue_run(process_before_split_produced, splitter_produces_to_other_cases).await,
       IntermediateFinalizedSplitOutcome::Yield(a, b, c) => Ok(IntermediateFlowingSplitOutcome::Yield(a, b, c)),
       IntermediateFinalizedSplitOutcome::Finish(a) => Ok(IntermediateFlowingSplitOutcome::Finish(a)),
-      IntermediateFinalizedSplitOutcome::RetryUserInput(a) => Ok(IntermediateFlowingSplitOutcome::RetryUserInput(a)),
+      IntermediateFinalizedSplitOutcome::RetryUserInput(a, b) => Ok(IntermediateFlowingSplitOutcome::RetryUserInput(a, b)),
     }
   }
 

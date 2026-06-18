@@ -1,7 +1,7 @@
 pub mod first_case_of_finalized_split_process;
 pub mod next_case_of_finalized_split_process;
 
-use crate::builder::{IntermediateFinalizedSplitResult, ParamUID, PreviousRunYieldedAt, RawFormContext, SessionContext, StepIndex};
+use crate::builder::{IntermediateFinalizedSplitResult, ParamUID, PreviousRunYieldedAt, MaybeFormContext, SessionContext, StepIndex};
 use crate::param_list::ParamList;
 use crate::param_list::concat::Concat;
 use crate::step::{ProcessMessages};
@@ -21,7 +21,7 @@ pub trait FinalizedSplitProcess<SplitterProducesForOtherCases>: Sized + Send + S
     previous_run_produced: SessionContext,
     previous_run_yielded_at: PreviousRunYieldedAt,
     user_input: String,
-    form_context: RawFormContext,
+    form_context: MaybeFormContext,
   ) -> impl Future<
     Output = IntermediateFinalizedSplitResult<
       Self::ProcessBeforeSplitProduces,

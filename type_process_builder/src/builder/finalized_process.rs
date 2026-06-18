@@ -1,7 +1,7 @@
 use crate::builder::flowing_process::FlowingProcess;
 use crate::builder::runnable_process::RunnableProcess;
 use crate::builder::{
-  IntermediateRunOutcome, ParamUID, PreviousRunYieldedAt, RawFormContext, RunOutcome, RunResult, SessionContext,
+  IntermediateRunOutcome, ParamUID, PreviousRunYieldedAt, MaybeFormContext, RunOutcome, RunResult, SessionContext,
   StepIndex,
 };
 use crate::param_list::ParamList;
@@ -21,7 +21,7 @@ pub trait FinalizedProcess: Sized + Send + Sync {
     previous_run_produced: SessionContext,
     previous_run_yielded_at: PreviousRunYieldedAt,
     user_input: String,
-    form_context: RawFormContext,
+    form_context: MaybeFormContext,
   ) -> impl Future<Output = RunResult<Self::Messages>> + Send;
 
   fn continue_run(
@@ -72,7 +72,7 @@ where
     previous_run_produced: SessionContext,
     previous_run_yielded_at: PreviousRunYieldedAt,
     user_input: String,
-    form_context: RawFormContext,
+    form_context: MaybeFormContext,
   ) -> RunResult<Self::Messages> {
     let outcome =
       self.process_before.resume_run(previous_run_produced, previous_run_yielded_at, user_input, form_context).await?;
@@ -80,7 +80,7 @@ where
       IntermediateRunOutcome::Continue(val) => self.continue_run(val).await,
       IntermediateRunOutcome::Yield(a, b, c) => Ok(RunOutcome::Yield(a, b, c)),
       IntermediateRunOutcome::Finish(a) => Ok(RunOutcome::Finish(a)),
-      IntermediateRunOutcome::RetryUserInput(a) => Ok(RunOutcome::RetryUserInput(a)),
+      IntermediateRunOutcome::RetryUserInput(a, b) => Ok(RunOutcome::RetryUserInput(a, b)),
     }
   }
 
@@ -94,7 +94,7 @@ where
       IntermediateRunOutcome::Continue(val) => self.continue_run(val).await,
       IntermediateRunOutcome::Yield(a, b, c) => Ok(RunOutcome::Yield(a, b, c)),
       IntermediateRunOutcome::Finish(a) => Ok(RunOutcome::Finish(a)),
-      IntermediateRunOutcome::RetryUserInput(a) => Ok(RunOutcome::RetryUserInput(a)),
+      IntermediateRunOutcome::RetryUserInput(a, b) => Ok(RunOutcome::RetryUserInput(a, b)),
     }
   }
 

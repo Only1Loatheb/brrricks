@@ -344,7 +344,7 @@ mod tests {
       &self,
       _consumes: <Self::ValidateInputConsumes as ToRef<'a>>::Output,
       _user_input: String,
-      _form_context: RawFormContext,
+      _form_context: Self::Context,
     ) -> anyhow::Result<InputValidation<Self::Produces, Messages>> {
       Ok(InputValidation::Successful(hlist![CommonCaseParam]))
     }
@@ -368,7 +368,7 @@ mod tests {
       &self,
       _consumes: <Self::ValidateInputConsumes as ToRef<'a>>::Output,
       _user_input: String,
-      _form_context: RawFormContext,
+      form_context: Self::Context,
     ) -> anyhow::Result<InputValidation<Self::Produces, Messages>> {
       Ok(InputValidation::Successful(hlist![CommonCaseParam]))
     }
@@ -379,6 +379,7 @@ mod tests {
     type CreateFormConsumes = HNil;
     type ValidateInputConsumes = HNil;
     type Produces = HNil;
+    type Context = EmptyContext;
     type Messages = Messages;
 
     async fn create_form<'a>(
@@ -392,7 +393,7 @@ mod tests {
       &self,
       _consumes: <Self::ValidateInputConsumes as ToRef<'a>>::Output,
       _user_input: String,
-      _form_context: RawFormContext,
+      form_context: Self::Context,
     ) -> anyhow::Result<InputValidation<Self::Produces, Messages>> {
       Ok(InputValidation::Successful(HNil))
     }
@@ -403,6 +404,7 @@ mod tests {
     type CreateFormConsumes = HNil;
     type ValidateInputConsumes = HNil;
     type Produces = HNil;
+    type Context = EmptyContext;
     type Messages = Messages;
 
     async fn create_form<'a>(
@@ -416,7 +418,7 @@ mod tests {
       &self,
       _consumes: <Self::ValidateInputConsumes as ToRef<'a>>::Output,
       _user_input: String,
-      _form_context: RawFormContext,
+      form_context: Self::Context,
     ) -> anyhow::Result<InputValidation<Self::Produces, Messages>> {
       Ok(InputValidation::Finish(Message("Always finnish".into())))
     }
@@ -427,6 +429,7 @@ mod tests {
     type CreateFormConsumes = HNil;
     type ValidateInputConsumes = HNil;
     type Produces = HList![CommonCaseParam];
+    type Context = u16;
     type Messages = Messages;
 
     async fn create_form<'a>(
@@ -440,9 +443,9 @@ mod tests {
       &self,
       _consumes: <Self::ValidateInputConsumes as ToRef<'a>>::Output,
       _user_input: String,
-      form_context: FormContext,
+      form_context: Self::Context,
     ) -> anyhow::Result<InputValidation<Self::Produces, Messages>> {
-      match form_context.0 {
+      match form_context {
         0 => Ok(InputValidation::Retry(Message("This will be accepted".into()))),
         _ => Ok(InputValidation::Successful(hlist![CommonCaseParam])),
       }
@@ -454,6 +457,7 @@ mod tests {
     type CreateFormConsumes = HNil;
     type ValidateInputConsumes = HNil;
     type Produces = HList![CaseOptionParam];
+    type Context = EmptyContext;
     type Messages = Messages;
 
     async fn create_form<'a>(
@@ -467,7 +471,7 @@ mod tests {
       &self,
       _consumes: <Self::ValidateInputConsumes as ToRef<'a>>::Output,
       user_input: String,
-      _form_context: Self::FormContext,
+      _form_context: Self::Context,
     ) -> anyhow::Result<InputValidation<Self::Produces, Messages>> {
       let option = user_input.parse::<u8>().unwrap_or(1);
       Ok(InputValidation::Successful(hlist!(CaseOptionParam(option))))
@@ -519,7 +523,7 @@ mod tests {
   impl FormSplitter for TestFormSplitter {
     type CreateFormConsumes = HNil;
     type ValidateInputConsumes = HNil;
-
+    type Context = u16;
     type Produces = Coprod![(Case1, HList![Split1Param]), (Case2, HList![Split2Param])];
     type Messages = Messages;
 
@@ -534,9 +538,9 @@ mod tests {
       &self,
       _consumes: <Self::ValidateInputConsumes as ToRef<'a>>::Output,
       user_input: String,
-      failed: FormContext,
+      failed: Self::Context,
     ) -> anyhow::Result<InputValidation<Self::Produces, Messages>> {
-      match (user_input.as_str(), failed.0) {
+      match (user_input.as_str(), failed) {
         ("retry", 0) => Ok(InputValidation::Retry(Message("retry again".into()))),
         ("finish", _) => Ok(InputValidation::Finish(Message("finished early".into()))),
         ("1", _) => Ok(InputValidation::Successful(Self::Produces::inject((Case1, hlist![Split1Param])))),
@@ -549,7 +553,7 @@ mod tests {
   impl FormSplitter for InnerFormSplitter {
     type CreateFormConsumes = HNil;
     type ValidateInputConsumes = HNil;
-
+    type Context = i16;
     type Produces = Coprod![(Case1, HList![InnerSplit1Param]), (Case2, HList![InnerSplit2Param])];
     type Messages = Messages;
 
@@ -564,9 +568,9 @@ mod tests {
       &self,
       _consumes: <Self::ValidateInputConsumes as ToRef<'a>>::Output,
       user_input: String,
-      failed: FormContext,
+      failed: Self::Context,
     ) -> anyhow::Result<InputValidation<Self::Produces, Messages>> {
-      match (user_input.as_str(), failed.0) {
+      match (user_input.as_str(), failed) {
         ("retry", 0) => Ok(InputValidation::Retry(Message("retry again".into()))),
         ("finish", _) => Ok(InputValidation::Finish(Message("finished early".into()))),
         ("1", _) => Ok(InputValidation::Successful(Self::Produces::inject((Case1, hlist![InnerSplit1Param])))),
@@ -611,7 +615,7 @@ mod tests {
           init_value,
           PreviousRunYieldedAt(StepIndex::MIN),
           messages[0].into(),
-          FormContext(0),
+          None,
         )
         .await;
       assert!(run_outcome.is_err_and(|x| format!("{x}") == "Admin error or error on frontend."))
@@ -628,7 +632,7 @@ mod tests {
           session_init_value(),
           PreviousRunYieldedAt(StepIndex::MIN),
           messages[messages_index].into(),
-          FormContext(0),
+          None,
         )
         .await
         .expect("Test failed");
@@ -642,7 +646,7 @@ mod tests {
               value,
               PreviousRunYieldedAt(yielded_at.0),
               messages[messages_index].into(),
-              FormContext(0),
+              None,
             )
             .await;
           assert!(run_outcome.is_err_and(|x| format!("{x}") == "Missing key: 0"))
@@ -975,6 +979,7 @@ mod tests {
     type CreateFormConsumes = HNil;
     type ValidateInputConsumes = HNil;
     type Produces = HNil;
+    type Context = EmptyContext;
     type Messages = Messages;
 
     async fn create_form<'a>(
@@ -988,7 +993,7 @@ mod tests {
       &self,
       _consumes: <Self::ValidateInputConsumes as ToRef<'a>>::Output,
       user_input: String,
-      _form_context: RawFormContext,
+      form_context: Self::Context,
     ) -> anyhow::Result<InputValidation<Self::Produces, Messages>> {
       if user_input == "retry" {
         Ok(InputValidation::Retry(Message("Try again".into())))
@@ -1263,7 +1268,7 @@ mod tests {
   ) {
     let mut previous_run_produced = session_init_value();
     let mut previous_run_yielded_at = PreviousRunYieldedAt(StepIndex::MIN);
-    let mut failed_attempts = FormContext(0);
+    let mut form_context = None;
     let mut messages_index = 0;
     // run ordered_all_unique_param_uids in tests to check what code is reachable and it does not panic
     let _ = process.ordered_all_unique_param_uids();
@@ -1273,7 +1278,7 @@ mod tests {
           previous_run_produced.clone(),
           previous_run_yielded_at.clone(),
           messages[messages_index].into(),
-          failed_attempts.clone(),
+          form_context.clone(),
         )
         .await
         .expect("Test failed");
@@ -1282,12 +1287,12 @@ mod tests {
         RunOutcome::Yield(msg, value, yielded_at) => {
           previous_run_produced = value;
           previous_run_yielded_at = PreviousRunYieldedAt(yielded_at.0);
-          failed_attempts = FormContext(0);
+          form_context = None;
 
           assert_eq!(msg.0, messages[messages_index])
         },
         RunOutcome::RetryUserInput(msg) => {
-          failed_attempts = FormContext(failed_attempts.0 + 1);
+          form_context = FormContext(form_context.0 + 1);
 
           assert_eq!(msg.0, messages[messages_index])
         },

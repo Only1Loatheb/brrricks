@@ -14,7 +14,7 @@ impl<EntryStep: Entry> FlowingProcess for EntryStep {
     previous_run_produced: SessionContext,
     _: PreviousRunYieldedAt,
     user_input: String,
-    _form_context: RawFormContext,
+    _form_context: MaybeFormContext,
   ) -> IntermediateRunResult<Self::Produces, Self::Messages> {
     let result: EntryStep::Produces = EntryStep::handle(self, previous_run_produced, user_input).await?;
     Ok(IntermediateRunOutcome::Continue(result))

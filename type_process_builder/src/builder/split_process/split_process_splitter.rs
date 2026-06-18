@@ -1,4 +1,4 @@
-use crate::builder::{FlowingProcess, IntermediateFinalizedSplitOutcome, IntermediateFinalizedSplitResult, IntermediateRunOutcome, ParamList, ParamUID, PreviousRunYieldedAt, RawFormContext, SessionContext, SplitProcess, StepIndex};
+use crate::builder::{FlowingProcess, IntermediateFinalizedSplitOutcome, IntermediateFinalizedSplitResult, IntermediateRunOutcome, ParamList, ParamUID, PreviousRunYieldedAt, MaybeFormContext, SessionContext, SplitProcess, StepIndex};
 use crate::param_list::borrow_just::BorrowJust;
 use crate::param_list::concat::Concat;
 use crate::step::{Splitter};
@@ -50,7 +50,7 @@ where
     previous_run_produced: SessionContext,
     previous_run_yielded_at: PreviousRunYieldedAt,
     user_input: String,
-    form_context: RawFormContext,
+    form_context: MaybeFormContext,
   ) -> IntermediateFinalizedSplitResult<
     Self::ProcessBeforeSplitProduces,
     Coproduct<Self::SplitterProducesForFirstCase, SplitterProducesForOtherCases>,
@@ -67,7 +67,7 @@ where
         },
         IntermediateRunOutcome::Yield(a, b, c) => Ok(IntermediateFinalizedSplitOutcome::Yield(a, b, c)),
         IntermediateRunOutcome::Finish(a) => Ok(IntermediateFinalizedSplitOutcome::Finish(a)),
-        IntermediateRunOutcome::RetryUserInput(a) => Ok(IntermediateFinalizedSplitOutcome::RetryUserInput(a)),
+        IntermediateRunOutcome::RetryUserInput(a, b) => Ok(IntermediateFinalizedSplitOutcome::RetryUserInput(a, b)),
       }
     } else {
       let process_before_split_produced = ProcessBefore::Produces::deserialize(previous_run_produced)?;
@@ -106,7 +106,7 @@ where
       },
       IntermediateRunOutcome::Yield(a, b, c) => Ok(IntermediateFinalizedSplitOutcome::Yield(a, b, c)),
       IntermediateRunOutcome::Finish(a) => Ok(IntermediateFinalizedSplitOutcome::Finish(a)),
-      IntermediateRunOutcome::RetryUserInput(a) => Ok(IntermediateFinalizedSplitOutcome::RetryUserInput(a)),
+      IntermediateRunOutcome::RetryUserInput(a, b) => Ok(IntermediateFinalizedSplitOutcome::RetryUserInput(a, b)),
     }
   }
 
