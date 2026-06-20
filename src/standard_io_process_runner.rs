@@ -32,10 +32,10 @@ pub(crate) async fn standard_io_process_runner(
       .await
       .map_err(io::Error::other)?
     {
-      RunOutcome::Yield(msg, value, yielded_at) => {
+      RunOutcome::Yield(msg, value, yielded_at, context) => {
         previous_run_produced = value;
         previous_run_yielded_at = PreviousRunYieldedAt(yielded_at.0);
-        form_context = None;
+        form_context = Some(context);
         println!("yielded: {}", msg.0);
       },
       RunOutcome::RetryUserInput(msg, context) => {

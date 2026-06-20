@@ -6,7 +6,7 @@ use frunk_core::traits::ToRef;
 use frunk_core::{Coprod, HList, hlist, hlist_pat};
 use serde::{Deserialize, Serialize};
 use type_process_builder::builder::*;
-use type_process_builder::step::{Entry, Final, Form, FormSplitter, InputValidation};
+use type_process_builder::step::{Entry, Final, Form, FormSplitter, FormWithContext, InputValidation};
 use typenum::*;
 
 #[derive(Deserialize, Serialize)]
@@ -48,8 +48,8 @@ impl FormSplitter for SelectAmountSource {
   async fn create_form<'a>(
     &self,
     _consumes: <Self::CreateFormConsumes as ToRef<'a>>::Output,
-  ) -> anyhow::Result<Message> {
-    Ok(Message("Enter 1 for 100 or 2 for custom amount ".into()))
+  ) -> anyhow::Result<FormWithContext<Message, Self::Context>> {
+    Ok(FormWithContext(Message("Enter 1 for 100 or 2 for custom amount".into()), EmptyContext))
   }
 
   async fn handle_input<'a>(
@@ -80,8 +80,8 @@ impl Form for AmountForm {
   async fn create_form<'a>(
     &self,
     _consumes: <Self::CreateFormConsumes as ToRef<'a>>::Output,
-  ) -> anyhow::Result<Message> {
-    Ok(Message("Enter a number".into()))
+  ) -> anyhow::Result<FormWithContext<Message, Self::Context>> {
+    Ok(FormWithContext(Message("Enter a number".into()), EmptyContext))
   }
 
   async fn handle_input<'a>(

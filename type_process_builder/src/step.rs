@@ -45,6 +45,8 @@ pub enum InputValidation<Produced, Messages: ProcessMessages, FormContext: Seria
   Finish(Messages::FinalMessage),
 }
 
+pub struct FormWithContext<FormMessage, FromContext>(pub FormMessage, pub FromContext);
+
 pub trait Form: Send + Sync {
   type CreateFormConsumes: ParamList + for<'a> ToRef<'a>;
   type ValidateInputConsumes: ParamList + for<'a> ToRef<'a>;
@@ -54,7 +56,9 @@ pub trait Form: Send + Sync {
   fn create_form(
     &self,
     consumes: <Self::CreateFormConsumes as ToRef>::Output,
-  ) -> impl Future<Output = anyhow::Result<<Self::Messages as ProcessMessages>::FormMessage>> + Send;
+  ) -> impl Future<
+    Output = anyhow::Result<FormWithContext<<Self::Messages as ProcessMessages>::FormMessage, Self::Context>>,
+  > + Send;
   fn handle_input(
     &self,
     consumes: <Self::ValidateInputConsumes as ToRef>::Output,
@@ -91,7 +95,9 @@ pub trait FormSplitter: Send + Sync {
   fn create_form(
     &self,
     consumes: <Self::CreateFormConsumes as ToRef>::Output,
-  ) -> impl Future<Output = anyhow::Result<<Self::Messages as ProcessMessages>::FormMessage>> + Send;
+  ) -> impl Future<
+    Output = anyhow::Result<FormWithContext<<Self::Messages as ProcessMessages>::FormMessage, Self::Context>>,
+  > + Send;
   fn handle_input(
     &self,
     consumes: <Self::ValidateInputConsumes as ToRef>::Output,

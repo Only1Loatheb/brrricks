@@ -40,7 +40,7 @@ pub type MaybeFormContext = Option<FormContext>;
 #[derive(Debug, PartialEq, Eq)]
 pub enum IntermediateRunOutcome<Produced: ParamList, Messages: ProcessMessages> {
   Continue(Produced),
-  Yield(Messages::FormMessage, SessionContext, CurrentRunYieldedAt),
+  Yield(Messages::FormMessage, SessionContext, CurrentRunYieldedAt, FormContext),
   Finish(Messages::FinalMessage),
   RetryUserInput(Messages::FormMessage, FormContext),
 }
@@ -57,7 +57,7 @@ pub enum IntermediateFinalizedSplitOutcome<
     process_before_split_produced: ProcessBeforeSplitProduced,
     splitter_produces_to_other_cases: SplitterProducesForOtherCases,
   },
-  Yield(Messages::FormMessage, SessionContext, CurrentRunYieldedAt),
+  Yield(Messages::FormMessage, SessionContext, CurrentRunYieldedAt, FormContext),
   Finish(Messages::FinalMessage),
   RetryUserInput(Messages::FormMessage, FormContext),
 }
@@ -79,7 +79,7 @@ pub enum IntermediateFlowingSplitOutcome<
     process_before_split_produced: ProcessBeforeSplitProduced,
     splitter_produces_to_other_cases: SplitterProducesForOtherCases,
   },
-  Yield(Messages::FormMessage, SessionContext, CurrentRunYieldedAt),
+  Yield(Messages::FormMessage, SessionContext, CurrentRunYieldedAt, FormContext),
   Finish(Messages::FinalMessage),
   RetryUserInput(Messages::FormMessage, FormContext),
 }
@@ -100,7 +100,7 @@ pub type IntermediateFlowingSplitResult<
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum RunOutcome<Messages: ProcessMessages> {
-  Yield(Messages::FormMessage, SessionContext, CurrentRunYieldedAt),
+  Yield(Messages::FormMessage, SessionContext, CurrentRunYieldedAt, FormContext),
   Finish(Messages::FinalMessage),
   RetryUserInput(Messages::FormMessage, FormContext),
 }

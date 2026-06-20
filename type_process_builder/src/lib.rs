@@ -16,7 +16,8 @@ mod tests {
   use crate::builder::*;
   use crate::param_list::ParamValue;
   use crate::step::{
-    Entry, Final, Form, FormSplitter, InputValidation, Operation, OperationOutcome, ProcessMessages, Splitter,
+    Entry, Final, Form, FormSplitter, FormWithContext, InputValidation, Operation, OperationOutcome, ProcessMessages,
+    Splitter,
   };
   use anyhow::anyhow;
   use frunk_core::hlist::HNil;
@@ -299,8 +300,8 @@ mod tests {
     async fn create_form<'a>(
       &self,
       _consumes: <Self::CreateFormConsumes as ToRef<'a>>::Output,
-    ) -> anyhow::Result<Message> {
-      Ok(Message("Finish early form".into()))
+    ) -> anyhow::Result<FormWithContext<Message, Self::Context>> {
+      Ok(FormWithContext(Message("Finish early form".into()), EmptyContext))
     }
 
     async fn handle_input<'a>(
@@ -334,8 +335,8 @@ mod tests {
     async fn create_form<'a>(
       &self,
       _consumes: <Self::CreateFormConsumes as ToRef<'a>>::Output,
-    ) -> anyhow::Result<Message> {
-      Ok(Message("Enter a number".into()))
+    ) -> anyhow::Result<FormWithContext<Message, Self::Context>> {
+      Ok(FormWithContext(Message("Enter a number".into()), EmptyContext))
     }
 
     async fn handle_input<'a>(
@@ -359,8 +360,8 @@ mod tests {
     async fn create_form<'a>(
       &self,
       _consumes: <Self::CreateFormConsumes as ToRef<'a>>::Output,
-    ) -> anyhow::Result<Message> {
-      Ok(Message("Enter a number".into()))
+    ) -> anyhow::Result<FormWithContext<Message, Self::Context>> {
+      Ok(FormWithContext(Message("Enter a number".into()), EmptyContext))
     }
 
     async fn handle_input<'a>(
@@ -384,8 +385,8 @@ mod tests {
     async fn create_form<'a>(
       &self,
       _consumes: <Self::CreateFormConsumes as ToRef<'a>>::Output,
-    ) -> anyhow::Result<Message> {
-      Ok(Message("Straight to trash".into()))
+    ) -> anyhow::Result<FormWithContext<Message, Self::Context>> {
+      Ok(FormWithContext(Message("Straight to trash".into()), EmptyContext))
     }
 
     async fn handle_input<'a>(
@@ -409,8 +410,8 @@ mod tests {
     async fn create_form<'a>(
       &self,
       _consumes: <Self::CreateFormConsumes as ToRef<'a>>::Output,
-    ) -> anyhow::Result<Message> {
-      Ok(Message("Last number in the process".into()))
+    ) -> anyhow::Result<FormWithContext<Message, Self::Context>> {
+      Ok(FormWithContext(Message("Last number in the process".into()), EmptyContext))
     }
 
     async fn handle_input<'a>(
@@ -434,8 +435,8 @@ mod tests {
     async fn create_form<'a>(
       &self,
       _consumes: <Self::CreateFormConsumes as ToRef<'a>>::Output,
-    ) -> anyhow::Result<Message> {
-      Ok(Message("This will be discarded".into()))
+    ) -> anyhow::Result<FormWithContext<Message, Self::Context>> {
+      Ok(FormWithContext(Message("This will be discarded".into()), 0))
     }
 
     async fn handle_input<'a>(
@@ -462,8 +463,8 @@ mod tests {
     async fn create_form<'a>(
       &self,
       _consumes: <Self::CreateFormConsumes as ToRef<'a>>::Output,
-    ) -> anyhow::Result<Message> {
-      Ok(Message("Choose a case".into()))
+    ) -> anyhow::Result<FormWithContext<Message, Self::Context>> {
+      Ok(FormWithContext(Message("Choose a case".into()), EmptyContext))
     }
 
     async fn handle_input<'a>(
@@ -529,8 +530,8 @@ mod tests {
     async fn create_form<'a>(
       &self,
       _consumes: <Self::CreateFormConsumes as ToRef<'a>>::Output,
-    ) -> anyhow::Result<Message> {
-      Ok(Message("choose case".into()))
+    ) -> anyhow::Result<FormWithContext<Message, Self::Context>> {
+      Ok(FormWithContext(Message("choose case".into()), 0))
     }
 
     async fn handle_input<'a>(
@@ -559,8 +560,8 @@ mod tests {
     async fn create_form<'a>(
       &self,
       _consumes: <Self::CreateFormConsumes as ToRef<'a>>::Output,
-    ) -> anyhow::Result<Message> {
-      Ok(Message("choose case".into()))
+    ) -> anyhow::Result<FormWithContext<Message, Self::Context>> {
+      Ok(FormWithContext(Message("choose case".into()), 0))
     }
 
     async fn handle_input<'a>(
@@ -626,11 +627,12 @@ mod tests {
         .expect("Test failed");
       messages_index += 1;
       match run_outcome {
-        RunOutcome::Yield(msg, mut value, yielded_at) => {
+        RunOutcome::Yield(msg, mut value, yielded_at, context) => {
           assert_eq!(msg.0, messages[messages_index]);
           value.pop();
-          let run_outcome =
-            process.resume_run(value, PreviousRunYieldedAt(yielded_at.0), messages[messages_index].into(), None).await;
+          let run_outcome = process
+            .resume_run(value, PreviousRunYieldedAt(yielded_at.0), messages[messages_index].into(), Some(context))
+            .await;
           assert!(run_outcome.is_err_and(|x| format!("{x}") == "Missing key: 0"))
         },
         RunOutcome::RetryUserInput(msg, _context) => {
@@ -967,8 +969,8 @@ mod tests {
     async fn create_form<'a>(
       &self,
       _consumes: <Self::CreateFormConsumes as ToRef<'a>>::Output,
-    ) -> anyhow::Result<Message> {
-      Ok(Message("Fancy a retry?".into()))
+    ) -> anyhow::Result<FormWithContext<Message, Self::Context>> {
+      Ok(FormWithContext(Message("Fancy a retry?".into()), EmptyContext))
     }
 
     async fn handle_input<'a>(
@@ -1266,10 +1268,10 @@ mod tests {
         .expect("Test failed");
       messages_index += 1;
       match run_outcome {
-        RunOutcome::Yield(msg, value, yielded_at) => {
+        RunOutcome::Yield(msg, value, yielded_at, context) => {
           previous_run_produced = value;
           previous_run_yielded_at = PreviousRunYieldedAt(yielded_at.0);
-          form_context = None;
+          form_context = Some(context);
           assert_eq!(msg.0, messages[messages_index])
         },
         RunOutcome::RetryUserInput(msg, context) => {

@@ -83,7 +83,7 @@ use frunk_core::traits::ToRef;
 use frunk_core::{Coprod, HList, hlist, hlist_pat};
 use serde::{Deserialize, Serialize};
 use type_process_builder::builder::*;
-use type_process_builder::step::{Entry, FailedInputValidationAttempts, Final, Form, FormSplitter, InputValidation};
+use type_process_builder::step::{Entry, Final, Form, FormSplitter, FormWithContext, InputValidation};
 use typenum::*;
 
 #[derive(Deserialize, Serialize)]
@@ -119,52 +119,57 @@ impl FormSplitter for SelectAmountSource {
   type CreateFormConsumes = HNil;
   type ValidateInputConsumes = HNil;
   type Produces = Coprod![(PredefinedAmount, HList![Amount]), (CustomAmount, HNil)];
+  type Context = EmptyContext;
   type Messages = Messages;
 
   async fn create_form<'a>(
     &self,
     _consumes: <Self::CreateFormConsumes as ToRef<'a>>::Output,
-  ) -> anyhow::Result<Message> {
-    Ok(Message("Enter 1 for 100 or 2 for custom amount ".into()))
+  ) -> anyhow::Result<FormWithContext<Message, Self::Context>> {
+    Ok(FormWithContext(Message("Enter 1 for 100 or 2 for custom amount".into()), EmptyContext))
   }
 
   async fn handle_input<'a>(
     &self,
     _consumes: <Self::ValidateInputConsumes as ToRef<'a>>::Output,
     user_input: String,
-    _failed_input_validation_attempts: FailedInputValidationAttempts,
-  ) -> anyhow::Result<InputValidation<Self::Produces, Messages>> {
+    _form_context: Self::Context,
+  ) -> anyhow::Result<InputValidation<Self::Produces, Messages, Self::Context>> {
     Ok(match user_input.as_str() {
       "1" => InputValidation::Successful(Self::Produces::inject((PredefinedAmount, hlist!(Amount(100))))),
       "2" => InputValidation::Successful(Self::Produces::inject((CustomAmount, HNil))),
-      _ => InputValidation::Retry(Message("not 1 or 2".into())),
+      _ => InputValidation::Retry(Message("not 1 or 2".into()), EmptyContext),
     })
   }
 }
+
+#[derive(Serialize, Deserialize)]
+struct EmptyContext;
 
 struct AmountForm;
 impl Form for AmountForm {
   type CreateFormConsumes = HNil;
   type ValidateInputConsumes = HNil;
   type Produces = HList![Amount];
+  type Context = EmptyContext;
   type Messages = Messages;
 
   async fn create_form<'a>(
     &self,
     _consumes: <Self::CreateFormConsumes as ToRef<'a>>::Output,
-  ) -> anyhow::Result<Message> {
-    Ok(Message("Enter a number".into()))
+  ) -> anyhow::Result<FormWithContext<Message, Self::Context>> {
+    Ok(FormWithContext(Message("Enter a number".into()), EmptyContext))
   }
 
   async fn handle_input<'a>(
     &self,
     _consumes: <Self::ValidateInputConsumes as ToRef<'a>>::Output,
     user_input: String,
-    _failed_input_validation_attempts: FailedInputValidationAttempts,
-  ) -> anyhow::Result<InputValidation<Self::Produces, Messages>> {
+    _form_context: Self::Context,
+  ) -> anyhow::Result<InputValidation<Self::Produces, Messages, Self::Context>> {
     match user_input.parse::<u32>() {
       Ok(value) => Ok(InputValidation::Successful(hlist![Amount(value)])),
-      Err(_) => Ok(InputValidation::Retry(Message("Invalid number".into()))),
+      Err(_) => Ok(InputValidation::Retry(Message("Invalid number".into()), EmptyContext)),
     }
   }
 }

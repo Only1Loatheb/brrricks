@@ -94,7 +94,7 @@ impl<Process: FinalizedProcess<Messages = Messages> + Sync>
     let already_stored_params = session_context.iter().map(|x| x.0).collect::<HashSet<_>>();
     let run_result = self.process.resume_run(session_context, previous_run_yielded_at, user_input, form_context).await;
     match run_result {
-      Ok(RunOutcome::Yield(message, session_context, current_run_yielded_at)) => {
+      Ok(RunOutcome::Yield(message, session_context, current_run_yielded_at, form_context)) => {
         let session_context_param_ids = session_context.iter().map(|x| x.0).collect::<HashSet<_>>();
         let params_to_store =
           session_context.into_iter().filter(|x| already_stored_params.contains(&x.0).not()).collect::<Vec<_>>();
@@ -105,7 +105,7 @@ impl<Process: FinalizedProcess<Messages = Messages> + Sync>
           &self.process,
           session_id,
           current_run_yielded_at,
-          None,
+          Some(form_context),
           params_to_store,
           params_to_remove,
         )
@@ -158,10 +158,16 @@ impl<Process: FinalizedProcess<Messages = Messages> + Sync>
     let run_result =
       self.process.resume_run(init_session_context, PreviousRunYieldedAt(StepIndex::MIN), shortcode_string, None).await;
     match run_result {
-      Ok(RunOutcome::Yield(message, session_context, current_run_yielded_at)) => {
-        let id = create_session_context(&self.pool, &self.process, current_run_yielded_at, None, session_context)
-          .await
-          .map_err(|_| ())?;
+      Ok(RunOutcome::Yield(message, session_context, current_run_yielded_at, form_context)) => {
+        let id = create_session_context(
+          &self.pool,
+          &self.process,
+          current_run_yielded_at,
+          Some(form_context),
+          session_context,
+        )
+        .await
+        .map_err(|_| ())?;
         Ok((id, UssdView::InputView(InputView { message: message.0, r_type: "InputView".into() })))
       },
       Ok(RunOutcome::RetryUserInput(..)) => {
@@ -268,8 +274,8 @@ mod tests {
       async fn create_form<'a>(
         &self,
         _consumes: <Self::CreateFormConsumes as ToRef<'a>>::Output,
-      ) -> anyhow::Result<Message> {
-        Ok(Message("This will be discarded".into()))
+      ) -> anyhow::Result<FormWithContext<Message, Self::Context>> {
+        Ok(FormWithContext(Message("This will be discarded".into()), 0))
       }
 
       async fn handle_input<'a>(
@@ -318,8 +324,8 @@ mod tests {
       async fn create_form<'a>(
         &self,
         _consumes: <Self::CreateFormConsumes as ToRef<'a>>::Output,
-      ) -> anyhow::Result<Message> {
-        Ok(Message("choose case".into()))
+      ) -> anyhow::Result<FormWithContext<Message, Self::Context>> {
+        Ok(FormWithContext(Message("choose case".into()), 0))
       }
 
       async fn handle_input<'a>(

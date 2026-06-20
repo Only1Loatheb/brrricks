@@ -5,7 +5,7 @@ use crate::builder::{
 };
 use crate::param_list::borrow_just::BorrowJust;
 use crate::param_list::concat::Concat;
-use crate::step::{FormSplitter, InputValidation};
+use crate::step::{FormSplitter, FormWithContext, InputValidation};
 use anyhow::anyhow;
 use frunk_core::coproduct::Coproduct;
 use std::marker::PhantomData;
@@ -81,7 +81,7 @@ where
         IntermediateRunOutcome::Continue(process_before_split_produced) => {
           self.continue_run(process_before_split_produced).await
         },
-        IntermediateRunOutcome::Yield(a, b, c) => Ok(IntermediateFinalizedSplitOutcome::Yield(a, b, c)),
+        IntermediateRunOutcome::Yield(a, b, c, d) => Ok(IntermediateFinalizedSplitOutcome::Yield(a, b, c, d)),
         IntermediateRunOutcome::Finish(a) => Ok(IntermediateFinalizedSplitOutcome::Finish(a)),
         IntermediateRunOutcome::RetryUserInput(a, b) => Ok(IntermediateFinalizedSplitOutcome::RetryUserInput(a, b)),
       }
@@ -123,10 +123,12 @@ where
       <&ProcessBefore::Produces as BorrowJust<'_, SplitterStep::CreateFormConsumes, _>>::borrow_just(
         &process_before_split_produced,
       );
+    let FormWithContext(form, form_context) = self.splitter.create_form(splitter_step_consumes).await?;
     Ok(IntermediateFinalizedSplitOutcome::Yield(
-      self.splitter.create_form(splitter_step_consumes).await?,
+      form,
       process_before_split_produced.serialize()?,
       CurrentRunYieldedAt(self.step_index),
+      postcard::to_allocvec(&form_context)?,
     ))
   }
 
@@ -143,7 +145,7 @@ where
       IntermediateRunOutcome::Continue(process_before_split_produced) => {
         self.continue_run(process_before_split_produced).await
       },
-      IntermediateRunOutcome::Yield(a, b, c) => Ok(IntermediateFinalizedSplitOutcome::Yield(a, b, c)),
+      IntermediateRunOutcome::Yield(a, b, c, d) => Ok(IntermediateFinalizedSplitOutcome::Yield(a, b, c, d)),
       IntermediateRunOutcome::Finish(a) => Ok(IntermediateFinalizedSplitOutcome::Finish(a)),
       IntermediateRunOutcome::RetryUserInput(a, b) => Ok(IntermediateFinalizedSplitOutcome::RetryUserInput(a, b)),
     }

@@ -78,7 +78,7 @@ where
       self.process_before.resume_run(previous_run_produced, previous_run_yielded_at, user_input, form_context).await?;
     match outcome {
       IntermediateRunOutcome::Continue(val) => self.continue_run(val).await,
-      IntermediateRunOutcome::Yield(a, b, c) => Ok(RunOutcome::Yield(a, b, c)),
+      IntermediateRunOutcome::Yield(a, b, c, d) => Ok(RunOutcome::Yield(a, b, c, d)),
       IntermediateRunOutcome::Finish(a) => Ok(RunOutcome::Finish(a)),
       IntermediateRunOutcome::RetryUserInput(a, b) => Ok(RunOutcome::RetryUserInput(a, b)),
     }
@@ -92,7 +92,7 @@ where
     let outcome = self.process_before.run_subprocess(subprocess_consumes).await?;
     match outcome {
       IntermediateRunOutcome::Continue(val) => self.continue_run(val).await,
-      IntermediateRunOutcome::Yield(a, b, c) => Ok(RunOutcome::Yield(a, b, c)),
+      IntermediateRunOutcome::Yield(a, b, c, d) => Ok(RunOutcome::Yield(a, b, c, d)),
       IntermediateRunOutcome::Finish(a) => Ok(RunOutcome::Finish(a)),
       IntermediateRunOutcome::RetryUserInput(a, b) => Ok(RunOutcome::RetryUserInput(a, b)),
     }

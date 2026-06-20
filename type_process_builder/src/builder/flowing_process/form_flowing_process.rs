@@ -4,7 +4,7 @@ use crate::builder::{
   ParamUID, PreviousRunYieldedAt, SessionContext, StepIndex,
 };
 use crate::param_list::concat::Concat;
-use crate::step::{Form, InputValidation};
+use crate::step::{Form, FormWithContext, InputValidation};
 use anyhow::anyhow;
 use std::marker::PhantomData;
 
@@ -61,7 +61,7 @@ where
         .await?;
       match process_before_output {
         IntermediateRunOutcome::Continue(process_before_produces) => self.continue_run(process_before_produces).await,
-        IntermediateRunOutcome::Yield(a, b, c) => Ok(IntermediateRunOutcome::Yield(a, b, c)),
+        IntermediateRunOutcome::Yield(a, b, c, d) => Ok(IntermediateRunOutcome::Yield(a, b, c, d)),
         IntermediateRunOutcome::Finish(a) => Ok(IntermediateRunOutcome::Finish(a)),
         IntermediateRunOutcome::RetryUserInput(a, b) => Ok(IntermediateRunOutcome::RetryUserInput(a, b)),
       }
@@ -87,10 +87,12 @@ where
     let last_step_consumes = <&ProcessBefore::Produces as BorrowJust<'_, FormStep::CreateFormConsumes, _>>::borrow_just(
       &process_before_produces,
     );
+    let FormWithContext(form, form_context) = self.form_step.create_form(last_step_consumes).await?;
     Ok(IntermediateRunOutcome::Yield(
-      self.form_step.create_form(last_step_consumes).await?,
+      form,
       process_before_produces.serialize()?,
       CurrentRunYieldedAt(self.step_index),
+      postcard::to_allocvec(&form_context)?,
     ))
   }
 
@@ -101,7 +103,7 @@ where
     let process_before_output = self.process_before.run_subprocess(subprocess_consumes).await?;
     match process_before_output {
       IntermediateRunOutcome::Continue(process_before_produces) => self.continue_run(process_before_produces).await,
-      IntermediateRunOutcome::Yield(a, b, c) => Ok(IntermediateRunOutcome::Yield(a, b, c)),
+      IntermediateRunOutcome::Yield(a, b, c, d) => Ok(IntermediateRunOutcome::Yield(a, b, c, d)),
       IntermediateRunOutcome::Finish(a) => Ok(IntermediateRunOutcome::Finish(a)),
       IntermediateRunOutcome::RetryUserInput(a, b) => Ok(IntermediateRunOutcome::RetryUserInput(a, b)),
     }

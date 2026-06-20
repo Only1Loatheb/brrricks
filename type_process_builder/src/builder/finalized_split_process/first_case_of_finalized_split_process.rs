@@ -141,7 +141,9 @@ impl<
           process_before_split_produced,
           splitter_produces_to_other_cases,
         } => self.continue_run(process_before_split_produced, splitter_produces_to_other_cases).await,
-        IntermediateFinalizedSplitOutcome::Yield(a, b, c) => Ok(IntermediateFinalizedSplitOutcome::Yield(a, b, c)),
+        IntermediateFinalizedSplitOutcome::Yield(a, b, c, d) => {
+          Ok(IntermediateFinalizedSplitOutcome::Yield(a, b, c, d))
+        },
         IntermediateFinalizedSplitOutcome::Finish(a) => Ok(IntermediateFinalizedSplitOutcome::Finish(a)),
         IntermediateFinalizedSplitOutcome::RetryUserInput(a, b) => {
           Ok(IntermediateFinalizedSplitOutcome::RetryUserInput(a, b))
@@ -149,7 +151,7 @@ impl<
       }
     } else {
       match self.this_case.resume_run(previous_run_produced, previous_run_yielded_at, user_input, form_context).await? {
-        RunOutcome::Yield(a, b, c) => Ok(IntermediateFinalizedSplitOutcome::Yield(a, b, c)),
+        RunOutcome::Yield(a, b, c, d) => Ok(IntermediateFinalizedSplitOutcome::Yield(a, b, c, d)),
         RunOutcome::Finish(a) => Ok(IntermediateFinalizedSplitOutcome::Finish(a)),
         RunOutcome::RetryUserInput(a, b) => Ok(IntermediateFinalizedSplitOutcome::RetryUserInput(a, b)),
       }
@@ -169,7 +171,7 @@ impl<
       Coproduct::Inl(splitter_produces_for_this_case) => {
         let this_case_consumes = splitter_produces_for_this_case.concat(process_before_split_produced);
         match self.this_case.run_subprocess(this_case_consumes).await? {
-          RunOutcome::Yield(a, b, c) => Ok(IntermediateFinalizedSplitOutcome::Yield(a, b, c)),
+          RunOutcome::Yield(a, b, c, d) => Ok(IntermediateFinalizedSplitOutcome::Yield(a, b, c, d)),
           RunOutcome::Finish(a) => Ok(IntermediateFinalizedSplitOutcome::Finish(a)),
           RunOutcome::RetryUserInput(a, b) => Ok(IntermediateFinalizedSplitOutcome::RetryUserInput(a, b)),
         }
@@ -192,7 +194,7 @@ impl<
         process_before_split_produced,
         splitter_produces_to_other_cases,
       } => self.continue_run(process_before_split_produced, splitter_produces_to_other_cases).await,
-      IntermediateFinalizedSplitOutcome::Yield(a, b, c) => Ok(IntermediateFinalizedSplitOutcome::Yield(a, b, c)),
+      IntermediateFinalizedSplitOutcome::Yield(a, b, c, d) => Ok(IntermediateFinalizedSplitOutcome::Yield(a, b, c, d)),
       IntermediateFinalizedSplitOutcome::Finish(a) => Ok(IntermediateFinalizedSplitOutcome::Finish(a)),
       IntermediateFinalizedSplitOutcome::RetryUserInput(a, b) => {
         Ok(IntermediateFinalizedSplitOutcome::RetryUserInput(a, b))
