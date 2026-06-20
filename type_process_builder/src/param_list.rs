@@ -62,7 +62,7 @@ where
 
   /// <https://isocpp.org/blog/2014/06/stroustrup-lists>
   fn _deserialize(mut session_context: SessionContext) -> anyhow::Result<Self> {
-    let index = session_context.iter().rposition(|(k, _)| *k == Head::UID::U32).ok_or( {
+    let index = session_context.iter().rposition(|(k, _)| *k == Head::UID::U32).ok_or({
       let head_param_uid: ParamUID = Head::UID::U32;
       anyhow!("Missing key: {head_param_uid}")
     })?;

@@ -1,7 +1,7 @@
 use crate::builder::borrow_just::BorrowJust;
 use crate::builder::{
-  CurrentRunYieldedAt, FlowingProcess, MaybeFormContext, IntermediateRunOutcome, IntermediateRunResult, ParamList, ParamUID,
-  PreviousRunYieldedAt, SessionContext, StepIndex,
+  CurrentRunYieldedAt, FlowingProcess, IntermediateRunOutcome, IntermediateRunResult, MaybeFormContext, ParamList,
+  ParamUID, PreviousRunYieldedAt, SessionContext, StepIndex,
 };
 use crate::param_list::concat::Concat;
 use crate::step::{Form, InputValidation};
@@ -74,7 +74,7 @@ where
       let context: FormStep::Context = postcard::from_bytes(&form_context.ok_or(anyhow!("Missing FormContext"))?)?;
       match self.form_step.handle_input(last_step_consumes, user_input, context).await? {
         InputValidation::Successful(a) => Ok(IntermediateRunOutcome::Continue(a.concat(process_before_produces))),
-        InputValidation::Retry(a) => Ok(IntermediateRunOutcome::RetryUserInput(a, todo!())),
+        InputValidation::Retry(a, b) => Ok(IntermediateRunOutcome::RetryUserInput(a, postcard::to_allocvec(&b)?)),
         InputValidation::Finish(a) => Ok(IntermediateRunOutcome::Finish(a)),
       }
     }

@@ -1,5 +1,5 @@
 use crate::builder::finalized_process::FinalizedProcess;
-use crate::builder::{ParamUID, PreviousRunYieldedAt, MaybeFormContext, RunResult, SessionContext, StepIndex};
+use crate::builder::{MaybeFormContext, ParamUID, PreviousRunYieldedAt, RunResult, SessionContext, StepIndex};
 use std::collections::HashSet;
 
 pub struct RunnableProcess<UnderlyingProcess: FinalizedProcess> {
@@ -21,10 +21,7 @@ impl<UnderlyingProcess: FinalizedProcess> RunnableProcess<UnderlyingProcess> {
     user_input: String,
     form_context: MaybeFormContext,
   ) -> RunResult<UnderlyingProcess::Messages> {
-    self
-      .finalized_process
-      .resume_run(previous_run_produced, previous_run_yielded_at, user_input, form_context)
-      .await
+    self.finalized_process.resume_run(previous_run_produced, previous_run_yielded_at, user_input, form_context).await
   }
 
   /// [crate::param_list::ParamList::_deserialize]

@@ -1,7 +1,10 @@
-use crate::builder::{FlowingProcess, IntermediateFinalizedSplitOutcome, IntermediateFinalizedSplitResult, IntermediateRunOutcome, ParamList, ParamUID, PreviousRunYieldedAt, MaybeFormContext, SessionContext, SplitProcess, StepIndex};
+use crate::builder::{
+  FlowingProcess, IntermediateFinalizedSplitOutcome, IntermediateFinalizedSplitResult, IntermediateRunOutcome,
+  MaybeFormContext, ParamList, ParamUID, PreviousRunYieldedAt, SessionContext, SplitProcess, StepIndex,
+};
 use crate::param_list::borrow_just::BorrowJust;
 use crate::param_list::concat::Concat;
-use crate::step::{Splitter};
+use crate::step::Splitter;
 use frunk_core::coproduct::Coproduct;
 use std::marker::PhantomData;
 

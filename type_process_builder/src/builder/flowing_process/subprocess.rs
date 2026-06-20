@@ -1,5 +1,8 @@
-use crate::builder::{FlowingProcess, IntermediateRunOutcome, IntermediateRunResult, ParamList, ParamUID, PreviousRunYieldedAt, MaybeFormContext, SessionContext, StepIndex};
-use crate::step::{ProcessMessages};
+use crate::builder::{
+  FlowingProcess, IntermediateRunOutcome, IntermediateRunResult, MaybeFormContext, ParamList, ParamUID,
+  PreviousRunYieldedAt, SessionContext, StepIndex,
+};
+use crate::step::ProcessMessages;
 use std::marker::PhantomData;
 
 pub struct Subprocess<ProcessBeforeProduces, Messages> {

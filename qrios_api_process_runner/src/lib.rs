@@ -14,7 +14,7 @@ use std::ops::Not;
 use type_process_builder::builder::{
   FinalizedProcess, ParamUID, PreviousRunYieldedAt, RunOutcome, RunnableProcess, StepIndex,
 };
-use type_process_builder::step::{ProcessMessages};
+use type_process_builder::step::ProcessMessages;
 
 pub struct Message(pub String);
 
@@ -92,10 +92,7 @@ impl<Process: FinalizedProcess<Messages = Messages> + Sync>
         .await
         .map_err(|_| ())?;
     let already_stored_params = session_context.iter().map(|x| x.0).collect::<HashSet<_>>();
-    let run_result = self
-      .process
-      .resume_run(session_context, previous_run_yielded_at, user_input, form_context)
-      .await;
+    let run_result = self.process.resume_run(session_context, previous_run_yielded_at, user_input, form_context).await;
     match run_result {
       Ok(RunOutcome::Yield(message, session_context, current_run_yielded_at)) => {
         let session_context_param_ids = session_context.iter().map(|x| x.0).collect::<HashSet<_>>();
@@ -108,7 +105,7 @@ impl<Process: FinalizedProcess<Messages = Messages> + Sync>
           &self.process,
           session_id,
           current_run_yielded_at,
-          FormContext(0),
+          None,
           params_to_store,
           params_to_remove,
         )
@@ -116,8 +113,10 @@ impl<Process: FinalizedProcess<Messages = Messages> + Sync>
         .map_err(|_| ())?;
         Ok(UssdView::InputView(InputView { message: message.0, r_type: "InputView".into() }))
       },
-      Ok(RunOutcome::RetryUserInput(message)) => {
-        increment_failed_input_validation_attempts(&self.pool, &self.process, session_id).await.map_err(|_| ())?;
+      Ok(RunOutcome::RetryUserInput(message, form_context)) => {
+        increment_failed_input_validation_attempts(&self.pool, &self.process, session_id, form_context)
+          .await
+          .map_err(|_| ())?;
         Ok(UssdView::InputView(InputView { message: message.0, r_type: "InputView".into() }))
       },
       Ok(RunOutcome::Finish(message)) => {
@@ -156,29 +155,16 @@ impl<Process: FinalizedProcess<Messages = Messages> + Sync>
     };
     let init_session_context =
       vec![(0, postcard::to_allocvec(&body.msisdn).unwrap()), (1, postcard::to_allocvec(&body.operator).unwrap())];
-    let run_result = self
-      .process
-      .resume_run(
-        init_session_context,
-        PreviousRunYieldedAt(StepIndex::MIN),
-        shortcode_string,
-        FormContext(0),
-      )
-      .await;
+    let run_result =
+      self.process.resume_run(init_session_context, PreviousRunYieldedAt(StepIndex::MIN), shortcode_string, None).await;
     match run_result {
       Ok(RunOutcome::Yield(message, session_context, current_run_yielded_at)) => {
-        let id = create_session_context(
-          &self.pool,
-          &self.process,
-          current_run_yielded_at,
-          FormContext(0),
-          session_context,
-        )
-        .await
-        .map_err(|_| ())?;
+        let id = create_session_context(&self.pool, &self.process, current_run_yielded_at, None, session_context)
+          .await
+          .map_err(|_| ())?;
         Ok((id, UssdView::InputView(InputView { message: message.0, r_type: "InputView".into() })))
       },
-      Ok(RunOutcome::RetryUserInput(message)) => {
+      Ok(RunOutcome::RetryUserInput(..)) => {
         unreachable!("We haven't prompted user for input yet")
       },
       Ok(RunOutcome::Finish(message)) => {
@@ -290,10 +276,10 @@ mod tests {
         &self,
         _consumes: <Self::ValidateInputConsumes as ToRef<'a>>::Output,
         _user_input: String,
-        form_context: Self::Context,
-      ) -> anyhow::Result<InputValidation<Self::Produces, Messages>> {
-        match form_context {
-          0 => Ok(InputValidation::Retry(Message("This will be accepted".into()))),
+        failed: Self::Context,
+      ) -> anyhow::Result<InputValidation<Self::Produces, Messages, Self::Context>> {
+        match failed {
+          0 => Ok(InputValidation::Retry(Message("This will be accepted".into()), failed + 1)),
           _ => Ok(InputValidation::Successful(hlist![FormOutput])),
         }
       }
@@ -341,9 +327,9 @@ mod tests {
         _consumes: <Self::ValidateInputConsumes as ToRef<'a>>::Output,
         user_input: String,
         failed: u16,
-      ) -> anyhow::Result<InputValidation<Self::Produces, Messages>> {
+      ) -> anyhow::Result<InputValidation<Self::Produces, Messages, Self::Context>> {
         match (user_input.as_str(), failed) {
-          ("retry", 0) => Ok(InputValidation::Retry(Message("retry again".into()))),
+          ("retry", 0) => Ok(InputValidation::Retry(Message("retry again".into()), failed + 1)),
           ("finish", _) => Ok(InputValidation::Finish(Message("finished early".into()))),
           ("1", _) => Ok(InputValidation::Successful(Self::Produces::inject((Case1, hlist![SplitCase1Output])))),
           _ => Ok(InputValidation::Successful(Self::Produces::inject((Case2, hlist![SplitCase2Output])))),

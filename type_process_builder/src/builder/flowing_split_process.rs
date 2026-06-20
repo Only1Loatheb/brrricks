@@ -3,10 +3,12 @@ pub mod first_case_of_flowing_split_process;
 pub mod flowing_case_of_finalized_split_process;
 pub mod flowing_case_of_flowing_split_process;
 
-use crate::builder::{IntermediateFlowingSplitResult, ParamUID, PreviousRunYieldedAt, MaybeFormContext, SessionContext, StepIndex};
+use crate::builder::{
+  IntermediateFlowingSplitResult, MaybeFormContext, ParamUID, PreviousRunYieldedAt, SessionContext, StepIndex,
+};
 use crate::param_list::ParamList;
 use crate::param_list::concat::Concat;
-use crate::step::{ProcessMessages};
+use crate::step::ProcessMessages;
 use frunk_core::coproduct::Coproduct;
 use std::future::Future;
 

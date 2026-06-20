@@ -1,10 +1,14 @@
-use crate::builder::{CurrentRunYieldedAt, FlowingProcess, IntermediateFinalizedSplitOutcome, IntermediateFinalizedSplitResult, IntermediateRunOutcome, ParamList, ParamUID, PreviousRunYieldedAt, MaybeFormContext, SessionContext, SplitProcess, StepIndex};
+use crate::builder::{
+  CurrentRunYieldedAt, FlowingProcess, IntermediateFinalizedSplitOutcome, IntermediateFinalizedSplitResult,
+  IntermediateRunOutcome, MaybeFormContext, ParamList, ParamUID, PreviousRunYieldedAt, SessionContext, SplitProcess,
+  StepIndex,
+};
 use crate::param_list::borrow_just::BorrowJust;
 use crate::param_list::concat::Concat;
 use crate::step::{FormSplitter, InputValidation};
+use anyhow::anyhow;
 use frunk_core::coproduct::Coproduct;
 use std::marker::PhantomData;
-use anyhow::anyhow;
 
 pub struct SplitProcessFormSplitter<
   Tag: Send + Sync,
@@ -99,7 +103,9 @@ where
             splitter_produces_to_other_cases,
           })
         },
-        InputValidation::Retry(a) => Ok(IntermediateFinalizedSplitOutcome::RetryUserInput(a, todo!())),
+        InputValidation::Retry(a, b) => {
+          Ok(IntermediateFinalizedSplitOutcome::RetryUserInput(a, postcard::to_allocvec(&b)?))
+        },
         InputValidation::Finish(a) => Ok(IntermediateFinalizedSplitOutcome::Finish(a)),
       }
     }

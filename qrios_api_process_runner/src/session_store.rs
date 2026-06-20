@@ -1,5 +1,8 @@
 use sqlx::{Executor, PgPool, Row};
-use type_process_builder::builder::{CurrentRunYieldedAt, FinalizedProcess, ParamUID, PreviousRunYieldedAt, MaybeFormContext, RunnableProcess, SessionContext};
+use type_process_builder::builder::{
+  CurrentRunYieldedAt, FinalizedProcess, MaybeFormContext, ParamUID, PreviousRunYieldedAt, RunnableProcess,
+  SessionContext,
+};
 
 pub async fn create_session_context_table<Process: FinalizedProcess>(
   pool: &PgPool,
@@ -86,7 +89,7 @@ pub async fn get_session_context(
   let row = sqlx::query(&sql.0).bind(session_id).fetch_one(pool).await?;
 
   let previous_run_yielded_at = PreviousRunYieldedAt(row.try_get(0)?);
-  let form_context = row.try_get::<Vec<u8>, _>(1)?;
+  let form_context = row.try_get::<Option<Vec<u8>>, _>(1)?;
 
   let mut session_context = Vec::with_capacity(ordered_all_unique_param_uids.len());
   for idx_and_param_uid in ordered_all_unique_param_uids.iter().enumerate() {
@@ -122,18 +125,11 @@ pub async fn increment_failed_input_validation_attempts<Process: FinalizedProces
   pool: &PgPool,
   process: &RunnableProcess<Process>,
   id: i64,
+  form_context: Vec<u8>,
 ) -> Result<PgQueryResult, sqlx::Error> {
   let table_name = table_name(process);
-
-  let sql = format!(
-    r#"
-      UPDATE {table_name}
-      SET form_context = form_context + 1
-      WHERE id = $1
-    "#
-  );
-
-  sqlx::query(&sql).bind(id).execute(pool).await
+  let sql = format!(r#"UPDATE {table_name} SET form_context = $1 WHERE id = $2"#);
+  sqlx::query(&sql).bind(form_context).bind(id).execute(pool).await
 }
 
 pub async fn update_session_context<Process: FinalizedProcess>(
@@ -145,8 +141,7 @@ pub async fn update_session_context<Process: FinalizedProcess>(
   params_to_store: SessionContext,
   params_to_remove: Vec<u32>,
 ) -> Result<(), sqlx::Error> {
-  let mut assignments =
-    vec!["previous_run_yielded_at = $1".to_string(), "form_context = $2".to_string()];
+  let mut assignments = vec!["previous_run_yielded_at = $1".to_string(), "form_context = $2".to_string()];
 
   for (i, (col, _)) in params_to_store.iter().enumerate() {
     assignments.push(format!("\"{}\" = ${}", col, i + 3));

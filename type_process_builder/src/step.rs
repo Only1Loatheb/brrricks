@@ -2,9 +2,9 @@ use crate::builder::ParamUID;
 use crate::param_list::ParamList;
 use frunk_core::coproduct::Coproduct;
 use frunk_core::traits::ToRef;
-use std::future::Future;
-use serde::de::DeserializeOwned;
 use serde::Serialize;
+use serde::de::DeserializeOwned;
+use std::future::Future;
 
 pub trait ProcessMessages: Send + Sync {
   type FormMessage: Send + Sync;
@@ -39,9 +39,9 @@ pub trait Operation: Send + Sync {
 }
 
 #[derive(Debug, PartialEq, Eq)]
-pub enum InputValidation<Produced, Messages: ProcessMessages> {
+pub enum InputValidation<Produced, Messages: ProcessMessages, FormContext: Serialize> {
   Successful(Produced),
-  Retry(Messages::FormMessage),
+  Retry(Messages::FormMessage, FormContext),
   Finish(Messages::FinalMessage),
 }
 
@@ -60,7 +60,7 @@ pub trait Form: Send + Sync {
     consumes: <Self::ValidateInputConsumes as ToRef>::Output,
     user_input: String,
     form_context: Self::Context,
-  ) -> impl Future<Output = anyhow::Result<InputValidation<Self::Produces, Self::Messages>>> + Send;
+  ) -> impl Future<Output = anyhow::Result<InputValidation<Self::Produces, Self::Messages, Self::Context>>> + Send;
 }
 
 pub trait SplitterOutput: Send + Sync {}
@@ -97,7 +97,7 @@ pub trait FormSplitter: Send + Sync {
     consumes: <Self::ValidateInputConsumes as ToRef>::Output,
     user_input: String,
     form_context: Self::Context,
-  ) -> impl Future<Output = anyhow::Result<InputValidation<Self::Produces, Self::Messages>>> + Send;
+  ) -> impl Future<Output = anyhow::Result<InputValidation<Self::Produces, Self::Messages, Self::Context>>> + Send;
 }
 
 pub trait Final: Send + Sync {

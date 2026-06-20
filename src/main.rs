@@ -42,6 +42,7 @@ impl FormSplitter for SelectAmountSource {
   type CreateFormConsumes = HNil;
   type ValidateInputConsumes = HNil;
   type Produces = Coprod![(PredefinedAmount, HList![Amount]), (CustomAmount, HNil)];
+  type Context = EmptyContext;
   type Messages = Messages;
 
   async fn create_form<'a>(
@@ -55,12 +56,12 @@ impl FormSplitter for SelectAmountSource {
     &self,
     _consumes: <Self::ValidateInputConsumes as ToRef<'a>>::Output,
     user_input: String,
-    _form_context: MaybeFormContext,
-  ) -> anyhow::Result<InputValidation<Self::Produces, Messages>> {
+    _form_context: Self::Context,
+  ) -> anyhow::Result<InputValidation<Self::Produces, Messages, Self::Context>> {
     Ok(match user_input.as_str() {
       "1" => InputValidation::Successful(Self::Produces::inject((PredefinedAmount, hlist!(Amount(100))))),
       "2" => InputValidation::Successful(Self::Produces::inject((CustomAmount, HNil))),
-      _ => InputValidation::Retry(Message("not 1 or 2".into())),
+      _ => InputValidation::Retry(Message("not 1 or 2".into()), EmptyContext),
     })
   }
 }
@@ -87,11 +88,11 @@ impl Form for AmountForm {
     &self,
     _consumes: <Self::ValidateInputConsumes as ToRef<'a>>::Output,
     user_input: String,
-    _form_context: MaybeFormContext,
-  ) -> anyhow::Result<InputValidation<Self::Produces, Messages>> {
+    _form_context: Self::Context,
+  ) -> anyhow::Result<InputValidation<Self::Produces, Messages, Self::Context>> {
     match user_input.parse::<u32>() {
       Ok(value) => Ok(InputValidation::Successful(hlist![Amount(value)])),
-      Err(_) => Ok(InputValidation::Retry(Message("Invalid number".into()))),
+      Err(_) => Ok(InputValidation::Retry(Message("Invalid number".into()), EmptyContext)),
     }
   }
 }

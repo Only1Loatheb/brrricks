@@ -1,5 +1,10 @@
 use crate::builder::subprocess::{Subprocess, subprocess};
-use crate::builder::{FinalizedProcess, FinalizedSplitProcess, FlowingCaseOfFinalizedSplitProcess, FlowingProcess, IntermediateFinalizedSplitOutcome, IntermediateFinalizedSplitResult, NextCaseOfFinalizedSplitProcess, ParamList, ParamUID, PreviousRunYieldedAt, MaybeFormContext, RunOutcome, SessionContext, SplitProcess, StepIndex, WILL_BE_RENUMBERED};
+use crate::builder::{
+  FinalizedProcess, FinalizedSplitProcess, FlowingCaseOfFinalizedSplitProcess, FlowingProcess,
+  IntermediateFinalizedSplitOutcome, IntermediateFinalizedSplitResult, MaybeFormContext,
+  NextCaseOfFinalizedSplitProcess, ParamList, ParamUID, PreviousRunYieldedAt, RunOutcome, SessionContext, SplitProcess,
+  StepIndex, WILL_BE_RENUMBERED,
+};
 use crate::param_list::concat::Concat;
 use frunk_core::coproduct::Coproduct;
 use std::marker::PhantomData;
@@ -143,11 +148,7 @@ impl<
         },
       }
     } else {
-      match self
-        .this_case
-        .resume_run(previous_run_produced, previous_run_yielded_at, user_input, form_context)
-        .await?
-      {
+      match self.this_case.resume_run(previous_run_produced, previous_run_yielded_at, user_input, form_context).await? {
         RunOutcome::Yield(a, b, c) => Ok(IntermediateFinalizedSplitOutcome::Yield(a, b, c)),
         RunOutcome::Finish(a) => Ok(IntermediateFinalizedSplitOutcome::Finish(a)),
         RunOutcome::RetryUserInput(a, b) => Ok(IntermediateFinalizedSplitOutcome::RetryUserInput(a, b)),
@@ -193,8 +194,9 @@ impl<
       } => self.continue_run(process_before_split_produced, splitter_produces_to_other_cases).await,
       IntermediateFinalizedSplitOutcome::Yield(a, b, c) => Ok(IntermediateFinalizedSplitOutcome::Yield(a, b, c)),
       IntermediateFinalizedSplitOutcome::Finish(a) => Ok(IntermediateFinalizedSplitOutcome::Finish(a)),
-      IntermediateFinalizedSplitOutcome::RetryUserInput(a, b) => Ok(IntermediateFinalizedSplitOutcome::RetryUserInput
-        (a, b)),
+      IntermediateFinalizedSplitOutcome::RetryUserInput(a, b) => {
+        Ok(IntermediateFinalizedSplitOutcome::RetryUserInput(a, b))
+      },
     }
   }
 
