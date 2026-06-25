@@ -420,7 +420,7 @@ mod tests {
       _user_input: String,
       _form_context: Self::Context,
     ) -> anyhow::Result<InputValidation<Self::Produces, Messages, Self::Context>> {
-      Ok(InputValidation::Finish(Message("Always finnish".into())))
+      Ok(InputValidation::Finish(Message("Always finish".into())))
     }
   }
 
@@ -523,8 +523,8 @@ mod tests {
   impl FormSplitter for TestFormSplitter {
     type CreateFormConsumes = HNil;
     type ValidateInputConsumes = HNil;
-    type Context = u16;
     type Produces = Coprod![(Case1, HList![Split1Param]), (Case2, HList![Split2Param])];
+    type Context = u16;
     type Messages = Messages;
 
     async fn create_form<'a>(
@@ -553,8 +553,8 @@ mod tests {
   impl FormSplitter for InnerFormSplitter {
     type CreateFormConsumes = HNil;
     type ValidateInputConsumes = HNil;
-    type Context = i16;
     type Produces = Coprod![(Case1, HList![InnerSplit1Param]), (Case2, HList![InnerSplit2Param])];
+    type Context = i16;
     type Messages = Messages;
 
     async fn create_form<'a>(
@@ -602,7 +602,7 @@ mod tests {
   #[tokio::test]
   async fn test_end_emitted_in_form_step() {
     let process = ExtractMsisdnOperatorAndShortcodeString.show(FinishAfterInput).end(FinalNoConsumes).build("", 0);
-    test_process_messages(&process, vec!["*123#", "Last number in the process", "10", "Always finnish"]).await;
+    test_process_messages(&process, vec!["*123#", "Last number in the process", "10", "Always finish"]).await;
 
     async fn test_return_error_on_param_missing_from_init_value(
       process: &RunnableProcess<impl FinalizedProcess<Messages = Messages>>,
@@ -782,7 +782,7 @@ mod tests {
       "20",
       "Last number in the process",
       "30",
-      "Always finnish",
+      "Always finish",
     ];
     test_process_messages(&process, messages).await;
   }
