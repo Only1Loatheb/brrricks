@@ -1242,6 +1242,7 @@ mod tests {
       .end(FinalNoConsumes)
       .build("", 0);
 
+    assert_eq!(48, size_of_val(&process));
     let messages = vec!["*123#", "Straight to trash", "trash me babe", "Choose a case", "2", "Empty good bye"];
     test_process_messages(&process, messages).await;
   }
