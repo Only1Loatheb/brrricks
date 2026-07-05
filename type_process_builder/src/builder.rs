@@ -28,7 +28,7 @@ pub struct PreviousRunYieldedAt(pub StepIndex);
 #[derive(PartialEq, Debug, Eq, Clone, PartialOrd, Ord, Hash)]
 pub struct CurrentRunYieldedAt(pub StepIndex);
 
-pub(crate) const WILL_BE_RENUMBERED: i32 = i32::MAX;
+pub(crate) const WILL_BE_RENUMBERED: StepIndex = StepIndex::MAX;
 
 pub type FormContext = Vec<u8>;
 pub type MaybeFormContext = Option<FormContext>;
