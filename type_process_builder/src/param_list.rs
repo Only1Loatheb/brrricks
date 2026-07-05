@@ -1,4 +1,3 @@
-use crate::builder::{ParamUID, SessionContext};
 use crate::param_list::intersect::Contains;
 use anyhow::anyhow;
 use frunk_core::hlist::{HCons, HList, HNil};
@@ -10,6 +9,10 @@ pub mod borrow_just;
 pub mod concat;
 pub mod intersect;
 pub mod transform;
+
+pub type ParamUID = u32;
+
+pub type SessionContext = Vec<(ParamUID, Vec<u8>)>;
 
 /// Use [typenum::op] to generate UID if the desired typenum const is missing.
 pub trait ParamValue: Serialize + DeserializeOwned + Send + Sync {

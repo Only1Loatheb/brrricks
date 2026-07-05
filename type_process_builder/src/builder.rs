@@ -30,10 +30,6 @@ pub struct CurrentRunYieldedAt(pub StepIndex);
 
 pub(crate) const WILL_BE_RENUMBERED: i32 = i32::MAX;
 
-pub type ParamUID = u32;
-
-pub type SessionContext = Vec<(ParamUID, Vec<u8>)>;
-
 pub type FormContext = Vec<u8>;
 pub type MaybeFormContext = Option<FormContext>;
 

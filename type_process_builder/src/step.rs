@@ -1,5 +1,4 @@
-use crate::builder::ParamUID;
-use crate::param_list::ParamList;
+use crate::param_list::{ParamList, SessionContext};
 use frunk_core::coproduct::Coproduct;
 use frunk_core::traits::ToRef;
 use serde::Serialize;
@@ -17,7 +16,7 @@ pub trait Entry: Send + Sync {
   type Messages: ProcessMessages;
   fn handle(
     &self,
-    consumes: Vec<(ParamUID, Vec<u8>)>,
+    consumes: SessionContext,
     initial_input: String,
   ) -> impl Future<Output = anyhow::Result<Self::Produces>> + Send;
 }

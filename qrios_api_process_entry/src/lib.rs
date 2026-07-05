@@ -3,7 +3,7 @@ use frunk_core::{HList, hlist};
 use serde::{Deserialize, Serialize};
 use std::marker::PhantomData;
 use std::ops::Not;
-use type_process_builder::builder::ParamUID;
+use type_process_builder::builder::SessionContext;
 use type_process_builder::param_list::ParamValue;
 use type_process_builder::step::{Entry, ProcessMessages};
 use typenum::U0;
@@ -59,11 +59,7 @@ impl<Messages: ProcessMessages> Entry for DialedSessionEntry<Messages> {
   type Produces = HList![DialedSessionEntryParam];
   type Messages = Messages;
 
-  async fn handle(
-    &self,
-    mut consumes: Vec<(ParamUID, Vec<u8>)>,
-    shortcode_string: String,
-  ) -> anyhow::Result<Self::Produces> {
+  async fn handle(&self, mut consumes: SessionContext, shortcode_string: String) -> anyhow::Result<Self::Produces> {
     let operator_value = consumes.pop().ok_or_else(|| anyhow!("Admin error or error on frontend."))?.1;
     let msisdn_value = consumes.pop().ok_or_else(|| anyhow!("Admin error or error on frontend."))?.1;
     let msisdn_str: String = postcard::from_bytes(&msisdn_value).map_err(|_| anyhow!("Admin error on frontend."))?;

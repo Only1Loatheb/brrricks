@@ -105,7 +105,7 @@ impl Entry for ShortcodeStringEntry {
 
   async fn handle(
     &self,
-    _consumes: Vec<(ParamUID, Vec<u8>)>,
+    _consumes: SessionContext,
     shortcode_string: String,
   ) -> anyhow::Result<HList![ShortcodeString]> {
     Ok(hlist!(ShortcodeString(shortcode_string)))
