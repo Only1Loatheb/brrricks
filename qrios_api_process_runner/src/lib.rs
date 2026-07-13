@@ -211,19 +211,9 @@ mod tests {
   async fn session_store_test() {
     use crate::QriosUssdApiService;
     use qrios_api_reqwest_client::Client;
-    use sqlx::PgPool;
     use std::sync::Arc;
-    use testcontainers::runners::AsyncRunner;
-    use testcontainers_modules::postgres::Postgres;
     use tokio::net::TcpListener;
     let _ = tracing_subscriber::fmt::try_init();
-
-    let node = Postgres::default().start().await.unwrap();
-    let port = node.get_host_port_ipv4(5432).await.unwrap();
-    let connection_string = format!("postgres://postgres:postgres@127.0.0.1:{port}/postgres");
-    let pool = PgPool::connect(&connection_string).await.unwrap();
-
-    sqlx::query("CREATE SCHEMA session_store").execute(&pool).await.expect("Failed to create schema");
 
     #[derive(Deserialize, Serialize)]
     struct FormOutput;
@@ -351,7 +341,18 @@ mod tests {
       .case_end(Case2, |x| x.end(ConsumeCase2Final))
       .build("test_process", 1);
 
-    let service = QriosUssdApiService::new(process, pool).await.expect("Failed to create service");
+    use testcontainers::runners::AsyncRunner;
+    use testcontainers_modules::postgres::Postgres;
+    let node = Postgres::default().start().await.unwrap();
+    let service = {
+      use sqlx::PgPool;
+      let pool = {
+        let port = node.get_host_port_ipv4(5432).await.unwrap();
+        let connection_string = format!("postgres://postgres:postgres@127.0.0.1:{port}/postgres");
+        PgPool::connect(&connection_string).await.unwrap()
+      };
+      QriosUssdApiService::new(process, pool).await.expect("Failed to create service")
+    };
     let app = qrios_api_axum_server::server::new(Arc::new(service));
     let listener = TcpListener::bind("127.0.0.1:0").await.expect("Failed to bind random port");
     let addr = listener.local_addr().expect("Failed to get server local address");

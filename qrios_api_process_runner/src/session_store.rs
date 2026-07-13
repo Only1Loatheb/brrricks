@@ -9,13 +9,14 @@ pub async fn create_session_context_table<Process: FinalizedProcess>(
   process: &RunnableProcess<Process>,
   ordered_all_unique_param_uids: &Vec<ParamUID>,
 ) -> Result<(), sqlx::Error> {
+  sqlx::query("CREATE SCHEMA IF NOT EXISTS session_store").execute(pool).await?;
   let mut param_columns = String::new();
   for col in ordered_all_unique_param_uids {
     let name: &u32 = col;
     param_columns.push_str(&format!(",\"{name}\" BYTEA"));
   }
 
-  let table_name = table_name(process);
+  let table_name = qualified_table_name(process);
   let sql = format!(
     r#"
     CREATE TABLE IF NOT EXISTS {table_name} (
@@ -44,7 +45,7 @@ pub async fn create_session_context<Process: FinalizedProcess>(
     placeholders.push(format!("${}", i + 3));
   }
 
-  let table_name = table_name(process);
+  let table_name = qualified_table_name(process);
   let sql =
     format!("INSERT INTO {table_name} ({}) VALUES ({}) RETURNING id;", columns.join(", "), placeholders.join(", "));
 
@@ -75,7 +76,7 @@ pub fn build_get_session_context_query<Process: FinalizedProcess>(
     sql.push_str(&format!(",\"{uid}\""));
   }
 
-  let table_name = table_name(process);
+  let table_name = qualified_table_name(process);
   sql.push_str(&format!(" FROM {table_name} WHERE id = $1"));
   GetSessionContextQuery(sql)
 }
@@ -106,7 +107,7 @@ pub async fn delete_session_context<Process: FinalizedProcess>(
   process: &RunnableProcess<Process>,
   id: i64,
 ) -> Result<u64, sqlx::Error> {
-  let table_name = table_name(process);
+  let table_name = qualified_table_name(process);
 
   let sql = format!(r#"DELETE FROM {table_name} WHERE id = $1"#);
 
@@ -115,7 +116,7 @@ pub async fn delete_session_context<Process: FinalizedProcess>(
   Ok(result.rows_affected())
 }
 
-fn table_name<Process: FinalizedProcess>(process: &RunnableProcess<Process>) -> String {
+fn qualified_table_name<Process: FinalizedProcess>(process: &RunnableProcess<Process>) -> String {
   let process_name = process.get_name();
   let process_version = process.get_version();
   format!("session_store.{process_name}_{process_version}")
@@ -127,7 +128,7 @@ pub async fn increment_failed_input_validation_attempts<Process: FinalizedProces
   id: i64,
   form_context: Vec<u8>,
 ) -> Result<PgQueryResult, sqlx::Error> {
-  let table_name = table_name(process);
+  let table_name = qualified_table_name(process);
   let sql = format!(r#"UPDATE {table_name} SET form_context = $1 WHERE id = $2"#);
   sqlx::query(&sql).bind(form_context).bind(id).execute(pool).await
 }
@@ -155,7 +156,7 @@ pub async fn update_session_context<Process: FinalizedProcess>(
     assignments.push(format!("\"{col}\" = NULL"));
   }
 
-  let table_name = table_name(process);
+  let table_name = qualified_table_name(process);
 
   let where_placeholder = params_to_store.len() + 3;
 

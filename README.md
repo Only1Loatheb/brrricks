@@ -119,14 +119,14 @@ impl FormSplitter for SelectAmountSource {
   type CreateFormConsumes = HNil;
   type ValidateInputConsumes = HNil;
   type Produces = Coprod![(PredefinedAmount, HList![Amount]), (CustomAmount, HNil)];
-  type Context = EmptyContext;
+  type Context = EmptyFormContext;
   type Messages = Messages;
 
   async fn create_form<'a>(
     &self,
     _consumes: <Self::CreateFormConsumes as ToRef<'a>>::Output,
   ) -> anyhow::Result<FormWithContext<Message, Self::Context>> {
-    Ok(FormWithContext(Message("Enter 1 for 100 or 2 for custom amount".into()), EmptyContext))
+    Ok(FormWithContext(Message("Enter 1 for 100 or 2 for custom amount".into()), EmptyFormContext))
   }
 
   async fn handle_input<'a>(
@@ -138,27 +138,27 @@ impl FormSplitter for SelectAmountSource {
     Ok(match user_input.as_str() {
       "1" => InputValidation::Successful(Self::Produces::inject((PredefinedAmount, hlist!(Amount(100))))),
       "2" => InputValidation::Successful(Self::Produces::inject((CustomAmount, HNil))),
-      _ => InputValidation::Retry(Message("not 1 or 2".into()), EmptyContext),
+      _ => InputValidation::Retry(Message("not 1 or 2".into()), EmptyFormContext),
     })
   }
 }
 
 #[derive(Serialize, Deserialize)]
-struct EmptyContext;
+struct EmptyFormContext;
 
 struct AmountForm;
 impl Form for AmountForm {
   type CreateFormConsumes = HNil;
   type ValidateInputConsumes = HNil;
   type Produces = HList![Amount];
-  type Context = EmptyContext;
+  type Context = EmptyFormContext;
   type Messages = Messages;
 
   async fn create_form<'a>(
     &self,
     _consumes: <Self::CreateFormConsumes as ToRef<'a>>::Output,
   ) -> anyhow::Result<FormWithContext<Message, Self::Context>> {
-    Ok(FormWithContext(Message("Enter a number".into()), EmptyContext))
+    Ok(FormWithContext(Message("Enter a number".into()), EmptyFormContext))
   }
 
   async fn handle_input<'a>(
@@ -169,7 +169,7 @@ impl Form for AmountForm {
   ) -> anyhow::Result<InputValidation<Self::Produces, Messages, Self::Context>> {
     match user_input.parse::<u32>() {
       Ok(value) => Ok(InputValidation::Successful(hlist![Amount(value)])),
-      Err(_) => Ok(InputValidation::Retry(Message("Invalid number".into()), EmptyContext)),
+      Err(_) => Ok(InputValidation::Retry(Message("Invalid number".into()), EmptyFormContext)),
     }
   }
 }

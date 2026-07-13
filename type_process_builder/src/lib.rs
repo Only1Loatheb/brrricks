@@ -287,21 +287,21 @@ mod tests {
   }
 
   #[derive(Serialize, Deserialize)]
-  struct EmptyContext;
+  struct EmptyFormContext;
 
   struct FinishEarlyForm;
   impl Form for FinishEarlyForm {
     type CreateFormConsumes = HNil;
     type ValidateInputConsumes = HNil;
     type Produces = HNil;
-    type Context = EmptyContext;
+    type Context = EmptyFormContext;
     type Messages = Messages;
 
     async fn create_form<'a>(
       &self,
       _consumes: <Self::CreateFormConsumes as ToRef<'a>>::Output,
     ) -> anyhow::Result<FormWithContext<Message, Self::Context>> {
-      Ok(FormWithContext(Message("Finish early form".into()), EmptyContext))
+      Ok(FormWithContext(Message("Finish early form".into()), EmptyFormContext))
     }
 
     async fn handle_input<'a>(
@@ -329,14 +329,14 @@ mod tests {
     type CreateFormConsumes = HList![Split1Param];
     type ValidateInputConsumes = HNil;
     type Produces = HList![CommonCaseParam];
-    type Context = EmptyContext;
+    type Context = EmptyFormContext;
     type Messages = Messages;
 
     async fn create_form<'a>(
       &self,
       _consumes: <Self::CreateFormConsumes as ToRef<'a>>::Output,
     ) -> anyhow::Result<FormWithContext<Message, Self::Context>> {
-      Ok(FormWithContext(Message("Enter a number".into()), EmptyContext))
+      Ok(FormWithContext(Message("Enter a number".into()), EmptyFormContext))
     }
 
     async fn handle_input<'a>(
@@ -354,14 +354,14 @@ mod tests {
     type CreateFormConsumes = HList![Split2Param];
     type ValidateInputConsumes = HNil;
     type Produces = HList![CommonCaseParam];
-    type Context = EmptyContext;
+    type Context = EmptyFormContext;
     type Messages = Messages;
 
     async fn create_form<'a>(
       &self,
       _consumes: <Self::CreateFormConsumes as ToRef<'a>>::Output,
     ) -> anyhow::Result<FormWithContext<Message, Self::Context>> {
-      Ok(FormWithContext(Message("Enter a number".into()), EmptyContext))
+      Ok(FormWithContext(Message("Enter a number".into()), EmptyFormContext))
     }
 
     async fn handle_input<'a>(
@@ -379,14 +379,14 @@ mod tests {
     type CreateFormConsumes = HNil;
     type ValidateInputConsumes = HNil;
     type Produces = HNil;
-    type Context = EmptyContext;
+    type Context = EmptyFormContext;
     type Messages = Messages;
 
     async fn create_form<'a>(
       &self,
       _consumes: <Self::CreateFormConsumes as ToRef<'a>>::Output,
     ) -> anyhow::Result<FormWithContext<Message, Self::Context>> {
-      Ok(FormWithContext(Message("Straight to trash".into()), EmptyContext))
+      Ok(FormWithContext(Message("Straight to trash".into()), EmptyFormContext))
     }
 
     async fn handle_input<'a>(
@@ -404,14 +404,14 @@ mod tests {
     type CreateFormConsumes = HNil;
     type ValidateInputConsumes = HNil;
     type Produces = HNil;
-    type Context = EmptyContext;
+    type Context = EmptyFormContext;
     type Messages = Messages;
 
     async fn create_form<'a>(
       &self,
       _consumes: <Self::CreateFormConsumes as ToRef<'a>>::Output,
     ) -> anyhow::Result<FormWithContext<Message, Self::Context>> {
-      Ok(FormWithContext(Message("Last number in the process".into()), EmptyContext))
+      Ok(FormWithContext(Message("Last number in the process".into()), EmptyFormContext))
     }
 
     async fn handle_input<'a>(
@@ -457,14 +457,14 @@ mod tests {
     type CreateFormConsumes = HNil;
     type ValidateInputConsumes = HNil;
     type Produces = HList![CaseOptionParam];
-    type Context = EmptyContext;
+    type Context = EmptyFormContext;
     type Messages = Messages;
 
     async fn create_form<'a>(
       &self,
       _consumes: <Self::CreateFormConsumes as ToRef<'a>>::Output,
     ) -> anyhow::Result<FormWithContext<Message, Self::Context>> {
-      Ok(FormWithContext(Message("Choose a case".into()), EmptyContext))
+      Ok(FormWithContext(Message("Choose a case".into()), EmptyFormContext))
     }
 
     async fn handle_input<'a>(
@@ -963,14 +963,14 @@ mod tests {
     type CreateFormConsumes = HNil;
     type ValidateInputConsumes = HNil;
     type Produces = HNil;
-    type Context = EmptyContext;
+    type Context = EmptyFormContext;
     type Messages = Messages;
 
     async fn create_form<'a>(
       &self,
       _consumes: <Self::CreateFormConsumes as ToRef<'a>>::Output,
     ) -> anyhow::Result<FormWithContext<Message, Self::Context>> {
-      Ok(FormWithContext(Message("Fancy a retry?".into()), EmptyContext))
+      Ok(FormWithContext(Message("Fancy a retry?".into()), EmptyFormContext))
     }
 
     async fn handle_input<'a>(
@@ -980,7 +980,7 @@ mod tests {
       _form_context: Self::Context,
     ) -> anyhow::Result<InputValidation<Self::Produces, Messages, Self::Context>> {
       if user_input == "retry" {
-        Ok(InputValidation::Retry(Message("Try again".into()), EmptyContext))
+        Ok(InputValidation::Retry(Message("Try again".into()), EmptyFormContext))
       } else {
         Ok(InputValidation::Successful(HNil))
       }
