@@ -2,6 +2,8 @@
 /Cargo.lock
 */Cargo.lock
 /.idea
+/.zed/*
+!.zed/tasks.json
 */target/
 target/
 qrios_api_axum_server/README.md

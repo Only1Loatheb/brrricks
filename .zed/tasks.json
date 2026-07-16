@@ -1,0 +1,7 @@
+[
+  {
+    "label": "Cargo Check",
+    "command": "echo XD && cargo check --all-targets -p bricks -p type_process_builder -p qrios_api_process_runner -p qrios_api_process_entry",
+    "tags": ["compile"]
+  }
+]
