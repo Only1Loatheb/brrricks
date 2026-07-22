@@ -101,21 +101,29 @@ fn generate_qrios_api_axum_server(project_dir: &Path) {
 }
 
 fn generate_qrios_api_reqwest_server(root: &Path) {
-  let mut progenitor = Command::new("cargo");
-  progenitor.args(["progenitor"]);
+  let swagger_path = root.join("qrios-ussd-api-swagger.json");
 
-  let output = progenitor.arg(root.join("qrios-ussd-api-swagger.json")).output();
-
-  if output.as_ref().is_err_and(|e| e.kind() == std::io::ErrorKind::NotFound) {
-    Command::new("cargo")
-      .args(["install", "cargo-progenitor"])
-      .status()
-      .expect("failed to install cargo-progenitor");
+  if !swagger_path.exists() {
+    panic!("Swagger file not found: {}", swagger_path.display());
   }
 
-  let code = progenitor.output().expect("cargo progenitor failed");
+  let file = fs::File::open(&swagger_path).expect("failed to open swagger");
 
-  fs::write(root.join("qrios_api_reqwest_client/src/lib.rs"), code.stdout).expect("failed to write progenitor code");
+  let spec = serde_json::from_reader(file).expect("failed to parse swagger");
+
+  let mut generator = progenitor::Generator::default();
+
+  let tokens = generator.generate_tokens(&spec).expect("generation failed");
+
+  let ast = syn::parse2(tokens).expect("failed to parse tokens");
+
+  let content = prettyplease::unparse(&ast);
+
+  let out_file = root.join("qrios_api_reqwest_client/src/lib.rs");
+
+  fs::write(&out_file, content).expect("failed to write generated client");
+
+  println!("Client written to {}", out_file.display());
 }
 
 fn install_git_hooks() {
