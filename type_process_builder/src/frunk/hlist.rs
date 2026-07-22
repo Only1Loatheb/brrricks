@@ -1,9 +1,9 @@
-/// Typeclass for HList (Heterogeneous List) behaviour.
+/// Typeclass for `HList` (Heterogeneous List) behaviour.
 pub trait HList: Sized {
   const LEN: usize;
 }
 
-/// Represents an empty HList.
+/// Represents an empty `HList`.
 #[derive(PartialEq, Debug, Eq, Clone, Copy, PartialOrd, Ord, Hash, Default)]
 pub struct HNil;
 
@@ -11,7 +11,7 @@ impl HList for HNil {
   const LEN: usize = 0;
 }
 
-/// Represents a non-empty HList, holding a head element and a tail HList.
+/// Represents a non-empty `HList`, holding a head element and a tail `HList`.
 #[derive(PartialEq, Debug, Eq, Clone, Copy, PartialOrd, Ord, Hash, Default)]
 pub struct HCons<H, T> {
   pub head: H,

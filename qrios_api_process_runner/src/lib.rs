@@ -243,9 +243,9 @@ mod tests {
       type Produces = HList![OperationOutput];
       type FinalMessage = Message;
 
-      async fn handle<'a>(
+      async fn handle(
         &self,
-        _consumes: <Self::Consumes as ToRef<'a>>::Output,
+        _consumes: <Self::Consumes as ToRef<'_>>::Output,
       ) -> anyhow::Result<OperationOutcome<Self::Produces, Self::FinalMessage>> {
         Ok(OperationOutcome::Successful(hlist!(OperationOutput)))
       }
@@ -259,16 +259,16 @@ mod tests {
       type Context = u16;
       type Messages = Messages;
 
-      async fn create_form<'a>(
+      async fn create_form(
         &self,
-        _consumes: <Self::CreateFormConsumes as ToRef<'a>>::Output,
+        _consumes: <Self::CreateFormConsumes as ToRef<'_>>::Output,
       ) -> anyhow::Result<FormWithContext<Message, Self::Context>> {
         Ok(FormWithContext(Message("This will be discarded".into()), 0))
       }
 
-      async fn handle_input<'a>(
+      async fn handle_input(
         &self,
-        _consumes: <Self::ValidateInputConsumes as ToRef<'a>>::Output,
+        _consumes: <Self::ValidateInputConsumes as ToRef<'_>>::Output,
         _user_input: String,
         failed: Self::Context,
       ) -> anyhow::Result<InputValidation<Self::Produces, Messages, Self::Context>> {
@@ -309,16 +309,16 @@ mod tests {
       type Context = u16;
       type Messages = Messages;
 
-      async fn create_form<'a>(
+      async fn create_form(
         &self,
-        _consumes: <Self::CreateFormConsumes as ToRef<'a>>::Output,
+        _consumes: <Self::CreateFormConsumes as ToRef<'_>>::Output,
       ) -> anyhow::Result<FormWithContext<Message, Self::Context>> {
         Ok(FormWithContext(Message("choose case".into()), 0))
       }
 
-      async fn handle_input<'a>(
+      async fn handle_input(
         &self,
-        _consumes: <Self::ValidateInputConsumes as ToRef<'a>>::Output,
+        _consumes: <Self::ValidateInputConsumes as ToRef<'_>>::Output,
         user_input: String,
         failed: u16,
       ) -> anyhow::Result<InputValidation<Self::Produces, Messages, Self::Context>> {

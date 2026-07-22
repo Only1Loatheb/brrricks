@@ -12,8 +12,8 @@ use crate::param_list::concat::Concat;
 use crate::step::ProcessMessages;
 use std::future::Future;
 
-/// Should we force the user to produce common params before the [crate::step::Splitter]?
-/// If we allow that the user can produce common params in [crate::step::Splitter] without defining additional step.
+/// Should we force the user to produce common params before the [`crate::step::Splitter`]?
+/// If we allow that the user can produce common params in [`crate::step::Splitter`] without defining additional step.
 /// The process builder API will be more ergonomic, but the implementation will be more involved.
 pub trait FlowingSplitProcess<SplitterProducesForOtherCases>: Sized + Send + Sync {
   // Please specify all associated types at the impl FlowingSplitProcess side for inference to work.
@@ -38,9 +38,9 @@ pub trait FlowingSplitProcess<SplitterProducesForOtherCases>: Sized + Send + Syn
     >,
   > + Send;
 
-  /// When a [crate::builder::flowing_process::FlowingProcess] is added to handle split case
+  /// When a [`crate::builder::flowing_process::FlowingProcess`] is added to handle split case
   /// the top level process has to pass to the case what process before split produces and what splitter produced for it
-  /// The [crate::builder::flowing_process::FlowingProcess::then] concatenates params produced in the step with all
+  /// The [`crate::builder::flowing_process::FlowingProcess::then`] concatenates params produced in the step with all
   /// the consumes.
   /// We can extract what process before split produced from case outcome
   fn continue_run(

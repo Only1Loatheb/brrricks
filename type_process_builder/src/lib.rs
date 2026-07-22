@@ -136,9 +136,9 @@ mod tests {
     type Produces = HList![Case1Param, CommonCaseParam];
     type FinalMessage = Message;
 
-    async fn handle<'a>(
+    async fn handle(
       &self,
-      _consumes: <Self::Consumes as ToRef<'a>>::Output,
+      _consumes: <Self::Consumes as ToRef<'_>>::Output,
     ) -> anyhow::Result<OperationOutcome<Self::Produces, Self::FinalMessage>> {
       Ok(OperationOutcome::Successful(hlist!(Case1Param, CommonCaseParam)))
     }
@@ -150,9 +150,9 @@ mod tests {
     type Produces = HList![Case2Param, CommonCaseParam];
     type FinalMessage = Message;
 
-    async fn handle<'a>(
+    async fn handle(
       &self,
-      _consumes: <Self::Consumes as ToRef<'a>>::Output,
+      _consumes: <Self::Consumes as ToRef<'_>>::Output,
     ) -> anyhow::Result<OperationOutcome<Self::Produces, Self::FinalMessage>> {
       Ok(OperationOutcome::Successful(hlist!(Case2Param, CommonCaseParam)))
     }
@@ -164,9 +164,9 @@ mod tests {
     type Produces = HList![Case2Param];
     type FinalMessage = Message;
 
-    async fn handle<'a>(
+    async fn handle(
       &self,
-      _consumes: <Self::Consumes as ToRef<'a>>::Output,
+      _consumes: <Self::Consumes as ToRef<'_>>::Output,
     ) -> anyhow::Result<OperationOutcome<Self::Produces, Self::FinalMessage>> {
       Ok(OperationOutcome::Successful(hlist!(Case2Param)))
     }
@@ -178,9 +178,9 @@ mod tests {
     type Produces = HList![Case1Param];
     type FinalMessage = Message;
 
-    async fn handle<'a>(
+    async fn handle(
       &self,
-      _consumes: <Self::Consumes as ToRef<'a>>::Output,
+      _consumes: <Self::Consumes as ToRef<'_>>::Output,
     ) -> anyhow::Result<OperationOutcome<Self::Produces, Self::FinalMessage>> {
       Ok(OperationOutcome::Successful(hlist!(Case1Param)))
     }
@@ -199,7 +199,7 @@ mod tests {
       (Case2, HList![Split2Param, CommonSplitParam]),
       (Case3, HList![CommonSplitParam])
     ];
-    async fn handle<'a>(&self, consumes: <Self::Consumes as ToRef<'a>>::Output) -> anyhow::Result<Self::Produces> {
+    async fn handle(&self, consumes: <Self::Consumes as ToRef<'_>>::Output) -> anyhow::Result<Self::Produces> {
       Ok(match consumes.head.0 {
         1 => Self::Produces::inject((Case1, hlist!(Split1Param, CommonSplitParam))),
         2 => Self::Produces::inject((Case2, hlist!(Split2Param, CommonSplitParam))),
@@ -214,7 +214,7 @@ mod tests {
     type Produces =
       Coprod![(Case1, HList![Split1Param, CommonSplitParam]), (Case2, HList![Split2Param, CommonSplitParam])];
 
-    async fn handle<'a>(&self, consumes: <Self::Consumes as ToRef<'a>>::Output) -> anyhow::Result<Self::Produces> {
+    async fn handle(&self, consumes: <Self::Consumes as ToRef<'_>>::Output) -> anyhow::Result<Self::Produces> {
       Ok(match consumes.head.0 {
         1 => Self::Produces::inject((Case1, hlist!(Split1Param, CommonSplitParam))),
         _ => Self::Produces::inject((Case2, hlist!(Split2Param, CommonSplitParam))),
@@ -229,7 +229,7 @@ mod tests {
     type Consumes = HNil;
     type Produces = Coprod![(InnerCase0, HNil), (InnerCase1, HNil)];
 
-    async fn handle<'a>(&self, _consumes: <Self::Consumes as ToRef<'a>>::Output) -> anyhow::Result<Self::Produces> {
+    async fn handle(&self, _consumes: <Self::Consumes as ToRef<'_>>::Output) -> anyhow::Result<Self::Produces> {
       Ok(Self::Produces::inject((InnerCase0, HNil)))
     }
   }
@@ -238,7 +238,7 @@ mod tests {
     type Consumes = HNil;
     type Produces = Coprod![(InnerCase0, HNil), (InnerCase1, HNil)];
 
-    async fn handle<'a>(&self, _consumes: <Self::Consumes as ToRef<'a>>::Output) -> anyhow::Result<Self::Produces> {
+    async fn handle(&self, _consumes: <Self::Consumes as ToRef<'_>>::Output) -> anyhow::Result<Self::Produces> {
       Ok(Self::Produces::inject((InnerCase1, HNil)))
     }
   }
@@ -253,7 +253,7 @@ mod tests {
       (Case4, HList![Split2Param, CommonSplitParam]),
     ];
 
-    async fn handle<'a>(&self, consumes: <Self::Consumes as ToRef<'a>>::Output) -> anyhow::Result<Self::Produces> {
+    async fn handle(&self, consumes: <Self::Consumes as ToRef<'_>>::Output) -> anyhow::Result<Self::Produces> {
       Ok(match consumes.head.0 {
         1 => Self::Produces::inject((Case1, hlist!(Split1Param, CommonSplitParam))),
         2 => Self::Produces::inject((Case2, hlist!(Split2Param, CommonSplitParam))),
@@ -283,9 +283,9 @@ mod tests {
     type Produces = HNil;
     type FinalMessage = Message;
 
-    async fn handle<'a>(
+    async fn handle(
       &self,
-      _consumes: <Self::Consumes as ToRef<'a>>::Output,
+      _consumes: <Self::Consumes as ToRef<'_>>::Output,
     ) -> anyhow::Result<OperationOutcome<Self::Produces, Self::FinalMessage>> {
       Ok(OperationOutcome::Finish(Message("Operation finished".into())))
     }
@@ -302,16 +302,16 @@ mod tests {
     type Context = EmptyFormContext;
     type Messages = Messages;
 
-    async fn create_form<'a>(
+    async fn create_form(
       &self,
-      _consumes: <Self::CreateFormConsumes as ToRef<'a>>::Output,
+      _consumes: <Self::CreateFormConsumes as ToRef<'_>>::Output,
     ) -> anyhow::Result<FormWithContext<Message, Self::Context>> {
       Ok(FormWithContext(Message("Finish early form".into()), EmptyFormContext))
     }
 
-    async fn handle_input<'a>(
+    async fn handle_input(
       &self,
-      _consumes: <Self::ValidateInputConsumes as ToRef<'a>>::Output,
+      _consumes: <Self::ValidateInputConsumes as ToRef<'_>>::Output,
       _user_input: String,
       _form_context: Self::Context,
     ) -> anyhow::Result<InputValidation<Self::Produces, Messages, Self::Context>> {
@@ -337,16 +337,16 @@ mod tests {
     type Context = EmptyFormContext;
     type Messages = Messages;
 
-    async fn create_form<'a>(
+    async fn create_form(
       &self,
-      _consumes: <Self::CreateFormConsumes as ToRef<'a>>::Output,
+      _consumes: <Self::CreateFormConsumes as ToRef<'_>>::Output,
     ) -> anyhow::Result<FormWithContext<Message, Self::Context>> {
       Ok(FormWithContext(Message("Enter a number".into()), EmptyFormContext))
     }
 
-    async fn handle_input<'a>(
+    async fn handle_input(
       &self,
-      _consumes: <Self::ValidateInputConsumes as ToRef<'a>>::Output,
+      _consumes: <Self::ValidateInputConsumes as ToRef<'_>>::Output,
       _user_input: String,
       _form_context: Self::Context,
     ) -> anyhow::Result<InputValidation<Self::Produces, Messages, Self::Context>> {
@@ -362,16 +362,16 @@ mod tests {
     type Context = EmptyFormContext;
     type Messages = Messages;
 
-    async fn create_form<'a>(
+    async fn create_form(
       &self,
-      _consumes: <Self::CreateFormConsumes as ToRef<'a>>::Output,
+      _consumes: <Self::CreateFormConsumes as ToRef<'_>>::Output,
     ) -> anyhow::Result<FormWithContext<Message, Self::Context>> {
       Ok(FormWithContext(Message("Enter a number".into()), EmptyFormContext))
     }
 
-    async fn handle_input<'a>(
+    async fn handle_input(
       &self,
-      _consumes: <Self::ValidateInputConsumes as ToRef<'a>>::Output,
+      _consumes: <Self::ValidateInputConsumes as ToRef<'_>>::Output,
       _user_input: String,
       _form_context: Self::Context,
     ) -> anyhow::Result<InputValidation<Self::Produces, Messages, Self::Context>> {
@@ -387,16 +387,16 @@ mod tests {
     type Context = EmptyFormContext;
     type Messages = Messages;
 
-    async fn create_form<'a>(
+    async fn create_form(
       &self,
-      _consumes: <Self::CreateFormConsumes as ToRef<'a>>::Output,
+      _consumes: <Self::CreateFormConsumes as ToRef<'_>>::Output,
     ) -> anyhow::Result<FormWithContext<Message, Self::Context>> {
       Ok(FormWithContext(Message("Straight to trash".into()), EmptyFormContext))
     }
 
-    async fn handle_input<'a>(
+    async fn handle_input(
       &self,
-      _consumes: <Self::ValidateInputConsumes as ToRef<'a>>::Output,
+      _consumes: <Self::ValidateInputConsumes as ToRef<'_>>::Output,
       _user_input: String,
       _form_context: Self::Context,
     ) -> anyhow::Result<InputValidation<Self::Produces, Messages, Self::Context>> {
@@ -412,16 +412,16 @@ mod tests {
     type Context = EmptyFormContext;
     type Messages = Messages;
 
-    async fn create_form<'a>(
+    async fn create_form(
       &self,
-      _consumes: <Self::CreateFormConsumes as ToRef<'a>>::Output,
+      _consumes: <Self::CreateFormConsumes as ToRef<'_>>::Output,
     ) -> anyhow::Result<FormWithContext<Message, Self::Context>> {
       Ok(FormWithContext(Message("Last number in the process".into()), EmptyFormContext))
     }
 
-    async fn handle_input<'a>(
+    async fn handle_input(
       &self,
-      _consumes: <Self::ValidateInputConsumes as ToRef<'a>>::Output,
+      _consumes: <Self::ValidateInputConsumes as ToRef<'_>>::Output,
       _user_input: String,
       _form_context: Self::Context,
     ) -> anyhow::Result<InputValidation<Self::Produces, Messages, Self::Context>> {
@@ -437,16 +437,16 @@ mod tests {
     type Context = u16;
     type Messages = Messages;
 
-    async fn create_form<'a>(
+    async fn create_form(
       &self,
-      _consumes: <Self::CreateFormConsumes as ToRef<'a>>::Output,
+      _consumes: <Self::CreateFormConsumes as ToRef<'_>>::Output,
     ) -> anyhow::Result<FormWithContext<Message, Self::Context>> {
       Ok(FormWithContext(Message("This will be discarded".into()), 0))
     }
 
-    async fn handle_input<'a>(
+    async fn handle_input(
       &self,
-      _consumes: <Self::ValidateInputConsumes as ToRef<'a>>::Output,
+      _consumes: <Self::ValidateInputConsumes as ToRef<'_>>::Output,
       _user_input: String,
       failed: Self::Context,
     ) -> anyhow::Result<InputValidation<Self::Produces, Messages, Self::Context>> {
@@ -465,16 +465,16 @@ mod tests {
     type Context = EmptyFormContext;
     type Messages = Messages;
 
-    async fn create_form<'a>(
+    async fn create_form(
       &self,
-      _consumes: <Self::CreateFormConsumes as ToRef<'a>>::Output,
+      _consumes: <Self::CreateFormConsumes as ToRef<'_>>::Output,
     ) -> anyhow::Result<FormWithContext<Message, Self::Context>> {
       Ok(FormWithContext(Message("Choose a case".into()), EmptyFormContext))
     }
 
-    async fn handle_input<'a>(
+    async fn handle_input(
       &self,
-      _consumes: <Self::ValidateInputConsumes as ToRef<'a>>::Output,
+      _consumes: <Self::ValidateInputConsumes as ToRef<'_>>::Output,
       user_input: String,
       _form_context: Self::Context,
     ) -> anyhow::Result<InputValidation<Self::Produces, Messages, Self::Context>> {
@@ -532,16 +532,16 @@ mod tests {
     type Context = u16;
     type Messages = Messages;
 
-    async fn create_form<'a>(
+    async fn create_form(
       &self,
-      _consumes: <Self::CreateFormConsumes as ToRef<'a>>::Output,
+      _consumes: <Self::CreateFormConsumes as ToRef<'_>>::Output,
     ) -> anyhow::Result<FormWithContext<Message, Self::Context>> {
       Ok(FormWithContext(Message("choose case".into()), 0))
     }
 
-    async fn handle_input<'a>(
+    async fn handle_input(
       &self,
-      _consumes: <Self::ValidateInputConsumes as ToRef<'a>>::Output,
+      _consumes: <Self::ValidateInputConsumes as ToRef<'_>>::Output,
       user_input: String,
       failed: Self::Context,
     ) -> anyhow::Result<InputValidation<Self::Produces, Messages, Self::Context>> {
@@ -562,16 +562,16 @@ mod tests {
     type Context = i16;
     type Messages = Messages;
 
-    async fn create_form<'a>(
+    async fn create_form(
       &self,
-      _consumes: <Self::CreateFormConsumes as ToRef<'a>>::Output,
+      _consumes: <Self::CreateFormConsumes as ToRef<'_>>::Output,
     ) -> anyhow::Result<FormWithContext<Message, Self::Context>> {
       Ok(FormWithContext(Message("choose case".into()), 0))
     }
 
-    async fn handle_input<'a>(
+    async fn handle_input(
       &self,
-      _consumes: <Self::ValidateInputConsumes as ToRef<'a>>::Output,
+      _consumes: <Self::ValidateInputConsumes as ToRef<'_>>::Output,
       user_input: String,
       failed: Self::Context,
     ) -> anyhow::Result<InputValidation<Self::Produces, Messages, Self::Context>> {
@@ -604,50 +604,50 @@ mod tests {
     test_process_messages(&process, vec!["*123#", "Choose a case", "2", "Good bye"]).await;
   }
 
+  async fn test_return_error_on_param_missing_from_init_value(
+    process: &RunnableProcess<impl FinalizedProcess<Messages = Messages>>,
+    messages: Vec<&str>,
+  ) {
+    let mut init_value = session_init_value();
+    init_value.pop();
+    let run_outcome =
+      process.resume_run(init_value, PreviousRunYieldedAt(StepIndex::MIN), messages[0].into(), None).await;
+    assert!(run_outcome.is_err_and(|x| format!("{x}") == "Admin error or error on frontend."));
+  }
+
+  async fn test_return_error_on_param_missing_from_context(
+    process: &RunnableProcess<impl FinalizedProcess<Messages = Messages>>,
+    messages: Vec<&str>,
+  ) {
+    let mut messages_index = 0;
+    let run_outcome = process
+      .resume_run(session_init_value(), PreviousRunYieldedAt(StepIndex::MIN), messages[messages_index].into(), None)
+      .await
+      .expect("Test failed");
+    messages_index += 1;
+    match run_outcome {
+      RunOutcome::Yield(msg, mut value, yielded_at, context) => {
+        assert_eq!(msg.0, messages[messages_index]);
+        value.pop();
+        let run_outcome = process
+          .resume_run(value, PreviousRunYieldedAt(yielded_at.0), messages[messages_index].into(), Some(context))
+          .await;
+        assert!(run_outcome.is_err_and(|x| format!("{x}") == "Missing key: 0"));
+      },
+      RunOutcome::RetryUserInput(msg, _context) => {
+        assert_eq!(msg.0, messages[messages_index]);
+      },
+      RunOutcome::Finish(msg) => {
+        assert_eq!(msg.0, messages[messages_index]);
+      },
+    }
+  }
+
   #[tokio::test]
   async fn test_end_emitted_in_form_step() {
     let process = ExtractMsisdnOperatorAndShortcodeString.show(FinishAfterInput).end(FinalNoConsumes).build("", 0);
     test_process_messages(&process, vec!["*123#", "Last number in the process", "10", "Always finish"]).await;
-
-    async fn test_return_error_on_param_missing_from_init_value(
-      process: &RunnableProcess<impl FinalizedProcess<Messages = Messages>>,
-      messages: Vec<&str>,
-    ) {
-      let mut init_value = session_init_value();
-      init_value.pop();
-      let run_outcome =
-        process.resume_run(init_value, PreviousRunYieldedAt(StepIndex::MIN), messages[0].into(), None).await;
-      assert!(run_outcome.is_err_and(|x| format!("{x}") == "Admin error or error on frontend."))
-    }
     test_return_error_on_param_missing_from_init_value(&process, vec!["*123#"]).await;
-
-    async fn test_return_error_on_param_missing_from_context(
-      process: &RunnableProcess<impl FinalizedProcess<Messages = Messages>>,
-      messages: Vec<&str>,
-    ) {
-      let mut messages_index = 0;
-      let run_outcome = process
-        .resume_run(session_init_value(), PreviousRunYieldedAt(StepIndex::MIN), messages[messages_index].into(), None)
-        .await
-        .expect("Test failed");
-      messages_index += 1;
-      match run_outcome {
-        RunOutcome::Yield(msg, mut value, yielded_at, context) => {
-          assert_eq!(msg.0, messages[messages_index]);
-          value.pop();
-          let run_outcome = process
-            .resume_run(value, PreviousRunYieldedAt(yielded_at.0), messages[messages_index].into(), Some(context))
-            .await;
-          assert!(run_outcome.is_err_and(|x| format!("{x}") == "Missing key: 0"))
-        },
-        RunOutcome::RetryUserInput(msg, _context) => {
-          assert_eq!(msg.0, messages[messages_index])
-        },
-        RunOutcome::Finish(msg) => {
-          assert_eq!(msg.0, messages[messages_index])
-        },
-      }
-    }
     test_return_error_on_param_missing_from_context(&process, vec!["*123#", "Last number in the process"]).await;
   }
 
@@ -1278,11 +1278,11 @@ mod tests {
           previous_run_produced = value;
           previous_run_yielded_at = PreviousRunYieldedAt(yielded_at.0);
           form_context = Some(context);
-          assert_eq!(msg.0, messages[messages_index])
+          assert_eq!(msg.0, messages[messages_index]);
         },
         RunOutcome::RetryUserInput(msg, context) => {
           form_context = Some(context);
-          assert_eq!(msg.0, messages[messages_index])
+          assert_eq!(msg.0, messages[messages_index]);
         },
         RunOutcome::Finish(msg) => {
           assert_eq!(msg.0, messages[messages_index]);

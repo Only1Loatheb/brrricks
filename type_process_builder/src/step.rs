@@ -33,7 +33,7 @@ pub trait Operation: Send + Sync {
   type FinalMessage: Send + Sync;
   fn handle(
     &self,
-    consumes: <Self::Consumes as ToRef>::Output,
+    consumes: <Self::Consumes as ToRef<'_>>::Output,
   ) -> impl Future<Output = anyhow::Result<OperationOutcome<Self::Produces, Self::FinalMessage>>> + Send;
 }
 
@@ -54,13 +54,13 @@ pub trait Form: Send + Sync {
   type Messages: ProcessMessages;
   fn create_form(
     &self,
-    consumes: <Self::CreateFormConsumes as ToRef>::Output,
+    consumes: <Self::CreateFormConsumes as ToRef<'_>>::Output,
   ) -> impl Future<
     Output = anyhow::Result<FormWithContext<<Self::Messages as ProcessMessages>::FormMessage, Self::Context>>,
   > + Send;
   fn handle_input(
     &self,
-    consumes: <Self::ValidateInputConsumes as ToRef>::Output,
+    consumes: <Self::ValidateInputConsumes as ToRef<'_>>::Output,
     user_input: String,
     form_context: Self::Context,
   ) -> impl Future<Output = anyhow::Result<InputValidation<Self::Produces, Self::Messages, Self::Context>>> + Send;
@@ -79,7 +79,7 @@ pub trait Splitter: Send + Sync {
   type Produces: SplitterOutput;
   fn handle(
     &self,
-    consumes: <Self::Consumes as ToRef>::Output,
+    consumes: <Self::Consumes as ToRef<'_>>::Output,
   ) -> impl Future<Output = anyhow::Result<Self::Produces>> + Send;
 }
 
@@ -93,13 +93,13 @@ pub trait FormSplitter: Send + Sync {
   type Messages: ProcessMessages;
   fn create_form(
     &self,
-    consumes: <Self::CreateFormConsumes as ToRef>::Output,
+    consumes: <Self::CreateFormConsumes as ToRef<'_>>::Output,
   ) -> impl Future<
     Output = anyhow::Result<FormWithContext<<Self::Messages as ProcessMessages>::FormMessage, Self::Context>>,
   > + Send;
   fn handle_input(
     &self,
-    consumes: <Self::ValidateInputConsumes as ToRef>::Output,
+    consumes: <Self::ValidateInputConsumes as ToRef<'_>>::Output,
     user_input: String,
     form_context: Self::Context,
   ) -> impl Future<Output = anyhow::Result<InputValidation<Self::Produces, Self::Messages, Self::Context>>> + Send;

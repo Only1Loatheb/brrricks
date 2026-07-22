@@ -11,7 +11,7 @@ use typenum::U0;
 #[derive(PartialEq, Debug, Eq, Clone, Copy, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 pub struct Msisdn(u64);
 impl Msisdn {
-  pub fn from_string(string: String) -> Option<Msisdn> {
+  pub fn from_string(string: &str) -> Option<Msisdn> {
     string
       .split_at_checked(string.len().checked_sub(10)?)
       .and_then(|(_prefix, suffix)| {
@@ -50,6 +50,7 @@ impl<Messages> Default for DialedSessionEntry<Messages> {
 }
 
 impl<Messages> DialedSessionEntry<Messages> {
+  #[must_use]
   pub fn new() -> Self {
     DialedSessionEntry(PhantomData)
   }
@@ -63,7 +64,7 @@ impl<Messages: ProcessMessages> Entry for DialedSessionEntry<Messages> {
     let operator_value = consumes.pop().ok_or_else(|| anyhow!("Admin error or error on frontend."))?.1;
     let msisdn_value = consumes.pop().ok_or_else(|| anyhow!("Admin error or error on frontend."))?.1;
     let msisdn_str: String = postcard::from_bytes(&msisdn_value).map_err(|_| anyhow!("Admin error on frontend."))?;
-    let msisdn = Msisdn::from_string(msisdn_str).ok_or_else(|| anyhow!("Admin error on frontend."))?;
+    let msisdn = Msisdn::from_string(&msisdn_str).ok_or_else(|| anyhow!("Admin error on frontend."))?;
     Ok(hlist!(DialedSessionEntryParam(
       msisdn,
       postcard::from_bytes(&operator_value).map_err(|_| anyhow!("Admin error or error on frontend."))?,

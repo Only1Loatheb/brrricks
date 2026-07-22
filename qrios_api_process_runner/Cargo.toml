@@ -3,6 +3,9 @@ name = "qrios_api_process_runner"
 version = "0.1.0"
 edition = "2024"
 
+[lints]
+workspace = true
+
 [dependencies]
 type_process_builder = { path = "../type_process_builder" }
 qrios_api_axum_server = { path = "../qrios_api_axum_server", features = ["server"] }

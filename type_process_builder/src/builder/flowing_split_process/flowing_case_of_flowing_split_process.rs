@@ -331,7 +331,7 @@ where
     }
   }
 
-  /// The process execution will call [crate::builder::SplitProcess::continue_run] instead of this one.
+  /// The process execution will call [`crate::builder::SplitProcess::continue_run`] instead of this one.
   /// I implemented it like this to avoid:
   /// ```ignore
   /// let _ = EntryA

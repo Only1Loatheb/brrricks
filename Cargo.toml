@@ -4,6 +4,9 @@ version = "0.1.0"
 edition = "2024"
 rust-version = "1.96.0"
 
+[lints]
+workspace = true
+
 [workspace]
 members = ["type_process_builder", "qrios_api_process_runner", "qrios_api_axum_server", "qrios_api_process_entry", "qrios_api_reqwest_client", "xtask"]
 
@@ -16,3 +19,17 @@ tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
 
 [workspace.lints.clippy]
 all = { level = "deny", priority = -1 }
+pedantic = { level = "deny", priority = -1 }
+inline_always = "allow"
+missing_errors_doc = "allow"
+module_name_repetitions = "allow"
+doc_markdown = "allow"
+struct_excessive_bools = "allow"
+default_trait_access = "allow"
+mismatching_type_param_order = "allow"
+elidable_lifetime_names = "allow"
+wildcard_imports = "allow"
+needless_raw_string_hashes = "allow"
+format_push_string = "allow"
+too_many_lines = "allow"
+items_after_statements = "allow"

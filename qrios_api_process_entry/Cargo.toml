@@ -3,6 +3,9 @@ name = "qrios_api_process_entry"
 version = "0.1.0"
 edition = "2024"
 
+[lints]
+workspace = true
+
 [dependencies]
 serde = { version = "1.0", features = ["derive"] }
 typenum = "1.0"

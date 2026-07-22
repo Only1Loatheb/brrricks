@@ -3,6 +3,9 @@ name = "type_process_builder"
 version = "0.1.0"
 edition = "2024"
 
+[lints]
+workspace = true
+
 [features]
 docs = ["dep:simple-mermaid"]
 

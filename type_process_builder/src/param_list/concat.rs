@@ -3,8 +3,8 @@ use crate::param_list::intersect::Contains;
 use crate::param_list::{ParamList, ParamValue};
 use typenum::{B0, Same};
 
-/// Using ParamList instead of HList simplifies where clauses
-/// Like `Add` and `extend` in [mod@crate::hlist], but with appropriate name
+/// Using `ParamList` instead of `HList` simplifies where clauses
+/// Like `Add` and `extend` in [`mod@crate::hlist`], but with appropriate name
 pub trait Concat<RHS: ParamList>: ParamList {
   type Concatenated: ParamList;
 
@@ -14,7 +14,7 @@ pub trait Concat<RHS: ParamList>: ParamList {
 impl<RHS: ParamList> Concat<RHS> for HNil {
   type Concatenated = RHS;
 
-  #[inline(always)]
+  #[inline]
   fn concat(self, rhs: RHS) -> Self::Concatenated {
     rhs
   }
@@ -28,7 +28,7 @@ where
 {
   type Concatenated = HCons<Head, <Tail as Concat<RHS>>::Concatenated>;
 
-  #[inline(always)]
+  #[inline]
   fn concat(self, rhs: RHS) -> Self::Concatenated {
     HCons { head: self.head, tail: self.tail.concat(rhs) }
   }

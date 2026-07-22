@@ -3,6 +3,10 @@ name = "qrios_api_reqwest_client"
 version = "0.1.0"
 edition = "2024"
 
+[lints.clippy]
+all = "allow"
+pedantic = "allow"
+
 [dependencies]
 progenitor-client = "0.13"
 reqwest = { version = "0.13", features = ["json", "query", "stream"] }

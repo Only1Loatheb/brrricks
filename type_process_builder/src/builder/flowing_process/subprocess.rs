@@ -49,6 +49,7 @@ impl<ProcessBeforeProduces: ParamList, Messages: ProcessMessages> FlowingProcess
   fn all_param_uids(&self, _acc: &mut Vec<ParamUID>) {}
 }
 
+#[must_use]
 pub fn subprocess<ProcessBeforeProduces: ParamList, Messages: ProcessMessages>()
 -> Subprocess<ProcessBeforeProduces, Messages> {
   Subprocess { phantom_data: Default::default() }

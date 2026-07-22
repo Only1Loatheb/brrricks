@@ -43,16 +43,16 @@ impl FormSplitter for SelectAmountSource {
   type Context = EmptyFormContext;
   type Messages = Messages;
 
-  async fn create_form<'a>(
+  async fn create_form(
     &self,
-    _consumes: <Self::CreateFormConsumes as ToRef<'a>>::Output,
+    _consumes: <Self::CreateFormConsumes as ToRef<'_>>::Output,
   ) -> anyhow::Result<FormWithContext<Message, Self::Context>> {
     Ok(FormWithContext(Message("Enter 1 for 100 or 2 for custom amount".into()), EmptyFormContext))
   }
 
-  async fn handle_input<'a>(
+  async fn handle_input(
     &self,
-    _consumes: <Self::ValidateInputConsumes as ToRef<'a>>::Output,
+    _consumes: <Self::ValidateInputConsumes as ToRef<'_>>::Output,
     user_input: String,
     _form_context: Self::Context,
   ) -> anyhow::Result<InputValidation<Self::Produces, Messages, Self::Context>> {
@@ -75,16 +75,16 @@ impl Form for AmountForm {
   type Context = EmptyFormContext;
   type Messages = Messages;
 
-  async fn create_form<'a>(
+  async fn create_form(
     &self,
-    _consumes: <Self::CreateFormConsumes as ToRef<'a>>::Output,
+    _consumes: <Self::CreateFormConsumes as ToRef<'_>>::Output,
   ) -> anyhow::Result<FormWithContext<Message, Self::Context>> {
     Ok(FormWithContext(Message("Enter a number".into()), EmptyFormContext))
   }
 
-  async fn handle_input<'a>(
+  async fn handle_input(
     &self,
-    _consumes: <Self::ValidateInputConsumes as ToRef<'a>>::Output,
+    _consumes: <Self::ValidateInputConsumes as ToRef<'_>>::Output,
     user_input: String,
     _form_context: Self::Context,
   ) -> anyhow::Result<InputValidation<Self::Produces, Messages, Self::Context>> {
