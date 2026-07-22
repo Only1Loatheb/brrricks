@@ -1,6 +1,6 @@
+use crate::frunk::coproduct::Coproduct;
+use crate::frunk::to_ref::ToRef;
 use crate::param_list::{ParamList, SessionContext};
-use frunk_core::coproduct::Coproduct;
-use frunk_core::traits::ToRef;
 use serde::Serialize;
 use serde::de::DeserializeOwned;
 use std::future::Future;

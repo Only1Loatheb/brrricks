@@ -18,7 +18,6 @@ tracing = "0.1.44"
 qrios_api_reqwest_client = { path = "../qrios_api_reqwest_client" }
 tokio = { version = "1.0", features = ["macros", "rt"] }
 qrios_api_process_entry = { path = "../qrios_api_process_entry" }
-frunk_core = "0.4"
 anyhow = "1.0.82"
 sqlx = { version = "0.8", features = ["runtime-tokio"] }
 typenum = "1.19.0"

@@ -7,9 +7,9 @@ use crate::builder::{
   FinalizedProcess, FirstCaseOfFinalizedSplitProcess, FlowingProcess, IntermediateFinalizedSplitResult,
   MaybeFormContext, ParamList, ParamUID, PreviousRunYieldedAt, SessionContext, StepIndex, WILL_BE_RENUMBERED,
 };
+use crate::frunk::coproduct::Coproduct;
 use crate::param_list::concat::Concat;
 use crate::step::ProcessMessages;
-use frunk_core::coproduct::Coproduct;
 use std::future::Future;
 
 /// We enforce at least one cases in the split.

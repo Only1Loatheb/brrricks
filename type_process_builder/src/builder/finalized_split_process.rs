@@ -4,10 +4,10 @@ pub mod next_case_of_finalized_split_process;
 use crate::builder::{
   IntermediateFinalizedSplitResult, MaybeFormContext, ParamUID, PreviousRunYieldedAt, SessionContext, StepIndex,
 };
+use crate::frunk::coproduct::Coproduct;
 use crate::param_list::ParamList;
 use crate::param_list::concat::Concat;
 use crate::step::ProcessMessages;
-use frunk_core::coproduct::Coproduct;
 use std::future::Future;
 
 pub trait FinalizedSplitProcess<SplitterProducesForOtherCases>: Sized + Send + Sync {

@@ -1,5 +1,6 @@
-use frunk_core::hlist::{HCons, HNil, Plucker};
-use frunk_core::traits::ToRef;
+use crate::frunk::hlist::{HCons, HNil};
+use crate::frunk::plucker::Plucker;
+use crate::frunk::to_ref::ToRef;
 
 pub trait BorrowJust<'a, Target: ToRef<'a>, Indices> {
   fn borrow_just(self) -> <Target as ToRef<'a>>::Output;

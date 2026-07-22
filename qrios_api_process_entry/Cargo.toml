@@ -8,5 +8,4 @@ serde = { version = "1.0", features = ["derive"] }
 typenum = "1.0"
 type_process_builder = { path = "../type_process_builder" }
 postcard = { version = "1.0", features = ["alloc"] }
-frunk_core = "0.4"
 anyhow = "1.0"

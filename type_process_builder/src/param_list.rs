@@ -1,6 +1,6 @@
+use crate::frunk::hlist::{HCons, HList, HNil};
 use crate::param_list::intersect::Contains;
 use anyhow::anyhow;
-use frunk_core::hlist::{HCons, HList, HNil};
 use serde::Serialize;
 use serde::de::DeserializeOwned;
 use typenum::{B0, Same, Unsigned};
@@ -22,7 +22,7 @@ pub trait ParamValue: Serialize + DeserializeOwned + Send + Sync {
 pub trait ParamList: HList + Send + Sync {
   // https://serde.rs/impl-serialize.html#serializing-a-sequence-or-map
   fn serialize(&self) -> anyhow::Result<SessionContext> {
-    let mut session_context = Vec::with_capacity(self.len());
+    let mut session_context = Vec::with_capacity(Self::LEN);
     self._serialize(&mut session_context)?;
     Ok(session_context)
   }

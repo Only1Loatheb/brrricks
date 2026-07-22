@@ -1,7 +1,8 @@
-use frunk_core::hlist::{HCons, HNil, Plucker};
+use crate::frunk::hlist::{HCons, HNil};
+use crate::frunk::plucker::Plucker;
 
 /// Trait for pulling out some subset of an HList, using type inference.
-/// Like [frunk_core::hlist::Sculptor], but ignores the remainder.
+/// Like `Sculptor`, but ignores the remainder.
 pub trait TransformTo<Target, Indices> {
   fn transform(self) -> Target;
 }

@@ -10,11 +10,11 @@ use crate::builder::operation_flowing_process::OperationFlowingProcess;
 use crate::builder::split_process_form_splitter::SplitProcessFormSplitter;
 use crate::builder::split_process_splitter::SplitProcessSplitter;
 use crate::builder::*;
+use crate::frunk::coproduct::Coproduct;
 use crate::param_list::ParamList;
 use crate::param_list::concat::Concat;
 use crate::param_list::transform::TransformTo;
 use crate::step::{Final, Form, FormSplitter, Operation, Splitter};
-use frunk_core::coproduct::Coproduct;
 use std::future::Future;
 
 pub trait FlowingProcess: Sized + Send + Sync {

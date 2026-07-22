@@ -196,15 +196,13 @@ impl<Process: FinalizedProcess<Messages = Messages> + Sync>
 #[cfg(test)]
 mod tests {
   use crate::{Message, Messages};
-  use frunk_core::hlist::HNil;
-  use frunk_core::traits::ToRef;
-  use frunk_core::{Coprod, HList, hlist};
   use qrios_api_process_entry::DialedSessionEntry;
   use serde::{Deserialize, Serialize};
   use type_process_builder::builder::*;
   use type_process_builder::param_list::ParamValue;
   use type_process_builder::step::Final;
   use type_process_builder::step::*;
+  use type_process_builder::{Coprod, HList, HNil, ToRef, hlist};
   use typenum::*;
 
   #[tokio::test]
@@ -392,7 +390,7 @@ mod tests {
       }) => {
         assert_eq!(message, "This will be discarded");
       },
-      _ => panic!("Expected InputView, got {:?}", &resp.action),
+      _ => panic!("Expected InputView, got {:?}", resp.action),
     }
 
     let resp = client

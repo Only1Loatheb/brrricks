@@ -5,8 +5,8 @@ use crate::builder::{
   NextCaseOfFinalizedSplitProcess, ParamList, ParamUID, PreviousRunYieldedAt, RunOutcome, SessionContext, SplitProcess,
   StepIndex, WILL_BE_RENUMBERED,
 };
+use crate::frunk::coproduct::Coproduct;
 use crate::param_list::concat::Concat;
-use frunk_core::coproduct::Coproduct;
 use std::marker::PhantomData;
 
 pub struct FirstCaseOfFinalizedSplitProcess<

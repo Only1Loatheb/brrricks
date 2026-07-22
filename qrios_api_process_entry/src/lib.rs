@@ -1,11 +1,11 @@
 use anyhow::anyhow;
-use frunk_core::{HList, hlist};
 use serde::{Deserialize, Serialize};
 use std::marker::PhantomData;
 use std::ops::Not;
 use type_process_builder::builder::SessionContext;
 use type_process_builder::param_list::ParamValue;
 use type_process_builder::step::{Entry, ProcessMessages};
+use type_process_builder::{HList, hlist};
 use typenum::U0;
 
 #[derive(PartialEq, Debug, Eq, Clone, Copy, PartialOrd, Ord, Hash, Serialize, Deserialize)]

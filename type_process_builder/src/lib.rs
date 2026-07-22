@@ -1,7 +1,13 @@
 #[allow(clippy::result_unit_err)]
 pub mod builder;
+pub mod frunk;
 pub mod param_list;
 pub mod step;
+
+pub use frunk::coproduct::{CNil, CoprodInjector, Coproduct};
+pub use frunk::hlist::{HCons, HList, HNil};
+pub use frunk::plucker::{Here, Plucker, There};
+pub use frunk::to_ref::ToRef;
 
 // cargo doc --no-deps --package type_process_builder --features docs
 /// View the diagrams
@@ -14,15 +20,14 @@ pub mod documentation_diagrams {}
 #[cfg(test)]
 mod tests {
   use crate::builder::*;
+  use crate::frunk::to_ref::ToRef;
   use crate::param_list::ParamValue;
   use crate::step::{
     Entry, Final, Form, FormSplitter, FormWithContext, InputValidation, Operation, OperationOutcome, ProcessMessages,
     Splitter,
   };
+  use crate::{Coprod, HList, HNil, hlist};
   use anyhow::anyhow;
-  use frunk_core::hlist::HNil;
-  use frunk_core::traits::ToRef;
-  use frunk_core::{Coprod, HList, hlist};
   use serde::{Deserialize, Serialize};
   use std::marker::PhantomData;
   use typenum::*;

@@ -2,10 +2,10 @@ use crate::builder::{
   FlowingProcess, IntermediateFinalizedSplitOutcome, IntermediateFinalizedSplitResult, IntermediateRunOutcome,
   MaybeFormContext, ParamList, ParamUID, PreviousRunYieldedAt, SessionContext, SplitProcess, StepIndex,
 };
+use crate::frunk::coproduct::Coproduct;
 use crate::param_list::borrow_just::BorrowJust;
 use crate::param_list::concat::Concat;
 use crate::step::Splitter;
-use frunk_core::coproduct::Coproduct;
 use std::marker::PhantomData;
 
 pub struct SplitProcessSplitter<

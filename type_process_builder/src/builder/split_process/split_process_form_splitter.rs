@@ -3,11 +3,11 @@ use crate::builder::{
   IntermediateRunOutcome, MaybeFormContext, ParamList, ParamUID, PreviousRunYieldedAt, SessionContext, SplitProcess,
   StepIndex,
 };
+use crate::frunk::coproduct::Coproduct;
 use crate::param_list::borrow_just::BorrowJust;
 use crate::param_list::concat::Concat;
 use crate::step::{FormSplitter, FormWithContext, InputValidation};
 use anyhow::anyhow;
-use frunk_core::coproduct::Coproduct;
 use std::marker::PhantomData;
 
 pub struct SplitProcessFormSplitter<

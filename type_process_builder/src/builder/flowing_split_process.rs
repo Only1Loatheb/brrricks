@@ -6,10 +6,10 @@ pub mod flowing_case_of_flowing_split_process;
 use crate::builder::{
   IntermediateFlowingSplitResult, MaybeFormContext, ParamUID, PreviousRunYieldedAt, SessionContext, StepIndex,
 };
+use crate::frunk::coproduct::Coproduct;
 use crate::param_list::ParamList;
 use crate::param_list::concat::Concat;
 use crate::step::ProcessMessages;
-use frunk_core::coproduct::Coproduct;
 use std::future::Future;
 
 /// Should we force the user to produce common params before the [crate::step::Splitter]?

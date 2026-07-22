@@ -1,10 +1,10 @@
+use crate::frunk::hlist::{HCons, HNil};
 use crate::param_list::intersect::Contains;
 use crate::param_list::{ParamList, ParamValue};
-use frunk_core::hlist::{HCons, HNil};
 use typenum::{B0, Same};
 
 /// Using ParamList instead of HList simplifies where clauses
-/// Like `Add` and `extend` in [mod@frunk_core::hlist], but with appropriate name
+/// Like `Add` and `extend` in [mod@crate::hlist], but with appropriate name
 pub trait Concat<RHS: ParamList>: ParamList {
   type Concatenated: ParamList;
 

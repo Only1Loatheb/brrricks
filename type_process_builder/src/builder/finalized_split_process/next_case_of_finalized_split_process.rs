@@ -4,8 +4,8 @@ use crate::builder::{
   IntermediateFinalizedSplitOutcome, IntermediateFinalizedSplitResult, MaybeFormContext, ParamList, ParamUID,
   PreviousRunYieldedAt, RunOutcome, RunResult, SessionContext, StepIndex, WILL_BE_RENUMBERED,
 };
+use crate::frunk::coproduct::{CNil, Coproduct};
 use crate::param_list::concat::Concat;
-use frunk_core::coproduct::{CNil, Coproduct};
 use std::marker::PhantomData;
 
 pub struct NextCaseOfFinalizedSplitProcess<

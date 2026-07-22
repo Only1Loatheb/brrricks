@@ -1,7 +1,7 @@
 use crate::builder::*;
+use crate::frunk::hlist::HNil;
 use crate::param_list::ParamList;
 use crate::step::Entry;
-use frunk_core::hlist::HNil;
 
 impl<EntryStep: Entry> FlowingProcess for EntryStep {
   type ProcessBeforeProduces = HNil;
