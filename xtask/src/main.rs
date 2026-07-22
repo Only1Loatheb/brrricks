@@ -70,17 +70,34 @@ fn update_example_in_readme(readme_path: &Path, example_path: &Path) {
   fs::write(readme_path, new_readme).expect("Failed to write README.md");
 }
 
-fn generate_qrios_api_axum_server(_root: &Path) {
-  let openapi = Command::new("npx")
-    .args(["@openapitools/openapi-generator-cli", "generate"])
-    .args(["-g", "rust-axum"])
-    .args(["-i", "qrios-ussd-api-swagger.json"])
-    .args(["-o", "qrios_api_axum_server"])
-    .args(["--package-name", "qrios_api_axum_server"])
+fn generate_qrios_api_axum_server(project_dir: &Path) {
+  let swagger_file_name: &str = "qrios-ussd-api-swagger.json";
+  let uid = String::from_utf8(Command::new("id").arg("-u").output().unwrap().stdout).unwrap().trim().to_string();
+  let gid = String::from_utf8(Command::new("id").arg("-g").output().unwrap().stdout).unwrap().trim().to_string();
+  let status = Command::new("docker")
+    .args([
+      "run",
+      "--rm",
+      "--user",
+      &format!("{uid}:{gid}"),
+      "-v",
+      &format!("{}:/local", project_dir.display()),
+      "openapitools/openapi-generator-cli:v7.20.0",
+      "generate",
+      "-i",
+      &format!("/local/{swagger_file_name}"),
+      "-g",
+      "rust-axum",
+      "-o",
+      "/local/qrios_api_axum_server",
+      "--additional-properties=packageName=qrios_api_axum_server,disableValidator=true",
+    ])
     .status()
-    .expect("openapi-generator failed");
+    .expect("failed to run docker");
 
-  assert!(openapi.success(), "openapi-generator failed");
+  if !status.success() {
+    panic!("openapi-generator failed");
+  }
 }
 
 fn generate_qrios_api_reqwest_server(root: &Path) {
