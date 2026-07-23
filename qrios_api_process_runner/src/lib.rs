@@ -1,13 +1,21 @@
 mod session_store;
 
-use crate::session_store::*;
+use crate::session_store::{
+  GetSessionContextQuery, build_get_session_context_query, create_session_context, create_session_context_table,
+  delete_session_context, get_session_context, increment_failed_input_validation_attempts, update_session_context,
+};
 use async_trait::async_trait;
 use qrios_api_axum_server::apis::ErrorHandler;
 use qrios_api_axum_server::apis::developers_app_endpoints::{
   PostUssdsessioneventAbortResponse, PostUssdsessioneventCloseResponse, PostUssdsessioneventContinueResponse,
   PostUssdsessioneventNewResponse,
 };
-use qrios_api_axum_server::models::*;
+use qrios_api_axum_server::models::{
+  AbortSession, CloseSession, ContinueSession, InfoView, InputView, PostUssdsessioneventAbortHeaderParams,
+  PostUssdsessioneventCloseHeaderParams, PostUssdsessioneventContinueHeaderParams, PostUssdsessioneventNewHeaderParams,
+  ShowView, UssdAction, UssdActionResult, UssdSessionCommand, UssdSessionEventNewSession,
+  UssdSessionEventNewSessionSessionInput, UssdView,
+};
 use sqlx::PgPool;
 use std::collections::HashSet;
 use std::ops::Not;
@@ -47,7 +55,7 @@ impl<Process: FinalizedProcess<Messages = Messages>> ErrorHandler<()> for QriosU
 impl<Process: FinalizedProcess<Messages = Messages> + Sync>
   qrios_api_axum_server::apis::developers_app_endpoints::DevelopersAppEndpoints for QriosUssdApiService<Process>
 {
-  /// I guess we could delete by [AbortSession] session_id
+  /// I guess we could delete by [`AbortSession`] `session_id`
   async fn post_ussdsessionevent_abort(
     &self,
     method: &http::method::Method,
@@ -205,13 +213,13 @@ mod tests {
   use type_process_builder::{Coprod, HList, HNil, ToRef, hlist};
   use typenum::*;
 
+  #[allow(clippy::too_many_lines)]
   #[tokio::test]
   async fn session_store_test() {
     use crate::QriosUssdApiService;
     use qrios_api_reqwest_client::Client;
     use std::sync::Arc;
     use tokio::net::TcpListener;
-    let _ = tracing_subscriber::fmt::try_init();
 
     #[derive(Deserialize, Serialize)]
     struct FormOutput;
@@ -339,9 +347,12 @@ mod tests {
       .case_end(Case2, |x| x.end(ConsumeCase2Final))
       .build("test_process", 1);
 
-    use testcontainers::runners::AsyncRunner;
-    use testcontainers_modules::postgres::Postgres;
-    let node = Postgres::default().start().await.unwrap();
+    let node = {
+      use testcontainers::runners::AsyncRunner;
+      use testcontainers_modules::postgres::Postgres;
+      Postgres::default().start().await.unwrap()
+    };
+    let _ = tracing_subscriber::fmt::try_init();
     let service = {
       use sqlx::PgPool;
       let pool = {

@@ -1,4 +1,5 @@
 use sqlx::{Executor, PgPool, Row};
+use std::fmt::Write;
 use type_process_builder::builder::{
   CurrentRunYieldedAt, FinalizedProcess, MaybeFormContext, ParamUID, PreviousRunYieldedAt, RunnableProcess,
   SessionContext,
@@ -13,16 +14,16 @@ pub async fn create_session_context_table<Process: FinalizedProcess>(
   let mut param_columns = String::new();
   for col in ordered_all_unique_param_uids {
     let name: &u32 = col;
-    param_columns.push_str(&format!(",\"{name}\" BYTEA"));
+    let _: std::fmt::Result = write!(param_columns, ",\"{name}\" BYTEA");
   }
 
   let table_name = qualified_table_name(process);
   let sql = format!(
-    r#"
+    r"
     CREATE TABLE IF NOT EXISTS {table_name} (
       id BIGSERIAL PRIMARY KEY,
       previous_run_yielded_at INTEGER NOT NULL,
-      form_context BYTEA{param_columns})"#,
+      form_context BYTEA{param_columns})",
   );
 
   pool.execute(sql.as_str()).await?;
@@ -62,8 +63,8 @@ use sqlx::postgres::PgQueryResult;
 
 pub struct GetSessionContextQuery(String);
 /// Builds:
-/// SELECT "previous_run_yielded_at","form_context","0","1","2"
-/// FROM session_store.process_version
+/// SELECT "`previous_run_yielded_at","form_context","0","1","2`"
+/// FROM `session_store.process_version`
 /// WHERE id = $1
 pub fn build_get_session_context_query<Process: FinalizedProcess>(
   process: &RunnableProcess<Process>,
@@ -73,11 +74,11 @@ pub fn build_get_session_context_query<Process: FinalizedProcess>(
 
   sql.push_str("SELECT \"previous_run_yielded_at\",\"form_context\"");
   for uid in ordered_all_unique_param_uids {
-    sql.push_str(&format!(",\"{uid}\""));
+    let _: std::fmt::Result = write!(sql, ",\"{uid}\"");
   }
 
   let table_name = qualified_table_name(process);
-  sql.push_str(&format!(" FROM {table_name} WHERE id = $1"));
+  let _: std::fmt::Result = write!(sql, " FROM {table_name} WHERE id = $1");
   GetSessionContextQuery(sql)
 }
 
@@ -109,7 +110,7 @@ pub async fn delete_session_context<Process: FinalizedProcess>(
 ) -> Result<u64, sqlx::Error> {
   let table_name = qualified_table_name(process);
 
-  let sql = format!(r#"DELETE FROM {table_name} WHERE id = $1"#);
+  let sql = format!(r"DELETE FROM {table_name} WHERE id = $1");
 
   let result = sqlx::query(&sql).bind(id).execute(pool).await?;
 
@@ -129,7 +130,7 @@ pub async fn increment_failed_input_validation_attempts<Process: FinalizedProces
   form_context: Vec<u8>,
 ) -> Result<PgQueryResult, sqlx::Error> {
   let table_name = qualified_table_name(process);
-  let sql = format!(r#"UPDATE {table_name} SET form_context = $1 WHERE id = $2"#);
+  let sql = format!(r"UPDATE {table_name} SET form_context = $1 WHERE id = $2");
   sqlx::query(&sql).bind(form_context).bind(id).execute(pool).await
 }
 

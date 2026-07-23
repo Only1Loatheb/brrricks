@@ -13,11 +13,11 @@ pub trait Plucker<Target, Index> {
   fn pluck(self) -> (Target, Self::Remainder);
 }
 
-impl<T, Tail> Plucker<T, Here> for HCons<T, Tail> {
+impl<Head, Tail> Plucker<Head, Here> for HCons<Head, Tail> {
   type Remainder = Tail;
 
   #[inline(always)]
-  fn pluck(self) -> (T, Self::Remainder) {
+  fn pluck(self) -> (Head, Self::Remainder) {
     (self.head, self.tail)
   }
 }
@@ -36,11 +36,11 @@ where
 }
 
 /// Implementation when target is reference and the pluck target is in head
-impl<'a, T, Tail: ToRef<'a>> Plucker<&'a T, Here> for &'a HCons<T, Tail> {
+impl<'a, Head, Tail: ToRef<'a>> Plucker<&'a Head, Here> for &'a HCons<Head, Tail> {
   type Remainder = <Tail as ToRef<'a>>::Output;
 
   #[inline(always)]
-  fn pluck(self) -> (&'a T, Self::Remainder) {
+  fn pluck(self) -> (&'a Head, Self::Remainder) {
     (&self.head, self.tail.to_ref())
   }
 }
