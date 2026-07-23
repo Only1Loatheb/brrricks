@@ -10,7 +10,7 @@ pub trait ToRef<'a> {
 impl<'a> ToRef<'a> for HNil {
   type Output = HNil;
 
-  #[inline]
+  #[inline(always)]
   fn to_ref(&'a self) -> Self::Output {
     HNil
   }
@@ -22,7 +22,7 @@ where
 {
   type Output = HCons<&'a H, <T as ToRef<'a>>::Output>;
 
-  #[inline]
+  #[inline(always)]
   fn to_ref(&'a self) -> Self::Output {
     HCons { head: &self.head, tail: self.tail.to_ref() }
   }

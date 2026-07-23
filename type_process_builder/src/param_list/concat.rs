@@ -14,7 +14,7 @@ pub trait Concat<RHS: ParamList>: ParamList {
 impl<RHS: ParamList> Concat<RHS> for HNil {
   type Concatenated = RHS;
 
-  #[inline]
+  #[inline(always)]
   fn concat(self, rhs: RHS) -> Self::Concatenated {
     rhs
   }
@@ -28,7 +28,7 @@ where
 {
   type Concatenated = HCons<Head, <Tail as Concat<RHS>>::Concatenated>;
 
-  #[inline]
+  #[inline(always)]
   fn concat(self, rhs: RHS) -> Self::Concatenated {
     HCons { head: self.head, tail: self.tail.concat(rhs) }
   }

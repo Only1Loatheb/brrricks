@@ -11,7 +11,7 @@ pub trait TransformTo<Target, Indices> {
 ///
 /// Index type is `HNil` because we don't need an index for finding `HNil`
 impl<Source> TransformTo<HNil, HNil> for Source {
-  #[inline]
+  #[inline(always)]
   fn transform(self) -> HNil {
     HNil
   }
@@ -28,7 +28,7 @@ where
   HCons<SourceHead, SourceTail>: Plucker<TargetHead, IndexHead>,
   <HCons<SourceHead, SourceTail> as Plucker<TargetHead, IndexHead>>::Remainder: TransformTo<TargetTail, IndexTail>,
 {
-  #[inline]
+  #[inline(always)]
   fn transform(self) -> HCons<TargetHead, TargetTail> {
     let (head, remainder): (TargetHead, <HCons<SourceHead, SourceTail> as Plucker<TargetHead, IndexHead>>::Remainder) =
       self.pluck();

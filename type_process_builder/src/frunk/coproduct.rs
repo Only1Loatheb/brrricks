@@ -17,7 +17,7 @@ pub trait CoprodInjector<InjectType, Index> {
 }
 
 impl<I, Tail> CoprodInjector<I, Here> for Coproduct<I, Tail> {
-  #[inline]
+  #[inline(always)]
   fn inject(to_insert: I) -> Self {
     Coproduct::Inl(to_insert)
   }
@@ -27,7 +27,7 @@ impl<Head, I, Tail, TailIndex> CoprodInjector<I, There<TailIndex>> for Coproduct
 where
   Tail: CoprodInjector<I, TailIndex>,
 {
-  #[inline]
+  #[inline(always)]
   fn inject(to_insert: I) -> Self {
     let tail_inserted = <Tail as CoprodInjector<I, TailIndex>>::inject(to_insert);
     Coproduct::Inr(tail_inserted)
@@ -35,7 +35,7 @@ where
 }
 
 impl<Head, Tail> Coproduct<Head, Tail> {
-  #[inline]
+  #[inline(always)]
   pub fn inject<T, Index>(to_insert: T) -> Self
   where
     Self: CoprodInjector<T, Index>,

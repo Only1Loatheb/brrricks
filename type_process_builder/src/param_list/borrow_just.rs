@@ -7,7 +7,7 @@ pub trait BorrowJust<'a, Target: ToRef<'a>, Indices> {
 }
 
 impl<Source> BorrowJust<'_, HNil, HNil> for Source {
-  #[inline]
+  #[inline(always)]
   fn borrow_just(self) -> HNil {
     HNil
   }
@@ -21,7 +21,7 @@ where
     BorrowJust<'a, TargetTail, IndexTail>,
   TargetTail: ToRef<'a>,
 {
-  #[inline]
+  #[inline(always)]
   fn borrow_just(self) -> HCons<&'a TargetHead, <TargetTail as ToRef<'a>>::Output> {
     let (head, remainder): (
       &'a TargetHead,

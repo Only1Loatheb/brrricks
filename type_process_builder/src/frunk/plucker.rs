@@ -16,7 +16,7 @@ pub trait Plucker<Target, Index> {
 impl<T, Tail> Plucker<T, Here> for HCons<T, Tail> {
   type Remainder = Tail;
 
-  #[inline]
+  #[inline(always)]
   fn pluck(self) -> (T, Self::Remainder) {
     (self.head, self.tail)
   }
@@ -28,7 +28,7 @@ where
 {
   type Remainder = HCons<Head, <Tail as Plucker<FromTail, TailIndex>>::Remainder>;
 
-  #[inline]
+  #[inline(always)]
   fn pluck(self) -> (FromTail, Self::Remainder) {
     let (target, tail_remainder) = <Tail as Plucker<FromTail, TailIndex>>::pluck(self.tail);
     (target, HCons { head: self.head, tail: tail_remainder })
@@ -39,7 +39,7 @@ where
 impl<'a, T, Tail: ToRef<'a>> Plucker<&'a T, Here> for &'a HCons<T, Tail> {
   type Remainder = <Tail as ToRef<'a>>::Output;
 
-  #[inline]
+  #[inline(always)]
   fn pluck(self) -> (&'a T, Self::Remainder) {
     (&self.head, self.tail.to_ref())
   }
@@ -52,7 +52,7 @@ where
 {
   type Remainder = HCons<&'a Head, <&'a Tail as Plucker<&'a FromTail, TailIndex>>::Remainder>;
 
-  #[inline]
+  #[inline(always)]
   fn pluck(self) -> (&'a FromTail, Self::Remainder) {
     let (target, tail_remainder) = <&'a Tail as Plucker<&'a FromTail, TailIndex>>::pluck(&self.tail);
     (target, HCons { head: &self.head, tail: tail_remainder })
