@@ -207,7 +207,7 @@ cargo run
 ## Typical USSD service interaction flow
 
 ```mermaid
-ssequenceDiagram
+sequenceDiagram
     actor User
     participant Platform
     box Purple
@@ -239,13 +239,12 @@ ssequenceDiagram
     SessionStore --) App: Session deleted
     App --) Platform: Final USSD screen
     Platform --) User: Display USSD screen
-
 ```
 
 ## Process builder states
 
 ```mermaid
-%%%{
+%%{
   init: {
     'flowchart': {
       'defaultRenderer': 'tidy-tree'
@@ -291,7 +290,6 @@ flowchart TD
     click FinalizedSplitProcess "https://github.com/Only1Loatheb/brrricks/blob/master/type_process_builder/src/builder/finalized_split_process.rs"
     click FinalizedProcess "https://github.com/Only1Loatheb/brrricks/blob/master/type_process_builder/src/builder/finalized_process.rs"
     click RunnableProcess "https://github.com/Only1Loatheb/brrricks/blob/master/type_process_builder/src/builder/runnable_process.rs"
-
 ```
 
 ## Plausible use cases

@@ -46,10 +46,24 @@ fn update_diagram_in_readme(diagram_path: &Path, readme_path: &Path, section_hea
   let readme = fs::read_to_string(readme_path).expect("Failed to read README.md");
 
   let header_start = readme.find(section_header).expect("section header not found");
-  let mmd_start = readme[header_start..].find("```mermaid\n").map(|i| header_start + i + 12).expect("mermaid block start not found");
-  let mmd_end = readme[mmd_start..].find("\n```").map(|i| mmd_start + i).expect("mermaid block end not found");
+  let block_marker = "```mermaid\n";
+  let block_start = readme[header_start..]
+    .find(block_marker)
+    .map(|i| header_start + i)
+    .expect("mermaid block start not found");
+  let content_start = block_start + block_marker.len();
+  let block_end = readme[content_start..]
+    .find("```")
+    .map(|i| content_start + i)
+    .expect("mermaid block end not found");
 
-  let updated_readme = format!("{}{}{}", &readme[..mmd_start], mmd, &readme[mmd_end..]);
+  let diagram_content = if mmd.ends_with('\n') {
+    mmd
+  } else {
+    format!("{mmd}\n")
+  };
+
+  let updated_readme = format!("{}{}{}", &readme[..content_start], diagram_content, &readme[block_end..]);
   fs::write(readme_path, updated_readme).expect("failed to write README.md");
 }
 
