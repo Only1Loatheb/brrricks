@@ -207,7 +207,6 @@ mod tests {
   use qrios_api_process_entry::DialedSessionEntry;
   use serde::{Deserialize, Serialize};
   use type_process_builder::builder::*;
-  use type_process_builder::param_list::ParamValue;
   use type_process_builder::step::Final;
   use type_process_builder::step::*;
   use type_process_builder::{Coprod, HList, HNil, ToRef, hlist};
@@ -223,26 +222,21 @@ mod tests {
 
     #[derive(Deserialize, Serialize)]
     struct FormOutput;
-    impl ParamValue for FormOutput {
-      type UID = U1;
-    }
 
     #[derive(Deserialize, Serialize)]
     struct OperationOutput;
-    impl ParamValue for OperationOutput {
-      type UID = U2;
-    }
 
     #[derive(Deserialize, Serialize)]
     struct SplitCase1Output;
-    impl ParamValue for SplitCase1Output {
-      type UID = U3;
-    }
 
     #[derive(Deserialize, Serialize)]
     struct SplitCase2Output;
-    impl ParamValue for SplitCase2Output {
-      type UID = U4;
+
+    type_process_builder::impl_param_value! {
+      FormOutput => U1,
+      OperationOutput => U2,
+      SplitCase1Output => U3,
+      SplitCase2Output => U4,
     }
 
     struct ProduceParamOperation;

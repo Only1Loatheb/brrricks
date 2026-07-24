@@ -3,7 +3,6 @@ use serde::{Deserialize, Serialize};
 use std::marker::PhantomData;
 use type_process_builder::builder::*;
 use type_process_builder::frunk::to_ref::ToRef;
-use type_process_builder::param_list::ParamValue;
 use type_process_builder::step::{
   Entry, Final, Form, FormSplitter, FormWithContext, InputValidation, Operation, OperationOutcome, ProcessMessages,
   Splitter,
@@ -23,64 +22,49 @@ enum Operator {
 #[derive(Deserialize, Serialize)]
 struct ShortcodeString(String);
 
+use type_process_builder::impl_param_value;
+
 #[derive(Deserialize, Serialize)]
 struct EntryParam(Msisdn, Operator, ShortcodeString);
-impl ParamValue for EntryParam {
-  type UID = U0;
-}
 
 #[derive(Deserialize, Serialize)]
 struct Split1Param;
-impl ParamValue for Split1Param {
-  type UID = U1;
-}
 
 #[derive(Deserialize, Serialize)]
 struct Split2Param;
-impl ParamValue for Split2Param {
-  type UID = U2;
-}
 
 #[derive(Deserialize, Serialize)]
 struct CommonSplitParam;
-impl ParamValue for CommonSplitParam {
-  type UID = U3;
-}
 
 #[derive(Deserialize, Serialize)]
 struct Case1Param;
-impl ParamValue for Case1Param {
-  type UID = U4;
-}
 
 #[derive(Deserialize, Serialize)]
 struct Case2Param;
-impl ParamValue for Case2Param {
-  type UID = U5;
-}
 
 #[derive(Deserialize, Serialize)]
 struct CommonCaseParam;
-impl ParamValue for CommonCaseParam {
-  type UID = U6;
-}
 
 #[derive(Deserialize, Serialize)]
 struct CaseOptionParam(pub u8);
-impl ParamValue for CaseOptionParam {
-  type UID = U7;
-}
 
 #[derive(Deserialize, Serialize)]
 struct InnerSplit1Param;
-impl ParamValue for InnerSplit1Param {
-  type UID = U8;
-}
 
 #[derive(Deserialize, Serialize)]
 struct InnerSplit2Param;
-impl ParamValue for InnerSplit2Param {
-  type UID = U9;
+
+impl_param_value! {
+  EntryParam => U0,
+  Split1Param => U1,
+  Split2Param => U2,
+  CommonSplitParam => U3,
+  Case1Param => U4,
+  Case2Param => U5,
+  CommonCaseParam => U6,
+  CaseOptionParam => U7,
+  InnerSplit1Param => U8,
+  InnerSplit2Param => U9,
 }
 
 pub struct Message(pub String);

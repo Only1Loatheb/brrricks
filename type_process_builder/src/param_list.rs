@@ -19,6 +19,67 @@ pub trait ParamValue: Serialize + DeserializeOwned + Send + Sync {
   type UID: Unsigned;
 }
 
+/// Macro to implement [`ParamValue`] for multiple types intended for use in a single process.
+///
+/// Ensures that no duplicate [`Unsigned`] are passed within one invocation at compile time.
+///
+/// # Usage:
+/// ```
+/// use type_process_builder::impl_param_value;
+/// use serde::{Serialize, Deserialize};
+/// use typenum::{U0, U1, U2};
+///
+/// #[derive(Serialize, Deserialize)]
+/// struct ShortcodeString;
+/// #[derive(Serialize, Deserialize)]
+/// struct EntryParam;
+/// #[derive(Serialize, Deserialize)]
+/// struct Split1Param;
+///
+/// impl_param_value!(ShortcodeString, U0);
+///
+/// impl_param_value! {
+///   EntryParam => U1,
+///   Split1Param => U2,
+/// }
+/// ```
+///
+/// Passing duplicate typenum UIDs within the same invocation results in a compile-time error:
+/// ```compile_fail
+/// use type_process_builder::impl_param_value;
+/// use serde::{Serialize, Deserialize};
+/// use typenum::U0;
+///
+/// #[derive(Serialize, Deserialize)]
+/// struct ParamA;
+/// #[derive(Serialize, Deserialize)]
+/// struct ParamB;
+///
+/// impl_param_value! {
+///   ParamA => U0,
+///   ParamB => U0, // conflicting implementations of trait `DuplicateParamUidInMacroInvocation` for type `UTerm`
+/// }
+/// ```
+#[macro_export]
+macro_rules! impl_param_value {
+  ($type:ty, $uid:ty) => {
+    impl $crate::param_list::ParamValue for $type {
+      type UID = $uid;
+    }
+  };
+  ($($type:ty => $uid:ty),* $(,)?) => {
+    $(
+      $crate::impl_param_value!($type, $uid);
+    )*
+    const _: () = {
+      trait DuplicateParamUidInMacroInvocation {}
+      $(
+        impl DuplicateParamUidInMacroInvocation for $uid {}
+      )*
+    };
+  };
+}
+
 pub trait ParamList: HList + Send + Sync {
   // https://serde.rs/impl-serialize.html#serializing-a-sequence-or-map
   fn serialize(&self) -> anyhow::Result<SessionContext> {

@@ -2,21 +2,22 @@ mod standard_io_process_runner;
 
 use crate::standard_io_process_runner::{Message, Messages, standard_io_process_runner};
 use serde::{Deserialize, Serialize};
-use type_process_builder::builder::{FinalizedProcess, FlowingProcess, ParamValue, SessionContext, SplitProcess};
+use type_process_builder::builder::{FinalizedProcess, FlowingProcess, SessionContext, SplitProcess};
 use type_process_builder::step::{Entry, Final, Form, FormSplitter, FormWithContext, InputValidation};
 use type_process_builder::{Coprod, HList, HNil, ToRef, hlist, hlist_pat};
 use typenum::{U0, U1};
 
+use type_process_builder::impl_param_value;
+
 #[derive(Deserialize, Serialize)]
 struct ShortcodeString(String);
-impl ParamValue for ShortcodeString {
-  type UID = U0;
-}
 
 #[derive(Deserialize, Serialize)]
 struct Amount(u32);
-impl ParamValue for Amount {
-  type UID = U1;
+
+impl_param_value! {
+  ShortcodeString => U0,
+  Amount => U1,
 }
 
 struct ShortcodeStringEntry;
