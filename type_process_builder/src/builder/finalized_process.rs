@@ -22,16 +22,19 @@ pub trait FinalizedProcess: Sized + Send + Sync {
     previous_run_yielded_at: PreviousRunYieldedAt,
     user_input: String,
     form_context: MaybeFormContext,
+    back_navigation_available: bool,
   ) -> impl Future<Output = RunResult<Self::Messages>> + Send;
 
   fn continue_run(
     &self,
     process_before_produces: Self::ProcessBeforeProduces,
+    back_navigation_available: bool,
   ) -> impl Future<Output = RunResult<Self::Messages>> + Send;
 
   fn run_subprocess(
     &self,
     subprocess_consumes: Self::SubprocessConsumes,
+    back_navigation_available: bool,
   ) -> impl Future<Output = RunResult<Self::Messages>> + Send;
 
   fn build(self, name: &'static str, version: u32) -> RunnableProcess<Self> {
@@ -73,30 +76,34 @@ where
     previous_run_yielded_at: PreviousRunYieldedAt,
     user_input: String,
     form_context: MaybeFormContext,
+    back_navigation_available: bool,
   ) -> RunResult<Self::Messages> {
     let outcome =
-      self.process_before.resume_run(previous_run_produced, previous_run_yielded_at, user_input, form_context).await?;
+      self.process_before.resume_run(previous_run_produced, previous_run_yielded_at, user_input, form_context, back_navigation_available).await?;
     match outcome {
-      IntermediateRunOutcome::Continue(val) => self.continue_run(val).await,
+      IntermediateRunOutcome::Continue(val) => self.continue_run(val, back_navigation_available).await,
       IntermediateRunOutcome::Yield(a, b, c, d) => Ok(RunOutcome::Yield(a, b, c, d)),
       IntermediateRunOutcome::Finish(a) => Ok(RunOutcome::Finish(a)),
       IntermediateRunOutcome::RetryUserInput(a, b) => Ok(RunOutcome::RetryUserInput(a, b)),
+      IntermediateRunOutcome::Back => Ok(RunOutcome::Back),
     }
   }
 
-  async fn continue_run(&self, process_before_produces: Self::ProcessBeforeProduces) -> RunResult<Self::Messages> {
+  async fn continue_run(&self, process_before_produces: Self::ProcessBeforeProduces, _back_navigation_available: bool) -> RunResult<Self::Messages> {
     Ok(RunOutcome::Finish(self.final_step.handle(process_before_produces.transform()).await?))
   }
 
-  async fn run_subprocess(&self, subprocess_consumes: Self::SubprocessConsumes) -> RunResult<Self::Messages> {
-    let outcome = self.process_before.run_subprocess(subprocess_consumes).await?;
+  async fn run_subprocess(&self, subprocess_consumes: Self::SubprocessConsumes, back_navigation_available: bool) -> RunResult<Self::Messages> {
+    let outcome = self.process_before.run_subprocess(subprocess_consumes, back_navigation_available).await?;
     match outcome {
-      IntermediateRunOutcome::Continue(val) => self.continue_run(val).await,
+      IntermediateRunOutcome::Continue(val) => self.continue_run(val, back_navigation_available).await,
       IntermediateRunOutcome::Yield(a, b, c, d) => Ok(RunOutcome::Yield(a, b, c, d)),
       IntermediateRunOutcome::Finish(a) => Ok(RunOutcome::Finish(a)),
       IntermediateRunOutcome::RetryUserInput(a, b) => Ok(RunOutcome::RetryUserInput(a, b)),
+      IntermediateRunOutcome::Back => Ok(RunOutcome::Back),
     }
   }
+
 
   fn enumerate_steps(&mut self, last_used_index: StepIndex) -> StepIndex {
     // most likely not worth to assign an index to final steps, but maybe test

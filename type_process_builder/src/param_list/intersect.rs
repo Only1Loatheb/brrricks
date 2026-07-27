@@ -1,5 +1,5 @@
 use crate::frunk::hlist::{HCons, HNil};
-use crate::param_list::ParamValue;
+use crate::param_list::{ParamList, ParamValue};
 use std::ops::BitOr;
 use typenum::{B0, B1, Bit, IsEqual};
 
@@ -81,3 +81,35 @@ where
     )
   }
 }
+
+////////// Union //////////
+
+pub trait PrependIf<Head, Tail> {
+  type Output;
+}
+
+impl<Head, Tail> PrependIf<Head, Tail> for typenum::B1 {
+  type Output = Tail;
+}
+
+impl<Head, Tail> PrependIf<Head, Tail> for typenum::B0 {
+  type Output = HCons<Head, Tail>;
+}
+
+pub trait Union<RHS: ParamList>: ParamList {
+  type Output: ParamList;
+}
+
+impl<RHS: ParamList> Union<RHS> for HNil {
+  type Output = RHS;
+}
+
+impl<Head: ParamValue, Tail: Union<RHS> + ParamList, RHS: ParamList> Union<RHS> for HCons<Head, Tail>
+where
+  <Tail as Union<RHS>>::Output: Contains<Head>,
+  <<Tail as Union<RHS>>::Output as Contains<Head>>::IsContained: PrependIf<Head, <Tail as Union<RHS>>::Output>,
+  <<<Tail as Union<RHS>>::Output as Contains<Head>>::IsContained as PrependIf<Head, <Tail as Union<RHS>>::Output>>::Output: ParamList,
+{
+  type Output = <<<Tail as Union<RHS>>::Output as Contains<Head>>::IsContained as PrependIf<Head, <Tail as Union<RHS>>::Output>>::Output;
+}
+

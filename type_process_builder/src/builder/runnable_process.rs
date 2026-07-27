@@ -20,8 +20,9 @@ impl<UnderlyingProcess: FinalizedProcess> RunnableProcess<UnderlyingProcess> {
     previous_run_yielded_at: PreviousRunYieldedAt,
     user_input: String,
     form_context: MaybeFormContext,
+    back_navigation_available: bool,
   ) -> RunResult<UnderlyingProcess::Messages> {
-    self.finalized_process.resume_run(previous_run_produced, previous_run_yielded_at, user_input, form_context).await
+    self.finalized_process.resume_run(previous_run_produced, previous_run_yielded_at, user_input, form_context, back_navigation_available).await
   }
 
   /// [`crate::param_list::ParamList::`_deserialize]

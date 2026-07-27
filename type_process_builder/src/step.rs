@@ -42,6 +42,7 @@ pub enum InputValidation<Produced, Messages: ProcessMessages, FormContext: Seria
   Successful(Produced),
   Retry(Messages::FormMessage, FormContext),
   Finish(Messages::FinalMessage),
+  Back,
 }
 
 pub struct FormWithContext<FormMessage, FromContext>(pub FormMessage, pub FromContext);
@@ -55,6 +56,7 @@ pub trait Form: Send + Sync {
   fn create_form(
     &self,
     consumes: <Self::CreateFormConsumes as ToRef<'_>>::Output,
+    back_navigation_available: bool,
   ) -> impl Future<
     Output = anyhow::Result<FormWithContext<<Self::Messages as ProcessMessages>::FormMessage, Self::Context>>,
   > + Send;
@@ -94,6 +96,7 @@ pub trait FormSplitter: Send + Sync {
   fn create_form(
     &self,
     consumes: <Self::CreateFormConsumes as ToRef<'_>>::Output,
+    back_navigation_available: bool,
   ) -> impl Future<
     Output = anyhow::Result<FormWithContext<<Self::Messages as ProcessMessages>::FormMessage, Self::Context>>,
   > + Send;

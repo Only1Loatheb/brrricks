@@ -39,6 +39,7 @@ pub enum IntermediateRunOutcome<Produced: ParamList, Messages: ProcessMessages> 
   Yield(Messages::FormMessage, SessionContext, CurrentRunYieldedAt, FormContext),
   Finish(Messages::FinalMessage),
   RetryUserInput(Messages::FormMessage, FormContext),
+  Back,
 }
 
 pub type IntermediateRunResult<Produced, Messages> = anyhow::Result<IntermediateRunOutcome<Produced, Messages>>;
@@ -56,6 +57,7 @@ pub enum IntermediateFinalizedSplitOutcome<
   Yield(Messages::FormMessage, SessionContext, CurrentRunYieldedAt, FormContext),
   Finish(Messages::FinalMessage),
   RetryUserInput(Messages::FormMessage, FormContext),
+  Back,
 }
 
 pub type IntermediateFinalizedSplitResult<ProcessBeforeSplitProduced, SplitterProducesForOtherCases, Messages> =
@@ -78,6 +80,7 @@ pub enum IntermediateFlowingSplitOutcome<
   Yield(Messages::FormMessage, SessionContext, CurrentRunYieldedAt, FormContext),
   Finish(Messages::FinalMessage),
   RetryUserInput(Messages::FormMessage, FormContext),
+  Back,
 }
 
 pub type IntermediateFlowingSplitResult<
@@ -99,6 +102,8 @@ pub enum RunOutcome<Messages: ProcessMessages> {
   Yield(Messages::FormMessage, SessionContext, CurrentRunYieldedAt, FormContext),
   Finish(Messages::FinalMessage),
   RetryUserInput(Messages::FormMessage, FormContext),
+  Back,
 }
 
 pub type RunResult<Messages> = anyhow::Result<RunOutcome<Messages>>;
+

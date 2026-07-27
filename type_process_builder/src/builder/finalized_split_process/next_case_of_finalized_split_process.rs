@@ -124,6 +124,7 @@ for NextCaseOfFinalizedSplitProcess<
   type SplitterTagForThisCase = ThisTag;
   type SubprocessConsumes = ProcessBefore::SubprocessConsumes;
   type Messages = ProcessBefore::Messages;
+  type EverProduced = ProcessBefore::EverProduced;
 
   async fn resume_run(
     &self,
@@ -131,11 +132,12 @@ for NextCaseOfFinalizedSplitProcess<
     previous_run_yielded_at: PreviousRunYieldedAt,
     user_input: String,
     form_context: MaybeFormContext,
+    back_navigation_available: bool,
   ) -> IntermediateFinalizedSplitResult<Self::ProcessBeforeSplitProduces, SplitterProducesForOtherCases, Self::Messages> {
-    if previous_run_yielded_at.0 < self.case_index {
+    if previous_run_yielded_at.step_index < self.case_index {
       let process_before_output = self
         .split_process_before
-        .resume_run(previous_run_produced, previous_run_yielded_at, user_input, form_context)
+        .resume_run(previous_run_produced, previous_run_yielded_at, user_input, form_context, back_navigation_available)
         .await?;
       match process_before_output {
         IntermediateFinalizedSplitOutcome::GoToCase {
@@ -146,20 +148,22 @@ for NextCaseOfFinalizedSplitProcess<
             Coproduct::Inl((_pd, params)) => Coproduct::Inl(params),
             Coproduct::Inr(inr_value) => Coproduct::Inr(inr_value),
           };
-          self.continue_run(process_before_split_produced, produced).await
+          self.continue_run(process_before_split_produced, produced, back_navigation_available).await
         }
         IntermediateFinalizedSplitOutcome::Yield(a, b, c, d) => Ok(IntermediateFinalizedSplitOutcome::Yield(a, b, c, d)),
         IntermediateFinalizedSplitOutcome::Finish(a) => Ok(IntermediateFinalizedSplitOutcome::Finish(a)),
         IntermediateFinalizedSplitOutcome::RetryUserInput(a, b) => Ok(IntermediateFinalizedSplitOutcome::RetryUserInput
           (a, b)),
+        IntermediateFinalizedSplitOutcome::Back => Ok(IntermediateFinalizedSplitOutcome::Back),
       }
     } else {
       match self.this_case.resume_run(
-        previous_run_produced, previous_run_yielded_at, user_input, form_context,
+        previous_run_produced, previous_run_yielded_at, user_input, form_context, back_navigation_available,
       ).await? {
         RunOutcome::Yield(a, b, c, d) => Ok(IntermediateFinalizedSplitOutcome::Yield(a, b, c, d)),
         RunOutcome::Finish(a) => Ok(IntermediateFinalizedSplitOutcome::Finish(a)),
         RunOutcome::RetryUserInput(a, b) => Ok(IntermediateFinalizedSplitOutcome::RetryUserInput(a, b)),
+        RunOutcome::Back => Ok(IntermediateFinalizedSplitOutcome::Back),
       }
     }
   }
@@ -171,14 +175,16 @@ for NextCaseOfFinalizedSplitProcess<
       Self::SplitterProducesForThisCase,
       SplitterProducesForOtherCases,
     >,
+    back_navigation_available: bool,
   ) -> IntermediateFinalizedSplitResult<Self::ProcessBeforeSplitProduces, SplitterProducesForOtherCases, Self::Messages> {
     match splitter_produces_for_this_case_or_other_cases_consumes {
       Coproduct::Inl(splitter_produces_for_this_case) => {
         let this_case_consumes = splitter_produces_for_this_case.concat(process_before_split_produced);
-        match self.this_case.run_subprocess(this_case_consumes).await? {
+        match self.this_case.run_subprocess(this_case_consumes, back_navigation_available).await? {
           RunOutcome::Yield(a, b, c, d) => Ok(IntermediateFinalizedSplitOutcome::Yield(a, b, c, d)),
           RunOutcome::Finish(a) => Ok(IntermediateFinalizedSplitOutcome::Finish(a)),
           RunOutcome::RetryUserInput(a, b) => Ok(IntermediateFinalizedSplitOutcome::RetryUserInput(a, b)),
+          RunOutcome::Back => Ok(IntermediateFinalizedSplitOutcome::Back),
         }
       }
       Coproduct::Inr(splitter_produces_to_other_cases) => Ok(IntermediateFinalizedSplitOutcome::GoToCase {
@@ -188,9 +194,9 @@ for NextCaseOfFinalizedSplitProcess<
     }
   }
 
-  async fn run_split_subprocess(&self, subprocess_consumes: Self::SubprocessConsumes) ->
+  async fn run_split_subprocess(&self, subprocess_consumes: Self::SubprocessConsumes, back_navigation_available: bool) ->
   IntermediateFinalizedSplitResult<Self::ProcessBeforeSplitProduces, SplitterProducesForOtherCases, Self::Messages> {
-    let process_before_output = self.split_process_before.run_split_subprocess(subprocess_consumes).await?;
+    let process_before_output = self.split_process_before.run_split_subprocess(subprocess_consumes, back_navigation_available).await?;
     match process_before_output {
       IntermediateFinalizedSplitOutcome::GoToCase {
         process_before_split_produced,
@@ -200,12 +206,13 @@ for NextCaseOfFinalizedSplitProcess<
           Coproduct::Inl((_pd, params)) => Coproduct::Inl(params),
           Coproduct::Inr(inr_value) => Coproduct::Inr(inr_value),
         };
-        self.continue_run(process_before_split_produced, produced).await
+        self.continue_run(process_before_split_produced, produced, back_navigation_available).await
       }
       IntermediateFinalizedSplitOutcome::Yield(a, b, c, d) => Ok(IntermediateFinalizedSplitOutcome::Yield(a, b, c, d)),
       IntermediateFinalizedSplitOutcome::Finish(a) => Ok(IntermediateFinalizedSplitOutcome::Finish(a)),
       IntermediateFinalizedSplitOutcome::RetryUserInput(a, b) => Ok(IntermediateFinalizedSplitOutcome::RetryUserInput
         (a, b)),
+      IntermediateFinalizedSplitOutcome::Back => Ok(IntermediateFinalizedSplitOutcome::Back),
     }
   }
 
@@ -244,11 +251,12 @@ for NextCaseOfFinalizedSplitProcess<ThisTag, SplitterProducesForThisCase, CNil, 
     previous_run_yielded_at: PreviousRunYieldedAt,
     user_input: String,
     form_context: MaybeFormContext,
+    back_navigation_available: bool,
   ) -> RunResult<Self::Messages> {
-    if previous_run_yielded_at.0 < self.case_index {
+    if previous_run_yielded_at.step_index < self.case_index {
       let process_before_output = self
         .split_process_before
-        .resume_run(previous_run_produced, previous_run_yielded_at, user_input, form_context)
+        .resume_run(previous_run_produced, previous_run_yielded_at, user_input, form_context, back_navigation_available)
         .await?;
       match process_before_output {
         IntermediateFinalizedSplitOutcome::GoToCase {
@@ -257,31 +265,33 @@ for NextCaseOfFinalizedSplitProcess<ThisTag, SplitterProducesForThisCase, CNil, 
         } => match splitter_produces_to_other_cases {
           Coproduct::Inl((_pd, splitter_produces_for_this_case)) => {
             let this_case_consumes = splitter_produces_for_this_case.concat(process_before_split_produced);
-            self.this_case.run_subprocess(this_case_consumes).await
+            self.this_case.run_subprocess(this_case_consumes, back_navigation_available).await
           }
           Coproduct::Inr(c_nil) => match c_nil {},
         },
         IntermediateFinalizedSplitOutcome::Yield(a, b, c, d) => Ok(RunOutcome::Yield(a, b, c, d)),
         IntermediateFinalizedSplitOutcome::Finish(a) => Ok(RunOutcome::Finish(a)),
         IntermediateFinalizedSplitOutcome::RetryUserInput(a, b) => Ok(RunOutcome::RetryUserInput(a, b)),
+        IntermediateFinalizedSplitOutcome::Back => Ok(RunOutcome::Back),
       }
     } else {
       match self.this_case.resume_run(
-        previous_run_produced, previous_run_yielded_at, user_input, form_context,
+        previous_run_produced, previous_run_yielded_at, user_input, form_context, back_navigation_available,
       ).await? {
         RunOutcome::Yield(a, b, c, d) => Ok(RunOutcome::Yield(a, b, c, d)),
         RunOutcome::Finish(a) => Ok(RunOutcome::Finish(a)),
         RunOutcome::RetryUserInput(a, b) => Ok(RunOutcome::RetryUserInput(a, b)),
+        RunOutcome::Back => Ok(RunOutcome::Back),
       }
     }
   }
 
-  async fn continue_run(&self, this_case_consumes: Self::ProcessBeforeProduces) -> RunResult<Self::Messages> {
-    self.this_case.run_subprocess(this_case_consumes).await
+  async fn continue_run(&self, this_case_consumes: Self::ProcessBeforeProduces, back_navigation_available: bool) -> RunResult<Self::Messages> {
+    self.this_case.run_subprocess(this_case_consumes, back_navigation_available).await
   }
 
-  async fn run_subprocess(&self, subprocess_consumes: Self::SubprocessConsumes) -> RunResult<Self::Messages> {
-    let process_before_output = self.run_split_subprocess(subprocess_consumes).await?;
+  async fn run_subprocess(&self, subprocess_consumes: Self::SubprocessConsumes, back_navigation_available: bool) -> RunResult<Self::Messages> {
+    let process_before_output = self.run_split_subprocess(subprocess_consumes, back_navigation_available).await?;
     match process_before_output {
       IntermediateFinalizedSplitOutcome::GoToCase {
         process_before_split_produced: _, splitter_produces_to_other_cases
@@ -289,8 +299,10 @@ for NextCaseOfFinalizedSplitProcess<ThisTag, SplitterProducesForThisCase, CNil, 
       IntermediateFinalizedSplitOutcome::Yield(a, b, c, d) => Ok(RunOutcome::Yield(a, b, c, d)),
       IntermediateFinalizedSplitOutcome::Finish(a) => Ok(RunOutcome::Finish(a)),
       IntermediateFinalizedSplitOutcome::RetryUserInput(a, b) => Ok(RunOutcome::RetryUserInput(a, b)),
+      IntermediateFinalizedSplitOutcome::Back => Ok(RunOutcome::Back),
     }
   }
+
 
   fn enumerate_steps(&mut self, last_used_index: StepIndex) -> StepIndex {
     let used_index = self.split_process_before.enumerate_steps(last_used_index);

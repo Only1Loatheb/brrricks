@@ -17,6 +17,7 @@ pub trait FinalizedSplitProcess<SplitterProducesForOtherCases>: Sized + Send + S
   type SplitterTagForThisCase: Send + Sync;
   type SubprocessConsumes: ParamList;
   type Messages: ProcessMessages;
+  type EverProduced: ParamList;
 
   fn resume_run(
     &self,
@@ -24,6 +25,7 @@ pub trait FinalizedSplitProcess<SplitterProducesForOtherCases>: Sized + Send + S
     previous_run_yielded_at: PreviousRunYieldedAt,
     user_input: String,
     form_context: MaybeFormContext,
+    back_navigation_available: bool,
   ) -> impl Future<
     Output = IntermediateFinalizedSplitResult<
       Self::ProcessBeforeSplitProduces,
@@ -39,6 +41,7 @@ pub trait FinalizedSplitProcess<SplitterProducesForOtherCases>: Sized + Send + S
       Self::SplitterProducesForThisCase,
       SplitterProducesForOtherCases,
     >,
+    back_navigation_available: bool,
   ) -> impl Future<
     Output = IntermediateFinalizedSplitResult<
       Self::ProcessBeforeSplitProduces,
@@ -50,6 +53,7 @@ pub trait FinalizedSplitProcess<SplitterProducesForOtherCases>: Sized + Send + S
   fn run_split_subprocess(
     &self,
     subprocess_consumes: Self::SubprocessConsumes,
+    back_navigation_available: bool,
   ) -> impl Future<
     Output = IntermediateFinalizedSplitResult<
       Self::ProcessBeforeSplitProduces,
@@ -57,6 +61,7 @@ pub trait FinalizedSplitProcess<SplitterProducesForOtherCases>: Sized + Send + S
       Self::Messages,
     >,
   > + Send;
+
 
   fn enumerate_steps(&mut self, last_used_index: StepIndex) -> StepIndex;
 

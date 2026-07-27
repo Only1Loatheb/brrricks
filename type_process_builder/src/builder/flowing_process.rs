@@ -26,6 +26,7 @@ pub trait FlowingProcess: Sized + Send + Sync {
   type Produces: ParamList;
   type SubprocessConsumes: ParamList;
   type Messages: ProcessMessages;
+  type EverProduced: ParamList;
 
   fn resume_run(
     &self,
@@ -33,16 +34,19 @@ pub trait FlowingProcess: Sized + Send + Sync {
     previous_run_yielded_at: PreviousRunYieldedAt,
     user_input: String,
     form_context: MaybeFormContext,
+    back_navigation_available: bool,
   ) -> impl Future<Output = IntermediateRunResult<Self::Produces, Self::Messages>> + Send;
 
   fn continue_run(
     &self,
     process_before_produces: Self::ProcessBeforeProduces,
+    back_navigation_available: bool,
   ) -> impl Future<Output = IntermediateRunResult<Self::Produces, Self::Messages>> + Send;
 
   fn run_subprocess(
     &self,
     subprocess_consumes: Self::SubprocessConsumes,
+    back_navigation_available: bool,
   ) -> impl Future<Output = IntermediateRunResult<Self::Produces, Self::Messages>> + Send;
 
   fn then<
@@ -56,9 +60,10 @@ pub trait FlowingProcess: Sized + Send + Sync {
     Produces = <OperationStep::Produces as Concat<Self::Produces>>::Concatenated,
     SubprocessConsumes = Self::SubprocessConsumes,
     Messages = Self::Messages,
+    EverProduced = <OperationStep::Produces as Concat<Self::EverProduced>>::Concatenated,
   >
   where
-    OperationStep::Produces: ParamList + Concat<Self::Produces>,
+    OperationStep::Produces: ParamList + Concat<Self::Produces> + Concat<Self::EverProduced>,
     for<'a> &'a Self::Produces: BorrowJust<'a, OperationStep::Consumes, ProcessBeforeProducesToLastStepConsumesIndices>,
   {
     OperationFlowingProcess {
@@ -81,9 +86,10 @@ pub trait FlowingProcess: Sized + Send + Sync {
     Produces = <FormStep::Produces as Concat<Self::Produces>>::Concatenated,
     SubprocessConsumes = Self::SubprocessConsumes,
     Messages = Self::Messages,
+    EverProduced = <FormStep::Produces as Concat<Self::EverProduced>>::Concatenated,
   >
   where
-    FormStep::Produces: ParamList + Concat<Self::Produces>,
+    FormStep::Produces: ParamList + Concat<Self::Produces> + Concat<Self::EverProduced>,
     for<'a> &'a Self::Produces:
       BorrowJust<'a, FormStep::CreateFormConsumes, ProcessBeforeProducesToCreateFormConsumesIndices>,
     for<'a> &'a Self::Produces:
@@ -113,8 +119,10 @@ pub trait FlowingProcess: Sized + Send + Sync {
     SplitterTagForFirstCase = Tag,
     SubprocessConsumes = Self::SubprocessConsumes,
     Messages = Self::Messages,
+    EverProduced = <SplitterProducesForFirstCase as Concat<Self::EverProduced>>::Concatenated,
   >
   where
+    SplitterProducesForFirstCase: Concat<Self::EverProduced>,
     for<'a> &'a Self::Produces:
       BorrowJust<'a, SplitterStep::Consumes, ProcessBeforeProducesToSplitterStepConsumesIndices>,
   {
@@ -153,8 +161,10 @@ pub trait FlowingProcess: Sized + Send + Sync {
     SplitterTagForFirstCase = Tag,
     SubprocessConsumes = Self::SubprocessConsumes,
     Messages = Self::Messages,
+    EverProduced = <SplitterProducesForFirstCase as Concat<Self::EverProduced>>::Concatenated,
   >
   where
+    SplitterProducesForFirstCase: Concat<Self::EverProduced>,
     for<'a> &'a Self::Produces:
       BorrowJust<'a, SplitterStep::CreateFormConsumes, ProcessBeforeProducesToCreateFormConsumesIndices>,
     for<'a> &'a Self::Produces:
@@ -197,3 +207,4 @@ pub trait FlowingProcess: Sized + Send + Sync {
 
   fn all_param_uids(&self, acc: &mut Vec<ParamUID>);
 }
+
