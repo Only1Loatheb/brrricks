@@ -416,9 +416,12 @@ impl Form for OneInputRetryForm {
   async fn handle_input(
     &self,
     _consumes: <Self::ValidateInputConsumes as ToRef<'_>>::Output,
-    _user_input: String,
+    user_input: String,
     failed: Self::Context,
   ) -> anyhow::Result<InputValidation<Self::Produces, Messages, Self::Context>> {
+    if user_input == "0" {
+      return Ok(InputValidation::Back);
+    }
     match failed {
       0 => Ok(InputValidation::Retry(Message("This will be accepted".into()), failed + 1)),
       _ => Ok(InputValidation::Successful(hlist![CommonCaseParam])),
@@ -593,7 +596,13 @@ async fn test_return_error_on_param_missing_from_context(
 ) {
   let mut messages_index = 0;
   let run_outcome = process
-    .resume_run(session_init_value(), PreviousRunYieldedAt(StepIndex::MIN), messages[messages_index].into(), None, false)
+    .resume_run(
+      session_init_value(),
+      PreviousRunYieldedAt(StepIndex::MIN),
+      messages[messages_index].into(),
+      None,
+      false,
+    )
     .await
     .expect("Test failed");
   messages_index += 1;
@@ -1248,7 +1257,7 @@ async fn test_process_messages(
         .resume_run(
           previous_run_produced.clone(),
           PreviousRunYieldedAt(target_step_index),
-          "".to_string(),
+          String::new(),
           None,
           back_navigation_available,
         )
@@ -1275,6 +1284,7 @@ async fn test_process_messages(
         assert_eq!(msg.0, messages[messages_index]);
         break;
       },
+      RunOutcome::Back => unreachable!(),
     }
     messages_index += 1;
   }
@@ -1286,19 +1296,11 @@ async fn test_back_navigation() {
   let process = ExtractMsisdnOperatorAndShortcodeString
     .show(ChooseCaseForm)
     .split(SplitByTwoCaseOption)
-    .case_via(Case1, |x| x.show(OneInputRetryForm).end(SayGoodByAndConsumeCommonParams))
-    .case_via(Case2, |x| x.then(ProduceCaseParam2).end(SayGoodByAndConsumeCommonParams))
+    .case_via(Case1, |x| x.show(OneInputRetryForm))
+    .case_via(Case2, |x| x.then(ProduceCaseParam2))
+    .end(SayGoodByAndConsumeCommonParams)
     .build("", 0);
 
-  let messages = vec![
-    "*123#",
-    "Choose a case",
-    "1",
-    "This will be discarded",
-    "0",
-    "Choose a case",
-    "2",
-    "Good bye",
-  ];
+  let messages = vec!["*123#", "Choose a case", "1", "This will be discarded", "0", "Choose a case", "2", "Good bye"];
   test_process_messages(&process, messages).await;
 }

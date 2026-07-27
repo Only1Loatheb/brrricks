@@ -64,7 +64,6 @@ pub trait SplitProcess<SplitterProducesForOtherCases: Send + Sync>: Sized + Send
     >,
   > + Send;
 
-
   fn case_end<ThisCase: FinalizedProcess<Messages = Self::Messages>>(
     self,
     _assumed_tag: Self::SplitterTagForFirstCase,

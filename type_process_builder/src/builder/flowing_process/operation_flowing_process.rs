@@ -49,7 +49,9 @@ where
         .resume_run(previous_run_produced, previous_run_yielded_at, user_input, form_context, back_navigation_available)
         .await?;
       match process_before_output {
-        IntermediateRunOutcome::Continue(process_before_produces) => self.continue_run(process_before_produces, back_navigation_available).await,
+        IntermediateRunOutcome::Continue(process_before_produces) => {
+          self.continue_run(process_before_produces, back_navigation_available).await
+        },
         IntermediateRunOutcome::Yield(a, b, c, d) => Ok(IntermediateRunOutcome::Yield(a, b, c, d)),
         IntermediateRunOutcome::Finish(a) => Ok(IntermediateRunOutcome::Finish(a)),
         IntermediateRunOutcome::RetryUserInput(a, b) => Ok(IntermediateRunOutcome::RetryUserInput(a, b)),
@@ -81,16 +83,18 @@ where
     subprocess_consumes: Self::SubprocessConsumes,
     back_navigation_available: bool,
   ) -> IntermediateRunResult<Self::Produces, Self::Messages> {
-    let process_before_output = self.process_before.run_subprocess(subprocess_consumes, back_navigation_available).await?;
+    let process_before_output =
+      self.process_before.run_subprocess(subprocess_consumes, back_navigation_available).await?;
     match process_before_output {
-      IntermediateRunOutcome::Continue(process_before_produces) => self.continue_run(process_before_produces, back_navigation_available).await,
+      IntermediateRunOutcome::Continue(process_before_produces) => {
+        self.continue_run(process_before_produces, back_navigation_available).await
+      },
       IntermediateRunOutcome::Yield(a, b, c, d) => Ok(IntermediateRunOutcome::Yield(a, b, c, d)),
       IntermediateRunOutcome::Finish(a) => Ok(IntermediateRunOutcome::Finish(a)),
       IntermediateRunOutcome::RetryUserInput(a, b) => Ok(IntermediateRunOutcome::RetryUserInput(a, b)),
       IntermediateRunOutcome::Back => Ok(IntermediateRunOutcome::Back),
     }
   }
-
 
   fn enumerate_steps(&mut self, last_used_index: StepIndex) -> StepIndex {
     let used_index = self.process_before.enumerate_steps(last_used_index);

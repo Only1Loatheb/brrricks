@@ -105,7 +105,7 @@ pub trait FlowingProcess: Sized + Send + Sync {
 
   fn split<
     Tag: Send + Sync,
-    SplitterProducesForFirstCase: ParamList + Concat<Self::Produces>,
+    SplitterProducesForFirstCase: ParamList + Concat<Self::Produces> + Concat<Self::EverProduced>,
     SplitterProducesForOtherCases: Send + Sync,
     SplitterStep: Splitter<Produces = Coproduct<(Tag, SplitterProducesForFirstCase), SplitterProducesForOtherCases>>,
     ProcessBeforeProducesToSplitterStepConsumesIndices: Sync + Send,
@@ -122,7 +122,6 @@ pub trait FlowingProcess: Sized + Send + Sync {
     EverProduced = <SplitterProducesForFirstCase as Concat<Self::EverProduced>>::Concatenated,
   >
   where
-    SplitterProducesForFirstCase: Concat<Self::EverProduced>,
     for<'a> &'a Self::Produces:
       BorrowJust<'a, SplitterStep::Consumes, ProcessBeforeProducesToSplitterStepConsumesIndices>,
   {
@@ -143,7 +142,7 @@ pub trait FlowingProcess: Sized + Send + Sync {
 
   fn show_split<
     Tag: Send + Sync,
-    SplitterProducesForFirstCase: ParamList + Concat<Self::Produces>,
+    SplitterProducesForFirstCase: ParamList + Concat<Self::Produces> + Concat<Self::EverProduced>,
     SplitterProducesForOtherCases: Send + Sync,
     SplitterStep: FormSplitter<
         Produces = Coproduct<(Tag, SplitterProducesForFirstCase), SplitterProducesForOtherCases>,
@@ -164,7 +163,6 @@ pub trait FlowingProcess: Sized + Send + Sync {
     EverProduced = <SplitterProducesForFirstCase as Concat<Self::EverProduced>>::Concatenated,
   >
   where
-    SplitterProducesForFirstCase: Concat<Self::EverProduced>,
     for<'a> &'a Self::Produces:
       BorrowJust<'a, SplitterStep::CreateFormConsumes, ProcessBeforeProducesToCreateFormConsumesIndices>,
     for<'a> &'a Self::Produces:
@@ -207,4 +205,3 @@ pub trait FlowingProcess: Sized + Send + Sync {
 
   fn all_param_uids(&self, acc: &mut Vec<ParamUID>);
 }
-

@@ -62,29 +62,29 @@ where
         .resume_run(previous_run_produced, previous_run_yielded_at, user_input, form_context, back_navigation_available)
         .await?;
       match process_before_output {
-        IntermediateRunOutcome::Continue(process_before_produces) => self.continue_run(process_before_produces, back_navigation_available).await,
+        IntermediateRunOutcome::Continue(process_before_produces) => {
+          self.continue_run(process_before_produces, back_navigation_available).await
+        },
         IntermediateRunOutcome::Yield(a, b, c, d) => Ok(IntermediateRunOutcome::Yield(a, b, c, d)),
         IntermediateRunOutcome::Finish(a) => Ok(IntermediateRunOutcome::Finish(a)),
         IntermediateRunOutcome::RetryUserInput(a, b) => Ok(IntermediateRunOutcome::RetryUserInput(a, b)),
         IntermediateRunOutcome::Back => Ok(IntermediateRunOutcome::Back),
       }
+    } else if form_context.is_none() {
+      let process_before_produces = ProcessBefore::Produces::deserialize(previous_run_produced)?;
+      self.continue_run(process_before_produces, back_navigation_available).await
     } else {
-      if form_context.is_none() {
-        let process_before_produces = ProcessBefore::Produces::deserialize(previous_run_produced)?;
-        self.continue_run(process_before_produces, back_navigation_available).await
-      } else {
-        let process_before_produces = ProcessBefore::Produces::deserialize(previous_run_produced)?;
-        let last_step_consumes =
-          <&ProcessBefore::Produces as BorrowJust<'_, FormStep::ValidateInputConsumes, _>>::borrow_just(
-            &process_before_produces,
-          );
-        let context: FormStep::Context = postcard::from_bytes(&form_context.ok_or(anyhow!("Missing FormContext"))?)?;
-        match self.form_step.handle_input(last_step_consumes, user_input, context).await? {
-          InputValidation::Successful(a) => Ok(IntermediateRunOutcome::Continue(a.concat(process_before_produces))),
-          InputValidation::Retry(a, b) => Ok(IntermediateRunOutcome::RetryUserInput(a, postcard::to_allocvec(&b)?)),
-          InputValidation::Finish(a) => Ok(IntermediateRunOutcome::Finish(a)),
-          InputValidation::Back => Ok(IntermediateRunOutcome::Back),
-        }
+      let process_before_produces = ProcessBefore::Produces::deserialize(previous_run_produced)?;
+      let last_step_consumes =
+        <&ProcessBefore::Produces as BorrowJust<'_, FormStep::ValidateInputConsumes, _>>::borrow_just(
+          &process_before_produces,
+        );
+      let context: FormStep::Context = postcard::from_bytes(&form_context.ok_or(anyhow!("Missing FormContext"))?)?;
+      match self.form_step.handle_input(last_step_consumes, user_input, context).await? {
+        InputValidation::Successful(a) => Ok(IntermediateRunOutcome::Continue(a.concat(process_before_produces))),
+        InputValidation::Retry(a, b) => Ok(IntermediateRunOutcome::RetryUserInput(a, postcard::to_allocvec(&b)?)),
+        InputValidation::Finish(a) => Ok(IntermediateRunOutcome::Finish(a)),
+        InputValidation::Back => Ok(IntermediateRunOutcome::Back),
       }
     }
   }
@@ -97,7 +97,8 @@ where
     let last_step_consumes = <&ProcessBefore::Produces as BorrowJust<'_, FormStep::CreateFormConsumes, _>>::borrow_just(
       &process_before_produces,
     );
-    let FormWithContext(form, form_context) = self.form_step.create_form(last_step_consumes, back_navigation_available).await?;
+    let FormWithContext(form, form_context) =
+      self.form_step.create_form(last_step_consumes, back_navigation_available).await?;
     Ok(IntermediateRunOutcome::Yield(
       form,
       process_before_produces.serialize()?,
@@ -111,16 +112,18 @@ where
     subprocess_consumes: Self::SubprocessConsumes,
     back_navigation_available: bool,
   ) -> IntermediateRunResult<Self::Produces, Self::Messages> {
-    let process_before_output = self.process_before.run_subprocess(subprocess_consumes, back_navigation_available).await?;
+    let process_before_output =
+      self.process_before.run_subprocess(subprocess_consumes, back_navigation_available).await?;
     match process_before_output {
-      IntermediateRunOutcome::Continue(process_before_produces) => self.continue_run(process_before_produces, back_navigation_available).await,
+      IntermediateRunOutcome::Continue(process_before_produces) => {
+        self.continue_run(process_before_produces, back_navigation_available).await
+      },
       IntermediateRunOutcome::Yield(a, b, c, d) => Ok(IntermediateRunOutcome::Yield(a, b, c, d)),
       IntermediateRunOutcome::Finish(a) => Ok(IntermediateRunOutcome::Finish(a)),
       IntermediateRunOutcome::RetryUserInput(a, b) => Ok(IntermediateRunOutcome::RetryUserInput(a, b)),
       IntermediateRunOutcome::Back => Ok(IntermediateRunOutcome::Back),
     }
   }
-
 
   fn enumerate_steps(&mut self, last_used_index: StepIndex) -> StepIndex {
     let used_index = self.process_before.enumerate_steps(last_used_index);

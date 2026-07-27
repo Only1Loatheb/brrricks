@@ -124,8 +124,13 @@ impl FormSplitter for SelectAmountSource {
   async fn create_form(
     &self,
     _consumes: <Self::CreateFormConsumes as ToRef<'_>>::Output,
+    back_navigation_available: bool,
   ) -> anyhow::Result<FormWithContext<Message, Self::Context>> {
-    Ok(FormWithContext(Message("Enter 1 for 100 or 2 for custom amount".into()), EmptyFormContext))
+    if back_navigation_available {
+      Ok(FormWithContext(Message("Enter 1 for 100 or 2 for custom amount. 0 to go back".into()), EmptyFormContext))
+    } else {
+      Ok(FormWithContext(Message("Enter 1 for 100 or 2 for custom amount".into()), EmptyFormContext))
+    }
   }
 
   async fn handle_input(
@@ -137,6 +142,7 @@ impl FormSplitter for SelectAmountSource {
     Ok(match user_input.as_str() {
       "1" => InputValidation::Successful(Self::Produces::inject((PredefinedAmount, hlist!(Amount(100))))),
       "2" => InputValidation::Successful(Self::Produces::inject((CustomAmount, HNil))),
+      "0" => InputValidation::Back,
       _ => InputValidation::Retry(Message("not 1 or 2".into()), EmptyFormContext),
     })
   }
@@ -156,8 +162,13 @@ impl Form for AmountForm {
   async fn create_form(
     &self,
     _consumes: <Self::CreateFormConsumes as ToRef<'_>>::Output,
+    back_navigation_available: bool,
   ) -> anyhow::Result<FormWithContext<Message, Self::Context>> {
-    Ok(FormWithContext(Message("Enter a number".into()), EmptyFormContext))
+    if back_navigation_available {
+      Ok(FormWithContext(Message("Enter a number. 0 to go back".into()), EmptyFormContext))
+    } else {
+      Ok(FormWithContext(Message("Enter a number".into()), EmptyFormContext))
+    }
   }
 
   async fn handle_input(
@@ -166,6 +177,9 @@ impl Form for AmountForm {
     user_input: String,
     _form_context: Self::Context,
   ) -> anyhow::Result<InputValidation<Self::Produces, Messages, Self::Context>> {
+    if user_input == "0" {
+      return Ok(InputValidation::Back);
+    }
     match user_input.parse::<u32>() {
       Ok(value) => Ok(InputValidation::Successful(hlist![Amount(value)])),
       Err(_) => Ok(InputValidation::Retry(Message("Invalid number".into()), EmptyFormContext)),

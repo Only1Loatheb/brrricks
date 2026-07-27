@@ -75,7 +75,6 @@ pub trait FlowingSplitProcess<SplitterProducesForOtherCases>: Sized + Send + Syn
     >,
   > + Send;
 
-
   fn enumerate_steps(&mut self, last_used_index: StepIndex) -> StepIndex;
 
   fn all_param_uids(&self, acc: &mut Vec<ParamUID>);

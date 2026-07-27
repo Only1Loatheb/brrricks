@@ -78,8 +78,10 @@ where
     form_context: MaybeFormContext,
     back_navigation_available: bool,
   ) -> RunResult<Self::Messages> {
-    let outcome =
-      self.process_before.resume_run(previous_run_produced, previous_run_yielded_at, user_input, form_context, back_navigation_available).await?;
+    let outcome = self
+      .process_before
+      .resume_run(previous_run_produced, previous_run_yielded_at, user_input, form_context, back_navigation_available)
+      .await?;
     match outcome {
       IntermediateRunOutcome::Continue(val) => self.continue_run(val, back_navigation_available).await,
       IntermediateRunOutcome::Yield(a, b, c, d) => Ok(RunOutcome::Yield(a, b, c, d)),
@@ -89,11 +91,19 @@ where
     }
   }
 
-  async fn continue_run(&self, process_before_produces: Self::ProcessBeforeProduces, _back_navigation_available: bool) -> RunResult<Self::Messages> {
+  async fn continue_run(
+    &self,
+    process_before_produces: Self::ProcessBeforeProduces,
+    _back_navigation_available: bool,
+  ) -> RunResult<Self::Messages> {
     Ok(RunOutcome::Finish(self.final_step.handle(process_before_produces.transform()).await?))
   }
 
-  async fn run_subprocess(&self, subprocess_consumes: Self::SubprocessConsumes, back_navigation_available: bool) -> RunResult<Self::Messages> {
+  async fn run_subprocess(
+    &self,
+    subprocess_consumes: Self::SubprocessConsumes,
+    back_navigation_available: bool,
+  ) -> RunResult<Self::Messages> {
     let outcome = self.process_before.run_subprocess(subprocess_consumes, back_navigation_available).await?;
     match outcome {
       IntermediateRunOutcome::Continue(val) => self.continue_run(val, back_navigation_available).await,
@@ -103,7 +113,6 @@ where
       IntermediateRunOutcome::Back => Ok(RunOutcome::Back),
     }
   }
-
 
   fn enumerate_steps(&mut self, last_used_index: StepIndex) -> StepIndex {
     // most likely not worth to assign an index to final steps, but maybe test

@@ -116,7 +116,7 @@ impl<Process: FinalizedProcess<Messages = Messages> + Sync>
         .resume_run(
           session_context.clone(),
           PreviousRunYieldedAt(target_step_index),
-          "".to_string(),
+          String::new(),
           None,
           back_navigation_available,
         )
@@ -293,6 +293,7 @@ mod tests {
       async fn create_form(
         &self,
         _consumes: <Self::CreateFormConsumes as ToRef<'_>>::Output,
+        _back_navigation_available: bool,
       ) -> anyhow::Result<FormWithContext<Message, Self::Context>> {
         Ok(FormWithContext(Message("This will be discarded".into()), 0))
       }
@@ -343,6 +344,7 @@ mod tests {
       async fn create_form(
         &self,
         _consumes: <Self::CreateFormConsumes as ToRef<'_>>::Output,
+        _back_navigation_available: bool,
       ) -> anyhow::Result<FormWithContext<Message, Self::Context>> {
         Ok(FormWithContext(Message("choose case".into()), 0))
       }

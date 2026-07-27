@@ -157,7 +157,11 @@ impl<
         IntermediateFinalizedSplitOutcome::GoToCase {
           process_before_split_produced,
           splitter_produces_to_other_cases,
-        } => self.continue_run(process_before_split_produced, splitter_produces_to_other_cases, back_navigation_available).await,
+        } => {
+          self
+            .continue_run(process_before_split_produced, splitter_produces_to_other_cases, back_navigation_available)
+            .await
+        },
         IntermediateFinalizedSplitOutcome::Yield(a, b, c, d) => Ok(IntermediateFlowingSplitOutcome::Yield(a, b, c, d)),
         IntermediateFinalizedSplitOutcome::Finish(a) => Ok(IntermediateFlowingSplitOutcome::Finish(a)),
         IntermediateFinalizedSplitOutcome::RetryUserInput(a, b) => {
@@ -166,7 +170,11 @@ impl<
         IntermediateFinalizedSplitOutcome::Back => Ok(IntermediateFlowingSplitOutcome::Back),
       }
     } else {
-      match self.this_case.resume_run(previous_run_produced, previous_run_yielded_at, user_input, form_context, back_navigation_available).await? {
+      match self
+        .this_case
+        .resume_run(previous_run_produced, previous_run_yielded_at, user_input, form_context, back_navigation_available)
+        .await?
+      {
         IntermediateRunOutcome::Continue(a) => Ok(IntermediateFlowingSplitOutcome::Continue(a)),
         IntermediateRunOutcome::Yield(a, b, c, d) => Ok(IntermediateFlowingSplitOutcome::Yield(a, b, c, d)),
         IntermediateRunOutcome::Finish(a) => Ok(IntermediateFlowingSplitOutcome::Finish(a)),
@@ -218,12 +226,17 @@ impl<
     Self::EveryFlowingCaseProduces,
     Self::Messages,
   > {
-    let process_before_output = self.split_process_before.run_subprocess(subprocess_consumes, back_navigation_available).await?;
+    let process_before_output =
+      self.split_process_before.run_subprocess(subprocess_consumes, back_navigation_available).await?;
     match process_before_output {
       IntermediateFinalizedSplitOutcome::GoToCase {
         process_before_split_produced,
         splitter_produces_to_other_cases,
-      } => self.continue_run(process_before_split_produced, splitter_produces_to_other_cases, back_navigation_available).await,
+      } => {
+        self
+          .continue_run(process_before_split_produced, splitter_produces_to_other_cases, back_navigation_available)
+          .await
+      },
       IntermediateFinalizedSplitOutcome::Yield(a, b, c, d) => Ok(IntermediateFlowingSplitOutcome::Yield(a, b, c, d)),
       IntermediateFinalizedSplitOutcome::Finish(a) => Ok(IntermediateFlowingSplitOutcome::Finish(a)),
       IntermediateFinalizedSplitOutcome::RetryUserInput(a, b) => {
@@ -232,7 +245,6 @@ impl<
       IntermediateFinalizedSplitOutcome::Back => Ok(IntermediateFlowingSplitOutcome::Back),
     }
   }
-
 
   fn enumerate_steps(&mut self, last_used_index: StepIndex) -> StepIndex {
     let used_index = self.split_process_before.enumerate_steps(last_used_index);

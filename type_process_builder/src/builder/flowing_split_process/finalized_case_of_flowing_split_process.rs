@@ -1,7 +1,7 @@
 use crate::builder::subprocess::{Subprocess, subprocess};
 use crate::builder::{
-  FinalizedProcess, FlowingCaseOfFlowingSplitProcess, FlowingProcess,
-  FlowingSplitProcess, IntermediateFlowingSplitOutcome, IntermediateFlowingSplitResult, IntermediateRunOutcome, IntermediateRunResult,
+  FinalizedProcess, FlowingCaseOfFlowingSplitProcess, FlowingProcess, FlowingSplitProcess,
+  IntermediateFlowingSplitOutcome, IntermediateFlowingSplitResult, IntermediateRunOutcome, IntermediateRunResult,
   MaybeFormContext, ParamList, ParamUID, PreviousRunYieldedAt, RunOutcome, SessionContext, StepIndex,
   WILL_BE_RENUMBERED,
 };
@@ -355,4 +355,3 @@ for FinalizedCaseOfFlowingSplitProcess<ThisTag, SplitterProducesForThisCase, CNi
     self.this_case.all_param_uids(acc);
   }
 }
-

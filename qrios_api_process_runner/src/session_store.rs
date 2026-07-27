@@ -39,11 +39,8 @@ pub async fn create_session_context<Process: FinalizedProcess>(
   form_context: MaybeFormContext,
   session_context: SessionContext,
 ) -> Result<i64, sqlx::Error> {
-  let mut columns = vec![
-    "previous_run_yielded_at".to_string(),
-    "form_context".to_string(),
-    "visited_form_steps".to_string(),
-  ];
+  let mut columns =
+    vec!["previous_run_yielded_at".to_string(), "form_context".to_string(), "visited_form_steps".to_string()];
   let mut placeholders = vec!["$1".to_string(), "$2".to_string(), "$3".to_string()];
 
   for (i, (col, _)) in session_context.iter().enumerate() {
@@ -56,10 +53,7 @@ pub async fn create_session_context<Process: FinalizedProcess>(
     format!("INSERT INTO {table_name} ({}) VALUES ({}) RETURNING id;", columns.join(", "), placeholders.join(", "));
 
   let visited_steps_bytes = postcard::to_allocvec(&vec![current_run_yielded_at.0]).unwrap();
-  let mut query = sqlx::query(&sql)
-    .bind(current_run_yielded_at.0)
-    .bind(form_context)
-    .bind(visited_steps_bytes);
+  let mut query = sqlx::query(&sql).bind(current_run_yielded_at.0).bind(form_context).bind(visited_steps_bytes);
 
   for (_, value) in session_context {
     query = query.bind(value);
@@ -102,8 +96,8 @@ pub async fn get_session_context(
   let previous_run_yielded_at = PreviousRunYieldedAt(row.try_get(0)?);
   let form_context = row.try_get::<Option<Vec<u8>>, _>(1)?;
   let visited_form_steps_bytes = row.try_get::<Vec<u8>, _>(2)?;
-  let visited_form_steps: Vec<i32> = postcard::from_bytes(&visited_form_steps_bytes)
-    .map_err(|e| sqlx::Error::Decode(Box::new(e)))?;
+  let visited_form_steps: Vec<i32> =
+    postcard::from_bytes(&visited_form_steps_bytes).map_err(|e| sqlx::Error::Decode(Box::new(e)))?;
 
   let mut session_context = Vec::with_capacity(ordered_all_unique_param_uids.len());
   for idx_and_param_uid in ordered_all_unique_param_uids.iter().enumerate() {
@@ -146,6 +140,7 @@ pub async fn increment_failed_input_validation_attempts<Process: FinalizedProces
   sqlx::query(&sql).bind(form_context).bind(id).execute(pool).await
 }
 
+#[allow(clippy::too_many_arguments)] // we should not be removing from context anyway
 pub async fn update_session_context<Process: FinalizedProcess>(
   pool: &PgPool,
   process: &RunnableProcess<Process>,
@@ -181,10 +176,7 @@ pub async fn update_session_context<Process: FinalizedProcess>(
   let sql = format!("UPDATE {table_name} SET {} WHERE id = ${};", assignments.join(", "), where_placeholder);
 
   let visited_steps_bytes = postcard::to_allocvec(&visited_form_steps).unwrap();
-  let mut query = sqlx::query(&sql)
-    .bind(current_run_yielded_at.0)
-    .bind(form_context)
-    .bind(visited_steps_bytes);
+  let mut query = sqlx::query(&sql).bind(current_run_yielded_at.0).bind(form_context).bind(visited_steps_bytes);
 
   for (_, value) in params_to_store {
     query = query.bind(value);

@@ -48,7 +48,7 @@ pub(crate) async fn standard_io_process_runner(
         .resume_run(
           previous_run_produced.clone(),
           PreviousRunYieldedAt(target_step_index),
-          "".to_string(),
+          String::new(),
           None,
           back_navigation_available,
         )

@@ -89,34 +89,32 @@ where
         IntermediateRunOutcome::RetryUserInput(a, b) => Ok(IntermediateFinalizedSplitOutcome::RetryUserInput(a, b)),
         IntermediateRunOutcome::Back => Ok(IntermediateFinalizedSplitOutcome::Back),
       }
+    } else if form_context.is_none() {
+      let process_before_split_produced = ProcessBefore::Produces::deserialize(previous_run_produced)?;
+      self.continue_run(process_before_split_produced, back_navigation_available).await
     } else {
-      if form_context.is_none() {
-        let process_before_split_produced = ProcessBefore::Produces::deserialize(previous_run_produced)?;
-        self.continue_run(process_before_split_produced, back_navigation_available).await
-      } else {
-        let process_before_split_produced = ProcessBefore::Produces::deserialize(previous_run_produced)?;
-        let last_step_consumes =
-          <&ProcessBefore::Produces as BorrowJust<'_, SplitterStep::ValidateInputConsumes, _>>::borrow_just(
-            &process_before_split_produced,
-          );
-        let context: SplitterStep::Context = postcard::from_bytes(&form_context.ok_or(anyhow!("Missing FormContext"))?)?;
-        match self.splitter.handle_input(last_step_consumes, user_input, context).await? {
-          InputValidation::Successful(splitter_produces) => {
-            let splitter_produces_to_other_cases = match splitter_produces {
-              Coproduct::Inl(a) => Coproduct::Inl(a.1),
-              Coproduct::Inr(b) => Coproduct::Inr(b),
-            };
-            Ok(IntermediateFinalizedSplitOutcome::GoToCase {
-              process_before_split_produced,
-              splitter_produces_to_other_cases,
-            })
-          },
-          InputValidation::Retry(a, b) => {
-            Ok(IntermediateFinalizedSplitOutcome::RetryUserInput(a, postcard::to_allocvec(&b)?))
-          },
-          InputValidation::Finish(a) => Ok(IntermediateFinalizedSplitOutcome::Finish(a)),
-          InputValidation::Back => Ok(IntermediateFinalizedSplitOutcome::Back),
-        }
+      let process_before_split_produced = ProcessBefore::Produces::deserialize(previous_run_produced)?;
+      let last_step_consumes =
+        <&ProcessBefore::Produces as BorrowJust<'_, SplitterStep::ValidateInputConsumes, _>>::borrow_just(
+          &process_before_split_produced,
+        );
+      let context: SplitterStep::Context = postcard::from_bytes(&form_context.ok_or(anyhow!("Missing FormContext"))?)?;
+      match self.splitter.handle_input(last_step_consumes, user_input, context).await? {
+        InputValidation::Successful(splitter_produces) => {
+          let splitter_produces_to_other_cases = match splitter_produces {
+            Coproduct::Inl(a) => Coproduct::Inl(a.1),
+            Coproduct::Inr(b) => Coproduct::Inr(b),
+          };
+          Ok(IntermediateFinalizedSplitOutcome::GoToCase {
+            process_before_split_produced,
+            splitter_produces_to_other_cases,
+          })
+        },
+        InputValidation::Retry(a, b) => {
+          Ok(IntermediateFinalizedSplitOutcome::RetryUserInput(a, postcard::to_allocvec(&b)?))
+        },
+        InputValidation::Finish(a) => Ok(IntermediateFinalizedSplitOutcome::Finish(a)),
+        InputValidation::Back => Ok(IntermediateFinalizedSplitOutcome::Back),
       }
     }
   }
@@ -134,7 +132,8 @@ where
       <&ProcessBefore::Produces as BorrowJust<'_, SplitterStep::CreateFormConsumes, _>>::borrow_just(
         &process_before_split_produced,
       );
-    let FormWithContext(form, form_context) = self.splitter.create_form(splitter_step_consumes, back_navigation_available).await?;
+    let FormWithContext(form, form_context) =
+      self.splitter.create_form(splitter_step_consumes, back_navigation_available).await?;
     Ok(IntermediateFinalizedSplitOutcome::Yield(
       form,
       process_before_split_produced.serialize()?,
@@ -152,7 +151,8 @@ where
     Coproduct<Self::SplitterProducesForFirstCase, SplitterProducesForOtherCases>,
     Self::Messages,
   > {
-    let process_before_output = self.process_before.run_subprocess(subprocess_consumes, back_navigation_available).await?;
+    let process_before_output =
+      self.process_before.run_subprocess(subprocess_consumes, back_navigation_available).await?;
     match process_before_output {
       IntermediateRunOutcome::Continue(process_before_split_produced) => {
         self.continue_run(process_before_split_produced, back_navigation_available).await

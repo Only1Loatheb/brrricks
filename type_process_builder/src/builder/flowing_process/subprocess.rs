@@ -46,7 +46,6 @@ impl<ProcessBeforeProduces: ParamList, Messages: ProcessMessages> FlowingProcess
     self.continue_run(subprocess_consumes, back_navigation_available).await
   }
 
-
   fn enumerate_steps(&mut self, last_used_index: StepIndex) -> StepIndex {
     last_used_index
   }

@@ -106,4 +106,3 @@ pub enum RunOutcome<Messages: ProcessMessages> {
 }
 
 pub type RunResult<Messages> = anyhow::Result<RunOutcome<Messages>>;
-

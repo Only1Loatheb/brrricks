@@ -113,4 +113,3 @@ where
 {
   type Output = <<<Tail as Union<RHS>>::Output as Contains<Head>>::IsContained as PrependIf<Head, <Tail as Union<RHS>>::Output>>::Output;
 }
-

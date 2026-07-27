@@ -41,7 +41,6 @@ impl<EntryStep: Entry> FlowingProcess for EntryStep {
     unreachable!("Entry step never starts subprocess")
   }
 
-
   fn enumerate_steps(&mut self, last_used_index: StepIndex) -> StepIndex {
     last_used_index
   }

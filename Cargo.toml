@@ -20,6 +20,7 @@ tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
 [workspace.lints.clippy]
 all = { level = "deny", priority = -1 }
 pedantic = { level = "deny", priority = -1 }
-inline_always = "allow" # I hope the frunk guys done the measurements
-missing_errors_doc = "allow"
-default_trait_access = "allow" # Denying it causes repetitive code in phantom data initialisation
+inline-always = "allow" # I hope the frunk guys done the measurements
+missing-errors-doc = "allow"
+default-trait-access = "allow" # Denying it causes repetitive code in phantom data initialisation
+type-complexity = "allow" # sorry for complex types
