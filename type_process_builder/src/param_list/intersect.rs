@@ -1,7 +1,7 @@
 use crate::frunk::hlist::{HCons, HNil};
 use crate::param_list::{ParamList, ParamValue};
 use std::ops::BitOr;
-use typenum::{B0, B1, Bit, IsEqual};
+use typenum::{B0, B1, Bit, IsEqual, Same};
 
 ////////// Contains //////////
 
@@ -106,6 +106,7 @@ impl<RHS: ParamList> Union<RHS> for HNil {
 
 impl<Head: ParamValue, Tail: Union<RHS> + ParamList + Contains<Head>, RHS: ParamList> Union<RHS> for HCons<Head, Tail>
 where
+  <Tail as Contains<Head>>::IsContained: Same<B0>,
   <Tail as Union<RHS>>::Output: Contains<Head>,
   <<Tail as Union<RHS>>::Output as Contains<Head>>::IsContained: PrependIf<Head, <Tail as Union<RHS>>::Output>,
   <<<Tail as Union<RHS>>::Output as Contains<Head>>::IsContained as PrependIf<Head, <Tail as Union<RHS>>::Output>>::Output: ParamList,

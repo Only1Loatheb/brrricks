@@ -17,6 +17,7 @@ pub(crate) async fn standard_io_process_runner(
   let mut previous_run_produced = Vec::new();
   let mut previous_run_yielded_at = PreviousRunYieldedAt(StepIndex::MIN);
   let mut form_context = None;
+  let mut visited_form_steps = Vec::new();
 
   print!("Enter a shortcode");
   loop {
@@ -27,15 +28,42 @@ pub(crate) async fn standard_io_process_runner(
     io::stdin().read_line(&mut input)?;
     let user_input = input.trim().to_owned();
 
-    match demo_process
-      .resume_run(previous_run_produced.clone(), previous_run_yielded_at.clone(), user_input, form_context.clone())
+    let back_navigation_available = visited_form_steps.len() > 1;
+    let mut run_outcome = demo_process
+      .resume_run(
+        previous_run_produced.clone(),
+        previous_run_yielded_at.clone(),
+        user_input,
+        form_context.clone(),
+        back_navigation_available,
+      )
       .await
-      .map_err(io::Error::other)?
-    {
+      .map_err(io::Error::other)?;
+
+    if let RunOutcome::Back = run_outcome {
+      visited_form_steps.pop();
+      let target_step_index = *visited_form_steps.last().ok_or_else(|| io::Error::other("Cannot go back further"))?;
+      let back_navigation_available = visited_form_steps.len() > 1;
+      run_outcome = demo_process
+        .resume_run(
+          previous_run_produced.clone(),
+          PreviousRunYieldedAt(target_step_index),
+          "".to_string(),
+          None,
+          back_navigation_available,
+        )
+        .await
+        .map_err(io::Error::other)?;
+    }
+
+    match run_outcome {
       RunOutcome::Yield(msg, value, yielded_at, context) => {
         previous_run_produced = value;
         previous_run_yielded_at = PreviousRunYieldedAt(yielded_at.0);
         form_context = Some(context);
+        if visited_form_steps.last() != Some(&yielded_at.0) {
+          visited_form_steps.push(yielded_at.0);
+        }
         println!("yielded: {}", msg.0);
       },
       RunOutcome::RetryUserInput(msg, context) => {
@@ -46,6 +74,7 @@ pub(crate) async fn standard_io_process_runner(
         println!("finished: {}", msg.0);
         return Ok(());
       },
+      RunOutcome::Back => unreachable!(),
     }
   }
 }

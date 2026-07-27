@@ -268,6 +268,7 @@ impl Form for FinishEarlyForm {
   async fn create_form(
     &self,
     _consumes: <Self::CreateFormConsumes as ToRef<'_>>::Output,
+    _back_navigation_available: bool,
   ) -> anyhow::Result<FormWithContext<Message, Self::Context>> {
     Ok(FormWithContext(Message("Finish early form".into()), EmptyFormContext))
   }
@@ -303,6 +304,7 @@ impl Form for CommonCaseParam1Form {
   async fn create_form(
     &self,
     _consumes: <Self::CreateFormConsumes as ToRef<'_>>::Output,
+    _back_navigation_available: bool,
   ) -> anyhow::Result<FormWithContext<Message, Self::Context>> {
     Ok(FormWithContext(Message("Enter a number".into()), EmptyFormContext))
   }
@@ -328,6 +330,7 @@ impl Form for CommonCaseParam2Form {
   async fn create_form(
     &self,
     _consumes: <Self::CreateFormConsumes as ToRef<'_>>::Output,
+    _back_navigation_available: bool,
   ) -> anyhow::Result<FormWithContext<Message, Self::Context>> {
     Ok(FormWithContext(Message("Enter a number".into()), EmptyFormContext))
   }
@@ -353,6 +356,7 @@ impl Form for NoOpForm {
   async fn create_form(
     &self,
     _consumes: <Self::CreateFormConsumes as ToRef<'_>>::Output,
+    _back_navigation_available: bool,
   ) -> anyhow::Result<FormWithContext<Message, Self::Context>> {
     Ok(FormWithContext(Message("Straight to trash".into()), EmptyFormContext))
   }
@@ -378,6 +382,7 @@ impl Form for FinishAfterInput {
   async fn create_form(
     &self,
     _consumes: <Self::CreateFormConsumes as ToRef<'_>>::Output,
+    _back_navigation_available: bool,
   ) -> anyhow::Result<FormWithContext<Message, Self::Context>> {
     Ok(FormWithContext(Message("Last number in the process".into()), EmptyFormContext))
   }
@@ -403,6 +408,7 @@ impl Form for OneInputRetryForm {
   async fn create_form(
     &self,
     _consumes: <Self::CreateFormConsumes as ToRef<'_>>::Output,
+    _back_navigation_available: bool,
   ) -> anyhow::Result<FormWithContext<Message, Self::Context>> {
     Ok(FormWithContext(Message("This will be discarded".into()), 0))
   }
@@ -431,6 +437,7 @@ impl Form for ChooseCaseForm {
   async fn create_form(
     &self,
     _consumes: <Self::CreateFormConsumes as ToRef<'_>>::Output,
+    _back_navigation_available: bool,
   ) -> anyhow::Result<FormWithContext<Message, Self::Context>> {
     Ok(FormWithContext(Message("Choose a case".into()), EmptyFormContext))
   }
@@ -498,6 +505,7 @@ impl FormSplitter for TestFormSplitter {
   async fn create_form(
     &self,
     _consumes: <Self::CreateFormConsumes as ToRef<'_>>::Output,
+    _back_navigation_available: bool,
   ) -> anyhow::Result<FormWithContext<Message, Self::Context>> {
     Ok(FormWithContext(Message("choose case".into()), 0))
   }
@@ -528,6 +536,7 @@ impl FormSplitter for InnerFormSplitter {
   async fn create_form(
     &self,
     _consumes: <Self::CreateFormConsumes as ToRef<'_>>::Output,
+    _back_navigation_available: bool,
   ) -> anyhow::Result<FormWithContext<Message, Self::Context>> {
     Ok(FormWithContext(Message("choose case".into()), 0))
   }
@@ -574,7 +583,7 @@ async fn test_return_error_on_param_missing_from_init_value(
   let mut init_value = session_init_value();
   init_value.pop();
   let run_outcome =
-    process.resume_run(init_value, PreviousRunYieldedAt(StepIndex::MIN), messages[0].into(), None).await;
+    process.resume_run(init_value, PreviousRunYieldedAt(StepIndex::MIN), messages[0].into(), None, false).await;
   assert!(run_outcome.is_err_and(|x| format!("{x}") == "Admin error or error on frontend."));
 }
 
@@ -584,7 +593,7 @@ async fn test_return_error_on_param_missing_from_context(
 ) {
   let mut messages_index = 0;
   let run_outcome = process
-    .resume_run(session_init_value(), PreviousRunYieldedAt(StepIndex::MIN), messages[messages_index].into(), None)
+    .resume_run(session_init_value(), PreviousRunYieldedAt(StepIndex::MIN), messages[messages_index].into(), None, false)
     .await
     .expect("Test failed");
   messages_index += 1;
@@ -593,7 +602,7 @@ async fn test_return_error_on_param_missing_from_context(
       assert_eq!(msg.0, messages[messages_index]);
       value.pop();
       let run_outcome = process
-        .resume_run(value, PreviousRunYieldedAt(yielded_at.0), messages[messages_index].into(), Some(context))
+        .resume_run(value, PreviousRunYieldedAt(yielded_at.0), messages[messages_index].into(), Some(context), false)
         .await;
       assert!(run_outcome.is_err_and(|x| format!("{x}") == "Missing key: 0"));
     },
@@ -603,6 +612,7 @@ async fn test_return_error_on_param_missing_from_context(
     RunOutcome::Finish(msg) => {
       assert_eq!(msg.0, messages[messages_index]);
     },
+    RunOutcome::Back => panic!("Unexpected back"),
   }
 }
 
@@ -935,6 +945,7 @@ impl Form for RetryOnceForm {
   async fn create_form(
     &self,
     _consumes: <Self::CreateFormConsumes as ToRef<'_>>::Output,
+    _back_navigation_available: bool,
   ) -> anyhow::Result<FormWithContext<Message, Self::Context>> {
     Ok(FormWithContext(Message("Fancy a retry?".into()), EmptyFormContext))
   }
@@ -1212,25 +1223,48 @@ async fn test_process_messages(
   let mut previous_run_produced = session_init_value();
   let mut previous_run_yielded_at = PreviousRunYieldedAt(StepIndex::MIN);
   let mut form_context = None;
+  let mut visited_form_steps = Vec::new();
   let mut messages_index = 0;
   // run ordered_all_unique_param_uids in tests to check what code is reachable and it does not panic
   let _ = process.ordered_all_unique_param_uids();
   loop {
-    let run_outcome = process
+    let back_navigation_available = visited_form_steps.len() > 1;
+    let mut run_outcome = process
       .resume_run(
         previous_run_produced.clone(),
         previous_run_yielded_at.clone(),
         messages[messages_index].into(),
         form_context.clone(),
+        back_navigation_available,
       )
       .await
       .expect("Test failed");
+
+    if let RunOutcome::Back = run_outcome {
+      visited_form_steps.pop();
+      let target_step_index = *visited_form_steps.last().expect("Cannot go back further");
+      let back_navigation_available = visited_form_steps.len() > 1;
+      run_outcome = process
+        .resume_run(
+          previous_run_produced.clone(),
+          PreviousRunYieldedAt(target_step_index),
+          "".to_string(),
+          None,
+          back_navigation_available,
+        )
+        .await
+        .expect("Test failed");
+    }
+
     messages_index += 1;
     match run_outcome {
       RunOutcome::Yield(msg, value, yielded_at, context) => {
         previous_run_produced = value;
         previous_run_yielded_at = PreviousRunYieldedAt(yielded_at.0);
         form_context = Some(context);
+        if visited_form_steps.last() != Some(&yielded_at.0) {
+          visited_form_steps.push(yielded_at.0);
+        }
         assert_eq!(msg.0, messages[messages_index]);
       },
       RunOutcome::RetryUserInput(msg, context) => {
@@ -1245,4 +1279,26 @@ async fn test_process_messages(
     messages_index += 1;
   }
   assert_eq!(messages_index + 1, messages.len());
+}
+
+#[tokio::test]
+async fn test_back_navigation() {
+  let process = ExtractMsisdnOperatorAndShortcodeString
+    .show(ChooseCaseForm)
+    .split(SplitByTwoCaseOption)
+    .case_via(Case1, |x| x.show(OneInputRetryForm).end(SayGoodByAndConsumeCommonParams))
+    .case_via(Case2, |x| x.then(ProduceCaseParam2).end(SayGoodByAndConsumeCommonParams))
+    .build("", 0);
+
+  let messages = vec![
+    "*123#",
+    "Choose a case",
+    "1",
+    "This will be discarded",
+    "0",
+    "Choose a case",
+    "2",
+    "Good bye",
+  ];
+  test_process_messages(&process, messages).await;
 }

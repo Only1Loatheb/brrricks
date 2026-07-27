@@ -95,25 +95,50 @@ impl<Process: FinalizedProcess<Messages = Messages> + Sync>
       UssdActionResult::ReturnFromRedirectResult(_) => todo!(),
     };
     let session_id = body.context_data.parse::<i64>().map_err(|_| ())?;
-    let (previous_run_yielded_at, form_context, session_context) =
+    let (previous_run_yielded_at, form_context, mut visited_form_steps, session_context) =
       get_session_context(&self.pool, &self.get_session_context_query, session_id, &self.ordered_all_unique_param_uids)
         .await
         .map_err(|_| ())?;
     let already_stored_params = session_context.iter().map(|x| x.0).collect::<HashSet<_>>();
-    let run_result = self.process.resume_run(session_context, previous_run_yielded_at, user_input, form_context).await;
+
+    let back_navigation_available = visited_form_steps.len() > 1;
+    let mut run_result = self
+      .process
+      .resume_run(session_context.clone(), previous_run_yielded_at, user_input, form_context, back_navigation_available)
+      .await;
+
+    if let Ok(RunOutcome::Back) = run_result {
+      visited_form_steps.pop();
+      let target_step_index = *visited_form_steps.last().ok_or(())?;
+      let back_navigation_available = visited_form_steps.len() > 1;
+      run_result = self
+        .process
+        .resume_run(
+          session_context.clone(),
+          PreviousRunYieldedAt(target_step_index),
+          "".to_string(),
+          None,
+          back_navigation_available,
+        )
+        .await;
+    }
+
     match run_result {
       Ok(RunOutcome::Yield(message, session_context, current_run_yielded_at, form_context)) => {
         let session_context_param_ids = session_context.iter().map(|x| x.0).collect::<HashSet<_>>();
         let params_to_store =
           session_context.into_iter().filter(|x| already_stored_params.contains(&x.0).not()).collect::<Vec<_>>();
-        let params_to_remove =
-          already_stored_params.into_iter().filter(|x| session_context_param_ids.contains(x).not()).collect::<Vec<_>>();
+        let params_to_remove = vec![];
+        if visited_form_steps.last() != Some(&current_run_yielded_at.0) {
+          visited_form_steps.push(current_run_yielded_at.0);
+        }
         let id = update_session_context(
           &self.pool,
           &self.process,
           session_id,
           current_run_yielded_at,
           Some(form_context),
+          visited_form_steps,
           params_to_store,
           params_to_remove,
         )
@@ -131,6 +156,7 @@ impl<Process: FinalizedProcess<Messages = Messages> + Sync>
         delete_session_context(&self.pool, &self.process, session_id).await.map_err(|_| ())?;
         Ok(UssdView::InfoView(InfoView { message: message.0, r_type: "InfoView".into() }))
       },
+      Ok(RunOutcome::Back) => Err(()),
       Err(e) => {
         tracing::error!("Resume session failed: {:?}", e);
         delete_session_context(&self.pool, &self.process, session_id).await.map_err(|_| ())?;
@@ -163,8 +189,10 @@ impl<Process: FinalizedProcess<Messages = Messages> + Sync>
     };
     let init_session_context =
       vec![(0, postcard::to_allocvec(&body.msisdn).unwrap()), (1, postcard::to_allocvec(&body.operator).unwrap())];
-    let run_result =
-      self.process.resume_run(init_session_context, PreviousRunYieldedAt(StepIndex::MIN), shortcode_string, None).await;
+    let run_result = self
+      .process
+      .resume_run(init_session_context, PreviousRunYieldedAt(StepIndex::MIN), shortcode_string, None, false)
+      .await;
     match run_result {
       Ok(RunOutcome::Yield(message, session_context, current_run_yielded_at, form_context)) => {
         let id = create_session_context(
@@ -184,6 +212,7 @@ impl<Process: FinalizedProcess<Messages = Messages> + Sync>
       Ok(RunOutcome::Finish(message)) => {
         Ok((i64::MAX, UssdView::InfoView(InfoView { message: message.0, r_type: "InfoView".into() })))
       },
+      Ok(RunOutcome::Back) => Err(()),
       Err(e) => {
         tracing::error!("New session failed: {:?}", e);
         Err(())

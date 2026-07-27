@@ -7,6 +7,7 @@ use crate::builder::{
 };
 use crate::frunk::coproduct::{CNil, Coproduct};
 use crate::param_list::concat::Concat;
+use crate::param_list::intersect::Union;
 use std::marker::PhantomData;
 
 pub struct FlowingCaseOfFinalizedSplitProcess<
@@ -51,7 +52,8 @@ FlowingCaseOfFinalizedSplitProcess<
   ThisCase,
 >
 where
-  ThisCase::EverProduced: Concat<ProcessBefore::EverProduced>,
+  ProcessBefore::EverProduced: Union<ThisCase::EverProduced>,
+  <ProcessBefore::EverProduced as Union<ThisCase::EverProduced>>::Output: ParamList,
 {
   pub fn case_end<
     NextCase: FinalizedProcess<SubprocessConsumes=<SplitterProducesForNextCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated>,
@@ -135,14 +137,15 @@ for FlowingCaseOfFinalizedSplitProcess<
   ThisCase,
 >
 where
-  ThisCase::EverProduced: Concat<ProcessBefore::EverProduced>,
+  ProcessBefore::EverProduced: Union<ThisCase::EverProduced>,
+  <ProcessBefore::EverProduced as Union<ThisCase::EverProduced>>::Output: ParamList,
 {
   type ProcessBeforeSplitProduces = ProcessBefore::ProcessBeforeSplitProduces;
   type SplitterProducesForThisCase = SplitterProducesForThisCase;
   type EveryFlowingCaseProduces = ThisCase::Produces;
   type SubprocessConsumes = ProcessBefore::SubprocessConsumes;
   type Messages = ProcessBefore::Messages;
-  type EverProduced = <ThisCase::EverProduced as Concat<ProcessBefore::EverProduced>>::Concatenated;
+  type EverProduced = <ProcessBefore::EverProduced as Union<ThisCase::EverProduced>>::Output;
 
   async fn resume_run(
     &self,
@@ -271,13 +274,14 @@ for FlowingCaseOfFinalizedSplitProcess<
   ThisCase,
 >
 where
-  ThisCase::EverProduced: Concat<ProcessBefore::EverProduced>,
+  ProcessBefore::EverProduced: Union<ThisCase::EverProduced>,
+  <ProcessBefore::EverProduced as Union<ThisCase::EverProduced>>::Output: ParamList,
 {
   type ProcessBeforeProduces = ProcessBefore::ProcessBeforeSplitProduces;
   type Produces = ThisCase::Produces;
   type SubprocessConsumes = ProcessBefore::SubprocessConsumes;
   type Messages = ProcessBefore::Messages;
-  type EverProduced = <ThisCase::EverProduced as Concat<ProcessBefore::EverProduced>>::Concatenated;
+  type EverProduced = <ProcessBefore::EverProduced as Union<ThisCase::EverProduced>>::Output;
 
   async fn resume_run(
     &self,
