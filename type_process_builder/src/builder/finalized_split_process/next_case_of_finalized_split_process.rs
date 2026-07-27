@@ -134,7 +134,7 @@ for NextCaseOfFinalizedSplitProcess<
     form_context: MaybeFormContext,
     back_navigation_available: bool,
   ) -> IntermediateFinalizedSplitResult<Self::ProcessBeforeSplitProduces, SplitterProducesForOtherCases, Self::Messages> {
-    if previous_run_yielded_at.step_index < self.case_index {
+    if previous_run_yielded_at.0 < self.case_index {
       let process_before_output = self
         .split_process_before
         .resume_run(previous_run_produced, previous_run_yielded_at, user_input, form_context, back_navigation_available)
@@ -253,7 +253,7 @@ for NextCaseOfFinalizedSplitProcess<ThisTag, SplitterProducesForThisCase, CNil, 
     form_context: MaybeFormContext,
     back_navigation_available: bool,
   ) -> RunResult<Self::Messages> {
-    if previous_run_yielded_at.step_index < self.case_index {
+    if previous_run_yielded_at.0 < self.case_index {
       let process_before_output = self
         .split_process_before
         .resume_run(previous_run_produced, previous_run_yielded_at, user_input, form_context, back_navigation_available)
@@ -302,7 +302,6 @@ for NextCaseOfFinalizedSplitProcess<ThisTag, SplitterProducesForThisCase, CNil, 
       IntermediateFinalizedSplitOutcome::Back => Ok(RunOutcome::Back),
     }
   }
-
 
   fn enumerate_steps(&mut self, last_used_index: StepIndex) -> StepIndex {
     let used_index = self.split_process_before.enumerate_steps(last_used_index);

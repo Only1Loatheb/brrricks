@@ -75,7 +75,7 @@ where
     Coproduct<Self::SplitterProducesForFirstCase, SplitterProducesForOtherCases>,
     Self::Messages,
   > {
-    if previous_run_yielded_at.step_index < self.step_index {
+    if previous_run_yielded_at.0 < self.step_index {
       let process_before_output = self
         .process_before
         .resume_run(previous_run_produced, previous_run_yielded_at, user_input, form_context, back_navigation_available)

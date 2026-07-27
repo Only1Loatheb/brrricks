@@ -1,7 +1,7 @@
 use crate::builder::subprocess::{Subprocess, subprocess};
 use crate::builder::{
-  FinalizedProcess, FlowingCaseOfFlowingSplitProcess, FlowingProcess, FlowingSplitProcess,
-  IntermediateFlowingSplitOutcome, IntermediateFlowingSplitResult, IntermediateRunOutcome, IntermediateRunResult,
+  FinalizedCaseOfFlowingSplitProcess, FinalizedProcess, FinalizedSplitProcess, FlowingCaseOfFlowingSplitProcess, FlowingProcess,
+  FlowingSplitProcess, IntermediateFlowingSplitOutcome, IntermediateFlowingSplitResult, IntermediateRunOutcome, IntermediateRunResult,
   MaybeFormContext, ParamList, ParamUID, PreviousRunYieldedAt, RunOutcome, SessionContext, StepIndex,
   WILL_BE_RENUMBERED,
 };
@@ -146,7 +146,7 @@ for FinalizedCaseOfFlowingSplitProcess<
     back_navigation_available: bool,
   ) -> IntermediateFlowingSplitResult<Self::ProcessBeforeSplitProduces, SplitterProducesForOtherCases,
     Self::EveryFlowingCaseProduces, Self::Messages> {
-    if previous_run_yielded_at.step_index < self.case_index {
+    if previous_run_yielded_at.0 < self.case_index {
       let process_before_output = self
         .split_process_before
         .resume_run(previous_run_produced, previous_run_yielded_at, user_input, form_context, back_navigation_available)
@@ -275,7 +275,7 @@ for FinalizedCaseOfFlowingSplitProcess<ThisTag, SplitterProducesForThisCase, CNi
     form_context: MaybeFormContext,
     back_navigation_available: bool,
   ) -> IntermediateRunResult<Self::Produces, Self::Messages> {
-    if previous_run_yielded_at.step_index < self.case_index {
+    if previous_run_yielded_at.0 < self.case_index {
       let process_before_output = self
         .split_process_before
         .resume_run(previous_run_produced, previous_run_yielded_at, user_input, form_context, back_navigation_available)

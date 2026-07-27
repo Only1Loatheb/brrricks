@@ -148,7 +148,7 @@ impl<
     ThisCase::Produces,
     Self::Messages,
   > {
-    if previous_run_yielded_at.step_index < self.case_index {
+    if previous_run_yielded_at.0 < self.case_index {
       let process_before_output = self
         .split_process_before
         .resume_run(previous_run_produced, previous_run_yielded_at, user_input, form_context, back_navigation_available)

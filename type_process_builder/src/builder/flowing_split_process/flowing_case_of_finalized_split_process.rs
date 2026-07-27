@@ -50,6 +50,8 @@ FlowingCaseOfFinalizedSplitProcess<
   ProcessBefore,
   ThisCase,
 >
+where
+  ThisCase::EverProduced: Concat<ProcessBefore::EverProduced>,
 {
   pub fn case_end<
     NextCase: FinalizedProcess<SubprocessConsumes=<SplitterProducesForNextCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated>,
@@ -151,7 +153,7 @@ where
     back_navigation_available: bool,
   ) -> IntermediateFlowingSplitResult<Self::ProcessBeforeSplitProduces, SplitterProducesForOtherCases,
     Self::EveryFlowingCaseProduces, Self::Messages> {
-    if previous_run_yielded_at.step_index < self.case_index {
+    if previous_run_yielded_at.0 < self.case_index {
       let process_before_output = self
         .split_process_before
         .resume_run(previous_run_produced, previous_run_yielded_at, user_input, form_context, back_navigation_available)
@@ -285,7 +287,7 @@ where
     form_context: MaybeFormContext,
     back_navigation_available: bool,
   ) -> IntermediateRunResult<Self::Produces, Self::Messages> {
-    if previous_run_yielded_at.step_index < self.case_index {
+    if previous_run_yielded_at.0 < self.case_index {
       let process_before_output = self
         .split_process_before
         .resume_run(previous_run_produced, previous_run_yielded_at, user_input, form_context, back_navigation_available)

@@ -104,7 +104,7 @@ impl<RHS: ParamList> Union<RHS> for HNil {
   type Output = RHS;
 }
 
-impl<Head: ParamValue, Tail: Union<RHS> + ParamList, RHS: ParamList> Union<RHS> for HCons<Head, Tail>
+impl<Head: ParamValue, Tail: Union<RHS> + ParamList + Contains<Head>, RHS: ParamList> Union<RHS> for HCons<Head, Tail>
 where
   <Tail as Union<RHS>>::Output: Contains<Head>,
   <<Tail as Union<RHS>>::Output as Contains<Head>>::IsContained: PrependIf<Head, <Tail as Union<RHS>>::Output>,
