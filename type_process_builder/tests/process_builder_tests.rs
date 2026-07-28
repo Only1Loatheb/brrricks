@@ -1322,4 +1322,3 @@ fn test_ever_produced_union_prevents_reusing_removed_params() {
 
   let _ = process;
 }
-

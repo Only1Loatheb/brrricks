@@ -1,6 +1,6 @@
 use crate::builder::{
-  FlowingProcess, IntermediateRunOutcome, IntermediateRunResult, MaybeFormContext, ParamList,
-  PreviousRunYieldedAt, SessionContext, StepIndex,
+  FlowingProcess, IntermediateRunOutcome, IntermediateRunResult, MaybeFormContext, ParamList, PreviousRunYieldedAt,
+  SessionContext, StepIndex,
 };
 use crate::step::ProcessMessages;
 use std::marker::PhantomData;
