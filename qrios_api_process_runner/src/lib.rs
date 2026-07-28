@@ -125,10 +125,8 @@ impl<Process: FinalizedProcess<Messages = Messages> + Sync>
 
     match run_result {
       Ok(RunOutcome::Yield(message, session_context, current_run_yielded_at, form_context)) => {
-        let session_context_param_ids = session_context.iter().map(|x| x.0).collect::<HashSet<_>>();
         let params_to_store =
           session_context.into_iter().filter(|x| already_stored_params.contains(&x.0).not()).collect::<Vec<_>>();
-        let params_to_remove = vec![];
         if visited_form_steps.last() != Some(&current_run_yielded_at.0) {
           visited_form_steps.push(current_run_yielded_at.0);
         }
@@ -140,7 +138,6 @@ impl<Process: FinalizedProcess<Messages = Messages> + Sync>
           Some(form_context),
           visited_form_steps,
           params_to_store,
-          params_to_remove,
         )
         .await
         .map_err(|_| ())?;

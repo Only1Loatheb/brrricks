@@ -140,7 +140,6 @@ pub async fn increment_failed_input_validation_attempts<Process: FinalizedProces
   sqlx::query(&sql).bind(form_context).bind(id).execute(pool).await
 }
 
-#[allow(clippy::too_many_arguments)] // we should not be removing from context anyway
 pub async fn update_session_context<Process: FinalizedProcess>(
   pool: &PgPool,
   process: &RunnableProcess<Process>,
@@ -149,7 +148,6 @@ pub async fn update_session_context<Process: FinalizedProcess>(
   form_context: MaybeFormContext,
   visited_form_steps: Vec<i32>,
   params_to_store: SessionContext,
-  params_to_remove: Vec<u32>,
 ) -> Result<(), sqlx::Error> {
   let mut assignments = vec![
     "previous_run_yielded_at = $1".to_string(),
@@ -159,14 +157,6 @@ pub async fn update_session_context<Process: FinalizedProcess>(
 
   for (i, (col, _)) in params_to_store.iter().enumerate() {
     assignments.push(format!("\"{}\" = ${}", col, i + 4));
-  }
-
-  // We need to remove stale value so the column will be interpreted as unset when determining already_stored_params
-  // in the next session interaction.
-  // Clearing params missing from session context is necessary when using the same param in split case and reusing it
-  // after multiple execution path join into common continuation.
-  for col in &params_to_remove {
-    assignments.push(format!("\"{col}\" = NULL"));
   }
 
   let table_name = qualified_table_name(process);
