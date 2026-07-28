@@ -53,7 +53,7 @@ FlowingCaseOfFinalizedSplitProcess<
 >
 where
   ProcessBefore::EverProduced: Union<ThisCase::EverProduced>,
-  <ProcessBefore::EverProduced as Union<ThisCase::EverProduced>>::Output: ParamList,
+  <ProcessBefore::EverProduced as Union<ThisCase::EverProduced>>::Union: ParamList,
 {
   pub fn case_end<
     NextCase: FinalizedProcess<SubprocessConsumes=<SplitterProducesForNextCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated>,
@@ -138,14 +138,14 @@ for FlowingCaseOfFinalizedSplitProcess<
 >
 where
   ProcessBefore::EverProduced: Union<ThisCase::EverProduced>,
-  <ProcessBefore::EverProduced as Union<ThisCase::EverProduced>>::Output: ParamList,
+  <ProcessBefore::EverProduced as Union<ThisCase::EverProduced>>::Union: ParamList,
 {
   type ProcessBeforeSplitProduces = ProcessBefore::ProcessBeforeSplitProduces;
   type SplitterProducesForThisCase = SplitterProducesForThisCase;
   type EveryFlowingCaseProduces = ThisCase::Produces;
   type SubprocessConsumes = ProcessBefore::SubprocessConsumes;
   type Messages = ProcessBefore::Messages;
-  type EverProduced = <ProcessBefore::EverProduced as Union<ThisCase::EverProduced>>::Output;
+  type EverProduced = <ProcessBefore::EverProduced as Union<ThisCase::EverProduced>>::Union;
 
   async fn resume_run(
     &self,
@@ -269,13 +269,13 @@ for FlowingCaseOfFinalizedSplitProcess<
 >
 where
   ProcessBefore::EverProduced: Union<ThisCase::EverProduced>,
-  <ProcessBefore::EverProduced as Union<ThisCase::EverProduced>>::Output: ParamList,
+  <ProcessBefore::EverProduced as Union<ThisCase::EverProduced>>::Union: ParamList,
 {
   type ProcessBeforeProduces = ProcessBefore::ProcessBeforeSplitProduces;
   type Produces = ThisCase::Produces;
   type SubprocessConsumes = ProcessBefore::SubprocessConsumes;
   type Messages = ProcessBefore::Messages;
-  type EverProduced = <ProcessBefore::EverProduced as Union<ThisCase::EverProduced>>::Output;
+  type EverProduced = <ProcessBefore::EverProduced as Union<ThisCase::EverProduced>>::Union;
 
   async fn resume_run(
     &self,

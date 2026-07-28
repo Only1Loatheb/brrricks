@@ -4,7 +4,7 @@ use crate::param_list::{ParamList, ParamValue};
 use typenum::{B0, Same};
 
 /// Using `ParamList` instead of `HList` simplifies where clauses
-/// Like `Add` and `extend` in [`mod@crate::hlist`], but with appropriate name
+/// Like `Add` and `extend` in [`mod@frunk::hlist`], but with appropriate name
 pub trait Concat<RHS: ParamList>: ParamList {
   type Concatenated: ParamList;
 

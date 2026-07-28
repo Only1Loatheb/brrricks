@@ -273,7 +273,7 @@ mod tests {
 
       async fn handle(
         &self,
-        _consumes: <Self::Consumes as ToRef<'_>>::Output,
+        _consumes: <Self::Consumes as ToRef<'_>>::Ref,
       ) -> anyhow::Result<OperationOutcome<Self::Produces, Self::FinalMessage>> {
         Ok(OperationOutcome::Successful(hlist!(OperationOutput)))
       }
@@ -289,7 +289,7 @@ mod tests {
 
       async fn create_form(
         &self,
-        _consumes: <Self::CreateFormConsumes as ToRef<'_>>::Output,
+        _consumes: <Self::CreateFormConsumes as ToRef<'_>>::Ref,
         _back_navigation_available: bool,
       ) -> anyhow::Result<FormWithContext<Message, Self::Context>> {
         Ok(FormWithContext(Message("This will be discarded".into()), 0))
@@ -297,7 +297,7 @@ mod tests {
 
       async fn handle_input(
         &self,
-        _consumes: <Self::ValidateInputConsumes as ToRef<'_>>::Output,
+        _consumes: <Self::ValidateInputConsumes as ToRef<'_>>::Ref,
         _user_input: String,
         failed: Self::Context,
       ) -> anyhow::Result<InputValidation<Self::Produces, Messages, Self::Context>> {
@@ -340,7 +340,7 @@ mod tests {
 
       async fn create_form(
         &self,
-        _consumes: <Self::CreateFormConsumes as ToRef<'_>>::Output,
+        _consumes: <Self::CreateFormConsumes as ToRef<'_>>::Ref,
         _back_navigation_available: bool,
       ) -> anyhow::Result<FormWithContext<Message, Self::Context>> {
         Ok(FormWithContext(Message("choose case".into()), 0))
@@ -348,7 +348,7 @@ mod tests {
 
       async fn handle_input(
         &self,
-        _consumes: <Self::ValidateInputConsumes as ToRef<'_>>::Output,
+        _consumes: <Self::ValidateInputConsumes as ToRef<'_>>::Ref,
         user_input: String,
         failed: u16,
       ) -> anyhow::Result<InputValidation<Self::Produces, Messages, Self::Context>> {

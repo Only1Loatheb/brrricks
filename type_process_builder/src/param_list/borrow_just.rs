@@ -3,7 +3,7 @@ use crate::frunk::plucker::Plucker;
 use crate::frunk::to_ref::ToRef;
 
 pub trait BorrowJust<'a, Target: ToRef<'a>, Indices> {
-  fn borrow_just(self) -> <Target as ToRef<'a>>::Output;
+  fn borrow_just(self) -> <Target as ToRef<'a>>::Ref;
 }
 
 impl<Source> BorrowJust<'_, HNil, HNil> for Source {
@@ -22,7 +22,7 @@ where
   TargetTail: ToRef<'a>,
 {
   #[inline(always)]
-  fn borrow_just(self) -> HCons<&'a TargetHead, <TargetTail as ToRef<'a>>::Output> {
+  fn borrow_just(self) -> HCons<&'a TargetHead, <TargetTail as ToRef<'a>>::Ref> {
     let (head, remainder): (
       &'a TargetHead,
       <&'a HCons<SourceHead, SourceTail> as Plucker<&'a TargetHead, IndexHead>>::Remainder,

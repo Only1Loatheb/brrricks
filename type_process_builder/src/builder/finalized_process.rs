@@ -4,7 +4,7 @@ use crate::builder::{
   IntermediateRunOutcome, MaybeFormContext, PreviousRunYieldedAt, RunOutcome, RunResult, SessionContext, StepIndex,
 };
 use crate::param_list::ParamList;
-use crate::param_list::transform::TransformTo;
+use crate::param_list::extract::Extract;
 use crate::step::{Final, ProcessMessages};
 use std::future::Future;
 use std::marker::PhantomData;
@@ -61,7 +61,7 @@ impl<
 > FinalizedProcess
   for FlowingFinalizedProcess<ProcessBefore, FinalStep, ProcessBeforeProducesTransformToFinalConsumesIndices>
 where
-  ProcessBefore::Produces: TransformTo<FinalStep::Consumes, ProcessBeforeProducesTransformToFinalConsumesIndices>,
+  ProcessBefore::Produces: Extract<FinalStep::Consumes, ProcessBeforeProducesTransformToFinalConsumesIndices>,
 {
   type ProcessBeforeProduces = ProcessBefore::Produces;
   type SubprocessConsumes = ProcessBefore::SubprocessConsumes;
@@ -95,7 +95,7 @@ where
     process_before_produces: Self::ProcessBeforeProduces,
     _back_navigation_available: bool,
   ) -> RunResult<Self::Messages> {
-    Ok(RunOutcome::Finish(self.final_step.handle(process_before_produces.transform()).await?))
+    Ok(RunOutcome::Finish(self.final_step.handle(process_before_produces.extract()).await?))
   }
 
   async fn run_subprocess(

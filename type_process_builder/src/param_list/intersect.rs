@@ -25,12 +25,12 @@ where
 
 ////////// Filter //////////
 
-pub trait Filter<Head, Tail> {
+pub trait ThenKeep<Head, Tail> {
   type Filtered;
   fn filter(head: Head, tail: Tail) -> Self::Filtered;
 }
 
-impl<Head, Tail> Filter<Head, Tail> for B1 {
+impl<Head, Tail> ThenKeep<Head, Tail> for B1 {
   type Filtered = HCons<Head, Tail>;
 
   #[inline(always)]
@@ -39,7 +39,7 @@ impl<Head, Tail> Filter<Head, Tail> for B1 {
   }
 }
 
-impl<Head, Tail> Filter<Head, Tail> for B0 {
+impl<Head, Tail> ThenKeep<Head, Tail> for B0 {
   type Filtered = Tail;
 
   #[inline(always)]
@@ -67,15 +67,15 @@ impl<RHS> Intersect<RHS> for HNil {
 
 impl<Head: ParamValue, Tail: Intersect<RHS>, RHS: Contains<Head>> Intersect<RHS> for HCons<Head, Tail>
 where
-  <RHS as Contains<Head>>::IsContained: Filter<Head, <Tail as Intersect<RHS>>::Intersection>,
+  <RHS as Contains<Head>>::IsContained: ThenKeep<Head, <Tail as Intersect<RHS>>::Intersection>,
 {
   type Intersection =
-    <<RHS as Contains<Head>>::IsContained as Filter<Head, <Tail as Intersect<RHS>>::Intersection>>::Filtered;
+    <<RHS as Contains<Head>>::IsContained as ThenKeep<Head, <Tail as Intersect<RHS>>::Intersection>>::Filtered;
 
   #[inline(always)]
   fn intersect(self) -> Self::Intersection {
     let intersected_tail = self.tail.intersect();
-    <<RHS as Contains<Head>>::IsContained as Filter<Head, <Tail as Intersect<RHS>>::Intersection>>::filter(
+    <<RHS as Contains<Head>>::IsContained as ThenKeep<Head, <Tail as Intersect<RHS>>::Intersection>>::filter(
       self.head,
       intersected_tail,
     )
@@ -84,32 +84,20 @@ where
 
 ////////// Union //////////
 
-pub trait PrependIf<Head, Tail> {
-  type Output;
-}
-
-impl<Head, Tail> PrependIf<Head, Tail> for typenum::B1 {
-  type Output = Tail;
-}
-
-impl<Head, Tail> PrependIf<Head, Tail> for typenum::B0 {
-  type Output = HCons<Head, Tail>;
-}
-
 pub trait Union<RHS: ParamList>: ParamList {
-  type Output: ParamList;
+  type Union: ParamList;
 }
 
 impl<RHS: ParamList> Union<RHS> for HNil {
-  type Output = RHS;
+  type Union = RHS;
 }
 
 impl<Head: ParamValue, Tail: Union<RHS> + ParamList + Contains<Head>, RHS: ParamList> Union<RHS> for HCons<Head, Tail>
 where
   <Tail as Contains<Head>>::IsContained: Same<B0>,
-  <Tail as Union<RHS>>::Output: Contains<Head>,
-  <<Tail as Union<RHS>>::Output as Contains<Head>>::IsContained: PrependIf<Head, <Tail as Union<RHS>>::Output>,
-  <<<Tail as Union<RHS>>::Output as Contains<Head>>::IsContained as PrependIf<Head, <Tail as Union<RHS>>::Output>>::Output: ParamList,
+  <Tail as Union<RHS>>::Union: Contains<Head>,
+  <<Tail as Union<RHS>>::Union as Contains<Head>>::IsContained: ThenKeep<Head, <Tail as Union<RHS>>::Union>,
+  <<<Tail as Union<RHS>>::Union as Contains<Head>>::IsContained as ThenKeep<Head, <Tail as Union<RHS>>::Union>>::Filtered: ParamList,
 {
-  type Output = <<<Tail as Union<RHS>>::Output as Contains<Head>>::IsContained as PrependIf<Head, <Tail as Union<RHS>>::Output>>::Output;
+  type Union = <<<Tail as Union<RHS>>::Union as Contains<Head>>::IsContained as ThenKeep<Head, <Tail as Union<RHS>>::Union>>::Filtered;
 }
