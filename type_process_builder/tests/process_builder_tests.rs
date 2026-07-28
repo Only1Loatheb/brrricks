@@ -101,7 +101,7 @@ impl Operation for ProduceCaseParam1 {
 
   async fn handle(
     &self,
-    _consumes: <Self::Consumes as ToRef<'_>>::Output,
+    _consumes: <Self::Consumes as ToRef<'_>>::Ref,
   ) -> anyhow::Result<OperationOutcome<Self::Produces, Self::FinalMessage>> {
     Ok(OperationOutcome::Successful(hlist!(Case1Param, CommonCaseParam)))
   }
@@ -115,7 +115,7 @@ impl Operation for ProduceCaseParam2 {
 
   async fn handle(
     &self,
-    _consumes: <Self::Consumes as ToRef<'_>>::Output,
+    _consumes: <Self::Consumes as ToRef<'_>>::Ref,
   ) -> anyhow::Result<OperationOutcome<Self::Produces, Self::FinalMessage>> {
     Ok(OperationOutcome::Successful(hlist!(Case2Param, CommonCaseParam)))
   }
@@ -129,7 +129,7 @@ impl Operation for ProduceOnlyCase2Param {
 
   async fn handle(
     &self,
-    _consumes: <Self::Consumes as ToRef<'_>>::Output,
+    _consumes: <Self::Consumes as ToRef<'_>>::Ref,
   ) -> anyhow::Result<OperationOutcome<Self::Produces, Self::FinalMessage>> {
     Ok(OperationOutcome::Successful(hlist!(Case2Param)))
   }
@@ -143,7 +143,7 @@ impl Operation for ProduceOnlyCase1Param {
 
   async fn handle(
     &self,
-    _consumes: <Self::Consumes as ToRef<'_>>::Output,
+    _consumes: <Self::Consumes as ToRef<'_>>::Ref,
   ) -> anyhow::Result<OperationOutcome<Self::Produces, Self::FinalMessage>> {
     Ok(OperationOutcome::Successful(hlist!(Case1Param)))
   }
@@ -162,7 +162,7 @@ impl Splitter for SplitByThreeCaseOption {
     (Case2, HList![Split2Param, CommonSplitParam]),
     (Case3, HList![CommonSplitParam])
   ];
-  async fn handle(&self, consumes: <Self::Consumes as ToRef<'_>>::Output) -> anyhow::Result<Self::Produces> {
+  async fn handle(&self, consumes: <Self::Consumes as ToRef<'_>>::Ref) -> anyhow::Result<Self::Produces> {
     Ok(match consumes.head.0 {
       1 => Self::Produces::inject((Case1, hlist!(Split1Param, CommonSplitParam))),
       2 => Self::Produces::inject((Case2, hlist!(Split2Param, CommonSplitParam))),
@@ -177,7 +177,7 @@ impl Splitter for SplitByTwoCaseOption {
   type Produces =
     Coprod![(Case1, HList![Split1Param, CommonSplitParam]), (Case2, HList![Split2Param, CommonSplitParam])];
 
-  async fn handle(&self, consumes: <Self::Consumes as ToRef<'_>>::Output) -> anyhow::Result<Self::Produces> {
+  async fn handle(&self, consumes: <Self::Consumes as ToRef<'_>>::Ref) -> anyhow::Result<Self::Produces> {
     Ok(match consumes.head.0 {
       1 => Self::Produces::inject((Case1, hlist!(Split1Param, CommonSplitParam))),
       _ => Self::Produces::inject((Case2, hlist!(Split2Param, CommonSplitParam))),
@@ -192,7 +192,7 @@ impl Splitter for InnerSelectCase<B0> {
   type Consumes = HNil;
   type Produces = Coprod![(InnerCase0, HNil), (InnerCase1, HNil)];
 
-  async fn handle(&self, _consumes: <Self::Consumes as ToRef<'_>>::Output) -> anyhow::Result<Self::Produces> {
+  async fn handle(&self, _consumes: <Self::Consumes as ToRef<'_>>::Ref) -> anyhow::Result<Self::Produces> {
     Ok(Self::Produces::inject((InnerCase0, HNil)))
   }
 }
@@ -201,7 +201,7 @@ impl Splitter for InnerSelectCase<B1> {
   type Consumes = HNil;
   type Produces = Coprod![(InnerCase0, HNil), (InnerCase1, HNil)];
 
-  async fn handle(&self, _consumes: <Self::Consumes as ToRef<'_>>::Output) -> anyhow::Result<Self::Produces> {
+  async fn handle(&self, _consumes: <Self::Consumes as ToRef<'_>>::Ref) -> anyhow::Result<Self::Produces> {
     Ok(Self::Produces::inject((InnerCase1, HNil)))
   }
 }
@@ -216,7 +216,7 @@ impl Splitter for SplitByFourCaseOption {
     (Case4, HList![Split2Param, CommonSplitParam]),
   ];
 
-  async fn handle(&self, consumes: <Self::Consumes as ToRef<'_>>::Output) -> anyhow::Result<Self::Produces> {
+  async fn handle(&self, consumes: <Self::Consumes as ToRef<'_>>::Ref) -> anyhow::Result<Self::Produces> {
     Ok(match consumes.head.0 {
       1 => Self::Produces::inject((Case1, hlist!(Split1Param, CommonSplitParam))),
       2 => Self::Produces::inject((Case2, hlist!(Split2Param, CommonSplitParam))),
@@ -248,7 +248,7 @@ impl Operation for FinishEarlyOperation {
 
   async fn handle(
     &self,
-    _consumes: <Self::Consumes as ToRef<'_>>::Output,
+    _consumes: <Self::Consumes as ToRef<'_>>::Ref,
   ) -> anyhow::Result<OperationOutcome<Self::Produces, Self::FinalMessage>> {
     Ok(OperationOutcome::Finish(Message("Operation finished".into())))
   }
@@ -267,14 +267,14 @@ impl Form for FinishEarlyForm {
 
   async fn create_form(
     &self,
-    _consumes: <Self::CreateFormConsumes as ToRef<'_>>::Output,
+    _consumes: <Self::CreateFormConsumes as ToRef<'_>>::Ref,
   ) -> anyhow::Result<FormWithContext<Message, Self::Context>> {
     Ok(FormWithContext(Message("Finish early form".into()), EmptyFormContext))
   }
 
   async fn handle_input(
     &self,
-    _consumes: <Self::ValidateInputConsumes as ToRef<'_>>::Output,
+    _consumes: <Self::ValidateInputConsumes as ToRef<'_>>::Ref,
     _user_input: String,
     _form_context: Self::Context,
   ) -> anyhow::Result<InputValidation<Self::Produces, Messages, Self::Context>> {
@@ -302,14 +302,14 @@ impl Form for CommonCaseParam1Form {
 
   async fn create_form(
     &self,
-    _consumes: <Self::CreateFormConsumes as ToRef<'_>>::Output,
+    _consumes: <Self::CreateFormConsumes as ToRef<'_>>::Ref,
   ) -> anyhow::Result<FormWithContext<Message, Self::Context>> {
     Ok(FormWithContext(Message("Enter a number".into()), EmptyFormContext))
   }
 
   async fn handle_input(
     &self,
-    _consumes: <Self::ValidateInputConsumes as ToRef<'_>>::Output,
+    _consumes: <Self::ValidateInputConsumes as ToRef<'_>>::Ref,
     _user_input: String,
     _form_context: Self::Context,
   ) -> anyhow::Result<InputValidation<Self::Produces, Messages, Self::Context>> {
@@ -327,14 +327,14 @@ impl Form for CommonCaseParam2Form {
 
   async fn create_form(
     &self,
-    _consumes: <Self::CreateFormConsumes as ToRef<'_>>::Output,
+    _consumes: <Self::CreateFormConsumes as ToRef<'_>>::Ref,
   ) -> anyhow::Result<FormWithContext<Message, Self::Context>> {
     Ok(FormWithContext(Message("Enter a number".into()), EmptyFormContext))
   }
 
   async fn handle_input(
     &self,
-    _consumes: <Self::ValidateInputConsumes as ToRef<'_>>::Output,
+    _consumes: <Self::ValidateInputConsumes as ToRef<'_>>::Ref,
     _user_input: String,
     _form_context: Self::Context,
   ) -> anyhow::Result<InputValidation<Self::Produces, Messages, Self::Context>> {
@@ -352,14 +352,14 @@ impl Form for NoOpForm {
 
   async fn create_form(
     &self,
-    _consumes: <Self::CreateFormConsumes as ToRef<'_>>::Output,
+    _consumes: <Self::CreateFormConsumes as ToRef<'_>>::Ref,
   ) -> anyhow::Result<FormWithContext<Message, Self::Context>> {
     Ok(FormWithContext(Message("Straight to trash".into()), EmptyFormContext))
   }
 
   async fn handle_input(
     &self,
-    _consumes: <Self::ValidateInputConsumes as ToRef<'_>>::Output,
+    _consumes: <Self::ValidateInputConsumes as ToRef<'_>>::Ref,
     _user_input: String,
     _form_context: Self::Context,
   ) -> anyhow::Result<InputValidation<Self::Produces, Messages, Self::Context>> {
@@ -377,14 +377,14 @@ impl Form for FinishAfterInput {
 
   async fn create_form(
     &self,
-    _consumes: <Self::CreateFormConsumes as ToRef<'_>>::Output,
+    _consumes: <Self::CreateFormConsumes as ToRef<'_>>::Ref,
   ) -> anyhow::Result<FormWithContext<Message, Self::Context>> {
     Ok(FormWithContext(Message("Last number in the process".into()), EmptyFormContext))
   }
 
   async fn handle_input(
     &self,
-    _consumes: <Self::ValidateInputConsumes as ToRef<'_>>::Output,
+    _consumes: <Self::ValidateInputConsumes as ToRef<'_>>::Ref,
     _user_input: String,
     _form_context: Self::Context,
   ) -> anyhow::Result<InputValidation<Self::Produces, Messages, Self::Context>> {
@@ -402,14 +402,14 @@ impl Form for OneInputRetryForm {
 
   async fn create_form(
     &self,
-    _consumes: <Self::CreateFormConsumes as ToRef<'_>>::Output,
+    _consumes: <Self::CreateFormConsumes as ToRef<'_>>::Ref,
   ) -> anyhow::Result<FormWithContext<Message, Self::Context>> {
     Ok(FormWithContext(Message("This will be discarded".into()), 0))
   }
 
   async fn handle_input(
     &self,
-    _consumes: <Self::ValidateInputConsumes as ToRef<'_>>::Output,
+    _consumes: <Self::ValidateInputConsumes as ToRef<'_>>::Ref,
     _user_input: String,
     failed: Self::Context,
   ) -> anyhow::Result<InputValidation<Self::Produces, Messages, Self::Context>> {
@@ -430,14 +430,14 @@ impl Form for ChooseCaseForm {
 
   async fn create_form(
     &self,
-    _consumes: <Self::CreateFormConsumes as ToRef<'_>>::Output,
+    _consumes: <Self::CreateFormConsumes as ToRef<'_>>::Ref,
   ) -> anyhow::Result<FormWithContext<Message, Self::Context>> {
     Ok(FormWithContext(Message("Choose a case".into()), EmptyFormContext))
   }
 
   async fn handle_input(
     &self,
-    _consumes: <Self::ValidateInputConsumes as ToRef<'_>>::Output,
+    _consumes: <Self::ValidateInputConsumes as ToRef<'_>>::Ref,
     user_input: String,
     _form_context: Self::Context,
   ) -> anyhow::Result<InputValidation<Self::Produces, Messages, Self::Context>> {
@@ -474,7 +474,7 @@ impl Operation for FinishProcessOperation {
 
   async fn handle(
     &self,
-    _consumes: <Self::Consumes as ToRef<'_>>::Output,
+    _consumes: <Self::Consumes as ToRef<'_>>::Ref,
   ) -> anyhow::Result<OperationOutcome<Self::Produces, Self::FinalMessage>> {
     Ok(OperationOutcome::Finish(Message("Operation finished".into())))
   }
@@ -497,14 +497,14 @@ impl FormSplitter for TestFormSplitter {
 
   async fn create_form(
     &self,
-    _consumes: <Self::CreateFormConsumes as ToRef<'_>>::Output,
+    _consumes: <Self::CreateFormConsumes as ToRef<'_>>::Ref,
   ) -> anyhow::Result<FormWithContext<Message, Self::Context>> {
     Ok(FormWithContext(Message("choose case".into()), 0))
   }
 
   async fn handle_input(
     &self,
-    _consumes: <Self::ValidateInputConsumes as ToRef<'_>>::Output,
+    _consumes: <Self::ValidateInputConsumes as ToRef<'_>>::Ref,
     user_input: String,
     failed: Self::Context,
   ) -> anyhow::Result<InputValidation<Self::Produces, Messages, Self::Context>> {
@@ -527,14 +527,14 @@ impl FormSplitter for InnerFormSplitter {
 
   async fn create_form(
     &self,
-    _consumes: <Self::CreateFormConsumes as ToRef<'_>>::Output,
+    _consumes: <Self::CreateFormConsumes as ToRef<'_>>::Ref,
   ) -> anyhow::Result<FormWithContext<Message, Self::Context>> {
     Ok(FormWithContext(Message("choose case".into()), 0))
   }
 
   async fn handle_input(
     &self,
-    _consumes: <Self::ValidateInputConsumes as ToRef<'_>>::Output,
+    _consumes: <Self::ValidateInputConsumes as ToRef<'_>>::Ref,
     user_input: String,
     failed: Self::Context,
   ) -> anyhow::Result<InputValidation<Self::Produces, Messages, Self::Context>> {
@@ -934,14 +934,14 @@ impl Form for RetryOnceForm {
 
   async fn create_form(
     &self,
-    _consumes: <Self::CreateFormConsumes as ToRef<'_>>::Output,
+    _consumes: <Self::CreateFormConsumes as ToRef<'_>>::Ref,
   ) -> anyhow::Result<FormWithContext<Message, Self::Context>> {
     Ok(FormWithContext(Message("Fancy a retry?".into()), EmptyFormContext))
   }
 
   async fn handle_input(
     &self,
-    _consumes: <Self::ValidateInputConsumes as ToRef<'_>>::Output,
+    _consumes: <Self::ValidateInputConsumes as ToRef<'_>>::Ref,
     user_input: String,
     _form_context: Self::Context,
   ) -> anyhow::Result<InputValidation<Self::Produces, Messages, Self::Context>> {

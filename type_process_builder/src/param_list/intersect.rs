@@ -25,12 +25,12 @@ where
 
 ////////// Filter //////////
 
-pub trait Filter<Head, Tail> {
+pub trait ThenKeep<Head, Tail> {
   type Filtered;
   fn filter(head: Head, tail: Tail) -> Self::Filtered;
 }
 
-impl<Head, Tail> Filter<Head, Tail> for B1 {
+impl<Head, Tail> ThenKeep<Head, Tail> for B1 {
   type Filtered = HCons<Head, Tail>;
 
   #[inline(always)]
@@ -39,7 +39,7 @@ impl<Head, Tail> Filter<Head, Tail> for B1 {
   }
 }
 
-impl<Head, Tail> Filter<Head, Tail> for B0 {
+impl<Head, Tail> ThenKeep<Head, Tail> for B0 {
   type Filtered = Tail;
 
   #[inline(always)]
@@ -67,15 +67,15 @@ impl<RHS> Intersect<RHS> for HNil {
 
 impl<Head: ParamValue, Tail: Intersect<RHS>, RHS: Contains<Head>> Intersect<RHS> for HCons<Head, Tail>
 where
-  <RHS as Contains<Head>>::IsContained: Filter<Head, <Tail as Intersect<RHS>>::Intersection>,
+  <RHS as Contains<Head>>::IsContained: ThenKeep<Head, <Tail as Intersect<RHS>>::Intersection>,
 {
   type Intersection =
-    <<RHS as Contains<Head>>::IsContained as Filter<Head, <Tail as Intersect<RHS>>::Intersection>>::Filtered;
+    <<RHS as Contains<Head>>::IsContained as ThenKeep<Head, <Tail as Intersect<RHS>>::Intersection>>::Filtered;
 
   #[inline(always)]
   fn intersect(self) -> Self::Intersection {
     let intersected_tail = self.tail.intersect();
-    <<RHS as Contains<Head>>::IsContained as Filter<Head, <Tail as Intersect<RHS>>::Intersection>>::filter(
+    <<RHS as Contains<Head>>::IsContained as ThenKeep<Head, <Tail as Intersect<RHS>>::Intersection>>::filter(
       self.head,
       intersected_tail,
     )

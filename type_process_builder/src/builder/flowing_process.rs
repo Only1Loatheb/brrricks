@@ -16,7 +16,7 @@ use crate::builder::{
 use crate::frunk::coproduct::Coproduct;
 use crate::param_list::ParamList;
 use crate::param_list::concat::Concat;
-use crate::param_list::transform::TransformTo;
+use crate::param_list::extract::Extract;
 use crate::step::{Final, Form, FormSplitter, Operation, Splitter};
 use std::future::Future;
 
@@ -188,7 +188,7 @@ pub trait FlowingProcess: Sized + Send + Sync {
     Messages = Self::Messages,
   >
   where
-    Self::Produces: TransformTo<FinalStep::Consumes, ProcessBeforeProducesToLastStepConsumesIndices>,
+    Self::Produces: Extract<FinalStep::Consumes, ProcessBeforeProducesToLastStepConsumesIndices>,
   {
     FlowingFinalizedProcess { process_before: self, final_step: step, phantom_data: Default::default() }
   }

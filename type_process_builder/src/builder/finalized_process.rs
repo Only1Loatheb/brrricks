@@ -5,7 +5,7 @@ use crate::builder::{
   StepIndex,
 };
 use crate::param_list::ParamList;
-use crate::param_list::transform::TransformTo;
+use crate::param_list::extract::Extract;
 use crate::step::{Final, ProcessMessages};
 use std::future::Future;
 use std::marker::PhantomData;
@@ -60,7 +60,7 @@ impl<
 > FinalizedProcess
   for FlowingFinalizedProcess<ProcessBefore, FinalStep, ProcessBeforeProducesTransformToFinalConsumesIndices>
 where
-  ProcessBefore::Produces: TransformTo<FinalStep::Consumes, ProcessBeforeProducesTransformToFinalConsumesIndices>,
+  ProcessBefore::Produces: Extract<FinalStep::Consumes, ProcessBeforeProducesTransformToFinalConsumesIndices>,
 {
   type ProcessBeforeProduces = ProcessBefore::Produces;
   type SubprocessConsumes = ProcessBefore::SubprocessConsumes;
@@ -85,7 +85,7 @@ where
   }
 
   async fn continue_run(&self, process_before_produces: Self::ProcessBeforeProduces) -> RunResult<Self::Messages> {
-    Ok(RunOutcome::Finish(self.final_step.handle(process_before_produces.transform()).await?))
+    Ok(RunOutcome::Finish(self.final_step.handle(process_before_produces.extract()).await?))
   }
 
   async fn run_subprocess(&self, subprocess_consumes: Self::SubprocessConsumes) -> RunResult<Self::Messages> {

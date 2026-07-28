@@ -6,8 +6,8 @@ use crate::builder::{
 };
 use crate::frunk::coproduct::{CNil, Coproduct};
 use crate::param_list::concat::Concat;
+use crate::param_list::extract::Extract;
 use crate::param_list::intersect::Intersect;
-use crate::param_list::transform::TransformTo;
 use std::marker::PhantomData;
 
 pub struct FlowingCaseOfFlowingSplitProcess<
@@ -71,7 +71,7 @@ FlowingCaseOfFlowingSplitProcess<
   > where
     ProcessBefore::EveryFlowingCaseProduces: Intersect<ThisCase::Produces>,
     <ProcessBefore::EveryFlowingCaseProduces as Intersect<ThisCase::Produces>>::Intersection: ParamList,
-    ThisCase::Produces: TransformTo<<ProcessBefore::EveryFlowingCaseProduces as Intersect<ThisCase::Produces>>::Intersection, ThisIndices>,
+    ThisCase::Produces: Extract<<ProcessBefore::EveryFlowingCaseProduces as Intersect<ThisCase::Produces>>::Intersection, ThisIndices>,
   {
     FinalizedCaseOfFlowingSplitProcess {
       split_process_before: self,
@@ -105,7 +105,7 @@ FlowingCaseOfFlowingSplitProcess<
   > where
     ProcessBefore::EveryFlowingCaseProduces: Intersect<ThisCase::Produces>,
     <ProcessBefore::EveryFlowingCaseProduces as Intersect<ThisCase::Produces>>::Intersection: ParamList,
-    ThisCase::Produces: TransformTo<<ProcessBefore::EveryFlowingCaseProduces as Intersect<ThisCase::Produces>>::Intersection, ThisIndices>,
+    ThisCase::Produces: Extract<<ProcessBefore::EveryFlowingCaseProduces as Intersect<ThisCase::Produces>>::Intersection, ThisIndices>,
   {
     FlowingCaseOfFlowingSplitProcess {
       split_process_before: self,
@@ -141,7 +141,7 @@ for FlowingCaseOfFlowingSplitProcess<
 where
   ProcessBefore::EveryFlowingCaseProduces: Intersect<ThisCase::Produces>,
   <ProcessBefore::EveryFlowingCaseProduces as Intersect<ThisCase::Produces>>::Intersection: ParamList,
-  ThisCase::Produces: TransformTo<<ProcessBefore::EveryFlowingCaseProduces as Intersect<ThisCase::Produces>>::Intersection, Indices>,
+  ThisCase::Produces: Extract<<ProcessBefore::EveryFlowingCaseProduces as Intersect<ThisCase::Produces>>::Intersection, Indices>,
 {
   type ProcessBeforeSplitProduces = ProcessBefore::ProcessBeforeSplitProduces;
   type SplitterProducesForThisCase = SplitterProducesForThisCase;
@@ -185,7 +185,7 @@ where
         user_input,
         form_context,
       ).await? {
-        IntermediateRunOutcome::Continue(a) => Ok(IntermediateFlowingSplitOutcome::Continue(a.transform())),
+        IntermediateRunOutcome::Continue(a) => Ok(IntermediateFlowingSplitOutcome::Continue(a.extract())),
         IntermediateRunOutcome::Yield(a, b, c, d) => Ok(IntermediateFlowingSplitOutcome::Yield(a, b, c, d)),
         IntermediateRunOutcome::Finish(a) => Ok(IntermediateFlowingSplitOutcome::Finish(a)),
         IntermediateRunOutcome::RetryUserInput(a, b) => Ok(IntermediateFlowingSplitOutcome::RetryUserInput(a, b)),
@@ -206,7 +206,7 @@ where
       Coproduct::Inl(splitter_produces_for_this_case) => {
         let this_case_consumes = splitter_produces_for_this_case.concat(process_before_split_produced);
         match self.this_case.run_subprocess(this_case_consumes).await? {
-          IntermediateRunOutcome::Continue(a) => Ok(IntermediateFlowingSplitOutcome::Continue(a.transform())),
+          IntermediateRunOutcome::Continue(a) => Ok(IntermediateFlowingSplitOutcome::Continue(a.extract())),
           IntermediateRunOutcome::Yield(a, b, c, d) => Ok(IntermediateFlowingSplitOutcome::Yield(a, b, c, d)),
           IntermediateRunOutcome::Finish(a) => Ok(IntermediateFlowingSplitOutcome::Finish(a)),
           IntermediateRunOutcome::RetryUserInput(a, b) => Ok(IntermediateFlowingSplitOutcome::RetryUserInput(a, b)),
@@ -275,7 +275,7 @@ for FlowingCaseOfFlowingSplitProcess<
 where
   ProcessBefore::EveryFlowingCaseProduces: Intersect<ThisCase::Produces>,
   <ProcessBefore::EveryFlowingCaseProduces as Intersect<ThisCase::Produces>>::Intersection: ParamList,
-  ThisCase::Produces: TransformTo<<ProcessBefore::EveryFlowingCaseProduces as Intersect<ThisCase::Produces>>::Intersection, Indices>,
+  ThisCase::Produces: Extract<<ProcessBefore::EveryFlowingCaseProduces as Intersect<ThisCase::Produces>>::Intersection, Indices>,
 {
   type ProcessBeforeProduces = ProcessBefore::ProcessBeforeSplitProduces;
   type Produces = <ProcessBefore::EveryFlowingCaseProduces as Intersect<ThisCase::Produces>>::Intersection;
@@ -304,7 +304,7 @@ where
             let this_case_consumes = produces_to_this_case.concat(process_before_split_produced);
             match self.this_case.run_subprocess(this_case_consumes).await? {
               IntermediateRunOutcome::Continue(this_case_produced) =>
-                Ok(IntermediateRunOutcome::Continue(this_case_produced.transform())),
+                Ok(IntermediateRunOutcome::Continue(this_case_produced.extract())),
               IntermediateRunOutcome::Yield(a, b, c, d) => Ok(IntermediateRunOutcome::Yield(a, b, c, d)),
               IntermediateRunOutcome::Finish(a) => Ok(IntermediateRunOutcome::Finish(a)),
               IntermediateRunOutcome::RetryUserInput(a, b) => Ok(IntermediateRunOutcome::RetryUserInput(a, b)),
@@ -323,7 +323,7 @@ where
         user_input,
         form_context,
       ).await? {
-        IntermediateRunOutcome::Continue(a) => Ok(IntermediateRunOutcome::Continue(a.transform())),
+        IntermediateRunOutcome::Continue(a) => Ok(IntermediateRunOutcome::Continue(a.extract())),
         IntermediateRunOutcome::Yield(a, b, c, d) => Ok(IntermediateRunOutcome::Yield(a, b, c, d)),
         IntermediateRunOutcome::Finish(a) => Ok(IntermediateRunOutcome::Finish(a)),
         IntermediateRunOutcome::RetryUserInput(a, b) => Ok(IntermediateRunOutcome::RetryUserInput(a, b)),
@@ -369,7 +369,7 @@ where
           let this_case_consumes = produces_to_this_case.concat(process_before_split_produced);
           match self.this_case.run_subprocess(this_case_consumes).await? {
             IntermediateRunOutcome::Continue(this_case_produced) =>
-              Ok(IntermediateRunOutcome::Continue(this_case_produced.transform())),
+              Ok(IntermediateRunOutcome::Continue(this_case_produced.extract())),
             IntermediateRunOutcome::Yield(a, b, c, d) => Ok(IntermediateRunOutcome::Yield(a, b, c, d)),
             IntermediateRunOutcome::Finish(a) => Ok(IntermediateRunOutcome::Finish(a)),
             IntermediateRunOutcome::RetryUserInput(a, b) => Ok(IntermediateRunOutcome::RetryUserInput(a, b)),

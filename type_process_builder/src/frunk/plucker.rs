@@ -37,7 +37,7 @@ where
 
 /// Implementation when target is reference and the pluck target is in head
 impl<'a, Head, Tail: ToRef<'a>> Plucker<&'a Head, Here> for &'a HCons<Head, Tail> {
-  type Remainder = <Tail as ToRef<'a>>::Output;
+  type Remainder = <Tail as ToRef<'a>>::Ref;
 
   #[inline(always)]
   fn pluck(self) -> (&'a Head, Self::Remainder) {
