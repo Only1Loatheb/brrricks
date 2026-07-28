@@ -1,4 +1,5 @@
 use crate::frunk::hlist::{HCons, HNil};
+use crate::param_list::concat::Concat;
 use crate::param_list::{ParamList, ParamValue};
 use std::ops::BitOr;
 use typenum::{B0, B1, Bit, IsEqual, Same};
@@ -46,6 +47,18 @@ impl<Head, Tail> ThenKeep<Head, Tail> for B0 {
   fn filter(_head: Head, tail: Tail) -> Self::Filtered {
     tail
   }
+}
+
+pub trait IfNotKeep<Head, Tail> {
+  type Filtered;
+}
+
+impl<Head, Tail> IfNotKeep<Head, Tail> for B0 {
+  type Filtered = HCons<Head, Tail>;
+}
+
+impl<Head, Tail> IfNotKeep<Head, Tail> for B1 {
+  type Filtered = Tail;
 }
 
 ////////// Intersection //////////
@@ -96,8 +109,8 @@ impl<Head: ParamValue, Tail: Union<RHS> + ParamList + Contains<Head>, RHS: Param
 where
   <Tail as Contains<Head>>::IsContained: Same<B0>,
   <Tail as Union<RHS>>::Union: Contains<Head>,
-  <<Tail as Union<RHS>>::Union as Contains<Head>>::IsContained: ThenKeep<Head, <Tail as Union<RHS>>::Union>,
-  <<<Tail as Union<RHS>>::Union as Contains<Head>>::IsContained as ThenKeep<Head, <Tail as Union<RHS>>::Union>>::Filtered: ParamList,
+  <<Tail as Union<RHS>>::Union as Contains<Head>>::IsContained: IfNotKeep<Head, <Tail as Union<RHS>>::Union>,
+  <<<Tail as Union<RHS>>::Union as Contains<Head>>::IsContained as IfNotKeep<Head, <Tail as Union<RHS>>::Union>>::Filtered: ParamList,
 {
-  type Union = <<<Tail as Union<RHS>>::Union as Contains<Head>>::IsContained as ThenKeep<Head, <Tail as Union<RHS>>::Union>>::Filtered;
+  type Union = <<<Tail as Union<RHS>>::Union as Contains<Head>>::IsContained as IfNotKeep<Head, <Tail as Union<RHS>>::Union>>::Filtered;
 }
