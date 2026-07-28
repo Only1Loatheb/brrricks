@@ -6,7 +6,6 @@ use crate::builder::{
 };
 use crate::frunk::coproduct::{CNil, Coproduct};
 use crate::param_list::concat::Concat;
-use crate::param_list::intersect::Union;
 use std::marker::PhantomData;
 
 pub struct FinalizedCaseOfFlowingSplitProcess<
@@ -66,9 +65,6 @@ FinalizedCaseOfFlowingSplitProcess<
     Self,
     NextCase,
   >
-  where
-    <Self as FlowingSplitProcess<Coproduct<(NextTag, SplitterProducesForNextCase), SplitterProducesForOtherCases>>>::EverProduced: Union<NextCase::EverProduced>,
-    <<Self as FlowingSplitProcess<Coproduct<(NextTag, SplitterProducesForNextCase), SplitterProducesForOtherCases>>>::EverProduced as Union<NextCase::EverProduced>>::Union: ParamList,
   {
     FinalizedCaseOfFlowingSplitProcess {
       split_process_before: self,
@@ -102,9 +98,6 @@ FinalizedCaseOfFlowingSplitProcess<
     NextCase,
     Indices,
   >
-  where
-    <Self as FlowingSplitProcess<Coproduct<(NextTag, SplitterProducesForNextCase), SplitterProducesForOtherCases>>>::EverProduced: Union<NextCase::EverProduced>,
-    <<Self as FlowingSplitProcess<Coproduct<(NextTag, SplitterProducesForNextCase), SplitterProducesForOtherCases>>>::EverProduced as Union<NextCase::EverProduced>>::Union: ParamList,
   {
     FlowingCaseOfFlowingSplitProcess {
       split_process_before: self,
@@ -135,16 +128,13 @@ for FinalizedCaseOfFlowingSplitProcess<
   ProcessBefore,
   ThisCase,
 >
-where
-  ProcessBefore::EverProduced: Union<ThisCase::EverProduced>,
-  <ProcessBefore::EverProduced as Union<ThisCase::EverProduced>>::Union: ParamList,
 {
   type ProcessBeforeSplitProduces = ProcessBefore::ProcessBeforeSplitProduces;
   type SplitterProducesForThisCase = SplitterProducesForThisCase;
   type EveryFlowingCaseProduces = ProcessBefore::EveryFlowingCaseProduces;
   type SubprocessConsumes = ProcessBefore::SubprocessConsumes;
   type Messages = ProcessBefore::Messages;
-  type EverProduced = <ProcessBefore::EverProduced as Union<ThisCase::EverProduced>>::Union;
+  type EverProduced = ProcessBefore::EverProduced;
 
   async fn resume_run(
     &self,
@@ -263,15 +253,12 @@ impl<
   >,
 > FlowingProcess
 for FinalizedCaseOfFlowingSplitProcess<ThisTag, SplitterProducesForThisCase, CNil, ProcessBefore, ThisCase>
-where
-  ProcessBefore::EverProduced: Union<ThisCase::EverProduced>,
-  <ProcessBefore::EverProduced as Union<ThisCase::EverProduced>>::Union: ParamList,
 {
   type ProcessBeforeProduces = <SplitterProducesForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated;
   type Produces = ProcessBefore::EveryFlowingCaseProduces;
   type SubprocessConsumes = ProcessBefore::SubprocessConsumes;
   type Messages = ProcessBefore::Messages;
-  type EverProduced = <ProcessBefore::EverProduced as Union<ThisCase::EverProduced>>::Union;
+  type EverProduced = ProcessBefore::EverProduced;
 
   async fn resume_run(
     &self,

@@ -1,5 +1,4 @@
 use crate::frunk::hlist::{HCons, HNil};
-use crate::param_list::concat::Concat;
 use crate::param_list::{ParamList, ParamValue};
 use std::ops::BitOr;
 use typenum::{B0, B1, Bit, IsEqual, Same};

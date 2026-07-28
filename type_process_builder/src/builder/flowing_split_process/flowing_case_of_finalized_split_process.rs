@@ -51,6 +51,9 @@ FlowingCaseOfFinalizedSplitProcess<
   ProcessBefore,
   ThisCase,
 >
+where
+  ProcessBefore::EverProduced: Union<ThisCase::EverProduced>,
+  <ProcessBefore::EverProduced as Union<ThisCase::EverProduced>>::Union: ParamList,
 {
   pub fn case_end<
     NextCase: FinalizedProcess<SubprocessConsumes=<SplitterProducesForNextCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated>,
@@ -68,9 +71,6 @@ FlowingCaseOfFinalizedSplitProcess<
     Self,
     NextCase,
   >
-  where
-    <Self as FlowingSplitProcess<Coproduct<(NextTag, SplitterProducesForNextCase), SplitterProducesForOtherCases>>>::EverProduced: Union<NextCase::EverProduced>,
-    <<Self as FlowingSplitProcess<Coproduct<(NextTag, SplitterProducesForNextCase), SplitterProducesForOtherCases>>>::EverProduced as Union<NextCase::EverProduced>>::Union: ParamList,
   {
     FinalizedCaseOfFlowingSplitProcess {
       split_process_before: self,
@@ -105,9 +105,6 @@ FlowingCaseOfFinalizedSplitProcess<
     NextCase,
     Indices,
   >
-  where
-    <Self as FlowingSplitProcess<Coproduct<(NextTag, SplitterProducesForNextCase), SplitterProducesForOtherCases>>>::EverProduced: Union<NextCase::EverProduced>,
-    <<Self as FlowingSplitProcess<Coproduct<(NextTag, SplitterProducesForNextCase), SplitterProducesForOtherCases>>>::EverProduced as Union<NextCase::EverProduced>>::Union: ParamList,
   {
     FlowingCaseOfFlowingSplitProcess {
       split_process_before: self,

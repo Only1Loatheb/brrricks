@@ -7,7 +7,6 @@ use crate::builder::{
 };
 use crate::frunk::coproduct::Coproduct;
 use crate::param_list::concat::Concat;
-use crate::param_list::intersect::Union;
 use std::marker::PhantomData;
 
 pub struct FirstCaseOfFinalizedSplitProcess<
@@ -123,7 +122,7 @@ impl<
   type SplitterTagForThisCase = ProcessBefore::SplitterTagForFirstCase;
   type SubprocessConsumes = ProcessBefore::SubprocessConsumes;
   type Messages = ProcessBefore::Messages;
-  type EverProduced = ThisCase::EverProduced;
+  type EverProduced = ProcessBefore::EverProduced;
 
   async fn resume_run(
     &self,

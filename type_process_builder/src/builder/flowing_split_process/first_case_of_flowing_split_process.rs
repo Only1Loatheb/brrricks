@@ -7,7 +7,6 @@ use crate::builder::{
 };
 use crate::frunk::coproduct::Coproduct;
 use crate::param_list::concat::Concat;
-use crate::param_list::intersect::Union;
 use std::marker::PhantomData;
 
 pub struct FirstCaseOfFlowingSplitProcess<

@@ -123,7 +123,7 @@ impl FormSplitter for SelectAmountSource {
 
   async fn create_form(
     &self,
-    _consumes: <Self::CreateFormConsumes as ToRef<'_>>::Output,
+    _consumes: <Self::CreateFormConsumes as ToRef<'_>>::Ref,
     back_navigation_available: bool,
   ) -> anyhow::Result<FormWithContext<Message, Self::Context>> {
     if back_navigation_available {
@@ -135,7 +135,7 @@ impl FormSplitter for SelectAmountSource {
 
   async fn handle_input(
     &self,
-    _consumes: <Self::ValidateInputConsumes as ToRef<'_>>::Output,
+    _consumes: <Self::ValidateInputConsumes as ToRef<'_>>::Ref,
     user_input: String,
     _form_context: Self::Context,
   ) -> anyhow::Result<InputValidation<Self::Produces, Messages, Self::Context>> {
@@ -161,7 +161,7 @@ impl Form for AmountForm {
 
   async fn create_form(
     &self,
-    _consumes: <Self::CreateFormConsumes as ToRef<'_>>::Output,
+    _consumes: <Self::CreateFormConsumes as ToRef<'_>>::Ref,
     back_navigation_available: bool,
   ) -> anyhow::Result<FormWithContext<Message, Self::Context>> {
     if back_navigation_available {
@@ -173,7 +173,7 @@ impl Form for AmountForm {
 
   async fn handle_input(
     &self,
-    _consumes: <Self::ValidateInputConsumes as ToRef<'_>>::Output,
+    _consumes: <Self::ValidateInputConsumes as ToRef<'_>>::Ref,
     user_input: String,
     _form_context: Self::Context,
   ) -> anyhow::Result<InputValidation<Self::Produces, Messages, Self::Context>> {

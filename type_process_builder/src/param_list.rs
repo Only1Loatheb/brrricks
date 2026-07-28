@@ -7,8 +7,8 @@ use typenum::{B0, Same, Unsigned};
 
 pub mod borrow_just;
 pub mod concat;
-pub mod intersect;
 pub mod extract;
+pub mod intersect;
 
 pub type ParamUID = u32;
 
