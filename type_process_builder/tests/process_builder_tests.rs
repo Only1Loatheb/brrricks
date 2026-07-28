@@ -1237,7 +1237,7 @@ async fn test_process_messages(
   // run ordered_all_unique_param_uids in tests to check what code is reachable and it does not panic
   let _ = process.ordered_all_unique_param_uids();
   loop {
-    let back_navigation_available = visited_form_steps.len() > 1;
+    let back_navigation_available = !visited_form_steps.is_empty();
     let mut run_outcome = process
       .resume_run(
         previous_run_produced.clone(),

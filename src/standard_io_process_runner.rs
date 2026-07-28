@@ -28,7 +28,7 @@ pub(crate) async fn standard_io_process_runner(
     io::stdin().read_line(&mut input)?;
     let user_input = input.trim().to_owned();
 
-    let back_navigation_available = visited_form_steps.len() > 1;
+    let back_navigation_available = !visited_form_steps.is_empty();
     let mut run_outcome = demo_process
       .resume_run(
         previous_run_produced.clone(),
@@ -42,18 +42,22 @@ pub(crate) async fn standard_io_process_runner(
 
     if let RunOutcome::Back = run_outcome {
       visited_form_steps.pop();
-      let target_step_index = *visited_form_steps.last().ok_or_else(|| io::Error::other("Cannot go back further"))?;
-      let back_navigation_available = visited_form_steps.len() > 1;
-      run_outcome = demo_process
-        .resume_run(
-          previous_run_produced.clone(),
-          PreviousRunYieldedAt(target_step_index),
-          String::new(),
-          None,
-          back_navigation_available,
-        )
-        .await
-        .map_err(io::Error::other)?;
+      if let Some(&target_step_index) = visited_form_steps.last() {
+        let back_navigation_available = visited_form_steps.len() > 1;
+        run_outcome = demo_process
+          .resume_run(
+            previous_run_produced.clone(),
+            PreviousRunYieldedAt(target_step_index),
+            String::new(),
+            None,
+            back_navigation_available,
+          )
+          .await
+          .map_err(io::Error::other)?;
+      } else {
+        println!("Cannot go back further.");
+        continue;
+      }
     }
 
     match run_outcome {

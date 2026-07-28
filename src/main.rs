@@ -65,7 +65,6 @@ impl FormSplitter for SelectAmountSource {
     Ok(match user_input.as_str() {
       "1" => InputValidation::Successful(Self::Produces::inject((PredefinedAmount, hlist!(Amount(100))))),
       "2" => InputValidation::Successful(Self::Produces::inject((CustomAmount, HNil))),
-      "0" => InputValidation::Back,
       _ => InputValidation::Retry(Message("not 1 or 2".into()), EmptyFormContext),
     })
   }
