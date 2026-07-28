@@ -1,5 +1,5 @@
 use crate::builder::{
-  FlowingProcess, IntermediateRunOutcome, IntermediateRunResult, MaybeFormContext, ParamList, ParamUID,
+  FlowingProcess, IntermediateRunOutcome, IntermediateRunResult, MaybeFormContext, ParamList,
   PreviousRunYieldedAt, SessionContext, StepIndex,
 };
 use crate::step::ProcessMessages;
@@ -49,8 +49,6 @@ impl<ProcessBeforeProduces: ParamList, Messages: ProcessMessages> FlowingProcess
   fn enumerate_steps(&mut self, last_used_index: StepIndex) -> StepIndex {
     last_used_index
   }
-
-  fn all_param_uids(&self, _acc: &mut Vec<ParamUID>) {}
 }
 
 #[must_use]

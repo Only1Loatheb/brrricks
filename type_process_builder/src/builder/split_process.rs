@@ -5,7 +5,7 @@ use crate::builder::first_case_of_flowing_split_process::FirstCaseOfFlowingSplit
 use crate::builder::subprocess::{Subprocess, subprocess};
 use crate::builder::{
   FinalizedProcess, FirstCaseOfFinalizedSplitProcess, FlowingProcess, IntermediateFinalizedSplitResult,
-  MaybeFormContext, ParamList, ParamUID, PreviousRunYieldedAt, SessionContext, StepIndex, WILL_BE_RENUMBERED,
+  MaybeFormContext, ParamList, PreviousRunYieldedAt, SessionContext, StepIndex, WILL_BE_RENUMBERED,
 };
 use crate::frunk::coproduct::Coproduct;
 use crate::param_list::concat::Concat;
@@ -127,6 +127,4 @@ pub trait SplitProcess<SplitterProducesForOtherCases: Send + Sync>: Sized + Send
   }
 
   fn enumerate_steps(&mut self, last_used_index: StepIndex) -> StepIndex;
-
-  fn all_param_uids(&self, acc: &mut Vec<ParamUID>);
 }

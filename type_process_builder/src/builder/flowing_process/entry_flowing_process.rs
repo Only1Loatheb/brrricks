@@ -1,9 +1,8 @@
 use crate::builder::{
-  FlowingProcess, IntermediateRunOutcome, IntermediateRunResult, MaybeFormContext, ParamUID, PreviousRunYieldedAt,
+  FlowingProcess, IntermediateRunOutcome, IntermediateRunResult, MaybeFormContext, PreviousRunYieldedAt,
   SessionContext, StepIndex,
 };
 use crate::frunk::hlist::HNil;
-use crate::param_list::ParamList;
 use crate::step::Entry;
 
 impl<EntryStep: Entry> FlowingProcess for EntryStep {
@@ -43,9 +42,5 @@ impl<EntryStep: Entry> FlowingProcess for EntryStep {
 
   fn enumerate_steps(&mut self, last_used_index: StepIndex) -> StepIndex {
     last_used_index
-  }
-
-  fn all_param_uids(&self, acc: &mut Vec<ParamUID>) {
-    EntryStep::Produces::all_param_uids(acc);
   }
 }

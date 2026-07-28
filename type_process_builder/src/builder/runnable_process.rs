@@ -1,5 +1,6 @@
 use crate::builder::finalized_process::FinalizedProcess;
 use crate::builder::{MaybeFormContext, ParamUID, PreviousRunYieldedAt, RunResult, SessionContext, StepIndex};
+use crate::param_list::ParamList;
 use std::collections::HashSet;
 
 pub struct RunnableProcess<UnderlyingProcess: FinalizedProcess> {
@@ -31,7 +32,7 @@ impl<UnderlyingProcess: FinalizedProcess> RunnableProcess<UnderlyingProcess> {
   /// [`crate::param_list::ParamList::`_deserialize]
   pub fn ordered_all_unique_param_uids(&self) -> Vec<ParamUID> {
     let mut all_param_uids = Vec::<ParamUID>::new();
-    self.finalized_process.all_param_uids(&mut all_param_uids);
+    UnderlyingProcess::EverProduced::all_param_uids(&mut all_param_uids);
 
     let mut seen = HashSet::new();
     all_param_uids.into_iter().rev().filter(|c| seen.insert(*c)).collect::<Vec<_>>()

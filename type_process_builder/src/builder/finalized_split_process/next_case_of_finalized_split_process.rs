@@ -1,7 +1,7 @@
 use crate::builder::subprocess::{Subprocess, subprocess};
 use crate::builder::{
   FinalizedProcess, FinalizedSplitProcess, FlowingCaseOfFinalizedSplitProcess, FlowingProcess,
-  IntermediateFinalizedSplitOutcome, IntermediateFinalizedSplitResult, MaybeFormContext, ParamList, ParamUID,
+  IntermediateFinalizedSplitOutcome, IntermediateFinalizedSplitResult, MaybeFormContext, ParamList,
   PreviousRunYieldedAt, RunOutcome, RunResult, SessionContext, StepIndex, WILL_BE_RENUMBERED,
 };
 use crate::frunk::coproduct::{CNil, Coproduct};
@@ -221,12 +221,6 @@ for NextCaseOfFinalizedSplitProcess<
     self.case_index = used_index + 1;
     self.this_case.enumerate_steps(self.case_index)
   }
-
-  fn all_param_uids(&self, acc: &mut Vec<ParamUID>) {
-    self.split_process_before.all_param_uids(acc);
-    SplitterProducesForThisCase::all_param_uids(acc);
-    self.this_case.all_param_uids(acc);
-  }
 }
 
 /// the last case
@@ -244,6 +238,7 @@ for NextCaseOfFinalizedSplitProcess<ThisTag, SplitterProducesForThisCase, CNil, 
   type ProcessBeforeProduces = <SplitterProducesForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated;
   type SubprocessConsumes = ProcessBefore::SubprocessConsumes;
   type Messages = ProcessBefore::Messages;
+  type EverProduced = ProcessBefore::EverProduced;
 
   async fn resume_run(
     &self,
@@ -307,11 +302,5 @@ for NextCaseOfFinalizedSplitProcess<ThisTag, SplitterProducesForThisCase, CNil, 
     let used_index = self.split_process_before.enumerate_steps(last_used_index);
     self.case_index = used_index + 1;
     self.this_case.enumerate_steps(self.case_index)
-  }
-
-  fn all_param_uids(&self, acc: &mut Vec<ParamUID>) {
-    self.split_process_before.all_param_uids(acc);
-    SplitterProducesForThisCase::all_param_uids(acc);
-    self.this_case.all_param_uids(acc);
   }
 }

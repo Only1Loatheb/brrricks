@@ -1,7 +1,7 @@
 use crate::builder::flowing_process::FlowingProcess;
 use crate::builder::runnable_process::RunnableProcess;
 use crate::builder::{
-  IntermediateRunOutcome, MaybeFormContext, ParamUID, PreviousRunYieldedAt, RunOutcome, RunResult, SessionContext,
+  IntermediateRunOutcome, MaybeFormContext, PreviousRunYieldedAt, RunOutcome, RunResult, SessionContext,
   StepIndex,
 };
 use crate::param_list::ParamList;
@@ -15,6 +15,7 @@ pub trait FinalizedProcess: Sized + Send + Sync {
   type ProcessBeforeProduces: ParamList;
   type SubprocessConsumes: ParamList;
   type Messages: ProcessMessages;
+  type EverProduced: ParamList;
 
   fn resume_run(
     &self,
@@ -42,8 +43,6 @@ pub trait FinalizedProcess: Sized + Send + Sync {
   }
 
   fn enumerate_steps(&mut self, last_used_index: StepIndex) -> StepIndex;
-
-  fn all_param_uids(&self, acc: &mut Vec<ParamUID>);
 }
 
 pub struct FlowingFinalizedProcess<
@@ -68,6 +67,7 @@ where
   type ProcessBeforeProduces = ProcessBefore::Produces;
   type SubprocessConsumes = ProcessBefore::SubprocessConsumes;
   type Messages = ProcessBefore::Messages;
+  type EverProduced = ProcessBefore::EverProduced;
 
   async fn resume_run(
     // check where to resume when copying and pasting to finalized proces with finalized process instead of last case
@@ -117,9 +117,5 @@ where
   fn enumerate_steps(&mut self, last_used_index: StepIndex) -> StepIndex {
     // most likely not worth to assign an index to final steps, but maybe test
     self.process_before.enumerate_steps(last_used_index)
-  }
-
-  fn all_param_uids(&self, acc: &mut Vec<ParamUID>) {
-    self.process_before.all_param_uids(acc);
   }
 }

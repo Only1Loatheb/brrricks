@@ -1,6 +1,6 @@
 use crate::builder::{
   FlowingProcess, IntermediateFinalizedSplitOutcome, IntermediateFinalizedSplitResult, IntermediateRunOutcome,
-  MaybeFormContext, ParamList, ParamUID, PreviousRunYieldedAt, SessionContext, SplitProcess, StepIndex,
+  MaybeFormContext, ParamList, PreviousRunYieldedAt, SessionContext, SplitProcess, StepIndex,
 };
 use crate::frunk::coproduct::Coproduct;
 use crate::param_list::borrow_just::BorrowJust;
@@ -125,9 +125,5 @@ where
     let used_index = self.process_before.enumerate_steps(last_used_index);
     self.step_index = used_index + 1;
     self.step_index
-  }
-
-  fn all_param_uids(&self, acc: &mut Vec<ParamUID>) {
-    self.process_before.all_param_uids(acc);
   }
 }

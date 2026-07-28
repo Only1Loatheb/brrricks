@@ -2,7 +2,7 @@ pub mod first_case_of_finalized_split_process;
 pub mod next_case_of_finalized_split_process;
 
 use crate::builder::{
-  IntermediateFinalizedSplitResult, MaybeFormContext, ParamUID, PreviousRunYieldedAt, SessionContext, StepIndex,
+  IntermediateFinalizedSplitResult, MaybeFormContext, PreviousRunYieldedAt, SessionContext, StepIndex,
 };
 use crate::frunk::coproduct::Coproduct;
 use crate::param_list::ParamList;
@@ -63,6 +63,4 @@ pub trait FinalizedSplitProcess<SplitterProducesForOtherCases>: Sized + Send + S
   > + Send;
 
   fn enumerate_steps(&mut self, last_used_index: StepIndex) -> StepIndex;
-
-  fn all_param_uids(&self, acc: &mut Vec<ParamUID>);
 }

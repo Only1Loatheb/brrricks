@@ -2,7 +2,7 @@ use crate::builder::subprocess::{Subprocess, subprocess};
 use crate::builder::{
   FinalizedCaseOfFlowingSplitProcess, FinalizedProcess, FlowingCaseOfFlowingSplitProcess, FlowingProcess,
   FlowingSplitProcess, IntermediateFinalizedSplitOutcome, IntermediateFlowingSplitOutcome,
-  IntermediateFlowingSplitResult, IntermediateRunOutcome, MaybeFormContext, ParamList, ParamUID, PreviousRunYieldedAt,
+  IntermediateFlowingSplitResult, IntermediateRunOutcome, MaybeFormContext, ParamList, PreviousRunYieldedAt,
   SessionContext, SplitProcess, StepIndex, WILL_BE_RENUMBERED,
 };
 use crate::frunk::coproduct::Coproduct;
@@ -257,11 +257,5 @@ where
     let used_index = self.split_process_before.enumerate_steps(last_used_index);
     self.case_index = used_index + 1;
     self.this_case.enumerate_steps(self.case_index)
-  }
-
-  fn all_param_uids(&self, acc: &mut Vec<ParamUID>) {
-    self.split_process_before.all_param_uids(acc);
-    ProcessBefore::SplitterProducesForFirstCase::all_param_uids(acc);
-    self.this_case.all_param_uids(acc);
   }
 }
