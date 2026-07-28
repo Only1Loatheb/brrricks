@@ -1,4 +1,3 @@
-#[allow(clippy::result_unit_err)]
 pub mod builder;
 pub mod frunk;
 pub mod param_list;
