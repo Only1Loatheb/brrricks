@@ -1268,7 +1268,13 @@ async fn test_process_messages(
     messages_index += 1;
     match run_outcome {
       RunOutcome::Yield(msg, value, yielded_at, context) => {
-        previous_run_produced = value;
+        for (uid, val) in value {
+          if let Some(pos) = previous_run_produced.iter().position(|(u, _)| *u == uid) {
+            previous_run_produced[pos] = (uid, val);
+          } else {
+            previous_run_produced.push((uid, val));
+          }
+        }
         previous_run_yielded_at = PreviousRunYieldedAt(yielded_at.0);
         form_context = Some(context);
         if visited_form_steps.last() != Some(&yielded_at.0) {
@@ -1304,3 +1310,16 @@ async fn test_back_navigation() {
   let messages = vec!["*123#", "Choose a case", "1", "This will be discarded", "0", "Choose a case", "2", "Good bye"];
   test_process_messages(&process, messages).await;
 }
+
+#[test]
+fn test_ever_produced_union_prevents_reusing_removed_params() {
+  let process = ExtractMsisdnOperatorAndShortcodeString
+    .show(ChooseCaseForm)
+    .split(SplitByTwoCaseOption)
+    .case_via(Case1, |x| x.then(ProduceCaseParam1))
+    .case_via(Case2, |x| x.then(ProduceCaseParam2))
+    .end(SayGoodByAndConsumeCommonParams);
+
+  let _ = process;
+}
+

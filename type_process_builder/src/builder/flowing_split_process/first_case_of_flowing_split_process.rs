@@ -7,6 +7,7 @@ use crate::builder::{
 };
 use crate::frunk::coproduct::Coproduct;
 use crate::param_list::concat::Concat;
+use crate::param_list::intersect::Union;
 use std::marker::PhantomData;
 
 pub struct FirstCaseOfFlowingSplitProcess<
@@ -45,6 +46,9 @@ impl<
     ProcessBefore,
     ThisCase,
   >
+where
+  ProcessBefore::EverProduced: Union<ThisCase::EverProduced>,
+  <ProcessBefore::EverProduced as Union<ThisCase::EverProduced>>::Output: ParamList,
 {
   pub fn case_end<
     NextCase: FinalizedProcess<SubprocessConsumes=<SplitterProducesForNextCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated>,
@@ -127,13 +131,16 @@ impl<
     ProcessBefore,
     ThisCase,
   >
+where
+  ProcessBefore::EverProduced: Union<ThisCase::EverProduced>,
+  <ProcessBefore::EverProduced as Union<ThisCase::EverProduced>>::Output: ParamList,
 {
   type ProcessBeforeSplitProduces = ProcessBefore::ProcessBeforeSplitProduces;
   type SplitterProducesForThisCase = ProcessBefore::SplitterProducesForFirstCase;
   type EveryFlowingCaseProduces = ThisCase::Produces;
   type SubprocessConsumes = ProcessBefore::SubprocessConsumes;
   type Messages = ProcessBefore::Messages;
-  type EverProduced = ThisCase::EverProduced;
+  type EverProduced = <ProcessBefore::EverProduced as Union<ThisCase::EverProduced>>::Output;
 
   async fn resume_run(
     &self,
