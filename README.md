@@ -75,11 +75,11 @@ The process shown in the flowchart can be implemented using `Brrricks`:
 <!-- EXAMPLE_START -->
 
 ```rust
-mod standard_io_process_runner;
+pub mod standard_io_process_runner;
 
-use crate::standard_io_process_runner::{Message, Messages, standard_io_process_runner};
+use crate::standard_io_process_runner::{Message, Messages};
 use serde::{Deserialize, Serialize};
-use type_process_builder::builder::{FinalizedProcess, FlowingProcess, SessionContext, SplitProcess};
+use type_process_builder::builder::{FinalizedProcess, FlowingProcess, RunnableProcess, SessionContext, SplitProcess};
 use type_process_builder::step::{Entry, Final, Form, FormSplitter, FormWithContext, InputValidation};
 use type_process_builder::{Coprod, HList, HNil, ToRef, hlist, hlist_pat};
 use typenum::{U0, U1};
@@ -87,17 +87,17 @@ use typenum::{U0, U1};
 use type_process_builder::impl_param_value;
 
 #[derive(Deserialize, Serialize)]
-struct ShortcodeString(String);
+pub struct ShortcodeString(pub String);
 
 #[derive(Deserialize, Serialize)]
-struct Amount(u32);
+pub struct Amount(pub u32);
 
 impl_param_value! {
   ShortcodeString => U0,
   Amount => U1,
 }
 
-struct ShortcodeStringEntry;
+pub struct ShortcodeStringEntry;
 impl Entry for ShortcodeStringEntry {
   type Produces = HList![ShortcodeString];
   type Messages = Messages;
@@ -113,7 +113,7 @@ impl Entry for ShortcodeStringEntry {
 
 pub struct PredefinedAmount;
 pub struct CustomAmount;
-struct SelectAmountSource;
+pub struct SelectAmountSource;
 impl FormSplitter for SelectAmountSource {
   type CreateFormConsumes = HNil;
   type ValidateInputConsumes = HNil;
@@ -148,9 +148,9 @@ impl FormSplitter for SelectAmountSource {
 }
 
 #[derive(Serialize, Deserialize)]
-struct EmptyFormContext;
+pub struct EmptyFormContext;
 
-struct AmountForm;
+pub struct AmountForm;
 impl Form for AmountForm {
   type CreateFormConsumes = HNil;
   type ValidateInputConsumes = HNil;
@@ -186,7 +186,7 @@ impl Form for AmountForm {
   }
 }
 
-struct DisplayAmount;
+pub struct DisplayAmount;
 impl Final for DisplayAmount {
   type Consumes = HList![ShortcodeString, Amount];
   type FinalMessage = Message;
@@ -197,15 +197,14 @@ impl Final for DisplayAmount {
   }
 }
 
-#[tokio::main]
-async fn main() -> std::io::Result<()> {
-  let process = ShortcodeStringEntry
+#[must_use]
+pub fn build_demo_process() -> RunnableProcess<impl FinalizedProcess<Messages = Messages>> {
+  ShortcodeStringEntry
     .show_split(SelectAmountSource)
     .case_via(PredefinedAmount, |x| x)
     .case_via(CustomAmount, |x| x.show(AmountForm))
     .end(DisplayAmount)
-    .build("demo_process", 0);
-  standard_io_process_runner(process).await
+    .build("demo_process", 0)
 }
 
 ```

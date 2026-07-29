@@ -1,17 +1,29 @@
 use std::io;
 use std::io::Write;
-use type_process_builder::builder::{FinalizedProcess, PreviousRunYieldedAt, RunOutcome, RunnableProcess, StepIndex};
+use type_process_builder::builder::{
+  FinalizedProcess, PreviousRunYieldedAt, RunOutcome, RunnableProcess, SessionContext, StepIndex,
+};
 use type_process_builder::step::ProcessMessages;
 
-pub(crate) struct Message(pub String);
+#[derive(Debug, PartialEq, Eq)]
+pub struct Message(pub String);
 
-pub(crate) struct Messages;
+#[derive(Debug, PartialEq, Eq)]
+pub struct Messages;
 impl ProcessMessages for Messages {
   type FormMessage = Message;
   type FinalMessage = Message;
 }
 
-pub(crate) async fn standard_io_process_runner(
+pub fn update_session_context(previous_run_produced: &mut SessionContext, new_produced: SessionContext) {
+  for (uid, val) in new_produced {
+    if !previous_run_produced.iter().any(|(u, _)| *u == uid) {
+      previous_run_produced.push((uid, val));
+    }
+  }
+}
+
+pub async fn standard_io_process_runner(
   demo_process: RunnableProcess<impl FinalizedProcess<Messages = Messages>>,
 ) -> io::Result<()> {
   let mut previous_run_produced = Vec::new();
@@ -62,13 +74,7 @@ pub(crate) async fn standard_io_process_runner(
 
     match run_outcome {
       RunOutcome::Yield(msg, value, yielded_at, context) => {
-        for (uid, val) in value {
-          if let Some(pos) = previous_run_produced.iter().position(|(u, _)| *u == uid) {
-            previous_run_produced[pos] = (uid, val);
-          } else {
-            previous_run_produced.push((uid, val));
-          }
-        }
+        update_session_context(&mut previous_run_produced, value);
         previous_run_yielded_at = PreviousRunYieldedAt(yielded_at.0);
         form_context = Some(context);
         if visited_form_steps.last() != Some(&yielded_at.0) {
