@@ -5,6 +5,7 @@ use crate::builder::{
 };
 use crate::param_list::ParamList;
 use crate::param_list::extract::Extract;
+use crate::step::BackToken;
 use crate::step::{Final, ProcessMessages};
 use std::future::Future;
 use std::marker::PhantomData;
@@ -22,19 +23,19 @@ pub trait FinalizedProcess: Sized + Send + Sync {
     previous_run_yielded_at: PreviousRunYieldedAt,
     user_input: String,
     form_context: MaybeFormContext,
-    back_navigation_available: bool,
+    back_token: Option<BackToken>,
   ) -> impl Future<Output = RunResult<Self::Messages>> + Send;
 
   fn continue_run(
     &self,
     process_before_produces: Self::ProcessBeforeProduces,
-    back_navigation_available: bool,
+    back_token: Option<BackToken>,
   ) -> impl Future<Output = RunResult<Self::Messages>> + Send;
 
   fn run_subprocess(
     &self,
     subprocess_consumes: Self::SubprocessConsumes,
-    back_navigation_available: bool,
+    back_token: Option<BackToken>,
   ) -> impl Future<Output = RunResult<Self::Messages>> + Send;
 
   fn build(self, name: &'static str, version: u32) -> RunnableProcess<Self> {
@@ -75,14 +76,14 @@ where
     previous_run_yielded_at: PreviousRunYieldedAt,
     user_input: String,
     form_context: MaybeFormContext,
-    back_navigation_available: bool,
+    back_token: Option<BackToken>,
   ) -> RunResult<Self::Messages> {
     let outcome = self
       .process_before
-      .resume_run(previous_run_produced, previous_run_yielded_at, user_input, form_context, back_navigation_available)
+      .resume_run(previous_run_produced, previous_run_yielded_at, user_input, form_context, back_token)
       .await?;
     match outcome {
-      IntermediateRunOutcome::Continue(val) => self.continue_run(val, back_navigation_available).await,
+      IntermediateRunOutcome::Continue(val) => self.continue_run(val, back_token).await,
       IntermediateRunOutcome::Yield(a, b, c, d) => Ok(RunOutcome::Yield(a, b, c, d)),
       IntermediateRunOutcome::Finish(a) => Ok(RunOutcome::Finish(a)),
       IntermediateRunOutcome::RetryUserInput(a, b) => Ok(RunOutcome::RetryUserInput(a, b)),
@@ -93,7 +94,7 @@ where
   async fn continue_run(
     &self,
     process_before_produces: Self::ProcessBeforeProduces,
-    _back_navigation_available: bool,
+    _back_token: Option<BackToken>,
   ) -> RunResult<Self::Messages> {
     Ok(RunOutcome::Finish(self.final_step.handle(process_before_produces.extract()).await?))
   }
@@ -101,11 +102,11 @@ where
   async fn run_subprocess(
     &self,
     subprocess_consumes: Self::SubprocessConsumes,
-    back_navigation_available: bool,
+    back_token: Option<BackToken>,
   ) -> RunResult<Self::Messages> {
-    let outcome = self.process_before.run_subprocess(subprocess_consumes, back_navigation_available).await?;
+    let outcome = self.process_before.run_subprocess(subprocess_consumes, back_token).await?;
     match outcome {
-      IntermediateRunOutcome::Continue(val) => self.continue_run(val, back_navigation_available).await,
+      IntermediateRunOutcome::Continue(val) => self.continue_run(val, back_token).await,
       IntermediateRunOutcome::Yield(a, b, c, d) => Ok(RunOutcome::Yield(a, b, c, d)),
       IntermediateRunOutcome::Finish(a) => Ok(RunOutcome::Finish(a)),
       IntermediateRunOutcome::RetryUserInput(a, b) => Ok(RunOutcome::RetryUserInput(a, b)),

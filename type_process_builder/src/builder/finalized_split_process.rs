@@ -1,3 +1,4 @@
+use crate::step::BackToken;
 pub mod first_case_of_finalized_split_process;
 pub mod next_case_of_finalized_split_process;
 
@@ -25,7 +26,7 @@ pub trait FinalizedSplitProcess<SplitterProducesForOtherCases>: Sized + Send + S
     previous_run_yielded_at: PreviousRunYieldedAt,
     user_input: String,
     form_context: MaybeFormContext,
-    back_navigation_available: bool,
+    back_token: Option<BackToken>,
   ) -> impl Future<
     Output = IntermediateFinalizedSplitResult<
       Self::ProcessBeforeSplitProduces,
@@ -41,7 +42,7 @@ pub trait FinalizedSplitProcess<SplitterProducesForOtherCases>: Sized + Send + S
       Self::SplitterProducesForThisCase,
       SplitterProducesForOtherCases,
     >,
-    back_navigation_available: bool,
+    back_token: Option<BackToken>,
   ) -> impl Future<
     Output = IntermediateFinalizedSplitResult<
       Self::ProcessBeforeSplitProduces,
@@ -53,7 +54,7 @@ pub trait FinalizedSplitProcess<SplitterProducesForOtherCases>: Sized + Send + S
   fn run_split_subprocess(
     &self,
     subprocess_consumes: Self::SubprocessConsumes,
-    back_navigation_available: bool,
+    back_token: Option<BackToken>,
   ) -> impl Future<
     Output = IntermediateFinalizedSplitResult<
       Self::ProcessBeforeSplitProduces,

@@ -1,3 +1,4 @@
+use crate::step::BackToken;
 pub mod entry_flowing_process;
 pub mod form_flowing_process;
 pub mod operation_flowing_process;
@@ -34,19 +35,19 @@ pub trait FlowingProcess: Sized + Send + Sync {
     previous_run_yielded_at: PreviousRunYieldedAt,
     user_input: String,
     form_context: MaybeFormContext,
-    back_navigation_available: bool,
+    back_token: Option<BackToken>,
   ) -> impl Future<Output = IntermediateRunResult<Self::Produces, Self::Messages>> + Send;
 
   fn continue_run(
     &self,
     process_before_produces: Self::ProcessBeforeProduces,
-    back_navigation_available: bool,
+    back_token: Option<BackToken>,
   ) -> impl Future<Output = IntermediateRunResult<Self::Produces, Self::Messages>> + Send;
 
   fn run_subprocess(
     &self,
     subprocess_consumes: Self::SubprocessConsumes,
-    back_navigation_available: bool,
+    back_token: Option<BackToken>,
   ) -> impl Future<Output = IntermediateRunResult<Self::Produces, Self::Messages>> + Send;
 
   fn then<

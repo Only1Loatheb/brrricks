@@ -3,6 +3,7 @@ use crate::builder::{
   SessionContext, StepIndex,
 };
 use crate::frunk::hlist::HNil;
+use crate::step::BackToken;
 use crate::step::Entry;
 
 impl<EntryStep: Entry> FlowingProcess for EntryStep {
@@ -18,7 +19,7 @@ impl<EntryStep: Entry> FlowingProcess for EntryStep {
     _: PreviousRunYieldedAt,
     user_input: String,
     _form_context: MaybeFormContext,
-    _back_navigation_available: bool,
+    _back_token: Option<BackToken>,
   ) -> IntermediateRunResult<Self::Produces, Self::Messages> {
     let result: EntryStep::Produces = EntryStep::handle(self, previous_run_produced, user_input).await?;
     Ok(IntermediateRunOutcome::Continue(result))
@@ -27,7 +28,7 @@ impl<EntryStep: Entry> FlowingProcess for EntryStep {
   async fn continue_run(
     &self,
     _: Self::ProcessBeforeProduces,
-    _back_navigation_available: bool,
+    _back_token: Option<BackToken>,
   ) -> IntermediateRunResult<Self::Produces, Self::Messages> {
     unreachable!("We never continue from entry step")
   }
@@ -35,7 +36,7 @@ impl<EntryStep: Entry> FlowingProcess for EntryStep {
   async fn run_subprocess(
     &self,
     _: Self::SubprocessConsumes,
-    _back_navigation_available: bool,
+    _back_token: Option<BackToken>,
   ) -> IntermediateRunResult<Self::Produces, Self::Messages> {
     unreachable!("Entry step never starts subprocess")
   }

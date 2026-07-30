@@ -2,6 +2,7 @@ use crate::builder::{
   FlowingProcess, IntermediateRunOutcome, IntermediateRunResult, MaybeFormContext, ParamList, PreviousRunYieldedAt,
   SessionContext, StepIndex,
 };
+use crate::step::BackToken;
 use crate::step::ProcessMessages;
 use std::marker::PhantomData;
 
@@ -24,16 +25,16 @@ impl<ProcessBeforeProduces: ParamList, Messages: ProcessMessages> FlowingProcess
     _previous_run_yielded_at: PreviousRunYieldedAt,
     _user_input: String,
     _form_context: MaybeFormContext,
-    back_navigation_available: bool,
+    back_token: Option<BackToken>,
   ) -> IntermediateRunResult<Self::Produces, Self::Messages> {
     let process_before_produces = ProcessBeforeProduces::deserialize(previous_run_produced)?;
-    self.continue_run(process_before_produces, back_navigation_available).await
+    self.continue_run(process_before_produces, back_token).await
   }
 
   async fn continue_run(
     &self,
     process_before_produces: Self::ProcessBeforeProduces,
-    _back_navigation_available: bool,
+    _back_token: Option<BackToken>,
   ) -> IntermediateRunResult<Self::Produces, Self::Messages> {
     Ok(IntermediateRunOutcome::Continue(process_before_produces))
   }
@@ -41,9 +42,9 @@ impl<ProcessBeforeProduces: ParamList, Messages: ProcessMessages> FlowingProcess
   async fn run_subprocess(
     &self,
     subprocess_consumes: Self::SubprocessConsumes,
-    back_navigation_available: bool,
+    back_token: Option<BackToken>,
   ) -> IntermediateRunResult<Self::Produces, Self::Messages> {
-    self.continue_run(subprocess_consumes, back_navigation_available).await
+    self.continue_run(subprocess_consumes, back_token).await
   }
 
   fn enumerate_steps(&mut self, last_used_index: StepIndex) -> StepIndex {

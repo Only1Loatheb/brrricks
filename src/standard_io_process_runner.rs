@@ -1,5 +1,6 @@
 use std::io;
 use std::io::Write;
+use type_process_builder::back_navigation::create_back_token;
 use type_process_builder::builder::{
   FinalizedProcess, PreviousRunYieldedAt, RunOutcome, RunnableProcess, SessionContext, StepIndex,
 };
@@ -40,14 +41,14 @@ pub async fn standard_io_process_runner(
     io::stdin().read_line(&mut input)?;
     let user_input = input.trim().to_owned();
 
-    let back_navigation_available = visited_form_steps.len() > 1;
+    let back_token = if visited_form_steps.len() > 1 { Some(create_back_token()) } else { None };
     let mut run_outcome = demo_process
       .resume_run(
         previous_run_produced.clone(),
         previous_run_yielded_at.clone(),
         user_input,
         form_context.clone(),
-        back_navigation_available,
+        back_token,
       )
       .await
       .map_err(io::Error::other)?;
@@ -55,14 +56,14 @@ pub async fn standard_io_process_runner(
     if let RunOutcome::Back = run_outcome {
       visited_form_steps.pop();
       if let Some(&target_step_index) = visited_form_steps.last() {
-        let back_navigation_available = visited_form_steps.len() > 1;
+        let back_token = if visited_form_steps.len() > 1 { Some(create_back_token()) } else { None };
         run_outcome = demo_process
           .resume_run(
             previous_run_produced.clone(),
             PreviousRunYieldedAt(target_step_index),
             String::new(),
             None,
-            back_navigation_available,
+            back_token,
           )
           .await
           .map_err(io::Error::other)?;

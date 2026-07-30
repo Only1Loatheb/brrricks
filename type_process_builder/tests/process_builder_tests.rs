@@ -1,6 +1,7 @@
 use anyhow::anyhow;
 use serde::{Deserialize, Serialize};
 use std::marker::PhantomData;
+use type_process_builder::back_navigation::create_back_token;
 use type_process_builder::builder::*;
 use type_process_builder::frunk::to_ref::ToRef;
 use type_process_builder::step::{
@@ -268,7 +269,7 @@ impl Form for FinishEarlyForm {
   async fn create_form(
     &self,
     _consumes: <Self::CreateFormConsumes as ToRef<'_>>::Ref,
-    _back_navigation_available: bool,
+    _back_token: Option<BackToken>,
   ) -> anyhow::Result<FormWithContext<Message, Self::Context>> {
     Ok(FormWithContext(Message("Finish early form".into()), EmptyFormContext))
   }
@@ -278,7 +279,7 @@ impl Form for FinishEarlyForm {
     _consumes: <Self::ValidateInputConsumes as ToRef<'_>>::Ref,
     _user_input: String,
     _form_context: Self::Context,
-    _back_navigation_available: bool,
+    _back_token: Option<BackToken>,
   ) -> anyhow::Result<InputValidation<Self::Produces, Messages, Self::Context>> {
     Ok(InputValidation::Finish(Message("Form finished".into())))
   }
@@ -305,7 +306,7 @@ impl Form for CommonCaseParam1Form {
   async fn create_form(
     &self,
     _consumes: <Self::CreateFormConsumes as ToRef<'_>>::Ref,
-    _back_navigation_available: bool,
+    _back_token: Option<BackToken>,
   ) -> anyhow::Result<FormWithContext<Message, Self::Context>> {
     Ok(FormWithContext(Message("Enter a number".into()), EmptyFormContext))
   }
@@ -315,7 +316,7 @@ impl Form for CommonCaseParam1Form {
     _consumes: <Self::ValidateInputConsumes as ToRef<'_>>::Ref,
     _user_input: String,
     _form_context: Self::Context,
-    _back_navigation_available: bool,
+    _back_token: Option<BackToken>,
   ) -> anyhow::Result<InputValidation<Self::Produces, Messages, Self::Context>> {
     Ok(InputValidation::Successful(hlist![CommonCaseParam]))
   }
@@ -332,7 +333,7 @@ impl Form for CommonCaseParam2Form {
   async fn create_form(
     &self,
     _consumes: <Self::CreateFormConsumes as ToRef<'_>>::Ref,
-    _back_navigation_available: bool,
+    _back_token: Option<BackToken>,
   ) -> anyhow::Result<FormWithContext<Message, Self::Context>> {
     Ok(FormWithContext(Message("Enter a number".into()), EmptyFormContext))
   }
@@ -342,7 +343,7 @@ impl Form for CommonCaseParam2Form {
     _consumes: <Self::ValidateInputConsumes as ToRef<'_>>::Ref,
     _user_input: String,
     _form_context: Self::Context,
-    _back_navigation_available: bool,
+    _back_token: Option<BackToken>,
   ) -> anyhow::Result<InputValidation<Self::Produces, Messages, Self::Context>> {
     Ok(InputValidation::Successful(hlist![CommonCaseParam]))
   }
@@ -359,7 +360,7 @@ impl Form for NoOpForm {
   async fn create_form(
     &self,
     _consumes: <Self::CreateFormConsumes as ToRef<'_>>::Ref,
-    _back_navigation_available: bool,
+    _back_token: Option<BackToken>,
   ) -> anyhow::Result<FormWithContext<Message, Self::Context>> {
     Ok(FormWithContext(Message("Straight to trash".into()), EmptyFormContext))
   }
@@ -369,7 +370,7 @@ impl Form for NoOpForm {
     _consumes: <Self::ValidateInputConsumes as ToRef<'_>>::Ref,
     _user_input: String,
     _form_context: Self::Context,
-    _back_navigation_available: bool,
+    _back_token: Option<BackToken>,
   ) -> anyhow::Result<InputValidation<Self::Produces, Messages, Self::Context>> {
     Ok(InputValidation::Successful(HNil))
   }
@@ -386,7 +387,7 @@ impl Form for FinishAfterInput {
   async fn create_form(
     &self,
     _consumes: <Self::CreateFormConsumes as ToRef<'_>>::Ref,
-    _back_navigation_available: bool,
+    _back_token: Option<BackToken>,
   ) -> anyhow::Result<FormWithContext<Message, Self::Context>> {
     Ok(FormWithContext(Message("Last number in the process".into()), EmptyFormContext))
   }
@@ -396,7 +397,7 @@ impl Form for FinishAfterInput {
     _consumes: <Self::ValidateInputConsumes as ToRef<'_>>::Ref,
     _user_input: String,
     _form_context: Self::Context,
-    _back_navigation_available: bool,
+    _back_token: Option<BackToken>,
   ) -> anyhow::Result<InputValidation<Self::Produces, Messages, Self::Context>> {
     Ok(InputValidation::Finish(Message("Always finish".into())))
   }
@@ -413,7 +414,7 @@ impl Form for OneInputRetryForm {
   async fn create_form(
     &self,
     _consumes: <Self::CreateFormConsumes as ToRef<'_>>::Ref,
-    _back_navigation_available: bool,
+    _back_token: Option<BackToken>,
   ) -> anyhow::Result<FormWithContext<Message, Self::Context>> {
     Ok(FormWithContext(Message("This will be discarded".into()), 0))
   }
@@ -423,10 +424,12 @@ impl Form for OneInputRetryForm {
     _consumes: <Self::ValidateInputConsumes as ToRef<'_>>::Ref,
     user_input: String,
     failed: Self::Context,
-    _back_navigation_available: bool,
+    back_token: Option<BackToken>,
   ) -> anyhow::Result<InputValidation<Self::Produces, Messages, Self::Context>> {
-    if user_input == "0" {
-      return Ok(InputValidation::Back);
+    if user_input == "0"
+      && let Some(token) = back_token
+    {
+      return Ok(InputValidation::Back(token));
     }
     match failed {
       0 => Ok(InputValidation::Retry(Message("This will be accepted".into()), failed + 1)),
@@ -446,7 +449,7 @@ impl Form for ChooseCaseForm {
   async fn create_form(
     &self,
     _consumes: <Self::CreateFormConsumes as ToRef<'_>>::Ref,
-    _back_navigation_available: bool,
+    _back_token: Option<BackToken>,
   ) -> anyhow::Result<FormWithContext<Message, Self::Context>> {
     Ok(FormWithContext(Message("Choose a case".into()), EmptyFormContext))
   }
@@ -456,7 +459,7 @@ impl Form for ChooseCaseForm {
     _consumes: <Self::ValidateInputConsumes as ToRef<'_>>::Ref,
     user_input: String,
     _form_context: Self::Context,
-    _back_navigation_available: bool,
+    _back_token: Option<BackToken>,
   ) -> anyhow::Result<InputValidation<Self::Produces, Messages, Self::Context>> {
     let option = user_input.parse::<u8>().unwrap_or(1);
     Ok(InputValidation::Successful(hlist!(CaseOptionParam(option))))
@@ -515,7 +518,7 @@ impl FormSplitter for TestFormSplitter {
   async fn create_form(
     &self,
     _consumes: <Self::CreateFormConsumes as ToRef<'_>>::Ref,
-    _back_navigation_available: bool,
+    _back_token: Option<BackToken>,
   ) -> anyhow::Result<FormWithContext<Message, Self::Context>> {
     Ok(FormWithContext(Message("choose case".into()), 0))
   }
@@ -525,7 +528,7 @@ impl FormSplitter for TestFormSplitter {
     _consumes: <Self::ValidateInputConsumes as ToRef<'_>>::Ref,
     user_input: String,
     failed: Self::Context,
-    _back_navigation_available: bool,
+    _back_token: Option<BackToken>,
   ) -> anyhow::Result<InputValidation<Self::Produces, Messages, Self::Context>> {
     match (user_input.as_str(), failed) {
       ("retry", 0) => Ok(InputValidation::Retry(Message("retry again".into()), failed + 1)),
@@ -547,7 +550,7 @@ impl FormSplitter for InnerFormSplitter {
   async fn create_form(
     &self,
     _consumes: <Self::CreateFormConsumes as ToRef<'_>>::Ref,
-    _back_navigation_available: bool,
+    _back_token: Option<BackToken>,
   ) -> anyhow::Result<FormWithContext<Message, Self::Context>> {
     Ok(FormWithContext(Message("choose case".into()), 0))
   }
@@ -557,7 +560,7 @@ impl FormSplitter for InnerFormSplitter {
     _consumes: <Self::ValidateInputConsumes as ToRef<'_>>::Ref,
     user_input: String,
     failed: Self::Context,
-    _back_navigation_available: bool,
+    _back_token: Option<BackToken>,
   ) -> anyhow::Result<InputValidation<Self::Produces, Messages, Self::Context>> {
     match (user_input.as_str(), failed) {
       ("retry", 0) => Ok(InputValidation::Retry(Message("retry again".into()), failed + 1)),
@@ -594,8 +597,9 @@ async fn test_return_error_on_param_missing_from_init_value(
 ) {
   let mut init_value = session_init_value();
   init_value.pop();
-  let run_outcome =
-    process.resume_run(init_value, PreviousRunYieldedAt(StepIndex::MIN), messages[0].into(), None, false).await;
+  let run_outcome = process
+    .resume_run(init_value, PreviousRunYieldedAt(StepIndex::MIN), messages[0].into(), None, None::<BackToken>)
+    .await;
   assert!(run_outcome.is_err_and(|x| format!("{x}") == "Admin error or error on frontend."));
 }
 
@@ -610,7 +614,7 @@ async fn test_return_error_on_param_missing_from_context(
       PreviousRunYieldedAt(StepIndex::MIN),
       messages[messages_index].into(),
       None,
-      false,
+      None::<BackToken>,
     )
     .await
     .expect("Test failed");
@@ -620,7 +624,13 @@ async fn test_return_error_on_param_missing_from_context(
       assert_eq!(msg.0, messages[messages_index]);
       value.pop();
       let run_outcome = process
-        .resume_run(value, PreviousRunYieldedAt(yielded_at.0), messages[messages_index].into(), Some(context), false)
+        .resume_run(
+          value,
+          PreviousRunYieldedAt(yielded_at.0),
+          messages[messages_index].into(),
+          Some(context),
+          None::<BackToken>,
+        )
         .await;
       assert!(run_outcome.is_err_and(|x| format!("{x}") == "Missing key: 0"));
     },
@@ -963,7 +973,7 @@ impl Form for RetryOnceForm {
   async fn create_form(
     &self,
     _consumes: <Self::CreateFormConsumes as ToRef<'_>>::Ref,
-    _back_navigation_available: bool,
+    _back_token: Option<BackToken>,
   ) -> anyhow::Result<FormWithContext<Message, Self::Context>> {
     Ok(FormWithContext(Message("Fancy a retry?".into()), EmptyFormContext))
   }
@@ -973,7 +983,7 @@ impl Form for RetryOnceForm {
     _consumes: <Self::ValidateInputConsumes as ToRef<'_>>::Ref,
     user_input: String,
     _form_context: Self::Context,
-    _back_navigation_available: bool,
+    _back_token: Option<BackToken>,
   ) -> anyhow::Result<InputValidation<Self::Produces, Messages, Self::Context>> {
     if user_input == "retry" {
       Ok(InputValidation::Retry(Message("Try again".into()), EmptyFormContext))
@@ -1247,14 +1257,14 @@ async fn test_process_messages(
   // run ordered_all_unique_param_uids in tests to check what code is reachable and it does not panic
   let _ = process.ordered_all_unique_param_uids();
   loop {
-    let back_navigation_available = !visited_form_steps.is_empty();
+    let back_token = if visited_form_steps.is_empty() { None } else { Some(create_back_token()) };
     let mut run_outcome = process
       .resume_run(
         previous_run_produced.clone(),
         previous_run_yielded_at.clone(),
         messages[messages_index].into(),
         form_context.clone(),
-        back_navigation_available,
+        back_token,
       )
       .await
       .expect("Test failed");
@@ -1262,14 +1272,14 @@ async fn test_process_messages(
     if let RunOutcome::Back = run_outcome {
       visited_form_steps.pop();
       let target_step_index = *visited_form_steps.last().expect("Cannot go back further");
-      let back_navigation_available = visited_form_steps.len() > 1;
+      let back_token = if visited_form_steps.len() > 1 { Some(create_back_token()) } else { None };
       run_outcome = process
         .resume_run(
           previous_run_produced.clone(),
           PreviousRunYieldedAt(target_step_index),
           String::new(),
           None,
-          back_navigation_available,
+          back_token,
         )
         .await
         .expect("Test failed");

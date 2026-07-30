@@ -4,6 +4,7 @@ use crate::builder::{
   PreviousRunYieldedAt, SessionContext, StepIndex,
 };
 use crate::param_list::concat::Concat;
+use crate::step::BackToken;
 use crate::step::{Form, FormWithContext, InputValidation};
 use anyhow::anyhow;
 use std::marker::PhantomData;
@@ -54,16 +55,16 @@ where
     previous_run_yielded_at: PreviousRunYieldedAt,
     user_input: String,
     form_context: MaybeFormContext,
-    back_navigation_available: bool,
+    back_token: Option<BackToken>,
   ) -> IntermediateRunResult<Self::Produces, Self::Messages> {
     if previous_run_yielded_at.0 < self.step_index {
       let process_before_output = self
         .process_before
-        .resume_run(previous_run_produced, previous_run_yielded_at, user_input, form_context, back_navigation_available)
+        .resume_run(previous_run_produced, previous_run_yielded_at, user_input, form_context, back_token)
         .await?;
       match process_before_output {
         IntermediateRunOutcome::Continue(process_before_produces) => {
-          self.continue_run(process_before_produces, back_navigation_available).await
+          self.continue_run(process_before_produces, back_token).await
         },
         IntermediateRunOutcome::Yield(a, b, c, d) => Ok(IntermediateRunOutcome::Yield(a, b, c, d)),
         IntermediateRunOutcome::Finish(a) => Ok(IntermediateRunOutcome::Finish(a)),
@@ -72,7 +73,7 @@ where
       }
     } else if form_context.is_none() {
       let process_before_produces = ProcessBefore::Produces::deserialize(previous_run_produced)?;
-      self.continue_run(process_before_produces, back_navigation_available).await
+      self.continue_run(process_before_produces, back_token).await
     } else {
       let process_before_produces = ProcessBefore::Produces::deserialize(previous_run_produced)?;
       let last_step_consumes =
@@ -80,11 +81,11 @@ where
           &process_before_produces,
         );
       let context: FormStep::Context = postcard::from_bytes(&form_context.ok_or(anyhow!("Missing FormContext"))?)?;
-      match self.form_step.handle_input(last_step_consumes, user_input, context, back_navigation_available).await? {
+      match self.form_step.handle_input(last_step_consumes, user_input, context, back_token).await? {
         InputValidation::Successful(a) => Ok(IntermediateRunOutcome::Continue(a.concat(process_before_produces))),
         InputValidation::Retry(a, b) => Ok(IntermediateRunOutcome::RetryUserInput(a, postcard::to_allocvec(&b)?)),
         InputValidation::Finish(a) => Ok(IntermediateRunOutcome::Finish(a)),
-        InputValidation::Back => Ok(IntermediateRunOutcome::Back),
+        InputValidation::Back(_) => Ok(IntermediateRunOutcome::Back),
       }
     }
   }
@@ -92,13 +93,12 @@ where
   async fn continue_run(
     &self,
     process_before_produces: Self::ProcessBeforeProduces,
-    back_navigation_available: bool,
+    back_token: Option<BackToken>,
   ) -> IntermediateRunResult<Self::Produces, Self::Messages> {
     let last_step_consumes = <&ProcessBefore::Produces as BorrowJust<'_, FormStep::CreateFormConsumes, _>>::borrow_just(
       &process_before_produces,
     );
-    let FormWithContext(form, form_context) =
-      self.form_step.create_form(last_step_consumes, back_navigation_available).await?;
+    let FormWithContext(form, form_context) = self.form_step.create_form(last_step_consumes, back_token).await?;
     Ok(IntermediateRunOutcome::Yield(
       form,
       process_before_produces.serialize()?,
@@ -110,13 +110,12 @@ where
   async fn run_subprocess(
     &self,
     subprocess_consumes: Self::SubprocessConsumes,
-    back_navigation_available: bool,
+    back_token: Option<BackToken>,
   ) -> IntermediateRunResult<Self::Produces, Self::Messages> {
-    let process_before_output =
-      self.process_before.run_subprocess(subprocess_consumes, back_navigation_available).await?;
+    let process_before_output = self.process_before.run_subprocess(subprocess_consumes, back_token).await?;
     match process_before_output {
       IntermediateRunOutcome::Continue(process_before_produces) => {
-        self.continue_run(process_before_produces, back_navigation_available).await
+        self.continue_run(process_before_produces, back_token).await
       },
       IntermediateRunOutcome::Yield(a, b, c, d) => Ok(IntermediateRunOutcome::Yield(a, b, c, d)),
       IntermediateRunOutcome::Finish(a) => Ok(IntermediateRunOutcome::Finish(a)),

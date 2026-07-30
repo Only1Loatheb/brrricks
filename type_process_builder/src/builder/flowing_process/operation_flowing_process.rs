@@ -4,6 +4,7 @@ use crate::builder::{
 };
 use crate::param_list::borrow_just::BorrowJust;
 use crate::param_list::concat::Concat;
+use crate::step::BackToken;
 use crate::step::{Operation, OperationOutcome, ProcessMessages};
 use std::marker::PhantomData;
 
@@ -41,16 +42,16 @@ where
     previous_run_yielded_at: PreviousRunYieldedAt,
     user_input: String,
     form_context: MaybeFormContext,
-    back_navigation_available: bool,
+    back_token: Option<BackToken>,
   ) -> IntermediateRunResult<Self::Produces, Self::Messages> {
     if previous_run_yielded_at.0 < self.step_index {
       let process_before_output = self
         .process_before
-        .resume_run(previous_run_produced, previous_run_yielded_at, user_input, form_context, back_navigation_available)
+        .resume_run(previous_run_produced, previous_run_yielded_at, user_input, form_context, back_token)
         .await?;
       match process_before_output {
         IntermediateRunOutcome::Continue(process_before_produces) => {
-          self.continue_run(process_before_produces, back_navigation_available).await
+          self.continue_run(process_before_produces, back_token).await
         },
         IntermediateRunOutcome::Yield(a, b, c, d) => Ok(IntermediateRunOutcome::Yield(a, b, c, d)),
         IntermediateRunOutcome::Finish(a) => Ok(IntermediateRunOutcome::Finish(a)),
@@ -59,14 +60,14 @@ where
       }
     } else {
       let process_before_produces = ProcessBefore::Produces::deserialize(previous_run_produced)?;
-      self.continue_run(process_before_produces, back_navigation_available).await
+      self.continue_run(process_before_produces, back_token).await
     }
   }
 
   async fn continue_run(
     &self,
     process_before_produces: Self::ProcessBeforeProduces,
-    _back_navigation_available: bool,
+    _back_token: Option<BackToken>,
   ) -> IntermediateRunResult<Self::Produces, Self::Messages> {
     let last_step_consumes = (&process_before_produces).borrow_just();
     let last_step_outcome = self.last_step.handle(last_step_consumes).await?;
@@ -81,13 +82,12 @@ where
   async fn run_subprocess(
     &self,
     subprocess_consumes: Self::SubprocessConsumes,
-    back_navigation_available: bool,
+    back_token: Option<BackToken>,
   ) -> IntermediateRunResult<Self::Produces, Self::Messages> {
-    let process_before_output =
-      self.process_before.run_subprocess(subprocess_consumes, back_navigation_available).await?;
+    let process_before_output = self.process_before.run_subprocess(subprocess_consumes, back_token).await?;
     match process_before_output {
       IntermediateRunOutcome::Continue(process_before_produces) => {
-        self.continue_run(process_before_produces, back_navigation_available).await
+        self.continue_run(process_before_produces, back_token).await
       },
       IntermediateRunOutcome::Yield(a, b, c, d) => Ok(IntermediateRunOutcome::Yield(a, b, c, d)),
       IntermediateRunOutcome::Finish(a) => Ok(IntermediateRunOutcome::Finish(a)),

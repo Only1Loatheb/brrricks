@@ -19,10 +19,11 @@ use qrios_api_axum_server::models::{
 use sqlx::PgPool;
 use std::collections::HashSet;
 use std::ops::Not;
+use type_process_builder::back_navigation::create_back_token;
 use type_process_builder::builder::{
-  FinalizedProcess, ParamUID, PreviousRunYieldedAt, RunOutcome, RunnableProcess, StepIndex,
+  FinalizedProcess, FormContext, ParamUID, PreviousRunYieldedAt, RunOutcome, RunnableProcess, StepIndex,
 };
-use type_process_builder::step::ProcessMessages;
+use type_process_builder::step::{BackToken, ProcessMessages};
 
 pub struct Message(pub String);
 
@@ -101,25 +102,19 @@ impl<Process: FinalizedProcess<Messages = Messages> + Sync>
         .map_err(|_| ())?;
     let already_stored_params = session_context.iter().map(|x| x.0).collect::<HashSet<_>>();
 
-    let back_navigation_available = visited_form_steps.len() > 1;
+    let back_token = if visited_form_steps.len() > 1 { Some(create_back_token()) } else { None };
     let mut run_result = self
       .process
-      .resume_run(session_context.clone(), previous_run_yielded_at, user_input, form_context, back_navigation_available)
+      .resume_run(session_context.clone(), previous_run_yielded_at, user_input, form_context, back_token)
       .await;
 
     if let Ok(RunOutcome::Back) = run_result {
       visited_form_steps.pop();
       let target_step_index = *visited_form_steps.last().ok_or(())?;
-      let back_navigation_available = visited_form_steps.len() > 1;
+      let back_token = if visited_form_steps.len() > 1 { Some(create_back_token()) } else { None };
       run_result = self
         .process
-        .resume_run(
-          session_context.clone(),
-          PreviousRunYieldedAt(target_step_index),
-          String::new(),
-          None,
-          back_navigation_available,
-        )
+        .resume_run(session_context.clone(), PreviousRunYieldedAt(target_step_index), String::new(), None, back_token)
         .await;
     }
 
@@ -188,7 +183,13 @@ impl<Process: FinalizedProcess<Messages = Messages> + Sync>
       vec![(0, postcard::to_allocvec(&body.msisdn).unwrap()), (1, postcard::to_allocvec(&body.operator).unwrap())];
     let run_result = self
       .process
-      .resume_run(init_session_context, PreviousRunYieldedAt(StepIndex::MIN), shortcode_string, None, false)
+      .resume_run(
+        init_session_context,
+        PreviousRunYieldedAt(StepIndex::MIN),
+        shortcode_string,
+        None::<FormContext>,
+        None::<BackToken>,
+      )
       .await;
     match run_result {
       Ok(RunOutcome::Yield(message, session_context, current_run_yielded_at, form_context)) => {
@@ -290,7 +291,7 @@ mod tests {
       async fn create_form(
         &self,
         _consumes: <Self::CreateFormConsumes as ToRef<'_>>::Ref,
-        _back_navigation_available: bool,
+        _back_token: Option<BackToken>,
       ) -> anyhow::Result<FormWithContext<Message, Self::Context>> {
         Ok(FormWithContext(Message("This will be discarded".into()), 0))
       }
@@ -300,7 +301,7 @@ mod tests {
         _consumes: <Self::ValidateInputConsumes as ToRef<'_>>::Ref,
         _user_input: String,
         failed: Self::Context,
-        _back_navigation_available: bool,
+        _back_token: Option<BackToken>,
       ) -> anyhow::Result<InputValidation<Self::Produces, Messages, Self::Context>> {
         match failed {
           0 => Ok(InputValidation::Retry(Message("This will be accepted".into()), failed + 1)),
@@ -342,7 +343,7 @@ mod tests {
       async fn create_form(
         &self,
         _consumes: <Self::CreateFormConsumes as ToRef<'_>>::Ref,
-        _back_navigation_available: bool,
+        _back_token: Option<BackToken>,
       ) -> anyhow::Result<FormWithContext<Message, Self::Context>> {
         Ok(FormWithContext(Message("choose case".into()), 0))
       }
@@ -352,7 +353,7 @@ mod tests {
         _consumes: <Self::ValidateInputConsumes as ToRef<'_>>::Ref,
         user_input: String,
         failed: u16,
-        _back_navigation_available: bool,
+        _back_token: Option<BackToken>,
       ) -> anyhow::Result<InputValidation<Self::Produces, Messages, Self::Context>> {
         match (user_input.as_str(), failed) {
           ("retry", 0) => Ok(InputValidation::Retry(Message("retry again".into()), failed + 1)),
