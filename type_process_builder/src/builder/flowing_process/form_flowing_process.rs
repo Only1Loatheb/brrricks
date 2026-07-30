@@ -80,7 +80,7 @@ where
           &process_before_produces,
         );
       let context: FormStep::Context = postcard::from_bytes(&form_context.ok_or(anyhow!("Missing FormContext"))?)?;
-      match self.form_step.handle_input(last_step_consumes, user_input, context).await? {
+      match self.form_step.handle_input(last_step_consumes, user_input, context, back_navigation_available).await? {
         InputValidation::Successful(a) => Ok(IntermediateRunOutcome::Continue(a.concat(process_before_produces))),
         InputValidation::Retry(a, b) => Ok(IntermediateRunOutcome::RetryUserInput(a, postcard::to_allocvec(&b)?)),
         InputValidation::Finish(a) => Ok(IntermediateRunOutcome::Finish(a)),

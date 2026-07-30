@@ -40,7 +40,7 @@ pub async fn standard_io_process_runner(
     io::stdin().read_line(&mut input)?;
     let user_input = input.trim().to_owned();
 
-    let back_navigation_available = !visited_form_steps.is_empty();
+    let back_navigation_available = visited_form_steps.len() > 1;
     let mut run_outcome = demo_process
       .resume_run(
         previous_run_produced.clone(),

@@ -278,6 +278,7 @@ impl Form for FinishEarlyForm {
     _consumes: <Self::ValidateInputConsumes as ToRef<'_>>::Ref,
     _user_input: String,
     _form_context: Self::Context,
+    _back_navigation_available: bool,
   ) -> anyhow::Result<InputValidation<Self::Produces, Messages, Self::Context>> {
     Ok(InputValidation::Finish(Message("Form finished".into())))
   }
@@ -314,6 +315,7 @@ impl Form for CommonCaseParam1Form {
     _consumes: <Self::ValidateInputConsumes as ToRef<'_>>::Ref,
     _user_input: String,
     _form_context: Self::Context,
+    _back_navigation_available: bool,
   ) -> anyhow::Result<InputValidation<Self::Produces, Messages, Self::Context>> {
     Ok(InputValidation::Successful(hlist![CommonCaseParam]))
   }
@@ -340,6 +342,7 @@ impl Form for CommonCaseParam2Form {
     _consumes: <Self::ValidateInputConsumes as ToRef<'_>>::Ref,
     _user_input: String,
     _form_context: Self::Context,
+    _back_navigation_available: bool,
   ) -> anyhow::Result<InputValidation<Self::Produces, Messages, Self::Context>> {
     Ok(InputValidation::Successful(hlist![CommonCaseParam]))
   }
@@ -366,6 +369,7 @@ impl Form for NoOpForm {
     _consumes: <Self::ValidateInputConsumes as ToRef<'_>>::Ref,
     _user_input: String,
     _form_context: Self::Context,
+    _back_navigation_available: bool,
   ) -> anyhow::Result<InputValidation<Self::Produces, Messages, Self::Context>> {
     Ok(InputValidation::Successful(HNil))
   }
@@ -392,6 +396,7 @@ impl Form for FinishAfterInput {
     _consumes: <Self::ValidateInputConsumes as ToRef<'_>>::Ref,
     _user_input: String,
     _form_context: Self::Context,
+    _back_navigation_available: bool,
   ) -> anyhow::Result<InputValidation<Self::Produces, Messages, Self::Context>> {
     Ok(InputValidation::Finish(Message("Always finish".into())))
   }
@@ -418,6 +423,7 @@ impl Form for OneInputRetryForm {
     _consumes: <Self::ValidateInputConsumes as ToRef<'_>>::Ref,
     user_input: String,
     failed: Self::Context,
+    _back_navigation_available: bool,
   ) -> anyhow::Result<InputValidation<Self::Produces, Messages, Self::Context>> {
     if user_input == "0" {
       return Ok(InputValidation::Back);
@@ -450,6 +456,7 @@ impl Form for ChooseCaseForm {
     _consumes: <Self::ValidateInputConsumes as ToRef<'_>>::Ref,
     user_input: String,
     _form_context: Self::Context,
+    _back_navigation_available: bool,
   ) -> anyhow::Result<InputValidation<Self::Produces, Messages, Self::Context>> {
     let option = user_input.parse::<u8>().unwrap_or(1);
     Ok(InputValidation::Successful(hlist!(CaseOptionParam(option))))
@@ -518,6 +525,7 @@ impl FormSplitter for TestFormSplitter {
     _consumes: <Self::ValidateInputConsumes as ToRef<'_>>::Ref,
     user_input: String,
     failed: Self::Context,
+    _back_navigation_available: bool,
   ) -> anyhow::Result<InputValidation<Self::Produces, Messages, Self::Context>> {
     match (user_input.as_str(), failed) {
       ("retry", 0) => Ok(InputValidation::Retry(Message("retry again".into()), failed + 1)),
@@ -549,6 +557,7 @@ impl FormSplitter for InnerFormSplitter {
     _consumes: <Self::ValidateInputConsumes as ToRef<'_>>::Ref,
     user_input: String,
     failed: Self::Context,
+    _back_navigation_available: bool,
   ) -> anyhow::Result<InputValidation<Self::Produces, Messages, Self::Context>> {
     match (user_input.as_str(), failed) {
       ("retry", 0) => Ok(InputValidation::Retry(Message("retry again".into()), failed + 1)),
@@ -964,6 +973,7 @@ impl Form for RetryOnceForm {
     _consumes: <Self::ValidateInputConsumes as ToRef<'_>>::Ref,
     user_input: String,
     _form_context: Self::Context,
+    _back_navigation_available: bool,
   ) -> anyhow::Result<InputValidation<Self::Produces, Messages, Self::Context>> {
     if user_input == "retry" {
       Ok(InputValidation::Retry(Message("Try again".into()), EmptyFormContext))

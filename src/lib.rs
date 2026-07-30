@@ -61,6 +61,7 @@ impl FormSplitter for SelectAmountSource {
     _consumes: <Self::ValidateInputConsumes as ToRef<'_>>::Ref,
     user_input: String,
     _form_context: Self::Context,
+    _back_navigation_available: bool,
   ) -> anyhow::Result<InputValidation<Self::Produces, Messages, Self::Context>> {
     Ok(match user_input.as_str() {
       "1" => InputValidation::Successful(Self::Produces::inject((PredefinedAmount, hlist!(Amount(100))))),
@@ -98,6 +99,7 @@ impl Form for AmountForm {
     _consumes: <Self::ValidateInputConsumes as ToRef<'_>>::Ref,
     user_input: String,
     _form_context: Self::Context,
+    _back_navigation_available: bool,
   ) -> anyhow::Result<InputValidation<Self::Produces, Messages, Self::Context>> {
     if user_input == "0" {
       return Ok(InputValidation::Back);

@@ -65,6 +65,7 @@ pub trait Form: Send + Sync {
     consumes: <Self::ValidateInputConsumes as ToRef<'_>>::Ref,
     user_input: String,
     form_context: Self::Context,
+    back_navigation_available: bool,
   ) -> impl Future<Output = anyhow::Result<InputValidation<Self::Produces, Self::Messages, Self::Context>>> + Send;
 }
 
@@ -105,6 +106,7 @@ pub trait FormSplitter: Send + Sync {
     consumes: <Self::ValidateInputConsumes as ToRef<'_>>::Ref,
     user_input: String,
     form_context: Self::Context,
+    back_navigation_available: bool,
   ) -> impl Future<Output = anyhow::Result<InputValidation<Self::Produces, Self::Messages, Self::Context>>> + Send;
 }
 

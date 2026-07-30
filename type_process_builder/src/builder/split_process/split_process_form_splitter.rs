@@ -98,7 +98,7 @@ where
           &process_before_split_produced,
         );
       let context: SplitterStep::Context = postcard::from_bytes(&form_context.ok_or(anyhow!("Missing FormContext"))?)?;
-      match self.splitter.handle_input(last_step_consumes, user_input, context).await? {
+      match self.splitter.handle_input(last_step_consumes, user_input, context, back_navigation_available).await? {
         InputValidation::Successful(splitter_produces) => {
           let splitter_produces_to_other_cases = match splitter_produces {
             Coproduct::Inl(a) => Coproduct::Inl(a.1),

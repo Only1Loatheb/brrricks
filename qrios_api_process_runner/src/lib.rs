@@ -300,6 +300,7 @@ mod tests {
         _consumes: <Self::ValidateInputConsumes as ToRef<'_>>::Ref,
         _user_input: String,
         failed: Self::Context,
+        _back_navigation_available: bool,
       ) -> anyhow::Result<InputValidation<Self::Produces, Messages, Self::Context>> {
         match failed {
           0 => Ok(InputValidation::Retry(Message("This will be accepted".into()), failed + 1)),
@@ -351,6 +352,7 @@ mod tests {
         _consumes: <Self::ValidateInputConsumes as ToRef<'_>>::Ref,
         user_input: String,
         failed: u16,
+        _back_navigation_available: bool,
       ) -> anyhow::Result<InputValidation<Self::Produces, Messages, Self::Context>> {
         match (user_input.as_str(), failed) {
           ("retry", 0) => Ok(InputValidation::Retry(Message("retry again".into()), failed + 1)),
