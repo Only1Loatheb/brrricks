@@ -37,6 +37,7 @@ pub trait Operation: Send + Sync {
   ) -> impl Future<Output = anyhow::Result<OperationOutcome<Self::Produces, Self::FinalMessage>>> + Send;
 }
 
+/// I could make it type safe, but I want to allow for backing up from process that was composed in a dynamic GUI editor
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct BackToken(pub(crate) ());
 
