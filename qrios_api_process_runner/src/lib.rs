@@ -102,19 +102,26 @@ impl<Process: FinalizedProcess<Messages = Messages> + Sync>
         .map_err(|_| ())?;
     let already_stored_params = session_context.iter().map(|x| x.0).collect::<HashSet<_>>();
 
-    let back_token = if visited_form_steps.len() > 1 { Some(create_back_token()) } else { None };
-    let mut run_result = self
-      .process
-      .resume_run(session_context.clone(), previous_run_yielded_at, user_input, form_context, back_token)
-      .await;
+    let mut run_result = {
+      let back_token = visited_form_steps.is_empty().not().then(create_back_token);
+      self
+        .process
+        .resume_run(session_context.clone(), previous_run_yielded_at, user_input, form_context, back_token)
+        .await
+    };
 
     if let Ok(RunOutcome::Back) = run_result {
-      visited_form_steps.pop();
-      let target_step_index = *visited_form_steps.last().ok_or(())?;
+      let target_step_index = visited_form_steps.pop().ok_or(())?;
       let back_token = if visited_form_steps.len() > 1 { Some(create_back_token()) } else { None };
       run_result = self
         .process
-        .resume_run(session_context.clone(), PreviousRunYieldedAt(target_step_index), String::new(), None, back_token)
+        .resume_run(
+          session_context.clone(),
+          PreviousRunYieldedAt(target_step_index),
+          String::new(),
+          None::<FormContext>,
+          back_token,
+        )
         .await;
     }
 

@@ -75,29 +75,34 @@ The process shown in the flowchart can be implemented using `Brrricks`:
 <!-- EXAMPLE_START -->
 
 ```rust
-pub mod standard_io_process_runner;
-
-use crate::standard_io_process_runner::{Message, Messages};
 use serde::{Deserialize, Serialize};
 use type_process_builder::builder::{FinalizedProcess, FlowingProcess, RunnableProcess, SessionContext, SplitProcess};
-use type_process_builder::step::{BackToken, Entry, Final, Form, FormSplitter, FormWithContext, InputValidation};
+use type_process_builder::step::{
+  BackToken, Entry, Final, Form, FormSplitter, FormWithContext, InputValidation, ProcessMessages,
+};
 use type_process_builder::{Coprod, HList, HNil, ToRef, hlist, hlist_pat};
 use typenum::{U0, U1};
 
 use type_process_builder::impl_param_value;
 
 #[derive(Deserialize, Serialize)]
-pub struct ShortcodeString(pub String);
+struct ShortcodeString(pub String);
 
 #[derive(Deserialize, Serialize)]
-pub struct Amount(pub u32);
+struct Amount(pub u32);
 
 impl_param_value! {
   ShortcodeString => U0,
   Amount => U1,
 }
 
-pub struct ShortcodeStringEntry;
+pub struct Messages;
+impl ProcessMessages for Messages {
+  type FormMessage = String;
+  type FinalMessage = String;
+}
+
+struct ShortcodeStringEntry;
 impl Entry for ShortcodeStringEntry {
   type Produces = HList![ShortcodeString];
   type Messages = Messages;
@@ -111,9 +116,9 @@ impl Entry for ShortcodeStringEntry {
   }
 }
 
-pub struct PredefinedAmount;
-pub struct CustomAmount;
-pub struct SelectAmountSource;
+struct PredefinedAmount;
+struct CustomAmount;
+struct SelectAmountSource;
 impl FormSplitter for SelectAmountSource {
   type CreateFormConsumes = HNil;
   type ValidateInputConsumes = HNil;
@@ -125,11 +130,11 @@ impl FormSplitter for SelectAmountSource {
     &self,
     _consumes: <Self::CreateFormConsumes as ToRef<'_>>::Ref,
     back_token: Option<BackToken>,
-  ) -> anyhow::Result<FormWithContext<Message, Self::Context>> {
+  ) -> anyhow::Result<FormWithContext<String, Self::Context>> {
     let string = back_token.map_or("Enter 1 for 100 or 2 for custom amount".into(), |_| {
       "Enter 1 for 100 or 2 for custom amount. 0 to go back".into()
     });
-    Ok(FormWithContext(Message(string), EmptyFormContext))
+    Ok(FormWithContext(string, EmptyFormContext))
   }
 
   async fn handle_input(
@@ -143,15 +148,15 @@ impl FormSplitter for SelectAmountSource {
       ("0", Some(back_token)) => InputValidation::Back(back_token),
       ("1", _) => InputValidation::Successful(Self::Produces::inject((PredefinedAmount, hlist!(Amount(100))))),
       ("2", _) => InputValidation::Successful(Self::Produces::inject((CustomAmount, HNil))),
-      _ => InputValidation::Retry(Message("not 1 or 2".into()), EmptyFormContext),
+      _ => InputValidation::Retry("not 1 or 2".into(), EmptyFormContext),
     })
   }
 }
 
 #[derive(Serialize, Deserialize)]
-pub struct EmptyFormContext;
+struct EmptyFormContext;
 
-pub struct AmountForm;
+struct AmountForm;
 impl Form for AmountForm {
   type CreateFormConsumes = HNil;
   type ValidateInputConsumes = HNil;
@@ -163,9 +168,9 @@ impl Form for AmountForm {
     &self,
     _consumes: <Self::CreateFormConsumes as ToRef<'_>>::Ref,
     back_token: Option<BackToken>,
-  ) -> anyhow::Result<FormWithContext<Message, Self::Context>> {
+  ) -> anyhow::Result<FormWithContext<String, Self::Context>> {
     let string = back_token.map_or("Enter a number".into(), |_| "Enter a number. 0 to go back".into());
-    Ok(FormWithContext(Message(string), EmptyFormContext))
+    Ok(FormWithContext(string, EmptyFormContext))
   }
 
   async fn handle_input(
@@ -182,19 +187,19 @@ impl Form for AmountForm {
     }
     match user_input.parse::<u32>() {
       Ok(value) => Ok(InputValidation::Successful(hlist![Amount(value)])),
-      Err(_) => Ok(InputValidation::Retry(Message("Invalid number".into()), EmptyFormContext)),
+      Err(_) => Ok(InputValidation::Retry("Invalid number".into(), EmptyFormContext)),
     }
   }
 }
 
-pub struct DisplayAmount;
+struct DisplayAmount;
 impl Final for DisplayAmount {
   type Consumes = HList![ShortcodeString, Amount];
-  type FinalMessage = Message;
+  type FinalMessage = String;
 
-  async fn handle(&self, consumes: Self::Consumes) -> anyhow::Result<Message> {
+  async fn handle(&self, consumes: Self::Consumes) -> anyhow::Result<String> {
     let hlist_pat!(_shortcode_string, amount) = consumes;
-    Ok(Message(format!("The amount was: {}. Good bye!", amount.0)))
+    Ok(format!("The amount was: {}. Good bye!", amount.0))
   }
 }
 
