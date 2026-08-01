@@ -1,3 +1,4 @@
+use crate::HNil;
 use crate::builder::{
   FlowingProcess, IntermediateRunOutcome, IntermediateRunResult, MaybeFormContext, ParamList, PreviousRunYieldedAt,
   SessionContext, StepIndex,
@@ -17,7 +18,8 @@ impl<ProcessBeforeProduces: ParamList, Messages: ProcessMessages> FlowingProcess
   type Produces = ProcessBeforeProduces;
   type SubprocessConsumes = ProcessBeforeProduces;
   type Messages = Messages;
-  type EverProduced = ProcessBeforeProduces;
+  type EverProduced = ProcessBeforeProduces; // Includes params produced specific for this case in split
+  // fixme only pass ProcessBefore::EverProduced + params produced specific for this case in split
 
   async fn resume_run(
     &self,

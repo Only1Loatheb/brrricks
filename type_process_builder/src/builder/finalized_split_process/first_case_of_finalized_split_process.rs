@@ -9,6 +9,7 @@ use crate::frunk::coproduct::Coproduct;
 use crate::param_list::concat::Concat;
 use crate::step::BackToken;
 use std::marker::PhantomData;
+use crate::builder::intersect::Union;
 
 pub struct FirstCaseOfFinalizedSplitProcess<
   ThisTag: Send + Sync,
@@ -117,13 +118,17 @@ impl<
     ProcessBefore,
     ThisCase,
   >
+where
+  ProcessBefore::EverProduced: Union<ThisCase::EverProduced>,
+  <ProcessBefore::EverProduced as Union<ThisCase::EverProduced>>::Union: ParamList,
 {
   type ProcessBeforeSplitProduces = ProcessBefore::ProcessBeforeSplitProduces;
   type SplitterProducesForThisCase = ProcessBefore::SplitterProducesForFirstCase;
   type SplitterTagForThisCase = ProcessBefore::SplitterTagForFirstCase;
   type SubprocessConsumes = ProcessBefore::SubprocessConsumes;
   type Messages = ProcessBefore::Messages;
-  type EverProduced = ProcessBefore::EverProduced;
+  type EverProduced = <ProcessBefore::EverProduced as Union<ThisCase::EverProduced>>::Union; // fixme reverse the arg
+  // order?
 
   async fn resume_run(
     &self,

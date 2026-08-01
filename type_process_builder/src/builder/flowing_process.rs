@@ -120,7 +120,7 @@ pub trait FlowingProcess: Sized + Send + Sync {
     SplitterTagForFirstCase = Tag,
     SubprocessConsumes = Self::SubprocessConsumes,
     Messages = Self::Messages,
-    EverProduced = <SplitterProducesForFirstCase as Concat<Self::EverProduced>>::Concatenated,
+    EverProduced = Self::EverProduced,
   >
   where
     for<'a> &'a Self::Produces:
@@ -161,7 +161,7 @@ pub trait FlowingProcess: Sized + Send + Sync {
     SplitterTagForFirstCase = Tag,
     SubprocessConsumes = Self::SubprocessConsumes,
     Messages = Self::Messages,
-    EverProduced = <SplitterProducesForFirstCase as Concat<Self::EverProduced>>::Concatenated,
+    EverProduced = Self::EverProduced,
   >
   where
     for<'a> &'a Self::Produces:

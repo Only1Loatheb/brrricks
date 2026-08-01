@@ -50,7 +50,6 @@ impl<
     ProcessBeforeProducesToValidateInputConsumesIndices,
   >
 where
-  SplitterProducesForFirstCase: Concat<ProcessBefore::EverProduced>,
   for<'a> &'a ProcessBefore::Produces:
     BorrowJust<'a, SplitterStep::CreateFormConsumes, ProcessBeforeProducesToCreateFormConsumesIndices>,
   for<'a> &'a ProcessBefore::Produces:
@@ -61,7 +60,7 @@ where
   type SplitterTagForFirstCase = Tag;
   type SubprocessConsumes = ProcessBefore::SubprocessConsumes;
   type Messages = ProcessBefore::Messages;
-  type EverProduced = <SplitterProducesForFirstCase as Concat<ProcessBefore::EverProduced>>::Concatenated;
+  type EverProduced = ProcessBefore::EverProduced; // SplitterProducesForFirstCase is included in first case produces when handing first case
 
   async fn resume_run(
     &self,

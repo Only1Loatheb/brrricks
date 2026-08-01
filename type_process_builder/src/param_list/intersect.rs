@@ -3,7 +3,7 @@ use crate::param_list::{ParamList, ParamValue};
 use std::ops::BitOr;
 use typenum::{B0, B1, Bit, IsEqual, Same};
 
-////////// Contains //////////
+////////// Contains ////////// fixme move to contains.rs
 
 pub trait Contains<Needle: ParamValue> {
   type IsContained: Bit;
@@ -23,7 +23,7 @@ where
     <<Needle::UID as IsEqual<Head::UID>>::Output as BitOr<<Tail as Contains<Needle>>::IsContained>>::Output;
 }
 
-////////// Filter //////////
+////////// ThenKeep //////////
 
 pub trait ThenKeep<Head, Tail> {
   type Filtered;
@@ -47,6 +47,8 @@ impl<Head, Tail> ThenKeep<Head, Tail> for B0 {
     tail
   }
 }
+
+////////// Intersection ////////// fixme move to separate file with Union
 
 pub trait IfNotKeep<Head, Tail> {
   type Filtered;
@@ -94,7 +96,7 @@ where
   }
 }
 
-////////// Union //////////
+////////// Union ////////// fixme move to separate file with Intersection
 
 pub trait Union<RHS: ParamList>: ParamList {
   type Union: ParamList;

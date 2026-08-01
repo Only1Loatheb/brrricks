@@ -8,6 +8,7 @@ use crate::frunk::coproduct::{CNil, Coproduct};
 use crate::param_list::concat::Concat;
 use crate::step::BackToken;
 use std::marker::PhantomData;
+use crate::builder::intersect::Union;
 
 pub struct NextCaseOfFinalizedSplitProcess<
   ThisTag: Send + Sync,
@@ -119,13 +120,16 @@ for NextCaseOfFinalizedSplitProcess<
   ProcessBefore,
   ThisCase,
 >
+where
+  ProcessBefore::EverProduced: Union<ThisCase::EverProduced>,
+  <ProcessBefore::EverProduced as Union<ThisCase::EverProduced>>::Union: ParamList,
 {
   type ProcessBeforeSplitProduces = ProcessBefore::ProcessBeforeSplitProduces;
   type SplitterProducesForThisCase = SplitterProducesForThisCase;
   type SplitterTagForThisCase = ThisTag;
   type SubprocessConsumes = ProcessBefore::SubprocessConsumes;
   type Messages = ProcessBefore::Messages;
-  type EverProduced = ProcessBefore::EverProduced;
+  type EverProduced = <ProcessBefore::EverProduced as Union<ThisCase::EverProduced>>::Union;
 
   async fn resume_run(
     &self,
@@ -235,11 +239,14 @@ impl<
   >,
 > FinalizedProcess
 for NextCaseOfFinalizedSplitProcess<ThisTag, SplitterProducesForThisCase, CNil, ProcessBefore, ThisCase>
+where
+  ProcessBefore::EverProduced: Union<ThisCase::EverProduced>,
+  <ProcessBefore::EverProduced as Union<ThisCase::EverProduced>>::Union: ParamList,
 {
   type ProcessBeforeProduces = <SplitterProducesForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated;
   type SubprocessConsumes = ProcessBefore::SubprocessConsumes;
   type Messages = ProcessBefore::Messages;
-  type EverProduced = ProcessBefore::EverProduced;
+  type EverProduced = <ProcessBefore::EverProduced as Union<ThisCase::EverProduced>>::Union;
 
   async fn resume_run(
     &self,
