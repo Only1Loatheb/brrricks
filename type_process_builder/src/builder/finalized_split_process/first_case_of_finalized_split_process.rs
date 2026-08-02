@@ -9,7 +9,7 @@ use crate::frunk::coproduct::Coproduct;
 use crate::param_list::concat::Concat;
 use crate::step::BackToken;
 use std::marker::PhantomData;
-use crate::builder::intersect::Union;
+use crate::param_list::union::Union;
 
 pub struct FirstCaseOfFinalizedSplitProcess<
   ThisTag: Send + Sync,

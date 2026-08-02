@@ -1,5 +1,5 @@
 use crate::frunk::hlist::{HCons, HList, HNil};
-use crate::param_list::intersect::Contains;
+use crate::param_list::contains::Contains;
 use anyhow::anyhow;
 use serde::Serialize;
 use serde::de::DeserializeOwned;
@@ -9,6 +9,8 @@ pub mod borrow_just;
 pub mod concat;
 pub mod extract;
 pub mod intersect;
+pub mod contains;
+pub mod union;
 
 pub type ParamUID = u32;
 

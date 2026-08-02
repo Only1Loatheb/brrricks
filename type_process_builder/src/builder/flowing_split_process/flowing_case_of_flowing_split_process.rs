@@ -7,7 +7,8 @@ use crate::builder::{
 use crate::frunk::coproduct::{CNil, Coproduct};
 use crate::param_list::concat::Concat;
 use crate::param_list::extract::Extract;
-use crate::param_list::intersect::{Intersect, Union};
+use crate::param_list::intersect::Intersect;
+use crate::param_list::union::Union;
 use crate::step::BackToken;
 use std::marker::PhantomData;
 
