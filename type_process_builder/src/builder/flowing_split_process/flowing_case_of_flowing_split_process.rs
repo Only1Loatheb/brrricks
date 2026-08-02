@@ -54,8 +54,8 @@ FlowingCaseOfFlowingSplitProcess<
   ThisIndices,
 >
 where
-  ProcessBefore::EverProduced: Union<ThisCase::EverProduced>,
-  <ProcessBefore::EverProduced as Union<ThisCase::EverProduced>>::Union: ParamList,
+  ThisCase::EverProduced: Union<ProcessBefore::EverProduced>,
+  <ThisCase::EverProduced as Union<ProcessBefore::EverProduced>>::Union: ParamList,
 {
   pub fn case_end<
     NextCase: FinalizedProcess<
@@ -147,15 +147,15 @@ where
   ProcessBefore::EveryFlowingCaseProduces: Intersect<ThisCase::Produces>,
   <ProcessBefore::EveryFlowingCaseProduces as Intersect<ThisCase::Produces>>::Intersection: ParamList,
   ThisCase::Produces: Extract<<ProcessBefore::EveryFlowingCaseProduces as Intersect<ThisCase::Produces>>::Intersection, Indices>,
-  ProcessBefore::EverProduced: Union<ThisCase::EverProduced>,
-  <ProcessBefore::EverProduced as Union<ThisCase::EverProduced>>::Union: ParamList,
+  ThisCase::EverProduced: Union<ProcessBefore::EverProduced>,
+  <ThisCase::EverProduced as Union<ProcessBefore::EverProduced>>::Union: ParamList,
 {
   type ProcessBeforeSplitProduces = ProcessBefore::ProcessBeforeSplitProduces;
   type SplitterProducesForThisCase = SplitterProducesForThisCase;
   type EveryFlowingCaseProduces = <ProcessBefore::EveryFlowingCaseProduces as Intersect<ThisCase::Produces>>::Intersection;
   type SubprocessConsumes = ProcessBefore::SubprocessConsumes;
   type Messages = ProcessBefore::Messages;
-  type EverProduced = <ProcessBefore::EverProduced as Union<ThisCase::EverProduced>>::Union;
+  type EverProduced = <ThisCase::EverProduced as Union<ProcessBefore::EverProduced>>::Union;
 
   async fn resume_run(
     &self,
@@ -285,14 +285,14 @@ where
   ProcessBefore::EveryFlowingCaseProduces: Intersect<ThisCase::Produces>,
   <ProcessBefore::EveryFlowingCaseProduces as Intersect<ThisCase::Produces>>::Intersection: ParamList,
   ThisCase::Produces: Extract<<ProcessBefore::EveryFlowingCaseProduces as Intersect<ThisCase::Produces>>::Intersection, Indices>,
-  ProcessBefore::EverProduced: Union<ThisCase::EverProduced>,
-  <ProcessBefore::EverProduced as Union<ThisCase::EverProduced>>::Union: ParamList,
+  ThisCase::EverProduced: Union<ProcessBefore::EverProduced>,
+  <ThisCase::EverProduced as Union<ProcessBefore::EverProduced>>::Union: ParamList,
 {
   type ProcessBeforeProduces = ProcessBefore::ProcessBeforeSplitProduces;
   type Produces = <ProcessBefore::EveryFlowingCaseProduces as Intersect<ThisCase::Produces>>::Intersection;
   type SubprocessConsumes = ProcessBefore::SubprocessConsumes;
   type Messages = ProcessBefore::Messages;
-  type EverProduced = <ProcessBefore::EverProduced as Union<ThisCase::EverProduced>>::Union;
+  type EverProduced = <ThisCase::EverProduced as Union<ProcessBefore::EverProduced>>::Union;
 
   async fn resume_run(
     &self,

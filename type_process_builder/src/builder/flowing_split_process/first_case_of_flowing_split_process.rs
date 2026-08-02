@@ -130,15 +130,15 @@ impl<
     ThisCase,
   >
 where
-  ProcessBefore::EverProduced: Union<ThisCase::EverProduced>,
-  <ProcessBefore::EverProduced as Union<ThisCase::EverProduced>>::Union: ParamList,
+  ThisCase::EverProduced: Union<ProcessBefore::EverProduced>,
+  <ThisCase::EverProduced as Union<ProcessBefore::EverProduced>>::Union: ParamList,
 {
   type ProcessBeforeSplitProduces = ProcessBefore::ProcessBeforeSplitProduces;
   type SplitterProducesForThisCase = ProcessBefore::SplitterProducesForFirstCase;
   type EveryFlowingCaseProduces = ThisCase::Produces;
   type SubprocessConsumes = ProcessBefore::SubprocessConsumes;
   type Messages = ProcessBefore::Messages;
-  type EverProduced = <ProcessBefore::EverProduced as Union<ThisCase::EverProduced>>::Union;
+  type EverProduced = <ThisCase::EverProduced as Union<ProcessBefore::EverProduced>>::Union;
 
   async fn resume_run(
     &self,
