@@ -38,7 +38,7 @@ impl<
   SplitterProducesForOtherCases: Send + Sync,
   ProcessBefore: FlowingSplitProcess<Coproduct<(ThisTag, SplitterProducesForThisCase), Coproduct<(NextTag, SplitterProducesForNextCase), SplitterProducesForOtherCases>>>,
   SplitterProducesForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
-  SplitterProducesForNextCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
+  SplitterProducesForNextCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces> + Concat<ProcessBefore::EverProduced>,
   ThisCase: FlowingProcess<
     SubprocessConsumes=<SplitterProducesForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
     Messages = ProcessBefore::Messages,
@@ -65,8 +65,11 @@ where
   >(
     self,
     _assumed_tag: NextTag,
-    create_case: impl FnOnce(Subprocess<<SplitterProducesForNextCase as
-    Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated, ProcessBefore::Messages>) -> NextCase,
+    create_case: impl FnOnce(Subprocess<
+      <SplitterProducesForNextCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
+      <SplitterProducesForNextCase as Concat<ProcessBefore::EverProduced>>::Concatenated,
+      ProcessBefore::Messages
+    >) -> NextCase,
   ) -> FinalizedCaseOfFlowingSplitProcess<
     NextTag,
     SplitterProducesForNextCase,
@@ -83,6 +86,7 @@ where
       case_index: WILL_BE_RENUMBERED,
       this_case: create_case(subprocess::<
         <SplitterProducesForNextCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
+        <SplitterProducesForNextCase as Concat<ProcessBefore::EverProduced>>::Concatenated,
         ProcessBefore::Messages
       >()),
       phantom_data: Default::default(),
@@ -98,8 +102,11 @@ where
   >(
     self,
     _assumed_tag: NextTag,
-    create_case: impl FnOnce(Subprocess<<SplitterProducesForNextCase as
-    Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated, ProcessBefore::Messages>) -> NextCase,
+    create_case: impl FnOnce(Subprocess<
+      <SplitterProducesForNextCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
+      <SplitterProducesForNextCase as Concat<ProcessBefore::EverProduced>>::Concatenated,
+      ProcessBefore::Messages
+    >) -> NextCase,
   ) -> FlowingCaseOfFlowingSplitProcess<
     NextTag,
     SplitterProducesForNextCase,
@@ -117,6 +124,7 @@ where
       case_index: WILL_BE_RENUMBERED,
       this_case: create_case(subprocess::<
         <SplitterProducesForNextCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
+        <SplitterProducesForNextCase as Concat<ProcessBefore::EverProduced>>::Concatenated,
         ProcessBefore::Messages
       >()),
       phantom_data: Default::default(),

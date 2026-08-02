@@ -31,7 +31,7 @@ pub struct SplitProcessFormSplitter<
 impl<
   Tag: Send + Sync,
   ProcessBefore: FlowingProcess,
-  SplitterProducesForFirstCase: ParamList + Concat<ProcessBefore::Produces>,
+  SplitterProducesForFirstCase: ParamList + Concat<ProcessBefore::Produces> + Concat<ProcessBefore::EverProduced>,
   SplitterProducesForOtherCases: Send + Sync,
   SplitterStep: FormSplitter<
       Produces = Coproduct<(Tag, SplitterProducesForFirstCase), SplitterProducesForOtherCases>,

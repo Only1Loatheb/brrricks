@@ -6,18 +6,19 @@ use crate::step::BackToken;
 use crate::step::ProcessMessages;
 use std::marker::PhantomData;
 
-pub struct Subprocess<ProcessBeforeProduces, Messages> {
-  pub phantom_data: PhantomData<(ProcessBeforeProduces, Messages)>,
+// maybe can use dependent types and a trait, but is okay for now
+pub struct Subprocess<ProcessBeforeProduces, EverProduced, Messages> {
+  pub phantom_data: PhantomData<(ProcessBeforeProduces, EverProduced, Messages)>,
 }
 
-impl<ProcessBeforeProduces: ParamList, Messages: ProcessMessages> FlowingProcess
-  for Subprocess<ProcessBeforeProduces, Messages>
+impl<ProcessBeforeProduces: ParamList, EverProduced: ParamList, Messages: ProcessMessages> FlowingProcess
+  for Subprocess<ProcessBeforeProduces, EverProduced, Messages>
 {
   type ProcessBeforeProduces = ProcessBeforeProduces;
   type Produces = ProcessBeforeProduces;
   type SubprocessConsumes = ProcessBeforeProduces;
   type Messages = Messages;
-  type EverProduced = ProcessBeforeProduces; // Includes params produced specific for this case in split
+  type EverProduced = EverProduced; // Includes params produced specific for this case in split
   // fixme only pass ProcessBefore::EverProduced + params produced specific for this case in split
 
   async fn resume_run(
@@ -54,7 +55,7 @@ impl<ProcessBeforeProduces: ParamList, Messages: ProcessMessages> FlowingProcess
 }
 
 #[must_use]
-pub fn subprocess<ProcessBeforeProduces: ParamList, Messages: ProcessMessages>()
--> Subprocess<ProcessBeforeProduces, Messages> {
+pub fn subprocess<ProcessBeforeProduces: ParamList, EverProduced: ParamList, Messages: ProcessMessages>()
+-> Subprocess<ProcessBeforeProduces, EverProduced, Messages> {
   Subprocess { phantom_data: Default::default() }
 }

@@ -34,7 +34,7 @@ impl<
     >,
   >,
   SplitterProducesForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
-  SplitterProducesForNextCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
+  SplitterProducesForNextCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces> + Concat<ProcessBefore::EverProduced>,
   ThisCase: FinalizedProcess<
     SubprocessConsumes=<SplitterProducesForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
     Messages=ProcessBefore::Messages,
@@ -56,6 +56,7 @@ NextCaseOfFinalizedSplitProcess<
     create_case: impl FnOnce(
       Subprocess<
         <SplitterProducesForNextCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
+        <SplitterProducesForNextCase as Concat<ProcessBefore::EverProduced>>::Concatenated,
         ProcessBefore::Messages,
       >,
     ) -> NextCase,
@@ -66,6 +67,7 @@ NextCaseOfFinalizedSplitProcess<
       case_index: WILL_BE_RENUMBERED,
       this_case: create_case(subprocess::<
         <SplitterProducesForNextCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
+        <SplitterProducesForNextCase as Concat<ProcessBefore::EverProduced>>::Concatenated,
         ProcessBefore::Messages,
       >()),
       phantom_data: Default::default(),
@@ -81,6 +83,7 @@ NextCaseOfFinalizedSplitProcess<
     _assumed_tag: NextTag,
     create_case: impl FnOnce(Subprocess<
       <SplitterProducesForNextCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
+      <SplitterProducesForNextCase as Concat<ProcessBefore::EverProduced>>::Concatenated,
       ProcessBefore::Messages,
     >) -> NextCase,
   ) -> FlowingCaseOfFinalizedSplitProcess<
@@ -96,6 +99,7 @@ NextCaseOfFinalizedSplitProcess<
       case_index: WILL_BE_RENUMBERED,
       this_case: create_case(subprocess::<
         <SplitterProducesForNextCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
+        <SplitterProducesForNextCase as Concat<ProcessBefore::EverProduced>>::Concatenated,
         ProcessBefore::Messages,
       >()),
       phantom_data: Default::default(),

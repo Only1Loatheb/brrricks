@@ -26,7 +26,7 @@ pub struct SplitProcessSplitter<
 impl<
   Tag: Send + Sync,
   ProcessBefore: FlowingProcess,
-  SplitterProducesForFirstCase: ParamList + Concat<ProcessBefore::Produces>,
+  SplitterProducesForFirstCase: ParamList + Concat<ProcessBefore::Produces> + Concat<ProcessBefore::EverProduced>,
   SplitterProducesForOtherCases: Send + Sync,
   SplitterStep: Splitter<Produces = Coproduct<(Tag, SplitterProducesForFirstCase), SplitterProducesForOtherCases>>,
   ProcessBeforeProducesToSplitterStepConsumesIndices: Sync + Send,
