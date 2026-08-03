@@ -131,8 +131,7 @@ where
   type SplitterTagForThisCase = ProcessBefore::SplitterTagForFirstCase;
   type SubprocessConsumes = ProcessBefore::SubprocessConsumes;
   type Messages = ProcessBefore::Messages;
-  type EverProduced = <ThisCase::EverProduced as Union<ProcessBefore::EverProduced>>::Union; // fixme reverse the arg
-  // order?
+  type EverProduced = <ThisCase::EverProduced as Union<ProcessBefore::EverProduced>>::Union;
 
   async fn resume_run(
     &self,
