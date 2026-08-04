@@ -1,6 +1,5 @@
 use crate::builder::finalized_process::FinalizedProcess;
-use crate::builder::{MaybeFormContext, ParamUID, PreviousRunYieldedAt, RunResult, SessionContext, StepIndex};
-use crate::param_list::ParamList;
+use crate::builder::{MaybeFormContext, PreviousRunYieldedAt, RunResult, SessionContext, StepIndex};
 use crate::step::BackToken;
 
 pub struct RunnableProcess<UnderlyingProcess: FinalizedProcess> {
@@ -27,13 +26,6 @@ impl<UnderlyingProcess: FinalizedProcess> RunnableProcess<UnderlyingProcess> {
       .finalized_process
       .resume_run(previous_run_produced, previous_run_yielded_at, user_input, form_context, back_token)
       .await
-  }
-
-  /// [`crate::param_list::ParamList::`_deserialize]
-  pub fn ordered_all_unique_param_uids(&self) -> Vec<ParamUID> {
-    let mut all_param_uids = Vec::<ParamUID>::new();
-    UnderlyingProcess::EverProduced::all_param_uids(&mut all_param_uids);
-    all_param_uids
   }
 
   pub fn get_name(&self) -> &'static str {

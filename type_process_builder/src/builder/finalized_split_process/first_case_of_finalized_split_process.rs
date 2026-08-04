@@ -7,9 +7,9 @@ use crate::builder::{
 };
 use crate::frunk::coproduct::Coproduct;
 use crate::param_list::concat::Concat;
+use crate::param_list::union::Union;
 use crate::step::BackToken;
 use std::marker::PhantomData;
-use crate::param_list::union::Union;
 
 pub struct FirstCaseOfFinalizedSplitProcess<
   ThisTag: Send + Sync,
@@ -43,6 +43,7 @@ impl<
     ProcessBefore,
     ThisCase,
   >
+ where ThisCase::EverProduced: Union<ProcessBefore::EverProduced>
 {
   pub fn case_end<
     NextCase: FinalizedProcess<

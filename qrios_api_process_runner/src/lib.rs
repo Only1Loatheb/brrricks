@@ -42,7 +42,11 @@ pub struct QriosUssdApiService<Process: FinalizedProcess<Messages = Messages>> {
 
 impl<Process: FinalizedProcess<Messages = Messages>> QriosUssdApiService<Process> {
   pub async fn new(process: RunnableProcess<Process>, pool: PgPool) -> Result<Self, sqlx::Error> {
-    let ordered_all_unique_param_uids = process.ordered_all_unique_param_uids();
+    let ordered_all_unique_param_uids = {
+    let mut all_param_uids = Vec::<ParamUID>::new();
+    // Process::EverProduced::all_param_uids(&mut all_param_uids);
+    all_param_uids
+  };
     create_session_context_table(&pool, &process, &ordered_all_unique_param_uids).await?;
     let get_session_context_query = build_get_session_context_query(&process, &ordered_all_unique_param_uids);
     Ok(QriosUssdApiService { process, pool, ordered_all_unique_param_uids, get_session_context_query })

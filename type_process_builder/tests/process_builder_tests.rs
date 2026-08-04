@@ -1261,8 +1261,6 @@ async fn test_process_messages(
   process: &RunnableProcess<impl FinalizedProcess<Messages = Messages>>,
   messages: Vec<&str>,
 ) {
-  // run ordered_all_unique_param_uids in tests to check what code is reachable and it does not panic
-  let _ = process.ordered_all_unique_param_uids();
   let mut state = SessionState {
     session_context: session_init_value(),
     previous_run_yielded_at: PreviousRunYieldedAt(StepIndex::MIN),

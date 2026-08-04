@@ -48,6 +48,7 @@ FinalizedCaseOfFlowingSplitProcess<
   ProcessBefore,
   ThisCase,
 >
+where ThisCase::EverProduced: Union<ProcessBefore::EverProduced>
 {
   pub fn case_end<
     NextCase: FinalizedProcess<
@@ -244,7 +245,6 @@ where
       IntermediateFlowingSplitOutcome::Back => Ok(IntermediateFlowingSplitOutcome::Back),
     }
   }
-
 
   fn enumerate_steps(&mut self, last_used_index: StepIndex) -> StepIndex {
     let used_index = self.split_process_before.enumerate_steps(last_used_index);

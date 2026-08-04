@@ -19,7 +19,6 @@ impl<ProcessBeforeProduces: ParamList, EverProduced: ParamList, Messages: Proces
   type SubprocessConsumes = ProcessBeforeProduces;
   type Messages = Messages;
   type EverProduced = EverProduced; // Includes params produced specific for this case in split
-  // fixme only pass ProcessBefore::EverProduced + params produced specific for this case in split
 
   async fn resume_run(
     &self,

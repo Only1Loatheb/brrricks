@@ -47,6 +47,7 @@ NextCaseOfFinalizedSplitProcess<
   ProcessBefore,
   ThisCase,
 >
+  where ThisCase::EverProduced: Union<ProcessBefore::EverProduced>
 {
   pub fn case_end<NextCase: FinalizedProcess<
     SubprocessConsumes=<SplitterProducesForNextCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
