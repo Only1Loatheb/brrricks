@@ -20,10 +20,14 @@ use sqlx::PgPool;
 use std::collections::HashSet;
 use std::ops::Not;
 use type_process_builder::back_navigation::create_back_token;
+use type_process_builder::builder::contains::Contains;
 use type_process_builder::builder::{
-  FinalizedProcess, FormContext, ParamUID, PreviousRunYieldedAt, RunOutcome, RunnableProcess, StepIndex,
+  FinalizedProcess, FormContext, ParamUID, ParamValue, PreviousRunYieldedAt, RunOutcome, RunnableProcess, StepIndex,
 };
+use type_process_builder::param_list::ParamList;
 use type_process_builder::step::{BackToken, ProcessMessages};
+use type_process_builder::{HCons, HNil};
+use typenum::{Same, Unsigned, B0};
 
 pub struct Message(pub String);
 
@@ -40,13 +44,28 @@ pub struct QriosUssdApiService<Process: FinalizedProcess<Messages = Messages>> {
   get_session_context_query: GetSessionContextQuery,
 }
 
-impl<Process: FinalizedProcess<Messages = Messages>> QriosUssdApiService<Process> {
+pub trait ParamUids: ParamList {
+  fn param_uids() -> Vec<ParamUID>;
+}
+impl ParamUids for HNil {
+  fn param_uids() -> Vec<ParamUID> {
+    Vec::new()
+  }
+}
+impl<Head: ParamValue, Tail: ParamUids + Contains<Head>> ParamUids for HCons<Head, Tail>
+where
+  <Tail as Contains<Head>>::IsContained: Same<B0>,
+{
+  fn param_uids() -> Vec<ParamUID> {
+    let mut a = Tail::param_uids();
+    a.push(Head::UID::U32);
+    a
+  }
+}
+
+impl<Process: FinalizedProcess<Messages = Messages, EverProduced: ParamUids>> QriosUssdApiService<Process> {
   pub async fn new(process: RunnableProcess<Process>, pool: PgPool) -> Result<Self, sqlx::Error> {
-    let ordered_all_unique_param_uids = {
-    let mut all_param_uids = Vec::<ParamUID>::new();
-    // Process::EverProduced::all_param_uids(&mut all_param_uids);
-    all_param_uids
-  };
+    let ordered_all_unique_param_uids = <Process::EverProduced as ParamUids>::param_uids();
     create_session_context_table(&pool, &process, &ordered_all_unique_param_uids).await?;
     let get_session_context_query = build_get_session_context_query(&process, &ordered_all_unique_param_uids);
     Ok(QriosUssdApiService { process, pool, ordered_all_unique_param_uids, get_session_context_query })

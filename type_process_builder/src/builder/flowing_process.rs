@@ -195,6 +195,7 @@ pub trait FlowingProcess: Sized + Send + Sync {
     ProcessBeforeProduces = Self::Produces,
     SubprocessConsumes = Self::SubprocessConsumes,
     Messages = Self::Messages,
+    EverProduced = Self::EverProduced,
   >
   where
     Self::Produces: Extract<FinalStep::Consumes, ProcessBeforeProducesToLastStepConsumesIndices>,

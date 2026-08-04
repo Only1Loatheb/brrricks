@@ -98,8 +98,6 @@ pub trait ParamList: HList + Send + Sync {
   }
   /// [`crate::builder::RunnableProcess::ordered_all_unique_param_uids`]
   fn deserialize_from(session_context: SessionContext) -> anyhow::Result<Self>;
-
-  fn all_param_uids(acc: &mut Vec<ParamUID>); //fixme move up a level
 }
 
 impl ParamList for HNil {
@@ -110,8 +108,6 @@ impl ParamList for HNil {
   fn deserialize_from(_session_context: SessionContext) -> anyhow::Result<Self> {
     Ok(HNil)
   }
-
-  fn all_param_uids(_acc: &mut Vec<ParamUID>) {} //fixme move up a level
 }
 
 /// The `where` clause prevents the same [`ParamValue`] from being duplicated in a [`ParamList`].
@@ -136,10 +132,5 @@ where
     let head: Head = postcard::from_bytes(&value)?;
     let tail = Tail::deserialize_from(session_context)?;
     Ok(HCons { head, tail })
-  }
-
-  fn all_param_uids(acc: &mut Vec<ParamUID>) { //fixme move up a level
-    acc.push(Head::UID::U32);
-    Tail::all_param_uids(acc);
   }
 }
