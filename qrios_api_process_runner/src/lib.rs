@@ -27,7 +27,7 @@ use type_process_builder::builder::{
 use type_process_builder::param_list::ParamList;
 use type_process_builder::step::{BackToken, ProcessMessages};
 use type_process_builder::{HCons, HNil};
-use typenum::{Same, Unsigned, B0};
+use typenum::{B0, Same, Unsigned};
 
 pub struct Message(pub String);
 

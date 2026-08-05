@@ -28,7 +28,7 @@ impl<
   NextTag: Send + Sync,
   SplitterProducesForOtherCases: Send + Sync,
   ProcessBefore: SplitProcess<Coproduct<(NextTag, SplitterProducesForNextCase), SplitterProducesForOtherCases>>,
-  SplitterProducesForNextCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces> + Concat<ProcessBefore::EverProduced>,
+  SplitterProducesForNextCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces> + Concat<ProcessBefore::ProcessBeforeSplitEverProduced>,
   ThisCase: FinalizedProcess<
       SubprocessConsumes = <ProcessBefore::SplitterProducesForFirstCase as Concat<
         ProcessBefore::ProcessBeforeSplitProduces,
@@ -43,7 +43,8 @@ impl<
     ProcessBefore,
     ThisCase,
   >
- where ThisCase::EverProduced: Union<ProcessBefore::EverProduced>
+where
+  ThisCase::EverProduced: Union<ProcessBefore::EverProduced>,
 {
   pub fn case_end<
     NextCase: FinalizedProcess<
@@ -55,7 +56,7 @@ impl<
     create_case: impl FnOnce(
       Subprocess<
         <SplitterProducesForNextCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
-        <SplitterProducesForNextCase as Concat<ProcessBefore::EverProduced>>::Concatenated,
+        <SplitterProducesForNextCase as Concat<ProcessBefore::ProcessBeforeSplitEverProduced>>::Concatenated,
         ProcessBefore::Messages,
       >,
     ) -> NextCase,
@@ -66,7 +67,7 @@ impl<
       case_index: WILL_BE_RENUMBERED,
       this_case: create_case(subprocess::<
         <SplitterProducesForNextCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
-        <SplitterProducesForNextCase as Concat<ProcessBefore::EverProduced>>::Concatenated,
+        <SplitterProducesForNextCase as Concat<ProcessBefore::ProcessBeforeSplitEverProduced>>::Concatenated,
         ProcessBefore::Messages,
       >()),
       phantom_data: Default::default(),
@@ -82,7 +83,7 @@ impl<
     _assumed_tag: NextTag,
     create_case: impl FnOnce(Subprocess<
       <SplitterProducesForNextCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
-       <SplitterProducesForNextCase as Concat<ProcessBefore::EverProduced>>::Concatenated,
+       <SplitterProducesForNextCase as Concat<ProcessBefore::ProcessBeforeSplitEverProduced>>::Concatenated,
       ProcessBefore::Messages,
     >) -> NextCase,
   ) -> FlowingCaseOfFinalizedSplitProcess<
@@ -98,7 +99,7 @@ impl<
       case_index: WILL_BE_RENUMBERED,
       this_case: create_case(subprocess::<
         <SplitterProducesForNextCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
-        <SplitterProducesForNextCase as Concat<ProcessBefore::EverProduced>>::Concatenated,
+        <SplitterProducesForNextCase as Concat<ProcessBefore::ProcessBeforeSplitEverProduced>>::Concatenated,
         ProcessBefore::Messages,
       >()),
       phantom_data: Default::default(),
@@ -132,6 +133,7 @@ where
   type SplitterTagForThisCase = ProcessBefore::SplitterTagForFirstCase;
   type SubprocessConsumes = ProcessBefore::SubprocessConsumes;
   type Messages = ProcessBefore::Messages;
+  type ProcessBeforeSplitEverProduced = ProcessBefore::ProcessBeforeSplitEverProduced;
   type EverProduced = <ThisCase::EverProduced as Union<ProcessBefore::EverProduced>>::Union;
 
   async fn resume_run(

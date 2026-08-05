@@ -6,9 +6,9 @@ use crate::builder::{
 };
 use crate::frunk::coproduct::{CNil, Coproduct};
 use crate::param_list::concat::Concat;
+use crate::param_list::union::Union;
 use crate::step::BackToken;
 use std::marker::PhantomData;
-use crate::param_list::union::Union;
 
 pub struct FinalizedCaseOfFlowingSplitProcess<
   ThisTag: Send + Sync,
@@ -35,7 +35,7 @@ impl<
     Coproduct<(ThisTag, SplitterProducesForThisCase), Coproduct<(NextTag, SplitterProducesForNextCase), SplitterProducesForOtherCases>>,
   >,
   SplitterProducesForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
-  SplitterProducesForNextCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces> + Concat<ProcessBefore::EverProduced>,
+  SplitterProducesForNextCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces> + Concat<ProcessBefore::ProcessBeforeSplitEverProduced>,
   ThisCase: FinalizedProcess<
     SubprocessConsumes=<SplitterProducesForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
     Messages=ProcessBefore::Messages,
@@ -61,7 +61,7 @@ where ThisCase::EverProduced: Union<ProcessBefore::EverProduced>
     _assumed_tag: NextTag,
     create_case: impl FnOnce(Subprocess<
       <SplitterProducesForNextCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
-      <SplitterProducesForNextCase as Concat<ProcessBefore::EverProduced>>::Concatenated,
+      <SplitterProducesForNextCase as Concat<ProcessBefore::ProcessBeforeSplitEverProduced>>::Concatenated,
       ProcessBefore::Messages,
     >) -> NextCase,
   ) -> FinalizedCaseOfFlowingSplitProcess<
@@ -77,7 +77,7 @@ where ThisCase::EverProduced: Union<ProcessBefore::EverProduced>
       case_index: WILL_BE_RENUMBERED,
       this_case: create_case(subprocess::<
         <SplitterProducesForNextCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
-        <SplitterProducesForNextCase as Concat<ProcessBefore::EverProduced>>::Concatenated,
+        <SplitterProducesForNextCase as Concat<ProcessBefore::ProcessBeforeSplitEverProduced>>::Concatenated,
         ProcessBefore::Messages,
       >()),
       phantom_data: Default::default(),
@@ -95,7 +95,7 @@ where ThisCase::EverProduced: Union<ProcessBefore::EverProduced>
     _assumed_tag: NextTag,
     create_case: impl FnOnce(Subprocess<
       <SplitterProducesForNextCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
-      <SplitterProducesForNextCase as Concat<ProcessBefore::EverProduced>>::Concatenated,
+      <SplitterProducesForNextCase as Concat<ProcessBefore::ProcessBeforeSplitEverProduced>>::Concatenated,
       ProcessBefore::Messages,
     >) -> NextCase,
   ) -> FlowingCaseOfFlowingSplitProcess<
@@ -112,7 +112,7 @@ where ThisCase::EverProduced: Union<ProcessBefore::EverProduced>
       case_index: WILL_BE_RENUMBERED,
       this_case: create_case(subprocess::<
         <SplitterProducesForNextCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
-        <SplitterProducesForNextCase as Concat<ProcessBefore::EverProduced>>::Concatenated,
+        <SplitterProducesForNextCase as Concat<ProcessBefore::ProcessBeforeSplitEverProduced>>::Concatenated,
         ProcessBefore::Messages
       >()),
       phantom_data: Default::default(),
@@ -146,6 +146,7 @@ where
   type EveryFlowingCaseProduces = ProcessBefore::EveryFlowingCaseProduces;
   type SubprocessConsumes = ProcessBefore::SubprocessConsumes;
   type Messages = ProcessBefore::Messages;
+  type ProcessBeforeSplitEverProduced = ProcessBefore::ProcessBeforeSplitEverProduced;
   type EverProduced = <ThisCase::EverProduced as Union<ProcessBefore::EverProduced>>::Union;
 
   async fn resume_run(

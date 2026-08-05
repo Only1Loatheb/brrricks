@@ -20,10 +20,13 @@ use std::future::Future;
 pub trait SplitProcess<SplitterProducesForOtherCases: Send + Sync>: Sized + Send + Sync {
   // Please specify all associated types at the impl SplitProcess side for inference to work.
   type ProcessBeforeSplitProduces: ParamList;
-  type SplitterProducesForFirstCase: ParamList + Concat<Self::ProcessBeforeSplitProduces> + Concat<Self::EverProduced>;
+  type SplitterProducesForFirstCase: ParamList
+    + Concat<Self::ProcessBeforeSplitProduces>
+    + Concat<Self::ProcessBeforeSplitEverProduced>;
   type SplitterTagForFirstCase: Send + Sync;
   type SubprocessConsumes: ParamList;
   type Messages: ProcessMessages;
+  type ProcessBeforeSplitEverProduced: ParamList;
   type EverProduced: ParamList;
 
   fn resume_run(
@@ -71,7 +74,7 @@ pub trait SplitProcess<SplitterProducesForOtherCases: Send + Sync>: Sized + Send
     create_case: impl FnOnce(
       Subprocess<
         <Self::SplitterProducesForFirstCase as Concat<Self::ProcessBeforeSplitProduces>>::Concatenated,
-        <Self::SplitterProducesForFirstCase as Concat<Self::EverProduced>>::Concatenated,
+        <Self::SplitterProducesForFirstCase as Concat<Self::ProcessBeforeSplitEverProduced>>::Concatenated,
         Self::Messages,
       >,
     ) -> ThisCase,
@@ -90,7 +93,7 @@ pub trait SplitProcess<SplitterProducesForOtherCases: Send + Sync>: Sized + Send
       case_index: WILL_BE_RENUMBERED,
       this_case: create_case(subprocess::<
         <Self::SplitterProducesForFirstCase as Concat<Self::ProcessBeforeSplitProduces>>::Concatenated,
-        <Self::SplitterProducesForFirstCase as Concat<Self::EverProduced>>::Concatenated,
+        <Self::SplitterProducesForFirstCase as Concat<Self::ProcessBeforeSplitEverProduced>>::Concatenated,
         Self::Messages,
       >()),
       phantom_data: Default::default(),
@@ -107,7 +110,7 @@ pub trait SplitProcess<SplitterProducesForOtherCases: Send + Sync>: Sized + Send
     _assumed_tag: Self::SplitterTagForFirstCase,
     create_case: impl FnOnce(Subprocess<
       <Self::SplitterProducesForFirstCase as Concat<Self::ProcessBeforeSplitProduces>>::Concatenated,
-      <Self::SplitterProducesForFirstCase as Concat<Self::EverProduced>>::Concatenated,
+      <Self::SplitterProducesForFirstCase as Concat<Self::ProcessBeforeSplitEverProduced>>::Concatenated,
       Self::Messages,
     >) -> ThisCase,
   ) -> FirstCaseOfFlowingSplitProcess<
@@ -125,7 +128,7 @@ pub trait SplitProcess<SplitterProducesForOtherCases: Send + Sync>: Sized + Send
       case_index: WILL_BE_RENUMBERED,
       this_case: create_case(subprocess::<
         <Self::SplitterProducesForFirstCase as Concat<Self::ProcessBeforeSplitProduces>>::Concatenated,
-        <Self::SplitterProducesForFirstCase as Concat<Self::EverProduced>>::Concatenated,
+        <Self::SplitterProducesForFirstCase as Concat<Self::ProcessBeforeSplitEverProduced>>::Concatenated,
         Self::Messages,
       >()),
       phantom_data: Default::default(),

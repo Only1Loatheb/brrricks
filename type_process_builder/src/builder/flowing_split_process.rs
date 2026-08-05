@@ -23,6 +23,7 @@ pub trait FlowingSplitProcess<SplitterProducesForOtherCases>: Sized + Send + Syn
   type EveryFlowingCaseProduces: ParamList; // already includes ProcessBeforeSplitProduces;
   type SubprocessConsumes: ParamList;
   type Messages: ProcessMessages;
+  type ProcessBeforeSplitEverProduced: ParamList;
   type EverProduced: ParamList;
 
   fn resume_run(

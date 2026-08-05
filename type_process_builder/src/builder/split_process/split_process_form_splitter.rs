@@ -60,6 +60,7 @@ where
   type SplitterTagForFirstCase = Tag;
   type SubprocessConsumes = ProcessBefore::SubprocessConsumes;
   type Messages = ProcessBefore::Messages;
+  type ProcessBeforeSplitEverProduced = ProcessBefore::EverProduced;
   type EverProduced = ProcessBefore::EverProduced; // SplitterProducesForFirstCase is included in first case produces when handing first case
 
   async fn resume_run(

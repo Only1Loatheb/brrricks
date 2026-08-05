@@ -18,6 +18,7 @@ pub trait FinalizedSplitProcess<SplitterProducesForOtherCases>: Sized + Send + S
   type SplitterTagForThisCase: Send + Sync;
   type SubprocessConsumes: ParamList;
   type Messages: ProcessMessages;
+  type ProcessBeforeSplitEverProduced: ParamList;
   type EverProduced: ParamList;
 
   fn resume_run(
