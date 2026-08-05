@@ -1281,15 +1281,3 @@ async fn test_process_messages(
     }
   }
 }
-
-// #[test]
-// fn test_ever_produced_union_prevents_reusing_removed_params() {
-//   let process = ExtractMsisdnOperatorAndShortcodeString
-//     .show(ChooseCaseForm)
-//     .split(SplitByTwoCaseOption)
-//     .case_via(Case1, |x| x.then(ProduceCaseParam1))
-//     .case_via(Case2, |x| x.then(ProduceCaseParam2))
-//     .end(SayGoodByAndConsumeCommonParams);
-//
-//   let _ = process;
-// }

@@ -52,7 +52,8 @@ pub async fn create_session_context<Process: FinalizedProcess>(
   let sql =
     format!("INSERT INTO {table_name} ({}) VALUES ({}) RETURNING id;", columns.join(", "), placeholders.join(", "));
 
-  let visited_steps_bytes = postcard::to_allocvec(&vec![current_run_yielded_at.0]).unwrap();
+  let visited_steps_bytes =
+    postcard::to_allocvec(&vec![current_run_yielded_at.0]).map_err(|e| sqlx::Error::Encode(Box::new(e)))?;
   let mut query = sqlx::query(&sql).bind(current_run_yielded_at.0).bind(form_context).bind(visited_steps_bytes);
 
   for (_, value) in session_context {
@@ -165,7 +166,7 @@ pub async fn update_session_context<Process: FinalizedProcess>(
 
   let sql = format!("UPDATE {table_name} SET {} WHERE id = ${};", assignments.join(", "), where_placeholder);
 
-  let visited_steps_bytes = postcard::to_allocvec(&visited_form_steps).unwrap();
+  let visited_steps_bytes = postcard::to_allocvec(&visited_form_steps).map_err(|e| sqlx::Error::Encode(Box::new(e)))?;
   let mut query = sqlx::query(&sql).bind(current_run_yielded_at.0).bind(form_context).bind(visited_steps_bytes);
 
   for (_, value) in params_to_store {

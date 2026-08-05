@@ -20,11 +20,7 @@ Process implemented with this library has the following invariants enforced at *
 - each step may only consume parameters that are guaranteed to be produced earlier in the process,
 - all execution paths must terminate in a final step,
 - every branch introduced by a split step must have a corresponding continuation defined,
-- once a parameter is produced in every execution path, it cannot be overwritten in subsequent steps.
-  If a parameter value is present only in a subset of paths, it is removed from the session context
-  to guarantee that downstream steps operate only on parameters that are present in all incoming paths.
-  Removing the parameter from the session context allows reusing it in later in the process,
-  but parameter store implementation is required to remove the parameter from cache if it is removed from the session context.
+- once a parameter is produced in any execution path, it cannot be overwritten in subsequent steps.
 
 ## Simple explanation
 
@@ -332,8 +328,8 @@ cargo xtask
 
 Some integration tests require Docker to be running on your machine to start containers for external dependencies (e.g., Postgres).
 
-[//]: # (todo Redirect)
+[//]: # (Redirect can be imlemented with Final step)
 
-[//]: # (todo ReturnFromRedirect)
+[//]: # (ReturnFromRedirect can be implemented with Form step)
 
 [//]: # (todo set back_navigation_available with a step)
