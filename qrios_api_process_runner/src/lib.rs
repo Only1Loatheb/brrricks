@@ -19,10 +19,15 @@ use qrios_api_axum_server::models::{
 use sqlx::PgPool;
 use std::collections::HashSet;
 use std::ops::Not;
+use type_process_builder::back_navigation::create_back_token;
+use type_process_builder::builder::contains::Contains;
 use type_process_builder::builder::{
-  FinalizedProcess, ParamUID, PreviousRunYieldedAt, RunOutcome, RunnableProcess, StepIndex,
+  FinalizedProcess, FormContext, ParamUID, ParamValue, PreviousRunYieldedAt, RunOutcome, RunnableProcess, StepIndex,
 };
-use type_process_builder::step::ProcessMessages;
+use type_process_builder::param_list::ParamList;
+use type_process_builder::step::{BackToken, ProcessMessages};
+use type_process_builder::{HCons, HNil};
+use typenum::{B0, Same, Unsigned};
 
 pub struct Message(pub String);
 
@@ -39,9 +44,28 @@ pub struct QriosUssdApiService<Process: FinalizedProcess<Messages = Messages>> {
   get_session_context_query: GetSessionContextQuery,
 }
 
-impl<Process: FinalizedProcess<Messages = Messages>> QriosUssdApiService<Process> {
+pub trait ParamUids: ParamList {
+  fn param_uids() -> Vec<ParamUID>;
+}
+impl ParamUids for HNil {
+  fn param_uids() -> Vec<ParamUID> {
+    Vec::new()
+  }
+}
+impl<Head: ParamValue, Tail: ParamUids + Contains<Head>> ParamUids for HCons<Head, Tail>
+where
+  <Tail as Contains<Head>>::IsContained: Same<B0>,
+{
+  fn param_uids() -> Vec<ParamUID> {
+    let mut a = Tail::param_uids();
+    a.push(Head::UID::U32);
+    a
+  }
+}
+
+impl<Process: FinalizedProcess<Messages = Messages, EverProduced: ParamUids>> QriosUssdApiService<Process> {
   pub async fn new(process: RunnableProcess<Process>, pool: PgPool) -> Result<Self, sqlx::Error> {
-    let ordered_all_unique_param_uids = process.ordered_all_unique_param_uids();
+    let ordered_all_unique_param_uids = <Process::EverProduced as ParamUids>::param_uids();
     create_session_context_table(&pool, &process, &ordered_all_unique_param_uids).await?;
     let get_session_context_query = build_get_session_context_query(&process, &ordered_all_unique_param_uids);
     Ok(QriosUssdApiService { process, pool, ordered_all_unique_param_uids, get_session_context_query })
@@ -95,27 +119,50 @@ impl<Process: FinalizedProcess<Messages = Messages> + Sync>
       UssdActionResult::ReturnFromRedirectResult(_) => todo!(),
     };
     let session_id = body.context_data.parse::<i64>().map_err(|_| ())?;
-    let (previous_run_yielded_at, form_context, session_context) =
+    let (previous_run_yielded_at, form_context, mut visited_form_steps, session_context) =
       get_session_context(&self.pool, &self.get_session_context_query, session_id, &self.ordered_all_unique_param_uids)
         .await
         .map_err(|_| ())?;
     let already_stored_params = session_context.iter().map(|x| x.0).collect::<HashSet<_>>();
-    let run_result = self.process.resume_run(session_context, previous_run_yielded_at, user_input, form_context).await;
+
+    let mut run_result = {
+      let back_token = visited_form_steps.is_empty().not().then(create_back_token);
+      self
+        .process
+        .resume_run(session_context.clone(), previous_run_yielded_at, user_input, form_context, back_token)
+        .await
+    };
+
+    if let Ok(RunOutcome::Back) = run_result {
+      let target_step_index = visited_form_steps.pop().ok_or(())?;
+      let back_token = if visited_form_steps.len() > 1 { Some(create_back_token()) } else { None };
+      run_result = self
+        .process
+        .resume_run(
+          session_context.clone(),
+          PreviousRunYieldedAt(target_step_index),
+          String::new(),
+          None::<FormContext>,
+          back_token,
+        )
+        .await;
+    }
+
     match run_result {
       Ok(RunOutcome::Yield(message, session_context, current_run_yielded_at, form_context)) => {
-        let session_context_param_ids = session_context.iter().map(|x| x.0).collect::<HashSet<_>>();
         let params_to_store =
           session_context.into_iter().filter(|x| already_stored_params.contains(&x.0).not()).collect::<Vec<_>>();
-        let params_to_remove =
-          already_stored_params.into_iter().filter(|x| session_context_param_ids.contains(x).not()).collect::<Vec<_>>();
+        if visited_form_steps.last() != Some(&current_run_yielded_at.0) {
+          visited_form_steps.push(current_run_yielded_at.0);
+        }
         let id = update_session_context(
           &self.pool,
           &self.process,
           session_id,
           current_run_yielded_at,
           Some(form_context),
+          visited_form_steps,
           params_to_store,
-          params_to_remove,
         )
         .await
         .map_err(|_| ())?;
@@ -131,6 +178,7 @@ impl<Process: FinalizedProcess<Messages = Messages> + Sync>
         delete_session_context(&self.pool, &self.process, session_id).await.map_err(|_| ())?;
         Ok(UssdView::InfoView(InfoView { message: message.0, r_type: "InfoView".into() }))
       },
+      Ok(RunOutcome::Back) => Err(()),
       Err(e) => {
         tracing::error!("Resume session failed: {:?}", e);
         delete_session_context(&self.pool, &self.process, session_id).await.map_err(|_| ())?;
@@ -163,8 +211,16 @@ impl<Process: FinalizedProcess<Messages = Messages> + Sync>
     };
     let init_session_context =
       vec![(0, postcard::to_allocvec(&body.msisdn).unwrap()), (1, postcard::to_allocvec(&body.operator).unwrap())];
-    let run_result =
-      self.process.resume_run(init_session_context, PreviousRunYieldedAt(StepIndex::MIN), shortcode_string, None).await;
+    let run_result = self
+      .process
+      .resume_run(
+        init_session_context,
+        PreviousRunYieldedAt(StepIndex::MIN),
+        shortcode_string,
+        None::<FormContext>,
+        None::<BackToken>,
+      )
+      .await;
     match run_result {
       Ok(RunOutcome::Yield(message, session_context, current_run_yielded_at, form_context)) => {
         let id = create_session_context(
@@ -184,6 +240,7 @@ impl<Process: FinalizedProcess<Messages = Messages> + Sync>
       Ok(RunOutcome::Finish(message)) => {
         Ok((i64::MAX, UssdView::InfoView(InfoView { message: message.0, r_type: "InfoView".into() })))
       },
+      Ok(RunOutcome::Back) => Err(()),
       Err(e) => {
         tracing::error!("New session failed: {:?}", e);
         Err(())
@@ -264,6 +321,7 @@ mod tests {
       async fn create_form(
         &self,
         _consumes: <Self::CreateFormConsumes as ToRef<'_>>::Ref,
+        _back_token: Option<BackToken>,
       ) -> anyhow::Result<FormWithContext<Message, Self::Context>> {
         Ok(FormWithContext(Message("This will be discarded".into()), 0))
       }
@@ -273,6 +331,7 @@ mod tests {
         _consumes: <Self::ValidateInputConsumes as ToRef<'_>>::Ref,
         _user_input: String,
         failed: Self::Context,
+        _back_token: Option<BackToken>,
       ) -> anyhow::Result<InputValidation<Self::Produces, Messages, Self::Context>> {
         match failed {
           0 => Ok(InputValidation::Retry(Message("This will be accepted".into()), failed + 1)),
@@ -314,6 +373,7 @@ mod tests {
       async fn create_form(
         &self,
         _consumes: <Self::CreateFormConsumes as ToRef<'_>>::Ref,
+        _back_token: Option<BackToken>,
       ) -> anyhow::Result<FormWithContext<Message, Self::Context>> {
         Ok(FormWithContext(Message("choose case".into()), 0))
       }
@@ -323,6 +383,7 @@ mod tests {
         _consumes: <Self::ValidateInputConsumes as ToRef<'_>>::Ref,
         user_input: String,
         failed: u16,
+        _back_token: Option<BackToken>,
       ) -> anyhow::Result<InputValidation<Self::Produces, Messages, Self::Context>> {
         match (user_input.as_str(), failed) {
           ("retry", 0) => Ok(InputValidation::Retry(Message("retry again".into()), failed + 1)),

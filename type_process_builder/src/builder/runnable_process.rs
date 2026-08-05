@@ -1,6 +1,6 @@
 use crate::builder::finalized_process::FinalizedProcess;
-use crate::builder::{MaybeFormContext, ParamUID, PreviousRunYieldedAt, RunResult, SessionContext, StepIndex};
-use std::collections::HashSet;
+use crate::builder::{MaybeFormContext, PreviousRunYieldedAt, RunResult, SessionContext, StepIndex};
+use crate::step::BackToken;
 
 pub struct RunnableProcess<UnderlyingProcess: FinalizedProcess> {
   finalized_process: UnderlyingProcess, // shouldn't be public
@@ -20,17 +20,12 @@ impl<UnderlyingProcess: FinalizedProcess> RunnableProcess<UnderlyingProcess> {
     previous_run_yielded_at: PreviousRunYieldedAt,
     user_input: String,
     form_context: MaybeFormContext,
+    back_token: Option<BackToken>,
   ) -> RunResult<UnderlyingProcess::Messages> {
-    self.finalized_process.resume_run(previous_run_produced, previous_run_yielded_at, user_input, form_context).await
-  }
-
-  /// [`crate::param_list::ParamList::`_deserialize]
-  pub fn ordered_all_unique_param_uids(&self) -> Vec<ParamUID> {
-    let mut all_param_uids = Vec::<ParamUID>::new();
-    self.finalized_process.all_param_uids(&mut all_param_uids);
-
-    let mut seen = HashSet::new();
-    all_param_uids.into_iter().rev().filter(|c| seen.insert(*c)).collect::<Vec<_>>()
+    self
+      .finalized_process
+      .resume_run(previous_run_produced, previous_run_yielded_at, user_input, form_context, back_token)
+      .await
   }
 
   pub fn get_name(&self) -> &'static str {

@@ -1,9 +1,10 @@
 use crate::builder::{
-  FlowingProcess, IntermediateRunOutcome, IntermediateRunResult, MaybeFormContext, ParamList, ParamUID,
-  PreviousRunYieldedAt, SessionContext, StepIndex,
+  FlowingProcess, IntermediateRunOutcome, IntermediateRunResult, MaybeFormContext, ParamList, PreviousRunYieldedAt,
+  SessionContext, StepIndex,
 };
 use crate::param_list::borrow_just::BorrowJust;
 use crate::param_list::concat::Concat;
+use crate::step::BackToken;
 use crate::step::{Operation, OperationOutcome, ProcessMessages};
 use std::marker::PhantomData;
 
@@ -25,7 +26,7 @@ impl<
 > FlowingProcess
   for OperationFlowingProcess<ProcessBefore, OperationStep, ProcessBeforeProducesToLastStepConsumesIndices>
 where
-  OperationStep::Produces: ParamList + Concat<ProcessBefore::Produces>,
+  OperationStep::Produces: ParamList + Concat<ProcessBefore::Produces> + Concat<ProcessBefore::EverProduced>,
   for<'a> &'a ProcessBefore::Produces:
     BorrowJust<'a, OperationStep::Consumes, ProcessBeforeProducesToLastStepConsumesIndices>,
 {
@@ -33,6 +34,7 @@ where
   type Produces = <OperationStep::Produces as Concat<ProcessBefore::Produces>>::Concatenated;
   type SubprocessConsumes = ProcessBefore::SubprocessConsumes;
   type Messages = ProcessBefore::Messages;
+  type EverProduced = <OperationStep::Produces as Concat<ProcessBefore::EverProduced>>::Concatenated;
 
   async fn resume_run(
     &self,
@@ -40,27 +42,32 @@ where
     previous_run_yielded_at: PreviousRunYieldedAt,
     user_input: String,
     form_context: MaybeFormContext,
+    back_token: Option<BackToken>,
   ) -> IntermediateRunResult<Self::Produces, Self::Messages> {
     if previous_run_yielded_at.0 < self.step_index {
       let process_before_output = self
         .process_before
-        .resume_run(previous_run_produced, previous_run_yielded_at, user_input, form_context)
+        .resume_run(previous_run_produced, previous_run_yielded_at, user_input, form_context, back_token)
         .await?;
       match process_before_output {
-        IntermediateRunOutcome::Continue(process_before_produces) => self.continue_run(process_before_produces).await,
+        IntermediateRunOutcome::Continue(process_before_produces) => {
+          self.continue_run(process_before_produces, back_token).await
+        },
         IntermediateRunOutcome::Yield(a, b, c, d) => Ok(IntermediateRunOutcome::Yield(a, b, c, d)),
         IntermediateRunOutcome::Finish(a) => Ok(IntermediateRunOutcome::Finish(a)),
         IntermediateRunOutcome::RetryUserInput(a, b) => Ok(IntermediateRunOutcome::RetryUserInput(a, b)),
+        IntermediateRunOutcome::Back => Ok(IntermediateRunOutcome::Back),
       }
     } else {
       let process_before_produces = ProcessBefore::Produces::deserialize(previous_run_produced)?;
-      self.continue_run(process_before_produces).await
+      self.continue_run(process_before_produces, back_token).await
     }
   }
 
   async fn continue_run(
     &self,
     process_before_produces: Self::ProcessBeforeProduces,
+    _back_token: Option<BackToken>,
   ) -> IntermediateRunResult<Self::Produces, Self::Messages> {
     let last_step_consumes = (&process_before_produces).borrow_just();
     let last_step_outcome = self.last_step.handle(last_step_consumes).await?;
@@ -75,13 +82,17 @@ where
   async fn run_subprocess(
     &self,
     subprocess_consumes: Self::SubprocessConsumes,
+    back_token: Option<BackToken>,
   ) -> IntermediateRunResult<Self::Produces, Self::Messages> {
-    let process_before_output = self.process_before.run_subprocess(subprocess_consumes).await?;
+    let process_before_output = self.process_before.run_subprocess(subprocess_consumes, back_token).await?;
     match process_before_output {
-      IntermediateRunOutcome::Continue(process_before_produces) => self.continue_run(process_before_produces).await,
+      IntermediateRunOutcome::Continue(process_before_produces) => {
+        self.continue_run(process_before_produces, back_token).await
+      },
       IntermediateRunOutcome::Yield(a, b, c, d) => Ok(IntermediateRunOutcome::Yield(a, b, c, d)),
       IntermediateRunOutcome::Finish(a) => Ok(IntermediateRunOutcome::Finish(a)),
       IntermediateRunOutcome::RetryUserInput(a, b) => Ok(IntermediateRunOutcome::RetryUserInput(a, b)),
+      IntermediateRunOutcome::Back => Ok(IntermediateRunOutcome::Back),
     }
   }
 
@@ -89,10 +100,5 @@ where
     let used_index = self.process_before.enumerate_steps(last_used_index);
     self.step_index = used_index + 1;
     self.step_index
-  }
-
-  fn all_param_uids(&self, acc: &mut Vec<ParamUID>) {
-    self.process_before.all_param_uids(acc);
-    OperationStep::Produces::all_param_uids(acc);
   }
 }

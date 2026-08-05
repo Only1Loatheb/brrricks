@@ -1,10 +1,11 @@
 use crate::builder::{
   FlowingProcess, IntermediateFinalizedSplitOutcome, IntermediateFinalizedSplitResult, IntermediateRunOutcome,
-  MaybeFormContext, ParamList, ParamUID, PreviousRunYieldedAt, SessionContext, SplitProcess, StepIndex,
+  MaybeFormContext, ParamList, PreviousRunYieldedAt, SessionContext, SplitProcess, StepIndex,
 };
 use crate::frunk::coproduct::Coproduct;
 use crate::param_list::borrow_just::BorrowJust;
 use crate::param_list::concat::Concat;
+use crate::step::BackToken;
 use crate::step::Splitter;
 use std::marker::PhantomData;
 
@@ -25,7 +26,7 @@ pub struct SplitProcessSplitter<
 impl<
   Tag: Send + Sync,
   ProcessBefore: FlowingProcess,
-  SplitterProducesForFirstCase: ParamList + Concat<ProcessBefore::Produces>,
+  SplitterProducesForFirstCase: ParamList + Concat<ProcessBefore::Produces> + Concat<ProcessBefore::EverProduced>,
   SplitterProducesForOtherCases: Send + Sync,
   SplitterStep: Splitter<Produces = Coproduct<(Tag, SplitterProducesForFirstCase), SplitterProducesForOtherCases>>,
   ProcessBeforeProducesToSplitterStepConsumesIndices: Sync + Send,
@@ -47,6 +48,8 @@ where
   type SplitterTagForFirstCase = Tag;
   type SubprocessConsumes = ProcessBefore::SubprocessConsumes;
   type Messages = ProcessBefore::Messages;
+  type ProcessBeforeSplitEverProduced = ProcessBefore::EverProduced;
+  type EverProduced = ProcessBefore::EverProduced; // SplitterProducesForFirstCase is included in first case produces when handing first case
 
   async fn resume_run(
     &self,
@@ -54,6 +57,7 @@ where
     previous_run_yielded_at: PreviousRunYieldedAt,
     user_input: String,
     form_context: MaybeFormContext,
+    back_token: Option<BackToken>,
   ) -> IntermediateFinalizedSplitResult<
     Self::ProcessBeforeSplitProduces,
     Coproduct<Self::SplitterProducesForFirstCase, SplitterProducesForOtherCases>,
@@ -62,25 +66,27 @@ where
     if previous_run_yielded_at.0 < self.step_index {
       let process_before_output = self
         .process_before
-        .resume_run(previous_run_produced, previous_run_yielded_at, user_input, form_context)
+        .resume_run(previous_run_produced, previous_run_yielded_at, user_input, form_context, back_token)
         .await?;
       match process_before_output {
         IntermediateRunOutcome::Continue(process_before_split_produced) => {
-          self.continue_run(process_before_split_produced).await
+          self.continue_run(process_before_split_produced, back_token).await
         },
         IntermediateRunOutcome::Yield(a, b, c, d) => Ok(IntermediateFinalizedSplitOutcome::Yield(a, b, c, d)),
         IntermediateRunOutcome::Finish(a) => Ok(IntermediateFinalizedSplitOutcome::Finish(a)),
         IntermediateRunOutcome::RetryUserInput(a, b) => Ok(IntermediateFinalizedSplitOutcome::RetryUserInput(a, b)),
+        IntermediateRunOutcome::Back => Ok(IntermediateFinalizedSplitOutcome::Back),
       }
     } else {
       let process_before_split_produced = ProcessBefore::Produces::deserialize(previous_run_produced)?;
-      self.continue_run(process_before_split_produced).await
+      self.continue_run(process_before_split_produced, back_token).await
     }
   }
 
   async fn continue_run(
     &self,
     process_before_split_produced: Self::ProcessBeforeSplitProduces,
+    _back_token: Option<BackToken>,
   ) -> IntermediateFinalizedSplitResult<
     Self::ProcessBeforeSplitProduces,
     Coproduct<Self::SplitterProducesForFirstCase, SplitterProducesForOtherCases>,
@@ -97,19 +103,21 @@ where
   async fn run_subprocess(
     &self,
     subprocess_consumes: Self::SubprocessConsumes,
+    back_token: Option<BackToken>,
   ) -> IntermediateFinalizedSplitResult<
     Self::ProcessBeforeSplitProduces,
     Coproduct<Self::SplitterProducesForFirstCase, SplitterProducesForOtherCases>,
     Self::Messages,
   > {
-    let process_before_output = self.process_before.run_subprocess(subprocess_consumes).await?;
+    let process_before_output = self.process_before.run_subprocess(subprocess_consumes, back_token).await?;
     match process_before_output {
       IntermediateRunOutcome::Continue(process_before_split_produced) => {
-        self.continue_run(process_before_split_produced).await
+        self.continue_run(process_before_split_produced, back_token).await
       },
       IntermediateRunOutcome::Yield(a, b, c, d) => Ok(IntermediateFinalizedSplitOutcome::Yield(a, b, c, d)),
       IntermediateRunOutcome::Finish(a) => Ok(IntermediateFinalizedSplitOutcome::Finish(a)),
       IntermediateRunOutcome::RetryUserInput(a, b) => Ok(IntermediateFinalizedSplitOutcome::RetryUserInput(a, b)),
+      IntermediateRunOutcome::Back => Ok(IntermediateFinalizedSplitOutcome::Back),
     }
   }
 
@@ -117,9 +125,5 @@ where
     let used_index = self.process_before.enumerate_steps(last_used_index);
     self.step_index = used_index + 1;
     self.step_index
-  }
-
-  fn all_param_uids(&self, acc: &mut Vec<ParamUID>) {
-    self.process_before.all_param_uids(acc);
   }
 }

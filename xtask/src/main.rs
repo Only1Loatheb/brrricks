@@ -38,7 +38,7 @@ fn update_readme(root: &Path) {
     &root.join("README.md"),
     "## Process builder states",
   );
-  update_example_in_readme(&root.join("README.md"), &root.join("src/main.rs"));
+  update_example_in_readme(&root.join("README.md"), &root.join("src/lib.rs"));
 }
 
 fn update_diagram_in_readme(diagram_path: &Path, readme_path: &Path, section_header: &str) {
@@ -109,17 +109,13 @@ fn generate_qrios_api_axum_server(project_dir: &Path) {
     .status()
     .expect("failed to run docker");
 
-  if !status.success() {
-    panic!("openapi-generator failed");
-  }
+  assert!(status.success(), "openapi-generator failed");
 }
 
 fn generate_qrios_api_reqwest_server(root: &Path) {
   let swagger_path = root.join("qrios-ussd-api-swagger.json");
 
-  if !swagger_path.exists() {
-    panic!("Swagger file not found: {}", swagger_path.display());
-  }
+  assert!(swagger_path.exists(), "Swagger file not found: {}", swagger_path.display());
 
   let file = fs::File::open(&swagger_path).expect("failed to open swagger");
 

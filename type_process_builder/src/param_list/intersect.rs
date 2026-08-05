@@ -1,30 +1,12 @@
 use crate::frunk::hlist::{HCons, HNil};
 use crate::param_list::ParamValue;
-use std::ops::BitOr;
-use typenum::{B0, B1, Bit, IsEqual};
+use crate::param_list::contains::Contains;
+use typenum::{B0, B1};
 
-////////// Contains //////////
+////////// ThenKeep //////////
 
-pub trait Contains<Needle: ParamValue> {
-  type IsContained: Bit;
-}
-
-impl<Needle: ParamValue> Contains<Needle> for HNil {
-  type IsContained = B0;
-}
-
-impl<Needle: ParamValue, Head: ParamValue, Tail: Contains<Needle>> Contains<Needle> for HCons<Head, Tail>
-where
-  Needle::UID: IsEqual<Head::UID>,
-  <Needle::UID as IsEqual<Head::UID>>::Output: BitOr<<Tail as Contains<Needle>>::IsContained>,
-  <<Needle::UID as IsEqual<Head::UID>>::Output as BitOr<<Tail as Contains<Needle>>::IsContained>>::Output: Bit,
-{
-  type IsContained =
-    <<Needle::UID as IsEqual<Head::UID>>::Output as BitOr<<Tail as Contains<Needle>>::IsContained>>::Output;
-}
-
-////////// Filter //////////
-
+/// Like [`crate::param_list::union::IfNotKeep`], but the logic is negated and exposes runtime method for
+/// constructing the value
 pub trait ThenKeep<Head, Tail> {
   type Filtered;
   fn filter(head: Head, tail: Tail) -> Self::Filtered;

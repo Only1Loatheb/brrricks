@@ -1,3 +1,4 @@
+use crate::step::BackToken;
 pub mod split_process_form_splitter;
 pub mod split_process_splitter;
 
@@ -5,7 +6,7 @@ use crate::builder::first_case_of_flowing_split_process::FirstCaseOfFlowingSplit
 use crate::builder::subprocess::{Subprocess, subprocess};
 use crate::builder::{
   FinalizedProcess, FirstCaseOfFinalizedSplitProcess, FlowingProcess, IntermediateFinalizedSplitResult,
-  MaybeFormContext, ParamList, ParamUID, PreviousRunYieldedAt, SessionContext, StepIndex, WILL_BE_RENUMBERED,
+  MaybeFormContext, ParamList, PreviousRunYieldedAt, SessionContext, StepIndex, WILL_BE_RENUMBERED,
 };
 use crate::frunk::coproduct::Coproduct;
 use crate::param_list::concat::Concat;
@@ -19,10 +20,14 @@ use std::future::Future;
 pub trait SplitProcess<SplitterProducesForOtherCases: Send + Sync>: Sized + Send + Sync {
   // Please specify all associated types at the impl SplitProcess side for inference to work.
   type ProcessBeforeSplitProduces: ParamList;
-  type SplitterProducesForFirstCase: ParamList + Concat<Self::ProcessBeforeSplitProduces>;
+  type SplitterProducesForFirstCase: ParamList
+    + Concat<Self::ProcessBeforeSplitProduces>
+    + Concat<Self::ProcessBeforeSplitEverProduced>;
   type SplitterTagForFirstCase: Send + Sync;
   type SubprocessConsumes: ParamList;
   type Messages: ProcessMessages;
+  type ProcessBeforeSplitEverProduced: ParamList;
+  type EverProduced: ParamList;
 
   fn resume_run(
     &self,
@@ -30,6 +35,7 @@ pub trait SplitProcess<SplitterProducesForOtherCases: Send + Sync>: Sized + Send
     previous_run_yielded_at: PreviousRunYieldedAt,
     user_input: String,
     form_context: MaybeFormContext,
+    back_token: Option<BackToken>,
   ) -> impl Future<
     Output = IntermediateFinalizedSplitResult<
       Self::ProcessBeforeSplitProduces,
@@ -41,6 +47,7 @@ pub trait SplitProcess<SplitterProducesForOtherCases: Send + Sync>: Sized + Send
   fn continue_run(
     &self,
     process_before_split_produced: Self::ProcessBeforeSplitProduces,
+    back_token: Option<BackToken>,
   ) -> impl Future<
     Output = IntermediateFinalizedSplitResult<
       Self::ProcessBeforeSplitProduces,
@@ -52,6 +59,7 @@ pub trait SplitProcess<SplitterProducesForOtherCases: Send + Sync>: Sized + Send
   fn run_subprocess(
     &self,
     subprocess_consumes: Self::SubprocessConsumes,
+    back_token: Option<BackToken>,
   ) -> impl Future<
     Output = IntermediateFinalizedSplitResult<
       Self::ProcessBeforeSplitProduces,
@@ -66,6 +74,7 @@ pub trait SplitProcess<SplitterProducesForOtherCases: Send + Sync>: Sized + Send
     create_case: impl FnOnce(
       Subprocess<
         <Self::SplitterProducesForFirstCase as Concat<Self::ProcessBeforeSplitProduces>>::Concatenated,
+        <Self::SplitterProducesForFirstCase as Concat<Self::ProcessBeforeSplitEverProduced>>::Concatenated,
         Self::Messages,
       >,
     ) -> ThisCase,
@@ -84,6 +93,7 @@ pub trait SplitProcess<SplitterProducesForOtherCases: Send + Sync>: Sized + Send
       case_index: WILL_BE_RENUMBERED,
       this_case: create_case(subprocess::<
         <Self::SplitterProducesForFirstCase as Concat<Self::ProcessBeforeSplitProduces>>::Concatenated,
+        <Self::SplitterProducesForFirstCase as Concat<Self::ProcessBeforeSplitEverProduced>>::Concatenated,
         Self::Messages,
       >()),
       phantom_data: Default::default(),
@@ -98,9 +108,11 @@ pub trait SplitProcess<SplitterProducesForOtherCases: Send + Sync>: Sized + Send
   >(
     self,
     _assumed_tag: Self::SplitterTagForFirstCase,
-    create_case: impl FnOnce(
-      Subprocess<<Self::SplitterProducesForFirstCase as Concat<Self::ProcessBeforeSplitProduces>>::Concatenated, Self::Messages,>,
-    ) -> ThisCase,
+    create_case: impl FnOnce(Subprocess<
+      <Self::SplitterProducesForFirstCase as Concat<Self::ProcessBeforeSplitProduces>>::Concatenated,
+      <Self::SplitterProducesForFirstCase as Concat<Self::ProcessBeforeSplitEverProduced>>::Concatenated,
+      Self::Messages,
+    >) -> ThisCase,
   ) -> FirstCaseOfFlowingSplitProcess<
     Self::SplitterTagForFirstCase,
     Self::SplitterProducesForFirstCase,
@@ -116,6 +128,7 @@ pub trait SplitProcess<SplitterProducesForOtherCases: Send + Sync>: Sized + Send
       case_index: WILL_BE_RENUMBERED,
       this_case: create_case(subprocess::<
         <Self::SplitterProducesForFirstCase as Concat<Self::ProcessBeforeSplitProduces>>::Concatenated,
+        <Self::SplitterProducesForFirstCase as Concat<Self::ProcessBeforeSplitEverProduced>>::Concatenated,
         Self::Messages,
       >()),
       phantom_data: Default::default(),
@@ -123,6 +136,4 @@ pub trait SplitProcess<SplitterProducesForOtherCases: Send + Sync>: Sized + Send
   }
 
   fn enumerate_steps(&mut self, last_used_index: StepIndex) -> StepIndex;
-
-  fn all_param_uids(&self, acc: &mut Vec<ParamUID>);
 }

@@ -1,5 +1,5 @@
 use crate::frunk::hlist::{HCons, HNil};
-use crate::param_list::intersect::Contains;
+use crate::param_list::contains::Contains;
 use crate::param_list::{ParamList, ParamValue};
 use typenum::{B0, Same};
 

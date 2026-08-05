@@ -20,11 +20,7 @@ Process implemented with this library has the following invariants enforced at *
 - each step may only consume parameters that are guaranteed to be produced earlier in the process,
 - all execution paths must terminate in a final step,
 - every branch introduced by a split step must have a corresponding continuation defined,
-- once a parameter is produced in every execution path, it cannot be overwritten in subsequent steps.
-  If a parameter value is present only in a subset of paths, it is removed from the session context
-  to guarantee that downstream steps operate only on parameters that are present in all incoming paths.
-  Removing the parameter from the session context allows reusing it in later in the process,
-  but parameter store implementation is required to remove the parameter from cache if it is removed from the session context.
+- once a parameter is produced in any execution path, it cannot be overwritten in subsequent steps.
 
 ## Simple explanation
 
@@ -75,26 +71,31 @@ The process shown in the flowchart can be implemented using `Brrricks`:
 <!-- EXAMPLE_START -->
 
 ```rust
-mod standard_io_process_runner;
-
-use crate::standard_io_process_runner::{Message, Messages, standard_io_process_runner};
 use serde::{Deserialize, Serialize};
-use type_process_builder::builder::{FinalizedProcess, FlowingProcess, SessionContext, SplitProcess};
-use type_process_builder::step::{Entry, Final, Form, FormSplitter, FormWithContext, InputValidation};
+use type_process_builder::builder::{FinalizedProcess, FlowingProcess, RunnableProcess, SessionContext, SplitProcess};
+use type_process_builder::step::{
+  BackToken, Entry, Final, Form, FormSplitter, FormWithContext, InputValidation, ProcessMessages,
+};
 use type_process_builder::{Coprod, HList, HNil, ToRef, hlist, hlist_pat};
 use typenum::{U0, U1};
 
 use type_process_builder::impl_param_value;
 
 #[derive(Deserialize, Serialize)]
-struct ShortcodeString(String);
+struct ShortcodeString(pub String);
 
 #[derive(Deserialize, Serialize)]
-struct Amount(u32);
+struct Amount(pub u32);
 
 impl_param_value! {
   ShortcodeString => U0,
   Amount => U1,
+}
+
+pub struct Messages;
+impl ProcessMessages for Messages {
+  type FormMessage = String;
+  type FinalMessage = String;
 }
 
 struct ShortcodeStringEntry;
@@ -111,8 +112,8 @@ impl Entry for ShortcodeStringEntry {
   }
 }
 
-pub struct PredefinedAmount;
-pub struct CustomAmount;
+struct PredefinedAmount;
+struct CustomAmount;
 struct SelectAmountSource;
 impl FormSplitter for SelectAmountSource {
   type CreateFormConsumes = HNil;
@@ -124,8 +125,12 @@ impl FormSplitter for SelectAmountSource {
   async fn create_form(
     &self,
     _consumes: <Self::CreateFormConsumes as ToRef<'_>>::Ref,
-  ) -> anyhow::Result<FormWithContext<Message, Self::Context>> {
-    Ok(FormWithContext(Message("Enter 1 for 100 or 2 for custom amount".into()), EmptyFormContext))
+    back_token: Option<BackToken>,
+  ) -> anyhow::Result<FormWithContext<String, Self::Context>> {
+    let string = back_token.map_or("Enter 1 for 100 or 2 for custom amount".into(), |_| {
+      "Enter 1 for 100 or 2 for custom amount. 0 to go back".into()
+    });
+    Ok(FormWithContext(string, EmptyFormContext))
   }
 
   async fn handle_input(
@@ -133,11 +138,13 @@ impl FormSplitter for SelectAmountSource {
     _consumes: <Self::ValidateInputConsumes as ToRef<'_>>::Ref,
     user_input: String,
     _form_context: Self::Context,
+    back_token: Option<BackToken>,
   ) -> anyhow::Result<InputValidation<Self::Produces, Messages, Self::Context>> {
-    Ok(match user_input.as_str() {
-      "1" => InputValidation::Successful(Self::Produces::inject((PredefinedAmount, hlist!(Amount(100))))),
-      "2" => InputValidation::Successful(Self::Produces::inject((CustomAmount, HNil))),
-      _ => InputValidation::Retry(Message("not 1 or 2".into()), EmptyFormContext),
+    Ok(match (user_input.as_str(), back_token) {
+      ("0", Some(back_token)) => InputValidation::Back(back_token),
+      ("1", _) => InputValidation::Successful(Self::Produces::inject((PredefinedAmount, hlist!(Amount(100))))),
+      ("2", _) => InputValidation::Successful(Self::Produces::inject((CustomAmount, HNil))),
+      _ => InputValidation::Retry("not 1 or 2".into(), EmptyFormContext),
     })
   }
 }
@@ -156,8 +163,10 @@ impl Form for AmountForm {
   async fn create_form(
     &self,
     _consumes: <Self::CreateFormConsumes as ToRef<'_>>::Ref,
-  ) -> anyhow::Result<FormWithContext<Message, Self::Context>> {
-    Ok(FormWithContext(Message("Enter a number".into()), EmptyFormContext))
+    back_token: Option<BackToken>,
+  ) -> anyhow::Result<FormWithContext<String, Self::Context>> {
+    let string = back_token.map_or("Enter a number".into(), |_| "Enter a number. 0 to go back".into());
+    Ok(FormWithContext(string, EmptyFormContext))
   }
 
   async fn handle_input(
@@ -165,10 +174,16 @@ impl Form for AmountForm {
     _consumes: <Self::ValidateInputConsumes as ToRef<'_>>::Ref,
     user_input: String,
     _form_context: Self::Context,
+    back_token: Option<BackToken>,
   ) -> anyhow::Result<InputValidation<Self::Produces, Messages, Self::Context>> {
+    if user_input == "0"
+      && let Some(token) = back_token
+    {
+      return Ok(InputValidation::Back(token));
+    }
     match user_input.parse::<u32>() {
       Ok(value) => Ok(InputValidation::Successful(hlist![Amount(value)])),
-      Err(_) => Ok(InputValidation::Retry(Message("Invalid number".into()), EmptyFormContext)),
+      Err(_) => Ok(InputValidation::Retry("Invalid number".into(), EmptyFormContext)),
     }
   }
 }
@@ -176,23 +191,22 @@ impl Form for AmountForm {
 struct DisplayAmount;
 impl Final for DisplayAmount {
   type Consumes = HList![ShortcodeString, Amount];
-  type FinalMessage = Message;
+  type FinalMessage = String;
 
-  async fn handle(&self, consumes: Self::Consumes) -> anyhow::Result<Message> {
+  async fn handle(&self, consumes: Self::Consumes) -> anyhow::Result<String> {
     let hlist_pat!(_shortcode_string, amount) = consumes;
-    Ok(Message(format!("The amount was: {}. Good bye!", amount.0)))
+    Ok(format!("The amount was: {}. Good bye!", amount.0))
   }
 }
 
-#[tokio::main]
-async fn main() -> std::io::Result<()> {
-  let process = ShortcodeStringEntry
+#[must_use]
+pub fn build_demo_process() -> RunnableProcess<impl FinalizedProcess<Messages = Messages>> {
+  ShortcodeStringEntry
     .show_split(SelectAmountSource)
     .case_via(PredefinedAmount, |x| x)
     .case_via(CustomAmount, |x| x.show(AmountForm))
     .end(DisplayAmount)
-    .build("demo_process", 0);
-  standard_io_process_runner(process).await
+    .build("demo_process", 0)
 }
 
 ```
@@ -314,10 +328,8 @@ cargo xtask
 
 Some integration tests require Docker to be running on your machine to start containers for external dependencies (e.g., Postgres).
 
-[//]: # (todo Redirect)
+[//]: # (Redirect can be imlemented with Final step)
 
-[//]: # (todo ReturnFromRedirect)
+[//]: # (ReturnFromRedirect can be implemented with Form step)
 
-[//]: # (todo Back)
-
-[//]: # (todo ConditionalBack)
+[//]: # (todo set back_navigation_available with a step)

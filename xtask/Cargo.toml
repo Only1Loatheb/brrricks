@@ -7,8 +7,8 @@ edition = "2024"
 workspace = true
 
 [dependencies]
-serde_json = "=1.0.149"
-syn = "=2.0.117"
-prettyplease = "=0.2.37"
-progenitor = "=0.13.0"
+serde_json = "=1.0.151"
+syn = "=3.0.3"
+prettyplease = "=0.3.0"
+progenitor = { git = "https://github.com/oxidecomputer/progenitor", rev = "1b6e28b7cde1c4db7b422fc9cc533621fd8bb7c9" }
 sha2 = "=0.11.0"

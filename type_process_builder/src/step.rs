@@ -37,11 +37,16 @@ pub trait Operation: Send + Sync {
   ) -> impl Future<Output = anyhow::Result<OperationOutcome<Self::Produces, Self::FinalMessage>>> + Send;
 }
 
+/// I could make it type safe, but I want to allow for backing up from process that was composed in a dynamic GUI editor
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct BackToken(pub(crate) ());
+
 #[derive(Debug, PartialEq, Eq)]
 pub enum InputValidation<Produced, Messages: ProcessMessages, FormContext: Serialize> {
   Successful(Produced),
   Retry(Messages::FormMessage, FormContext),
   Finish(Messages::FinalMessage),
+  Back(BackToken),
 }
 
 pub struct FormWithContext<FormMessage, FromContext>(pub FormMessage, pub FromContext);
@@ -55,6 +60,7 @@ pub trait Form: Send + Sync {
   fn create_form(
     &self,
     consumes: <Self::CreateFormConsumes as ToRef<'_>>::Ref,
+    back_token: Option<BackToken>,
   ) -> impl Future<
     Output = anyhow::Result<FormWithContext<<Self::Messages as ProcessMessages>::FormMessage, Self::Context>>,
   > + Send;
@@ -63,6 +69,7 @@ pub trait Form: Send + Sync {
     consumes: <Self::ValidateInputConsumes as ToRef<'_>>::Ref,
     user_input: String,
     form_context: Self::Context,
+    back_token: Option<BackToken>,
   ) -> impl Future<Output = anyhow::Result<InputValidation<Self::Produces, Self::Messages, Self::Context>>> + Send;
 }
 
@@ -94,6 +101,7 @@ pub trait FormSplitter: Send + Sync {
   fn create_form(
     &self,
     consumes: <Self::CreateFormConsumes as ToRef<'_>>::Ref,
+    back_token: Option<BackToken>,
   ) -> impl Future<
     Output = anyhow::Result<FormWithContext<<Self::Messages as ProcessMessages>::FormMessage, Self::Context>>,
   > + Send;
@@ -102,6 +110,7 @@ pub trait FormSplitter: Send + Sync {
     consumes: <Self::ValidateInputConsumes as ToRef<'_>>::Ref,
     user_input: String,
     form_context: Self::Context,
+    back_token: Option<BackToken>,
   ) -> impl Future<Output = anyhow::Result<InputValidation<Self::Produces, Self::Messages, Self::Context>>> + Send;
 }
 

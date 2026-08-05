@@ -1,3 +1,4 @@
+use crate::step::BackToken;
 pub mod entry_flowing_process;
 pub mod form_flowing_process;
 pub mod operation_flowing_process;
@@ -10,8 +11,8 @@ use crate::builder::operation_flowing_process::OperationFlowingProcess;
 use crate::builder::split_process_form_splitter::SplitProcessFormSplitter;
 use crate::builder::split_process_splitter::SplitProcessSplitter;
 use crate::builder::{
-  IntermediateRunResult, MaybeFormContext, ParamUID, PreviousRunYieldedAt, ProcessMessages, SessionContext,
-  SplitProcess, StepIndex, WILL_BE_RENUMBERED,
+  IntermediateRunResult, MaybeFormContext, PreviousRunYieldedAt, ProcessMessages, SessionContext, SplitProcess,
+  StepIndex, WILL_BE_RENUMBERED,
 };
 use crate::frunk::coproduct::Coproduct;
 use crate::param_list::ParamList;
@@ -26,6 +27,7 @@ pub trait FlowingProcess: Sized + Send + Sync {
   type Produces: ParamList;
   type SubprocessConsumes: ParamList;
   type Messages: ProcessMessages;
+  type EverProduced: ParamList;
 
   fn resume_run(
     &self,
@@ -33,16 +35,19 @@ pub trait FlowingProcess: Sized + Send + Sync {
     previous_run_yielded_at: PreviousRunYieldedAt,
     user_input: String,
     form_context: MaybeFormContext,
+    back_token: Option<BackToken>,
   ) -> impl Future<Output = IntermediateRunResult<Self::Produces, Self::Messages>> + Send;
 
   fn continue_run(
     &self,
     process_before_produces: Self::ProcessBeforeProduces,
+    back_token: Option<BackToken>,
   ) -> impl Future<Output = IntermediateRunResult<Self::Produces, Self::Messages>> + Send;
 
   fn run_subprocess(
     &self,
     subprocess_consumes: Self::SubprocessConsumes,
+    back_token: Option<BackToken>,
   ) -> impl Future<Output = IntermediateRunResult<Self::Produces, Self::Messages>> + Send;
 
   fn then<
@@ -56,9 +61,10 @@ pub trait FlowingProcess: Sized + Send + Sync {
     Produces = <OperationStep::Produces as Concat<Self::Produces>>::Concatenated,
     SubprocessConsumes = Self::SubprocessConsumes,
     Messages = Self::Messages,
+    EverProduced = <OperationStep::Produces as Concat<Self::EverProduced>>::Concatenated,
   >
   where
-    OperationStep::Produces: ParamList + Concat<Self::Produces>,
+    OperationStep::Produces: ParamList + Concat<Self::Produces> + Concat<Self::EverProduced>,
     for<'a> &'a Self::Produces: BorrowJust<'a, OperationStep::Consumes, ProcessBeforeProducesToLastStepConsumesIndices>,
   {
     OperationFlowingProcess {
@@ -81,9 +87,10 @@ pub trait FlowingProcess: Sized + Send + Sync {
     Produces = <FormStep::Produces as Concat<Self::Produces>>::Concatenated,
     SubprocessConsumes = Self::SubprocessConsumes,
     Messages = Self::Messages,
+    EverProduced = <FormStep::Produces as Concat<Self::EverProduced>>::Concatenated,
   >
   where
-    FormStep::Produces: ParamList + Concat<Self::Produces>,
+    FormStep::Produces: ParamList + Concat<Self::Produces> + Concat<Self::EverProduced>,
     for<'a> &'a Self::Produces:
       BorrowJust<'a, FormStep::CreateFormConsumes, ProcessBeforeProducesToCreateFormConsumesIndices>,
     for<'a> &'a Self::Produces:
@@ -99,7 +106,7 @@ pub trait FlowingProcess: Sized + Send + Sync {
 
   fn split<
     Tag: Send + Sync,
-    SplitterProducesForFirstCase: ParamList + Concat<Self::Produces>,
+    SplitterProducesForFirstCase: ParamList + Concat<Self::Produces> + Concat<Self::EverProduced>,
     SplitterProducesForOtherCases: Send + Sync,
     SplitterStep: Splitter<Produces = Coproduct<(Tag, SplitterProducesForFirstCase), SplitterProducesForOtherCases>>,
     ProcessBeforeProducesToSplitterStepConsumesIndices: Sync + Send,
@@ -113,6 +120,8 @@ pub trait FlowingProcess: Sized + Send + Sync {
     SplitterTagForFirstCase = Tag,
     SubprocessConsumes = Self::SubprocessConsumes,
     Messages = Self::Messages,
+    ProcessBeforeSplitEverProduced = Self::EverProduced,
+    EverProduced = Self::EverProduced,
   >
   where
     for<'a> &'a Self::Produces:
@@ -135,7 +144,7 @@ pub trait FlowingProcess: Sized + Send + Sync {
 
   fn show_split<
     Tag: Send + Sync,
-    SplitterProducesForFirstCase: ParamList + Concat<Self::Produces>,
+    SplitterProducesForFirstCase: ParamList + Concat<Self::Produces> + Concat<Self::EverProduced>,
     SplitterProducesForOtherCases: Send + Sync,
     SplitterStep: FormSplitter<
         Produces = Coproduct<(Tag, SplitterProducesForFirstCase), SplitterProducesForOtherCases>,
@@ -153,6 +162,8 @@ pub trait FlowingProcess: Sized + Send + Sync {
     SplitterTagForFirstCase = Tag,
     SubprocessConsumes = Self::SubprocessConsumes,
     Messages = Self::Messages,
+    ProcessBeforeSplitEverProduced = Self::EverProduced,
+    EverProduced = Self::EverProduced,
   >
   where
     for<'a> &'a Self::Produces:
@@ -186,6 +197,7 @@ pub trait FlowingProcess: Sized + Send + Sync {
     ProcessBeforeProduces = Self::Produces,
     SubprocessConsumes = Self::SubprocessConsumes,
     Messages = Self::Messages,
+    EverProduced = Self::EverProduced,
   >
   where
     Self::Produces: Extract<FinalStep::Consumes, ProcessBeforeProducesToLastStepConsumesIndices>,
@@ -194,6 +206,4 @@ pub trait FlowingProcess: Sized + Send + Sync {
   }
 
   fn enumerate_steps(&mut self, last_used_index: StepIndex) -> StepIndex;
-
-  fn all_param_uids(&self, acc: &mut Vec<ParamUID>);
 }

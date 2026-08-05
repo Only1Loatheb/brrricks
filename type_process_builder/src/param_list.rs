@@ -1,5 +1,5 @@
 use crate::frunk::hlist::{HCons, HList, HNil};
-use crate::param_list::intersect::Contains;
+use crate::param_list::contains::Contains;
 use anyhow::anyhow;
 use serde::Serialize;
 use serde::de::DeserializeOwned;
@@ -7,8 +7,10 @@ use typenum::{B0, Same, Unsigned};
 
 pub mod borrow_just;
 pub mod concat;
+pub mod contains;
 pub mod extract;
 pub mod intersect;
+pub mod union;
 
 pub type ParamUID = u32;
 
@@ -96,8 +98,6 @@ pub trait ParamList: HList + Send + Sync {
   }
   /// [`crate::builder::RunnableProcess::ordered_all_unique_param_uids`]
   fn deserialize_from(session_context: SessionContext) -> anyhow::Result<Self>;
-
-  fn all_param_uids(acc: &mut Vec<ParamUID>);
 }
 
 impl ParamList for HNil {
@@ -108,8 +108,6 @@ impl ParamList for HNil {
   fn deserialize_from(_session_context: SessionContext) -> anyhow::Result<Self> {
     Ok(HNil)
   }
-
-  fn all_param_uids(_acc: &mut Vec<ParamUID>) {}
 }
 
 /// The `where` clause prevents the same [`ParamValue`] from being duplicated in a [`ParamList`].
@@ -134,10 +132,5 @@ where
     let head: Head = postcard::from_bytes(&value)?;
     let tail = Tail::deserialize_from(session_context)?;
     Ok(HCons { head, tail })
-  }
-
-  fn all_param_uids(acc: &mut Vec<ParamUID>) {
-    acc.push(Head::UID::U32);
-    Tail::all_param_uids(acc);
   }
 }

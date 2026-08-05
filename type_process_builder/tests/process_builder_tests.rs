@@ -2,6 +2,7 @@ use anyhow::anyhow;
 use serde::{Deserialize, Serialize};
 use std::marker::PhantomData;
 use type_process_builder::builder::*;
+use type_process_builder::documentation_diagrams::{SessionState, in_memory_process_runner};
 use type_process_builder::frunk::to_ref::ToRef;
 use type_process_builder::step::{
   Entry, Final, Form, FormSplitter, FormWithContext, InputValidation, Operation, OperationOutcome, ProcessMessages,
@@ -67,12 +68,10 @@ impl_param_value! {
   InnerSplit2Param => U9,
 }
 
-pub struct Message(pub String);
-
 struct Messages;
 impl ProcessMessages for Messages {
-  type FormMessage = Message;
-  type FinalMessage = Message;
+  type FormMessage = String;
+  type FinalMessage = String;
 }
 
 struct ExtractMsisdnOperatorAndShortcodeString;
@@ -97,7 +96,7 @@ struct ProduceCaseParam1;
 impl Operation for ProduceCaseParam1 {
   type Consumes = HNil;
   type Produces = HList![Case1Param, CommonCaseParam];
-  type FinalMessage = Message;
+  type FinalMessage = String;
 
   async fn handle(
     &self,
@@ -111,7 +110,7 @@ struct ProduceCaseParam2;
 impl Operation for ProduceCaseParam2 {
   type Consumes = HNil;
   type Produces = HList![Case2Param, CommonCaseParam];
-  type FinalMessage = Message;
+  type FinalMessage = String;
 
   async fn handle(
     &self,
@@ -125,7 +124,7 @@ struct ProduceOnlyCase2Param;
 impl Operation for ProduceOnlyCase2Param {
   type Consumes = HNil;
   type Produces = HList![Case2Param];
-  type FinalMessage = Message;
+  type FinalMessage = String;
 
   async fn handle(
     &self,
@@ -139,7 +138,7 @@ struct ProduceOnlyCase1Param;
 impl Operation for ProduceOnlyCase1Param {
   type Consumes = HNil;
   type Produces = HList![Case1Param];
-  type FinalMessage = Message;
+  type FinalMessage = String;
 
   async fn handle(
     &self,
@@ -230,7 +229,7 @@ struct NoOpOperation;
 impl Operation for NoOpOperation {
   type Consumes = HNil;
   type Produces = HNil;
-  type FinalMessage = Message;
+  type FinalMessage = String;
 
   async fn handle<'a>(
     &self,
@@ -244,13 +243,13 @@ struct FinishEarlyOperation;
 impl Operation for FinishEarlyOperation {
   type Consumes = HNil;
   type Produces = HNil;
-  type FinalMessage = Message;
+  type FinalMessage = String;
 
   async fn handle(
     &self,
     _consumes: <Self::Consumes as ToRef<'_>>::Ref,
   ) -> anyhow::Result<OperationOutcome<Self::Produces, Self::FinalMessage>> {
-    Ok(OperationOutcome::Finish(Message("Operation finished".into())))
+    Ok(OperationOutcome::Finish("Operation finished".into()))
   }
 }
 
@@ -268,8 +267,9 @@ impl Form for FinishEarlyForm {
   async fn create_form(
     &self,
     _consumes: <Self::CreateFormConsumes as ToRef<'_>>::Ref,
-  ) -> anyhow::Result<FormWithContext<Message, Self::Context>> {
-    Ok(FormWithContext(Message("Finish early form".into()), EmptyFormContext))
+    _back_token: Option<BackToken>,
+  ) -> anyhow::Result<FormWithContext<String, Self::Context>> {
+    Ok(FormWithContext("Finish early form".into(), EmptyFormContext))
   }
 
   async fn handle_input(
@@ -277,18 +277,19 @@ impl Form for FinishEarlyForm {
     _consumes: <Self::ValidateInputConsumes as ToRef<'_>>::Ref,
     _user_input: String,
     _form_context: Self::Context,
+    _back_token: Option<BackToken>,
   ) -> anyhow::Result<InputValidation<Self::Produces, Messages, Self::Context>> {
-    Ok(InputValidation::Finish(Message("Form finished".into())))
+    Ok(InputValidation::Finish("Form finished".into()))
   }
 }
 
 struct SayGoodByAndConsumeCommonParams;
 impl Final for SayGoodByAndConsumeCommonParams {
   type Consumes = HList![EntryParam, CommonSplitParam, CommonCaseParam];
-  type FinalMessage = Message;
+  type FinalMessage = String;
 
-  async fn handle(&self, _consumes: Self::Consumes) -> anyhow::Result<Message> {
-    Ok(Message("Good bye".into()))
+  async fn handle(&self, _consumes: Self::Consumes) -> anyhow::Result<String> {
+    Ok("Good bye".into())
   }
 }
 
@@ -303,8 +304,9 @@ impl Form for CommonCaseParam1Form {
   async fn create_form(
     &self,
     _consumes: <Self::CreateFormConsumes as ToRef<'_>>::Ref,
-  ) -> anyhow::Result<FormWithContext<Message, Self::Context>> {
-    Ok(FormWithContext(Message("Enter a number".into()), EmptyFormContext))
+    _back_token: Option<BackToken>,
+  ) -> anyhow::Result<FormWithContext<String, Self::Context>> {
+    Ok(FormWithContext("Enter a number".into(), EmptyFormContext))
   }
 
   async fn handle_input(
@@ -312,6 +314,7 @@ impl Form for CommonCaseParam1Form {
     _consumes: <Self::ValidateInputConsumes as ToRef<'_>>::Ref,
     _user_input: String,
     _form_context: Self::Context,
+    _back_token: Option<BackToken>,
   ) -> anyhow::Result<InputValidation<Self::Produces, Messages, Self::Context>> {
     Ok(InputValidation::Successful(hlist![CommonCaseParam]))
   }
@@ -328,8 +331,9 @@ impl Form for CommonCaseParam2Form {
   async fn create_form(
     &self,
     _consumes: <Self::CreateFormConsumes as ToRef<'_>>::Ref,
-  ) -> anyhow::Result<FormWithContext<Message, Self::Context>> {
-    Ok(FormWithContext(Message("Enter a number".into()), EmptyFormContext))
+    _back_token: Option<BackToken>,
+  ) -> anyhow::Result<FormWithContext<String, Self::Context>> {
+    Ok(FormWithContext("Enter a number".into(), EmptyFormContext))
   }
 
   async fn handle_input(
@@ -337,6 +341,7 @@ impl Form for CommonCaseParam2Form {
     _consumes: <Self::ValidateInputConsumes as ToRef<'_>>::Ref,
     _user_input: String,
     _form_context: Self::Context,
+    _back_token: Option<BackToken>,
   ) -> anyhow::Result<InputValidation<Self::Produces, Messages, Self::Context>> {
     Ok(InputValidation::Successful(hlist![CommonCaseParam]))
   }
@@ -353,8 +358,9 @@ impl Form for NoOpForm {
   async fn create_form(
     &self,
     _consumes: <Self::CreateFormConsumes as ToRef<'_>>::Ref,
-  ) -> anyhow::Result<FormWithContext<Message, Self::Context>> {
-    Ok(FormWithContext(Message("Straight to trash".into()), EmptyFormContext))
+    _back_token: Option<BackToken>,
+  ) -> anyhow::Result<FormWithContext<String, Self::Context>> {
+    Ok(FormWithContext("Straight to trash".into(), EmptyFormContext))
   }
 
   async fn handle_input(
@@ -362,6 +368,7 @@ impl Form for NoOpForm {
     _consumes: <Self::ValidateInputConsumes as ToRef<'_>>::Ref,
     _user_input: String,
     _form_context: Self::Context,
+    _back_token: Option<BackToken>,
   ) -> anyhow::Result<InputValidation<Self::Produces, Messages, Self::Context>> {
     Ok(InputValidation::Successful(HNil))
   }
@@ -378,8 +385,9 @@ impl Form for FinishAfterInput {
   async fn create_form(
     &self,
     _consumes: <Self::CreateFormConsumes as ToRef<'_>>::Ref,
-  ) -> anyhow::Result<FormWithContext<Message, Self::Context>> {
-    Ok(FormWithContext(Message("Last number in the process".into()), EmptyFormContext))
+    _back_token: Option<BackToken>,
+  ) -> anyhow::Result<FormWithContext<String, Self::Context>> {
+    Ok(FormWithContext("Last number in the process".into(), EmptyFormContext))
   }
 
   async fn handle_input(
@@ -387,8 +395,9 @@ impl Form for FinishAfterInput {
     _consumes: <Self::ValidateInputConsumes as ToRef<'_>>::Ref,
     _user_input: String,
     _form_context: Self::Context,
+    _back_token: Option<BackToken>,
   ) -> anyhow::Result<InputValidation<Self::Produces, Messages, Self::Context>> {
-    Ok(InputValidation::Finish(Message("Always finish".into())))
+    Ok(InputValidation::Finish("Always finish".into()))
   }
 }
 
@@ -403,18 +412,25 @@ impl Form for OneInputRetryForm {
   async fn create_form(
     &self,
     _consumes: <Self::CreateFormConsumes as ToRef<'_>>::Ref,
-  ) -> anyhow::Result<FormWithContext<Message, Self::Context>> {
-    Ok(FormWithContext(Message("This will be discarded".into()), 0))
+    _back_token: Option<BackToken>,
+  ) -> anyhow::Result<FormWithContext<String, Self::Context>> {
+    Ok(FormWithContext("This will be discarded".into(), 0))
   }
 
   async fn handle_input(
     &self,
     _consumes: <Self::ValidateInputConsumes as ToRef<'_>>::Ref,
-    _user_input: String,
+    user_input: String,
     failed: Self::Context,
+    back_token: Option<BackToken>,
   ) -> anyhow::Result<InputValidation<Self::Produces, Messages, Self::Context>> {
+    if user_input == "0"
+      && let Some(token) = back_token
+    {
+      return Ok(InputValidation::Back(token));
+    }
     match failed {
-      0 => Ok(InputValidation::Retry(Message("This will be accepted".into()), failed + 1)),
+      0 => Ok(InputValidation::Retry("This will be accepted".into(), failed + 1)),
       _ => Ok(InputValidation::Successful(hlist![CommonCaseParam])),
     }
   }
@@ -431,8 +447,9 @@ impl Form for ChooseCaseForm {
   async fn create_form(
     &self,
     _consumes: <Self::CreateFormConsumes as ToRef<'_>>::Ref,
-  ) -> anyhow::Result<FormWithContext<Message, Self::Context>> {
-    Ok(FormWithContext(Message("Choose a case".into()), EmptyFormContext))
+    _back_token: Option<BackToken>,
+  ) -> anyhow::Result<FormWithContext<String, Self::Context>> {
+    Ok(FormWithContext("Choose a case".into(), EmptyFormContext))
   }
 
   async fn handle_input(
@@ -440,6 +457,7 @@ impl Form for ChooseCaseForm {
     _consumes: <Self::ValidateInputConsumes as ToRef<'_>>::Ref,
     user_input: String,
     _form_context: Self::Context,
+    _back_token: Option<BackToken>,
   ) -> anyhow::Result<InputValidation<Self::Produces, Messages, Self::Context>> {
     let option = user_input.parse::<u8>().unwrap_or(1);
     Ok(InputValidation::Successful(hlist!(CaseOptionParam(option))))
@@ -449,20 +467,20 @@ impl Form for ChooseCaseForm {
 struct FinalNoConsumes;
 impl Final for FinalNoConsumes {
   type Consumes = HNil;
-  type FinalMessage = Message;
+  type FinalMessage = String;
 
-  async fn handle(&self, _consumes: Self::Consumes) -> anyhow::Result<Message> {
-    Ok(Message("Empty good bye".into()))
+  async fn handle(&self, _consumes: Self::Consumes) -> anyhow::Result<String> {
+    Ok("Empty good bye".into())
   }
 }
 
 struct FinalConsumeCase2Param;
 impl Final for FinalConsumeCase2Param {
   type Consumes = HList![Case2Param];
-  type FinalMessage = Message;
+  type FinalMessage = String;
 
-  async fn handle(&self, _consumes: Self::Consumes) -> anyhow::Result<Message> {
-    Ok(Message("I ate Case2Param".into()))
+  async fn handle(&self, _consumes: Self::Consumes) -> anyhow::Result<String> {
+    Ok("I ate Case2Param".into())
   }
 }
 
@@ -470,13 +488,13 @@ struct FinishProcessOperation;
 impl Operation for FinishProcessOperation {
   type Consumes = HNil;
   type Produces = HNil;
-  type FinalMessage = Message;
+  type FinalMessage = String;
 
   async fn handle(
     &self,
     _consumes: <Self::Consumes as ToRef<'_>>::Ref,
   ) -> anyhow::Result<OperationOutcome<Self::Produces, Self::FinalMessage>> {
-    Ok(OperationOutcome::Finish(Message("Operation finished".into())))
+    Ok(OperationOutcome::Finish("Operation finished".into()))
   }
 }
 
@@ -498,8 +516,9 @@ impl FormSplitter for TestFormSplitter {
   async fn create_form(
     &self,
     _consumes: <Self::CreateFormConsumes as ToRef<'_>>::Ref,
-  ) -> anyhow::Result<FormWithContext<Message, Self::Context>> {
-    Ok(FormWithContext(Message("choose case".into()), 0))
+    _back_token: Option<BackToken>,
+  ) -> anyhow::Result<FormWithContext<String, Self::Context>> {
+    Ok(FormWithContext("choose case".into(), 0))
   }
 
   async fn handle_input(
@@ -507,10 +526,11 @@ impl FormSplitter for TestFormSplitter {
     _consumes: <Self::ValidateInputConsumes as ToRef<'_>>::Ref,
     user_input: String,
     failed: Self::Context,
+    _back_token: Option<BackToken>,
   ) -> anyhow::Result<InputValidation<Self::Produces, Messages, Self::Context>> {
     match (user_input.as_str(), failed) {
-      ("retry", 0) => Ok(InputValidation::Retry(Message("retry again".into()), failed + 1)),
-      ("finish", _) => Ok(InputValidation::Finish(Message("finished early".into()))),
+      ("retry", 0) => Ok(InputValidation::Retry("retry again".into(), failed + 1)),
+      ("finish", _) => Ok(InputValidation::Finish("finished early".into())),
       ("1", _) => Ok(InputValidation::Successful(Self::Produces::inject((Case1, hlist![Split1Param])))),
       _ => Ok(InputValidation::Successful(Self::Produces::inject((Case2, hlist![Split2Param])))),
     }
@@ -528,8 +548,9 @@ impl FormSplitter for InnerFormSplitter {
   async fn create_form(
     &self,
     _consumes: <Self::CreateFormConsumes as ToRef<'_>>::Ref,
-  ) -> anyhow::Result<FormWithContext<Message, Self::Context>> {
-    Ok(FormWithContext(Message("choose case".into()), 0))
+    _back_token: Option<BackToken>,
+  ) -> anyhow::Result<FormWithContext<String, Self::Context>> {
+    Ok(FormWithContext("choose case".into(), 0))
   }
 
   async fn handle_input(
@@ -537,10 +558,11 @@ impl FormSplitter for InnerFormSplitter {
     _consumes: <Self::ValidateInputConsumes as ToRef<'_>>::Ref,
     user_input: String,
     failed: Self::Context,
+    _back_token: Option<BackToken>,
   ) -> anyhow::Result<InputValidation<Self::Produces, Messages, Self::Context>> {
     match (user_input.as_str(), failed) {
-      ("retry", 0) => Ok(InputValidation::Retry(Message("retry again".into()), failed + 1)),
-      ("finish", _) => Ok(InputValidation::Finish(Message("finished early".into()))),
+      ("retry", 0) => Ok(InputValidation::Retry("retry again".into(), failed + 1)),
+      ("finish", _) => Ok(InputValidation::Finish("finished early".into())),
       ("1", _) => Ok(InputValidation::Successful(Self::Produces::inject((Case1, hlist![InnerSplit1Param])))),
       _ => Ok(InputValidation::Successful(Self::Produces::inject((Case2, hlist![InnerSplit2Param])))),
     }
@@ -573,8 +595,9 @@ async fn test_return_error_on_param_missing_from_init_value(
 ) {
   let mut init_value = session_init_value();
   init_value.pop();
-  let run_outcome =
-    process.resume_run(init_value, PreviousRunYieldedAt(StepIndex::MIN), messages[0].into(), None).await;
+  let run_outcome = process
+    .resume_run(init_value, PreviousRunYieldedAt(StepIndex::MIN), messages[0].into(), None, None::<BackToken>)
+    .await;
   assert!(run_outcome.is_err_and(|x| format!("{x}") == "Admin error or error on frontend."));
 }
 
@@ -584,25 +607,38 @@ async fn test_return_error_on_param_missing_from_context(
 ) {
   let mut messages_index = 0;
   let run_outcome = process
-    .resume_run(session_init_value(), PreviousRunYieldedAt(StepIndex::MIN), messages[messages_index].into(), None)
+    .resume_run(
+      session_init_value(),
+      PreviousRunYieldedAt(StepIndex::MIN),
+      messages[messages_index].into(),
+      None,
+      None::<BackToken>,
+    )
     .await
     .expect("Test failed");
   messages_index += 1;
   match run_outcome {
     RunOutcome::Yield(msg, mut value, yielded_at, context) => {
-      assert_eq!(msg.0, messages[messages_index]);
+      assert_eq!(msg, messages[messages_index]);
       value.pop();
       let run_outcome = process
-        .resume_run(value, PreviousRunYieldedAt(yielded_at.0), messages[messages_index].into(), Some(context))
+        .resume_run(
+          value,
+          PreviousRunYieldedAt(yielded_at.0),
+          messages[messages_index].into(),
+          Some(context),
+          None::<BackToken>,
+        )
         .await;
       assert!(run_outcome.is_err_and(|x| format!("{x}") == "Missing key: 0"));
     },
     RunOutcome::RetryUserInput(msg, _context) => {
-      assert_eq!(msg.0, messages[messages_index]);
+      assert_eq!(msg, messages[messages_index]);
     },
     RunOutcome::Finish(msg) => {
-      assert_eq!(msg.0, messages[messages_index]);
+      assert_eq!(msg, messages[messages_index]);
     },
+    RunOutcome::Back => panic!("Unexpected back"),
   }
 }
 
@@ -935,8 +971,9 @@ impl Form for RetryOnceForm {
   async fn create_form(
     &self,
     _consumes: <Self::CreateFormConsumes as ToRef<'_>>::Ref,
-  ) -> anyhow::Result<FormWithContext<Message, Self::Context>> {
-    Ok(FormWithContext(Message("Fancy a retry?".into()), EmptyFormContext))
+    _back_token: Option<BackToken>,
+  ) -> anyhow::Result<FormWithContext<String, Self::Context>> {
+    Ok(FormWithContext("Fancy a retry?".into(), EmptyFormContext))
   }
 
   async fn handle_input(
@@ -944,9 +981,10 @@ impl Form for RetryOnceForm {
     _consumes: <Self::ValidateInputConsumes as ToRef<'_>>::Ref,
     user_input: String,
     _form_context: Self::Context,
+    _back_token: Option<BackToken>,
   ) -> anyhow::Result<InputValidation<Self::Produces, Messages, Self::Context>> {
     if user_input == "retry" {
-      Ok(InputValidation::Retry(Message("Try again".into()), EmptyFormContext))
+      Ok(InputValidation::Retry("Try again".into(), EmptyFormContext))
     } else {
       Ok(InputValidation::Successful(HNil))
     }
@@ -1205,44 +1243,41 @@ async fn test_subprocess_resume() {
   test_process_messages(&process, messages).await;
 }
 
+#[tokio::test]
+async fn test_back_navigation() {
+  let process = ExtractMsisdnOperatorAndShortcodeString
+    .show(ChooseCaseForm)
+    .split(SplitByTwoCaseOption)
+    .case_via(Case1, |x| x.show(OneInputRetryForm))
+    .case_via(Case2, |x| x.then(ProduceCaseParam2))
+    .end(SayGoodByAndConsumeCommonParams)
+    .build("", 0);
+
+  let messages = vec!["*123#", "Choose a case", "1", "This will be discarded", "0", "Choose a case", "2", "Good bye"];
+  test_process_messages(&process, messages).await;
+}
+
 async fn test_process_messages(
   process: &RunnableProcess<impl FinalizedProcess<Messages = Messages>>,
   messages: Vec<&str>,
 ) {
-  let mut previous_run_produced = session_init_value();
-  let mut previous_run_yielded_at = PreviousRunYieldedAt(StepIndex::MIN);
-  let mut form_context = None;
-  let mut messages_index = 0;
-  // run ordered_all_unique_param_uids in tests to check what code is reachable and it does not panic
-  let _ = process.ordered_all_unique_param_uids();
-  loop {
-    let run_outcome = process
-      .resume_run(
-        previous_run_produced.clone(),
-        previous_run_yielded_at.clone(),
-        messages[messages_index].into(),
-        form_context.clone(),
-      )
-      .await
-      .expect("Test failed");
-    messages_index += 1;
-    match run_outcome {
-      RunOutcome::Yield(msg, value, yielded_at, context) => {
-        previous_run_produced = value;
-        previous_run_yielded_at = PreviousRunYieldedAt(yielded_at.0);
-        form_context = Some(context);
-        assert_eq!(msg.0, messages[messages_index]);
-      },
-      RunOutcome::RetryUserInput(msg, context) => {
-        form_context = Some(context);
-        assert_eq!(msg.0, messages[messages_index]);
-      },
-      RunOutcome::Finish(msg) => {
-        assert_eq!(msg.0, messages[messages_index]);
-        break;
+  let mut state = SessionState {
+    session_context: session_init_value(),
+    previous_run_yielded_at: PreviousRunYieldedAt(StepIndex::MIN),
+    form_context: None,
+    visited_form_steps: Vec::new(),
+  };
+  let mut index = 0;
+  while index < messages.len() {
+    let user_input = messages[index];
+    index += 1;
+    let result = in_memory_process_runner(process, &mut state, user_input).await;
+    let expected_message = messages[index];
+    index += 1;
+    match result {
+      Ok(msg) | Err(msg) => {
+        assert_eq!(msg, expected_message);
       },
     }
-    messages_index += 1;
   }
-  assert_eq!(messages_index + 1, messages.len());
 }

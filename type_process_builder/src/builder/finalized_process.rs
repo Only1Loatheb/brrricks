@@ -1,11 +1,11 @@
 use crate::builder::flowing_process::FlowingProcess;
 use crate::builder::runnable_process::RunnableProcess;
 use crate::builder::{
-  IntermediateRunOutcome, MaybeFormContext, ParamUID, PreviousRunYieldedAt, RunOutcome, RunResult, SessionContext,
-  StepIndex,
+  IntermediateRunOutcome, MaybeFormContext, PreviousRunYieldedAt, RunOutcome, RunResult, SessionContext, StepIndex,
 };
 use crate::param_list::ParamList;
 use crate::param_list::extract::Extract;
+use crate::step::BackToken;
 use crate::step::{Final, ProcessMessages};
 use std::future::Future;
 use std::marker::PhantomData;
@@ -15,6 +15,7 @@ pub trait FinalizedProcess: Sized + Send + Sync {
   type ProcessBeforeProduces: ParamList;
   type SubprocessConsumes: ParamList;
   type Messages: ProcessMessages;
+  type EverProduced: ParamList;
 
   fn resume_run(
     &self,
@@ -22,16 +23,19 @@ pub trait FinalizedProcess: Sized + Send + Sync {
     previous_run_yielded_at: PreviousRunYieldedAt,
     user_input: String,
     form_context: MaybeFormContext,
+    back_token: Option<BackToken>,
   ) -> impl Future<Output = RunResult<Self::Messages>> + Send;
 
   fn continue_run(
     &self,
     process_before_produces: Self::ProcessBeforeProduces,
+    back_token: Option<BackToken>,
   ) -> impl Future<Output = RunResult<Self::Messages>> + Send;
 
   fn run_subprocess(
     &self,
     subprocess_consumes: Self::SubprocessConsumes,
+    back_token: Option<BackToken>,
   ) -> impl Future<Output = RunResult<Self::Messages>> + Send;
 
   fn build(self, name: &'static str, version: u32) -> RunnableProcess<Self> {
@@ -39,8 +43,6 @@ pub trait FinalizedProcess: Sized + Send + Sync {
   }
 
   fn enumerate_steps(&mut self, last_used_index: StepIndex) -> StepIndex;
-
-  fn all_param_uids(&self, acc: &mut Vec<ParamUID>);
 }
 
 pub struct FlowingFinalizedProcess<
@@ -65,6 +67,7 @@ where
   type ProcessBeforeProduces = ProcessBefore::Produces;
   type SubprocessConsumes = ProcessBefore::SubprocessConsumes;
   type Messages = ProcessBefore::Messages;
+  type EverProduced = ProcessBefore::EverProduced;
 
   async fn resume_run(
     // check where to resume when copying and pasting to finalized proces with finalized process instead of last case
@@ -73,37 +76,46 @@ where
     previous_run_yielded_at: PreviousRunYieldedAt,
     user_input: String,
     form_context: MaybeFormContext,
+    back_token: Option<BackToken>,
   ) -> RunResult<Self::Messages> {
-    let outcome =
-      self.process_before.resume_run(previous_run_produced, previous_run_yielded_at, user_input, form_context).await?;
+    let outcome = self
+      .process_before
+      .resume_run(previous_run_produced, previous_run_yielded_at, user_input, form_context, back_token)
+      .await?;
     match outcome {
-      IntermediateRunOutcome::Continue(val) => self.continue_run(val).await,
+      IntermediateRunOutcome::Continue(val) => self.continue_run(val, back_token).await,
       IntermediateRunOutcome::Yield(a, b, c, d) => Ok(RunOutcome::Yield(a, b, c, d)),
       IntermediateRunOutcome::Finish(a) => Ok(RunOutcome::Finish(a)),
       IntermediateRunOutcome::RetryUserInput(a, b) => Ok(RunOutcome::RetryUserInput(a, b)),
+      IntermediateRunOutcome::Back => Ok(RunOutcome::Back),
     }
   }
 
-  async fn continue_run(&self, process_before_produces: Self::ProcessBeforeProduces) -> RunResult<Self::Messages> {
+  async fn continue_run(
+    &self,
+    process_before_produces: Self::ProcessBeforeProduces,
+    _back_token: Option<BackToken>,
+  ) -> RunResult<Self::Messages> {
     Ok(RunOutcome::Finish(self.final_step.handle(process_before_produces.extract()).await?))
   }
 
-  async fn run_subprocess(&self, subprocess_consumes: Self::SubprocessConsumes) -> RunResult<Self::Messages> {
-    let outcome = self.process_before.run_subprocess(subprocess_consumes).await?;
+  async fn run_subprocess(
+    &self,
+    subprocess_consumes: Self::SubprocessConsumes,
+    back_token: Option<BackToken>,
+  ) -> RunResult<Self::Messages> {
+    let outcome = self.process_before.run_subprocess(subprocess_consumes, back_token).await?;
     match outcome {
-      IntermediateRunOutcome::Continue(val) => self.continue_run(val).await,
+      IntermediateRunOutcome::Continue(val) => self.continue_run(val, back_token).await,
       IntermediateRunOutcome::Yield(a, b, c, d) => Ok(RunOutcome::Yield(a, b, c, d)),
       IntermediateRunOutcome::Finish(a) => Ok(RunOutcome::Finish(a)),
       IntermediateRunOutcome::RetryUserInput(a, b) => Ok(RunOutcome::RetryUserInput(a, b)),
+      IntermediateRunOutcome::Back => Ok(RunOutcome::Back),
     }
   }
 
   fn enumerate_steps(&mut self, last_used_index: StepIndex) -> StepIndex {
     // most likely not worth to assign an index to final steps, but maybe test
     self.process_before.enumerate_steps(last_used_index)
-  }
-
-  fn all_param_uids(&self, acc: &mut Vec<ParamUID>) {
-    self.process_before.all_param_uids(acc);
   }
 }

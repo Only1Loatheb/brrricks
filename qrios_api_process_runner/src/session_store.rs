@@ -23,7 +23,8 @@ pub async fn create_session_context_table<Process: FinalizedProcess>(
     CREATE TABLE IF NOT EXISTS {table_name} (
       id BIGSERIAL PRIMARY KEY,
       previous_run_yielded_at INTEGER NOT NULL,
-      form_context BYTEA{param_columns})",
+      form_context BYTEA,
+      visited_form_steps BYTEA NOT NULL{param_columns})",
   );
 
   pool.execute(sql.as_str()).await?;
@@ -38,19 +39,22 @@ pub async fn create_session_context<Process: FinalizedProcess>(
   form_context: MaybeFormContext,
   session_context: SessionContext,
 ) -> Result<i64, sqlx::Error> {
-  let mut columns = vec!["previous_run_yielded_at".to_string(), "form_context".to_string()];
-  let mut placeholders = vec!["$1".to_string(), "$2".to_string()];
+  let mut columns =
+    vec!["previous_run_yielded_at".to_string(), "form_context".to_string(), "visited_form_steps".to_string()];
+  let mut placeholders = vec!["$1".to_string(), "$2".to_string(), "$3".to_string()];
 
   for (i, (col, _)) in session_context.iter().enumerate() {
     columns.push(format!("\"{col}\""));
-    placeholders.push(format!("${}", i + 3));
+    placeholders.push(format!("${}", i + 4));
   }
 
   let table_name = qualified_table_name(process);
   let sql =
     format!("INSERT INTO {table_name} ({}) VALUES ({}) RETURNING id;", columns.join(", "), placeholders.join(", "));
 
-  let mut query = sqlx::query(&sql).bind(current_run_yielded_at.0).bind(form_context);
+  let visited_steps_bytes =
+    postcard::to_allocvec(&vec![current_run_yielded_at.0]).map_err(|e| sqlx::Error::Encode(Box::new(e)))?;
+  let mut query = sqlx::query(&sql).bind(current_run_yielded_at.0).bind(form_context).bind(visited_steps_bytes);
 
   for (_, value) in session_context {
     query = query.bind(value);
@@ -63,7 +67,7 @@ use sqlx::postgres::PgQueryResult;
 
 pub struct GetSessionContextQuery(String);
 /// Builds:
-/// SELECT "`previous_run_yielded_at","form_context","0","1","2`"
+/// SELECT "`previous_run_yielded_at","form_context","visited_form_steps","0","1","2`"
 /// FROM `session_store.process_version`
 /// WHERE id = $1
 pub fn build_get_session_context_query<Process: FinalizedProcess>(
@@ -72,7 +76,7 @@ pub fn build_get_session_context_query<Process: FinalizedProcess>(
 ) -> GetSessionContextQuery {
   let mut sql = String::with_capacity(64 + ordered_all_unique_param_uids.len() * 8);
 
-  sql.push_str("SELECT \"previous_run_yielded_at\",\"form_context\"");
+  sql.push_str("SELECT \"previous_run_yielded_at\",\"form_context\",\"visited_form_steps\"");
   for uid in ordered_all_unique_param_uids {
     let _: std::fmt::Result = write!(sql, ",\"{uid}\"");
   }
@@ -87,20 +91,23 @@ pub async fn get_session_context(
   sql: &GetSessionContextQuery,
   session_id: i64,
   ordered_all_unique_param_uids: &[ParamUID],
-) -> Result<(PreviousRunYieldedAt, MaybeFormContext, SessionContext), sqlx::Error> {
+) -> Result<(PreviousRunYieldedAt, MaybeFormContext, Vec<i32>, SessionContext), sqlx::Error> {
   let row = sqlx::query(&sql.0).bind(session_id).fetch_one(pool).await?;
 
   let previous_run_yielded_at = PreviousRunYieldedAt(row.try_get(0)?);
   let form_context = row.try_get::<Option<Vec<u8>>, _>(1)?;
+  let visited_form_steps_bytes = row.try_get::<Vec<u8>, _>(2)?;
+  let visited_form_steps: Vec<i32> =
+    postcard::from_bytes(&visited_form_steps_bytes).map_err(|e| sqlx::Error::Decode(Box::new(e)))?;
 
   let mut session_context = Vec::with_capacity(ordered_all_unique_param_uids.len());
   for idx_and_param_uid in ordered_all_unique_param_uids.iter().enumerate() {
-    if let Ok(value) = row.try_get::<Vec<u8>, _>(idx_and_param_uid.0 + 2) {
+    if let Ok(value) = row.try_get::<Vec<u8>, _>(idx_and_param_uid.0 + 3) {
       session_context.push((*idx_and_param_uid.1, value));
     }
   }
 
-  Ok((previous_run_yielded_at, form_context, session_context))
+  Ok((previous_run_yielded_at, form_context, visited_form_steps, session_context))
 }
 
 pub async fn delete_session_context<Process: FinalizedProcess>(
@@ -140,30 +147,27 @@ pub async fn update_session_context<Process: FinalizedProcess>(
   id: i64,
   current_run_yielded_at: CurrentRunYieldedAt,
   form_context: MaybeFormContext,
+  visited_form_steps: Vec<i32>,
   params_to_store: SessionContext,
-  params_to_remove: Vec<u32>,
 ) -> Result<(), sqlx::Error> {
-  let mut assignments = vec!["previous_run_yielded_at = $1".to_string(), "form_context = $2".to_string()];
+  let mut assignments = vec![
+    "previous_run_yielded_at = $1".to_string(),
+    "form_context = $2".to_string(),
+    "visited_form_steps = $3".to_string(),
+  ];
 
   for (i, (col, _)) in params_to_store.iter().enumerate() {
-    assignments.push(format!("\"{}\" = ${}", col, i + 3));
-  }
-
-  // We need to remove stale value so the column will be interpreted as unset when determining already_stored_params
-  // in the next session interaction.
-  // Clearing params missing from session context is necessary when using the same param in split case and reusing it
-  // after multiple execution path join into common continuation.
-  for col in &params_to_remove {
-    assignments.push(format!("\"{col}\" = NULL"));
+    assignments.push(format!("\"{}\" = ${}", col, i + 4));
   }
 
   let table_name = qualified_table_name(process);
 
-  let where_placeholder = params_to_store.len() + 3;
+  let where_placeholder = params_to_store.len() + 4;
 
   let sql = format!("UPDATE {table_name} SET {} WHERE id = ${};", assignments.join(", "), where_placeholder);
 
-  let mut query = sqlx::query(&sql).bind(current_run_yielded_at.0).bind(form_context);
+  let visited_steps_bytes = postcard::to_allocvec(&visited_form_steps).map_err(|e| sqlx::Error::Encode(Box::new(e)))?;
+  let mut query = sqlx::query(&sql).bind(current_run_yielded_at.0).bind(form_context).bind(visited_steps_bytes);
 
   for (_, value) in params_to_store {
     query = query.bind(value);
