@@ -133,8 +133,11 @@ impl<Process: FinalizedProcess<Messages = Messages> + Sync>
         .await
     };
 
+    let mut is_back = false;
     if let Ok(RunOutcome::Back) = run_result {
-      let target_step_index = visited_form_steps.pop().ok_or(())?;
+      is_back = true;
+      visited_form_steps.pop();
+      let target_step_index = *visited_form_steps.last().ok_or(())?;
       let back_token = if visited_form_steps.len() > 1 { Some(create_back_token()) } else { None };
       run_result = self
         .process
@@ -150,9 +153,15 @@ impl<Process: FinalizedProcess<Messages = Messages> + Sync>
 
     match run_result {
       Ok(RunOutcome::Yield(message, session_context, current_run_yielded_at, form_context)) => {
+        let params_to_remove = if is_back {
+          let current_param_uids = session_context.iter().map(|x| x.0).collect::<HashSet<_>>();
+          already_stored_params.iter().filter(|uid| current_param_uids.contains(uid).not()).copied().collect::<Vec<_>>()
+        } else {
+          Vec::new()
+        };
         let params_to_store =
           session_context.into_iter().filter(|x| already_stored_params.contains(&x.0).not()).collect::<Vec<_>>();
-        if visited_form_steps.last() != Some(&current_run_yielded_at.0) {
+        if is_back.not() {
           visited_form_steps.push(current_run_yielded_at.0);
         }
         let id = update_session_context(
@@ -163,6 +172,7 @@ impl<Process: FinalizedProcess<Messages = Messages> + Sync>
           Some(form_context),
           visited_form_steps,
           params_to_store,
+          params_to_remove,
         )
         .await
         .map_err(|_| ())?;

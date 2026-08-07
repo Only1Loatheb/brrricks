@@ -141,6 +141,7 @@ pub async fn increment_failed_input_validation_attempts<Process: FinalizedProces
   sqlx::query(&sql).bind(form_context).bind(id).execute(pool).await
 }
 
+#[allow(clippy::too_many_arguments)]
 pub async fn update_session_context<Process: FinalizedProcess>(
   pool: &PgPool,
   process: &RunnableProcess<Process>,
@@ -149,6 +150,7 @@ pub async fn update_session_context<Process: FinalizedProcess>(
   form_context: MaybeFormContext,
   visited_form_steps: Vec<i32>,
   params_to_store: SessionContext,
+  params_to_remove: Vec<ParamUID>,
 ) -> Result<(), sqlx::Error> {
   let mut assignments = vec![
     "previous_run_yielded_at = $1".to_string(),
@@ -158,6 +160,10 @@ pub async fn update_session_context<Process: FinalizedProcess>(
 
   for (i, (col, _)) in params_to_store.iter().enumerate() {
     assignments.push(format!("\"{}\" = ${}", col, i + 4));
+  }
+
+  for col in &params_to_remove {
+    assignments.push(format!("\"{col}\" = NULL"));
   }
 
   let table_name = qualified_table_name(process);
