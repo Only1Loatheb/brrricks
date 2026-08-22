@@ -142,6 +142,46 @@ pub trait FlowingProcess: Sized + Send + Sync {
     }
   }
 
+  /// The process execution will call [`SplitProcess::continue_run`] instead of the individual case
+  /// [`FlowingProcess::continue_run`] method to avoid excessive nesting:
+  /// ```compile_fail,E0425
+  /// let _ = EntryA
+  ///   .show_split(SplitA, |subprocess|
+  ///     subprocess
+  ///       .case_via(Case1, |x| x)
+  ///       .case_via(Case2, |x| x.show(FormA))
+  ///   )
+  ///   .end(FinalA);
+  /// ```
+  /// and use the builder like this instead:
+  /// ```
+  /// # use type_process_builder::builder::*;
+  /// # use type_process_builder::step::*;
+  /// # use type_process_builder::{Coprod, HNil, ToRef};
+  /// # struct Msg;
+  /// # impl ProcessMessages for Msg { type FormMessage = String; type FinalMessage = String; }
+  /// # struct EntryA;
+  /// # impl Entry for EntryA { type Produces = HNil; type Messages = Msg; async fn handle(&self, _: SessionContext, _: String) -> anyhow::Result<HNil> { Ok(HNil) } }
+  /// # struct Case1; struct Case2; struct SplitA;
+  /// # impl FormSplitter for SplitA {
+  /// #   type CreateFormConsumes = HNil; type ValidateInputConsumes = HNil; type Produces = Coprod![(Case1, HNil), (Case2, HNil)]; type Context = (); type Messages = Msg;
+  /// #   async fn create_form(&self, _: <Self::CreateFormConsumes as ToRef<'_>>::Ref, _: Option<BackToken>) -> anyhow::Result<FormWithContext<String, ()>> { Ok(FormWithContext("".into(), ())) }
+  /// #   async fn handle_input(&self, _: <Self::ValidateInputConsumes as ToRef<'_>>::Ref, _: String, _: (), _: Option<BackToken>) -> anyhow::Result<InputValidation<Self::Produces, Msg, ()>> { Ok(InputValidation::Successful(Self::Produces::inject((Case1, HNil)))) }
+  /// # }
+  /// # struct FormA;
+  /// # impl Form for FormA {
+  /// #   type CreateFormConsumes = HNil; type ValidateInputConsumes = HNil; type Produces = HNil; type Context = (); type Messages = Msg;
+  /// #   async fn create_form(&self, _: <Self::CreateFormConsumes as ToRef<'_>>::Ref, _: Option<BackToken>) -> anyhow::Result<FormWithContext<String, ()>> { Ok(FormWithContext("".into(), ())) }
+  /// #   async fn handle_input(&self, _: <Self::ValidateInputConsumes as ToRef<'_>>::Ref, _: String, _: (), _: Option<BackToken>) -> anyhow::Result<InputValidation<HNil, Msg, ()>> { Ok(InputValidation::Successful(HNil)) }
+  /// # }
+  /// # struct FinalA;
+  /// # impl Final for FinalA { type Consumes = HNil; type FinalMessage = String; async fn handle(&self, _: HNil) -> anyhow::Result<String> { Ok("".into()) } }
+  /// let _ = EntryA
+  ///   .show_split(SplitA)
+  ///   .case_via(Case1, |x| x)
+  ///   .case_via(Case2, |x| x.show(FormA))
+  ///   .end(FinalA);
+  /// ```
   fn show_split<
     Tag: Send + Sync,
     SplitterProducesForFirstCase: ParamList + Concat<Self::Produces> + Concat<Self::EverProduced>,

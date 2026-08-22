@@ -47,7 +47,7 @@ pub trait ParamValue: Serialize + DeserializeOwned + Send + Sync {
 /// ```
 ///
 /// Passing duplicate typenum UIDs within the same invocation results in a compile-time error:
-/// ```compile_fail
+/// ```compile_fail,E0119
 /// use type_process_builder::impl_param_value;
 /// use serde::{Serialize, Deserialize};
 /// use typenum::U0;
@@ -96,7 +96,7 @@ pub trait ParamList: HList + Send + Sync {
   fn deserialize(session_context: SessionContext) -> anyhow::Result<Self> {
     Self::deserialize_from(session_context)
   }
-  /// [`crate::builder::RunnableProcess::ordered_all_unique_param_uids`]
+
   fn deserialize_from(session_context: SessionContext) -> anyhow::Result<Self>;
 }
 

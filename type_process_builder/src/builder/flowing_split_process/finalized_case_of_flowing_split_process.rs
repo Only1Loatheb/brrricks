@@ -254,7 +254,8 @@ where
   }
 }
 
-/// the last case
+/// Implementation for the last branch in the [`crate::builder::SplitProcess`].
+/// The only thing left from [`SplitterOutput`] is [`CNil`].
 impl<
   ThisTag: Send + Sync,
   SplitterProducesForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,

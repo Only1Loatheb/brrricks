@@ -256,7 +256,8 @@ where
   }
 }
 
-/// last case
+/// Implementation for the last branch in the [`crate::builder::SplitProcess`].
+/// The only thing left from [`SplitterOutput`] is [`CNil`].
 impl<
   ThisTag: Send + Sync,
   SplitterProducesForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
@@ -335,25 +336,8 @@ where
     }
   }
 
-  /// The process execution will call [`crate::builder::SplitProcess::continue_run`] instead of this one.
-  /// I implemented it like this to avoid:
-  /// ```ignore
-  /// let _ = EntryA
-  ///   .show_split(SplitA, |subprocess|
-  ///     subprocess
-  ///       .case_via(Case1, |x| x)
-  ///       .case_via(Case2, |x| x.show(FormA))
-  ///   )
-  ///   .end(FinalA);
-  /// ```
-  /// and use the builder like this instead:
-  /// ```ignore
-  /// let _ = EntryA
-  ///   .show_split(SplitA)
-  ///   .case_via(Case1, |x| x)
-  ///   .case_via(Case2, |x| x.show(FormA))
-  ///   .end(FinalA);
-  /// ```
+  /// The process execution will call [`crate::builder::SplitProcess::continue_run`] instead of this method.
+  /// See [`FlowingProcess::show_split`] for design details.
   async fn continue_run(&self, _process_before_produces: Self::ProcessBeforeProduces, _back_token: Option<BackToken>) -> IntermediateRunResult<Self::Produces, Self::Messages> {
     unreachable!("continue_run from last case is unreachable. The process is always continued from SplitProcess")
   }
