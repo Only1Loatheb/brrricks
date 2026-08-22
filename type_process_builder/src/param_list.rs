@@ -3,7 +3,7 @@ use crate::param_list::contains::Contains;
 use anyhow::anyhow;
 use serde::Serialize;
 use serde::de::DeserializeOwned;
-use typenum::{B0, Same, Unsigned};
+use typenum::{B0, Unsigned};
 
 pub mod borrow_just;
 pub mod concat;
@@ -110,11 +110,19 @@ impl ParamList for HNil {
   }
 }
 
+#[diagnostic::on_unimplemented(
+  message = "cannot include parameter: duplicate parameter UID for `{Param}` found in ParamList",
+  note = "Parameter `{Param}` appears multiple times in the parameter list or multiple parameters share same uid"
+)]
+pub trait PreventDuplicateParamUidInParamList<Param> {}
+
+impl<Param> PreventDuplicateParamUidInParamList<Param> for B0 {}
+
 /// The `where` clause prevents the same [`ParamValue`] from being duplicated in a [`ParamList`].
 /// Because uniqueness is checked by `UID`, this also guarantees that two different [`ParamValue`] types cannot share the same `UID` within the list.
 impl<Head: ParamValue, Tail: ParamList + Contains<Head>> ParamList for HCons<Head, Tail>
 where
-  <Tail as Contains<Head>>::IsContained: Same<B0>,
+  <Tail as Contains<Head>>::IsContained: PreventDuplicateParamUidInParamList<Head>,
 {
   fn serialize_into(&self, session_context: &mut SessionContext) -> anyhow::Result<()> {
     self.tail.serialize_into(session_context)?;

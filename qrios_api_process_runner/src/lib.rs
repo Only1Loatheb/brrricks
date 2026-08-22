@@ -22,12 +22,13 @@ use std::ops::Not;
 use type_process_builder::back_navigation::create_back_token;
 use type_process_builder::builder::contains::Contains;
 use type_process_builder::builder::{
-  FinalizedProcess, FormContext, ParamUID, ParamValue, PreviousRunYieldedAt, RunOutcome, RunnableProcess, StepIndex,
+  FinalizedProcess, FormContext, ParamUID, ParamValue, PreventDuplicateParamUidInParamList, PreviousRunYieldedAt,
+  RunOutcome, RunnableProcess, StepIndex,
 };
 use type_process_builder::param_list::ParamList;
 use type_process_builder::step::{BackToken, ProcessMessages};
 use type_process_builder::{HCons, HNil};
-use typenum::{B0, Same, Unsigned};
+use typenum::Unsigned;
 
 pub struct Message(pub String);
 
@@ -54,7 +55,7 @@ impl ParamUids for HNil {
 }
 impl<Head: ParamValue, Tail: ParamUids + Contains<Head>> ParamUids for HCons<Head, Tail>
 where
-  <Tail as Contains<Head>>::IsContained: Same<B0>,
+  <Tail as Contains<Head>>::IsContained: PreventDuplicateParamUidInParamList<Head>,
 {
   fn param_uids() -> Vec<ParamUID> {
     let mut a = Tail::param_uids();

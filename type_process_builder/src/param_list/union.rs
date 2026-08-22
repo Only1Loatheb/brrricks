@@ -1,8 +1,8 @@
 use crate::builder::contains::Contains;
 use crate::builder::{ParamList, ParamValue};
+use crate::param_list::PreventDuplicateParamUidInParamList;
 use crate::{HCons, HNil};
-use typenum::{B0, B1, Same};
-
+use typenum::{B0, B1};
 ////////// IfNotKeep //////////
 
 /// Like [`crate::param_list::intersect::ThenKeep`], but the logic is negated and omits the method to construct the value
@@ -30,7 +30,7 @@ impl<RHS: ParamList> Union<RHS> for HNil {
 
 impl<Head: ParamValue, Tail: Union<RHS> + ParamList + Contains<Head>, RHS: ParamList> Union<RHS> for HCons<Head, Tail>
 where
-  <Tail as Contains<Head>>::IsContained: Same<B0>,
+  <Tail as Contains<Head>>::IsContained: PreventDuplicateParamUidInParamList<Head>,
   <Tail as Union<RHS>>::Union: Contains<Head>,
   <<Tail as Union<RHS>>::Union as Contains<Head>>::IsContained: IfNotKeep<Head, <Tail as Union<RHS>>::Union>,
   <<<Tail as Union<RHS>>::Union as Contains<Head>>::IsContained as IfNotKeep<Head, <Tail as Union<RHS>>::Union>>::Filtered: ParamList,

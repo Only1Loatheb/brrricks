@@ -1,0 +1,20 @@
+error[E0277]: cannot include parameter: duplicate parameter UID for `ParamA` found in ParamList
+  --> tests/dx/duplicate_param_list_fails.rs:16:23
+   |
+16 |     assert_param_list(list);
+   |     ----------------- ^^^^ the trait `PreventDuplicateParamUidInParamList<ParamA>` is not implemented for `B1`
+   |     |
+   |     required by a bound introduced by this call
+   |
+   = note: Parameter `ParamA` appears multiple times in the parameter list or multiple parameters share same uid
+help: the trait `PreventDuplicateParamUidInParamList<Param>` is implemented for `B0`
+  --> src/param_list.rs
+   |
+   | impl<Param> PreventDuplicateParamUidInParamList<Param> for B0 {}
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   = note: required for `HCons<ParamA, HCons<ParamA, HNil>>` to implement `ParamList`
+note: required by a bound in `assert_param_list`
+  --> tests/dx/duplicate_param_list_fails.rs:12:25
+   |
+12 | fn assert_param_list<T: ParamList>(_val: T) {}
+   |                         ^^^^^^^^^ required by this bound in `assert_param_list`
