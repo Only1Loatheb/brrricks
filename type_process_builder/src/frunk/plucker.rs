@@ -44,17 +44,3 @@ impl<'a, Head, Tail: ToRef<'a>> Plucker<&'a Head, Here> for &'a HCons<Head, Tail
     (&self.head, self.tail.to_ref())
   }
 }
-
-/// Implementation when target is reference and the pluck target is in the tail
-impl<'a, Head, Tail, FromTail, TailIndex> Plucker<&'a FromTail, There<TailIndex>> for &'a HCons<Head, Tail>
-where
-  &'a Tail: Plucker<&'a FromTail, TailIndex>,
-{
-  type Remainder = HCons<&'a Head, <&'a Tail as Plucker<&'a FromTail, TailIndex>>::Remainder>;
-
-  #[inline(always)]
-  fn pluck(self) -> (&'a FromTail, Self::Remainder) {
-    let (target, tail_remainder) = <&'a Tail as Plucker<&'a FromTail, TailIndex>>::pluck(&self.tail);
-    (target, HCons { head: &self.head, tail: tail_remainder })
-  }
-}

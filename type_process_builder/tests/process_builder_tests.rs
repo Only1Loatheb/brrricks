@@ -1257,6 +1257,157 @@ async fn test_back_navigation() {
   test_process_messages(&process, messages).await;
 }
 
+#[tokio::test]
+async fn test_mixed_split_finalized_case_with_form_and_retry() {
+  let process = ExtractMsisdnOperatorAndShortcodeString
+    .show(ChooseCaseForm)
+    .split(SplitByTwoCaseOption)
+    .case_via(Case1, |x| x.then(ProduceCaseParam1))
+    .case_end(Case2, |x| x.show(OneInputRetryForm).end(FinalNoConsumes))
+    .end(SayGoodByAndConsumeCommonParams)
+    .build("", 0);
+
+  let messages = vec![
+    "*123#",
+    "Choose a case",
+    "2",
+    "This will be discarded",
+    "10",
+    "This will be accepted",
+    "20",
+    "Empty good bye",
+  ];
+  test_process_messages(&process, messages).await;
+}
+
+#[tokio::test]
+async fn test_three_case_mixed_split_all_branches() {
+  let process = ExtractMsisdnOperatorAndShortcodeString
+    .show(ChooseCaseForm)
+    .split(SplitByThreeCaseOption)
+    .case_end(Case1, |x| x.show(RetryOnceForm).end(FinalNoConsumes))
+    .case_via(Case2, |x| x.show(OneInputRetryForm).then(ProduceOnlyCase2Param))
+    .case_via(Case3, |x| x.then(ProduceOnlyCase1Param))
+    .end(FinalNoConsumes)
+    .build("", 0);
+
+  test_process_messages(
+    &process,
+    vec!["*123#", "Choose a case", "1", "Fancy a retry?", "retry", "Try again", "ok", "Empty good bye"],
+  )
+  .await;
+  test_process_messages(
+    &process,
+    vec![
+      "*123#",
+      "Choose a case",
+      "2",
+      "This will be discarded",
+      "10",
+      "This will be accepted",
+      "20",
+      "Empty good bye",
+    ],
+  )
+  .await;
+  test_process_messages(&process, vec!["*123#", "Choose a case", "3", "Empty good bye"]).await;
+}
+
+#[tokio::test]
+async fn test_finalized_case_early_finish_in_mixed_split() {
+  let process = ExtractMsisdnOperatorAndShortcodeString
+    .show(ChooseCaseForm)
+    .split(SplitByThreeCaseOption)
+    .case_via(Case1, |x| x.then(ProduceCaseParam1))
+    .case_end(Case2, |x| x.then(FinishProcessOperation).end(FinalNoConsumes))
+    .case_end(Case3, |x| x.show(FinishAfterInput).end(FinalNoConsumes))
+    .end(FinalNoConsumes)
+    .build("", 0);
+
+  test_process_messages(&process, vec!["*123#", "Choose a case", "2", "Operation finished"]).await;
+  test_process_messages(
+    &process,
+    vec!["*123#", "Choose a case", "3", "Last number in the process", "finish", "Always finish"],
+  )
+  .await;
+}
+
+#[tokio::test]
+async fn test_three_case_split_finalized_flowing_finalized() {
+  let process = ExtractMsisdnOperatorAndShortcodeString
+    .show(ChooseCaseForm)
+    .split(SplitByThreeCaseOption)
+    .case_end(Case1, |x| x.end(FinalNoConsumes))
+    .case_via(Case2, |x| x.show(OneInputRetryForm).then(ProduceOnlyCase2Param))
+    .case_end(Case3, |x| x.show(NoOpForm).end(FinalNoConsumes))
+    .end(FinalNoConsumes)
+    .build("", 0);
+
+  test_process_messages(&process, vec!["*123#", "Choose a case", "1", "Empty good bye"]).await;
+  test_process_messages(
+    &process,
+    vec![
+      "*123#",
+      "Choose a case",
+      "2",
+      "This will be discarded",
+      "10",
+      "This will be accepted",
+      "20",
+      "Empty good bye",
+    ],
+  )
+  .await;
+  test_process_messages(&process, vec!["*123#", "Choose a case", "3", "Straight to trash", "20", "Empty good bye"])
+    .await;
+}
+
+#[tokio::test]
+async fn test_back_navigation_in_finalized_case_of_mixed_split() {
+  let process = ExtractMsisdnOperatorAndShortcodeString
+    .show(ChooseCaseForm)
+    .split(SplitByTwoCaseOption)
+    .case_via(Case1, |x| x.then(ProduceCaseParam1))
+    .case_end(Case2, |x| x.show(OneInputRetryForm).end(FinalNoConsumes))
+    .end(SayGoodByAndConsumeCommonParams)
+    .build("", 0);
+
+  let messages = vec!["*123#", "Choose a case", "2", "This will be discarded", "0", "Choose a case", "1", "Good bye"];
+  test_process_messages(&process, messages).await;
+}
+
+#[tokio::test]
+async fn test_all_finalized_split_with_forms_and_early_finish() {
+  let process = ExtractMsisdnOperatorAndShortcodeString
+    .show(ChooseCaseForm)
+    .split(SplitByThreeCaseOption)
+    .case_end(Case1, |x| x.show(OneInputRetryForm).end(FinalNoConsumes))
+    .case_end(Case2, |x| x.then(FinishProcessOperation).end(FinalNoConsumes))
+    .case_end(Case3, |x| x.show(RetryOnceForm).end(FinalNoConsumes))
+    .build("", 0);
+
+  test_process_messages(
+    &process,
+    vec![
+      "*123#",
+      "Choose a case",
+      "1",
+      "This will be discarded",
+      "10",
+      "This will be accepted",
+      "20",
+      "Empty good bye",
+    ],
+  )
+  .await;
+  test_process_messages(&process, vec!["*123#", "Choose a case", "2", "Operation finished"]).await;
+  test_process_messages(
+    &process,
+    vec!["*123#", "Choose a case", "3", "Fancy a retry?", "retry", "Try again", "ok", "Empty good bye"],
+  )
+  .await;
+}
+
 async fn test_process_messages(
   process: &RunnableProcess<impl FinalizedProcess<Messages = Messages>>,
   messages: Vec<&str>,
