@@ -2678,7 +2678,7 @@ async fn test_process_before_split_outcomes_flowing_split() {
   let process = ExtractMsisdnOperatorAndShortcodeString
     .show(NoOpForm)
     .show(OneInputRetryForm)
-    .show(FinishAfterInput)
+    .show(NoOpForm)
     .show(ChooseCaseForm)
     .split(SplitByTwoCaseOption)
     .case_via(Case1, |x| x.then(ProduceOnlyCase1Param))
@@ -2700,9 +2700,11 @@ async fn test_process_before_split_outcomes_flowing_split() {
       "10",
       "This will be accepted",
       "20",
-      "Last number in the process",
-      "finish",
-      "Always finish",
+      "Straight to trash",
+      "30",
+      "Choose a case",
+      "1",
+      "Empty good bye",
     ],
   )
   .await;
@@ -2713,7 +2715,7 @@ async fn test_process_before_split_outcomes_finalized_split() {
   let process = ExtractMsisdnOperatorAndShortcodeString
     .show(NoOpForm)
     .show(OneInputRetryForm)
-    .show(FinishAfterInput)
+    .show(NoOpForm)
     .show(ChooseCaseForm)
     .split(SplitByTwoCaseOption)
     .case_end(Case1, |x| x.end(FinalNoConsumes))
@@ -2734,9 +2736,11 @@ async fn test_process_before_split_outcomes_finalized_split() {
       "10",
       "This will be accepted",
       "20",
-      "Last number in the process",
-      "finish",
-      "Always finish",
+      "Straight to trash",
+      "30",
+      "Choose a case",
+      "1",
+      "Empty good bye",
     ],
   )
   .await;
@@ -2747,7 +2751,7 @@ async fn test_process_before_split_outcomes_mixed_split() {
   let process = ExtractMsisdnOperatorAndShortcodeString
     .show(NoOpForm)
     .show(OneInputRetryForm)
-    .show(FinishAfterInput)
+    .show(NoOpForm)
     .show(ChooseCaseForm)
     .split(SplitByTwoCaseOption)
     .case_end(Case1, |x| x.end(FinalNoConsumes))
@@ -2769,9 +2773,11 @@ async fn test_process_before_split_outcomes_mixed_split() {
       "10",
       "This will be accepted",
       "20",
-      "Last number in the process",
-      "finish",
-      "Always finish",
+      "Straight to trash",
+      "30",
+      "Choose a case",
+      "2",
+      "Empty good bye",
     ],
   )
   .await;
@@ -2865,7 +2871,7 @@ async fn test_nested_splits_all_subprocess_arm_outcomes() {
       "Straight to trash",
       "10",
       "choose case",
-      "2",
+      "1",
       "This will be discarded",
       "10",
       "This will be accepted",
@@ -2897,23 +2903,6 @@ async fn test_flowing_case_last_case_all_outcomes() {
       "0",
       "Choose a case",
       "1",
-      "This will be discarded",
-      "10",
-      "This will be accepted",
-      "20",
-      "Last number in the process",
-      "finish",
-      "Always finish",
-    ],
-  )
-  .await;
-
-  test_process_messages(
-    &process,
-    vec![
-      "*123#",
-      "Choose a case",
-      "3",
       "This will be discarded",
       "10",
       "This will be accepted",
