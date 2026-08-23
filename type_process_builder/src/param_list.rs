@@ -112,7 +112,7 @@ impl ParamList for HNil {
 
 #[diagnostic::on_unimplemented(
   message = "cannot include parameter: duplicate parameter UID for `{Param}` found in ParamList",
-  note = "Parameter `{Param}` appears multiple times in the parameter list or multiple parameters share same uid"
+  note = "Parameter `{Param}` appears multiple times in the parameter list, or multiple parameters share the same UID"
 )]
 pub trait PreventDuplicateParamUidInParamList<Param> {}
 

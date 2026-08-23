@@ -6,9 +6,11 @@ use typenum::B0;
 
 #[diagnostic::on_unimplemented(
   message = "cannot overwrite parameter `{Param}`: it was already produced by a previous step in this process flow",
-  note = "The step being added produces parameter `{Param}`, but `{Param}` is already present in the preceding process parameters. Process steps cannot produce or overwrite existing parameters."
+  note = "The step being added produces parameter `{Param}`, \
+    but a parameter with the same UID has already been produced by a preceding step. \
+    Define a new parameter type or set a different UID for `{Param}`"
 )]
-pub trait PreventOverwritingParamInProcess<Param> {}
+pub trait PreventOverwritingParamInProcess<Param>: PreventDuplicateParamUidInParamList<Param> {}
 
 impl<Param> PreventOverwritingParamInProcess<Param> for B0 {}
 
@@ -33,7 +35,6 @@ impl<Head: ParamValue, Tail: Concat<RHS> + ParamList + Contains<Head>, RHS: Para
 where
   <Tail as Concat<RHS>>::Concatenated: Contains<Head>,
   <<Tail as Concat<RHS>>::Concatenated as Contains<Head>>::IsContained: PreventOverwritingParamInProcess<Head>,
-  <<Tail as Concat<RHS>>::Concatenated as Contains<Head>>::IsContained: PreventDuplicateParamUidInParamList<Head>,
   <Tail as Contains<Head>>::IsContained: PreventDuplicateParamUidInParamList<Head>,
 {
   type Concatenated = HCons<Head, <Tail as Concat<RHS>>::Concatenated>;
