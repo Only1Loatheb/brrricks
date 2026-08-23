@@ -1425,6 +1425,22 @@ async fn test_flowing_case_of_flowing_split_all_branches() {
   .await;
   test_process_messages(
     &process,
+    vec![
+      "*123#",
+      "Choose a case",
+      "1",
+      "This will be discarded",
+      "0",
+      "Choose a case",
+      "3",
+      "Straight to trash",
+      "10",
+      "Empty good bye",
+    ],
+  )
+  .await;
+  test_process_messages(
+    &process,
     vec!["*123#", "Choose a case", "2", "Fancy a retry?", "retry", "Try again", "ok", "Empty good bye"],
   )
   .await;
@@ -1443,6 +1459,11 @@ async fn test_flowing_case_of_finalized_split_all_branches() {
     .end(FinalNoConsumes)
     .build("", 0);
 
+  test_process_messages(
+    &process,
+    vec!["*123#", "Choose a case", "1", "This will be discarded", "0", "Choose a case", "3", "Operation finished"],
+  )
+  .await;
   test_process_messages(
     &process,
     vec![
@@ -2697,6 +2718,109 @@ async fn test_finalized_process_subprocess_outcomes() {
       "Last number in the process",
       "finish",
       "Always finish",
+    ],
+  )
+  .await;
+}
+
+#[tokio::test]
+async fn test_flowing_split_subprocess_outcomes_flowing_and_finalized() {
+  let process1 = ExtractMsisdnOperatorAndShortcodeString
+    .show(ChooseCaseForm)
+    .split(SplitByTwoCaseOption)
+    .case_via(Case1, |x| x.then(ProduceOnlyCase1Param))
+    .case_via(Case2, |x| {
+      x.show_split(InnerFormSplitter)
+        .case_via(Case1, |x| x.show(OneInputRetryForm).show(FinishAfterInput).then(ProduceOnlyCase1Param))
+        .case_via(Case2, |x| x.show(OneInputRetryForm).then(FinishProcessOperation))
+    })
+    .end(FinalNoConsumes)
+    .build("", 0);
+
+  test_process_messages(
+    &process1,
+    vec![
+      "*123#",
+      "Choose a case",
+      "2",
+      "choose case",
+      "1",
+      "This will be discarded",
+      "10",
+      "This will be accepted",
+      "ok",
+      "Last number in the process",
+      "finish",
+      "Always finish",
+    ],
+  )
+  .await;
+
+  test_process_messages(
+    &process1,
+    vec![
+      "*123#",
+      "Choose a case",
+      "2",
+      "choose case",
+      "2",
+      "This will be discarded",
+      "0",
+      "choose case",
+      "2",
+      "This will be discarded",
+      "10",
+      "This will be accepted",
+      "ok",
+      "Operation finished",
+    ],
+  )
+  .await;
+
+  let process2 = ExtractMsisdnOperatorAndShortcodeString
+    .show(ChooseCaseForm)
+    .split(SplitByTwoCaseOption)
+    .case_via(Case1, |x| x.then(ProduceOnlyCase1Param))
+    .case_via(Case2, |x| {
+      x.show_split(InnerFormSplitter)
+        .case_end(Case1, |x| x.show(OneInputRetryForm).end(FinalNoConsumes))
+        .case_via(Case2, |x| x.show(OneInputRetryForm).show(FinishAfterInput).then(ProduceOnlyCase2Param))
+    })
+    .end(FinalNoConsumes)
+    .build("", 0);
+
+  test_process_messages(
+    &process2,
+    vec![
+      "*123#",
+      "Choose a case",
+      "2",
+      "choose case",
+      "2",
+      "This will be discarded",
+      "10",
+      "This will be accepted",
+      "ok",
+      "Last number in the process",
+      "finish",
+      "Always finish",
+    ],
+  )
+  .await;
+
+  test_process_messages(
+    &process2,
+    vec![
+      "*123#",
+      "Choose a case",
+      "2",
+      "choose case",
+      "1",
+      "This will be discarded",
+      "10",
+      "This will be accepted",
+      "ok",
+      "Empty good bye",
     ],
   )
   .await;
