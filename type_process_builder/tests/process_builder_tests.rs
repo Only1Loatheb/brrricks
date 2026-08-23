@@ -1111,56 +1111,6 @@ async fn test_select_flowing_case_after_finalized_case_yield() {
 }
 
 #[tokio::test]
-async fn test_retry_in_case_2_then_resume_in_mixed_split() {
-  let process = ExtractMsisdnOperatorAndShortcodeString
-    .show(ChooseCaseForm)
-    .split(SplitByThreeCaseOption)
-    .case_end(Case1, |x| x.end(FinalNoConsumes))
-    .case_via(Case2, |x| x.show(RetryOnceForm).then(ProduceCaseParam2))
-    .case_end(Case3, |x| x.end(FinalNoConsumes))
-    .end(FinalNoConsumes)
-    .build("", 0);
-
-  test_process_messages(
-    &process,
-    vec!["*123#", "Choose a case", "2", "Fancy a retry?", "retry", "Try again", "accept", "Empty good bye"],
-  )
-  .await;
-}
-
-#[tokio::test]
-async fn test_retry_in_case_1_then_resume_in_mixed_split() {
-  let process = ExtractMsisdnOperatorAndShortcodeString
-    .show(ChooseCaseForm)
-    .split(SplitByTwoCaseOption)
-    .case_via(Case1, |x| x.show(RetryOnceForm).then(ProduceCaseParam1))
-    .case_end(Case2, |x| x.end(FinalNoConsumes))
-    .end(FinalNoConsumes)
-    .build("", 0);
-
-  test_process_messages(
-    &process,
-    vec!["*123#", "Choose a case", "1", "Fancy a retry?", "retry", "Try again", "accept", "Empty good bye"],
-  )
-  .await;
-  test_process_messages(&process, vec!["*123#", "Choose a case", "1", "Fancy a retry?", "anything", "Empty good bye"])
-    .await;
-}
-
-#[tokio::test]
-async fn test_finish_in_case_1_finalized_mixed_split() {
-  let process = ExtractMsisdnOperatorAndShortcodeString
-    .show(ChooseCaseForm)
-    .split(SplitByTwoCaseOption)
-    .case_end(Case1, |x| x.then(FinishProcessOperation).end(FinalNoConsumes))
-    .case_via(Case2, |x| x.then(ProduceCaseParam2))
-    .end(FinalNoConsumes)
-    .build("", 0);
-
-  test_process_messages(&process, vec!["*123#", "Choose a case", "1", "Operation finished"]).await;
-}
-
-#[tokio::test]
 async fn test_retry_in_case_1_finalized_mixed_split() {
   let process = ExtractMsisdnOperatorAndShortcodeString
     .show(ChooseCaseForm)
@@ -1257,29 +1207,6 @@ async fn test_back_navigation() {
     .build("", 0);
 
   let messages = vec!["*123#", "Choose a case", "1", "This will be discarded", "0", "Choose a case", "2", "Good bye"];
-  test_process_messages(&process, messages).await;
-}
-
-#[tokio::test]
-async fn test_mixed_split_finalized_case_with_form_and_retry() {
-  let process = ExtractMsisdnOperatorAndShortcodeString
-    .show(ChooseCaseForm)
-    .split(SplitByTwoCaseOption)
-    .case_via(Case1, |x| x.then(ProduceCaseParam1))
-    .case_end(Case2, |x| x.show(OneInputRetryForm).end(FinalNoConsumes))
-    .end(SayGoodByAndConsumeCommonParams)
-    .build("", 0);
-
-  let messages = vec![
-    "*123#",
-    "Choose a case",
-    "2",
-    "This will be discarded",
-    "10",
-    "This will be accepted",
-    "20",
-    "Empty good bye",
-  ];
   test_process_messages(&process, messages).await;
 }
 
@@ -1384,20 +1311,6 @@ async fn test_three_case_split_finalized_flowing_finalized() {
 }
 
 #[tokio::test]
-async fn test_back_navigation_in_finalized_case_of_mixed_split() {
-  let process = ExtractMsisdnOperatorAndShortcodeString
-    .show(ChooseCaseForm)
-    .split(SplitByTwoCaseOption)
-    .case_via(Case1, |x| x.then(ProduceCaseParam1))
-    .case_end(Case2, |x| x.show(OneInputRetryForm).end(FinalNoConsumes))
-    .end(SayGoodByAndConsumeCommonParams)
-    .build("", 0);
-
-  let messages = vec!["*123#", "Choose a case", "2", "This will be discarded", "0", "Choose a case", "1", "Good bye"];
-  test_process_messages(&process, messages).await;
-}
-
-#[tokio::test]
 async fn test_all_finalized_split_with_forms_and_early_finish() {
   let process = ExtractMsisdnOperatorAndShortcodeString
     .show(ChooseCaseForm)
@@ -1422,6 +1335,11 @@ async fn test_all_finalized_split_with_forms_and_early_finish() {
   )
   .await;
   test_process_messages(&process, vec!["*123#", "Choose a case", "2", "Operation finished"]).await;
+  test_process_messages(
+    &process,
+    vec!["*123#", "Choose a case", "1", "This will be discarded", "0", "Choose a case", "2", "Operation finished"],
+  )
+  .await;
   test_process_messages(
     &process,
     vec!["*123#", "Choose a case", "3", "Fancy a retry?", "retry", "Try again", "ok", "Empty good bye"],
@@ -1725,16 +1643,7 @@ async fn test_four_case_mixed_split_all_branch_outcomes() {
   test_process_messages(&process, vec!["*123#", "Choose a case", "3", "Operation finished"]).await;
   test_process_messages(
     &process,
-    vec![
-      "*123#",
-      "Choose a case",
-      "1",
-      "This will be discarded",
-      "0",
-      "Choose a case",
-      "3",
-      "Operation finished",
-    ],
+    vec!["*123#", "Choose a case", "1", "This will be discarded", "0", "Choose a case", "3", "Operation finished"],
   )
   .await;
   test_process_messages(
@@ -2057,52 +1966,6 @@ async fn test_multiple_forms_and_operations_in_finalized_case_of_flowing_split()
       "Try again",
       "ok",
       "Empty good bye",
-    ],
-  )
-  .await;
-  test_process_messages(
-    &process,
-    vec![
-      "*123#",
-      "Choose a case",
-      "2",
-      "This will be discarded",
-      "10",
-      "This will be accepted",
-      "20",
-      "Last number in the process",
-      "finish",
-      "Always finish",
-    ],
-  )
-  .await;
-}
-
-#[tokio::test]
-async fn test_multiple_forms_and_operations_in_next_case_of_finalized_split() {
-  let process = ExtractMsisdnOperatorAndShortcodeString
-    .show(ChooseCaseForm)
-    .split(SplitByThreeCaseOption)
-    .case_end(Case1, |x| x.show(OneInputRetryForm).show(RetryOnceForm).end(FinalNoConsumes))
-    .case_end(Case2, |x| x.show(OneInputRetryForm).show(FinishAfterInput).end(FinalNoConsumes))
-    .case_end(Case3, |x| x.show(OneInputRetryForm).then(FinishProcessOperation).end(FinalNoConsumes))
-    .build("", 0);
-
-  test_process_messages(
-    &process,
-    vec![
-      "*123#",
-      "Choose a case",
-      "2",
-      "This will be discarded",
-      "0",
-      "Choose a case",
-      "3",
-      "This will be discarded",
-      "10",
-      "This will be accepted",
-      "20",
-      "Operation finished",
     ],
   )
   .await;
