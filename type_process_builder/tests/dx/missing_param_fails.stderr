@@ -1,0 +1,58 @@
+error[E0277]: cannot consume parameter `&MissingParam`: it has not been produced by any previous step in this process flow
+  --> tests/dx/missing_param_fails.rs:48:19
+   |
+48 |   let _ = MyEntry.then(ConsumeMissingParam);
+   |                   ^^^^ the trait `Plucker<&MissingParam, _>` is not implemented for `&HCons<ProducedParam, HNil>`
+   |
+   = note: The step being added requires parameter `&MissingParam`, but it has not been produced yet by any preceding step.
+help: the following other types implement trait `Plucker<Target, Index>`
+  --> src/frunk/plucker.rs
+   |
+   |   impl<Head, Tail> Plucker<Head, Here> for HCons<Head, Tail> {
+   |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `HCons<Head, Tail>` implements `Plucker<Head, Here>`
+...
+   | / impl<Head, Tail, FromTail, TailIndex> Plucker<FromTail, There<TailIndex>> for HCons<Head, Tail>
+   | | where
+   | |   Tail: Plucker<FromTail, TailIndex>,
+   | |_____________________________________^ `HCons<Head, Tail>` implements `Plucker<FromTail, There<TailIndex>>`
+...
+   |   impl<'a, Head, Tail: ToRef<'a>> Plucker<&'a Head, Here> for &'a HCons<Head, Tail> {
+   |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `&HCons<Head, Tail>` implements `Plucker<&Head, Here>`
+   = note: required for `&'a HCons<ProducedParam, HNil>` to implement `for<'a> BorrowJust<'a, HCons<MissingParam, HNil>, HCons<_, _>>`
+note: required by a bound in `type_process_builder::builder::FlowingProcess::then::{anon_assoc#0}`
+  --> src/builder/flowing_process.rs
+   |
+   |     for<'a> &'a Self::Produces: BorrowJust<'a, OperationStep::Consumes, ProcessBeforeProducesToLastStepConsumesIndices>,
+   |                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `FlowingProcess::then::{anon_assoc#0}`
+
+error[E0277]: cannot consume parameter `&MissingParam`: it has not been produced by any previous step in this process flow
+  --> tests/dx/missing_param_fails.rs:48:24
+   |
+48 |   let _ = MyEntry.then(ConsumeMissingParam);
+   |                   ---- ^^^^^^^^^^^^^^^^^^^ the trait `Plucker<&MissingParam, _>` is not implemented for `&HCons<ProducedParam, HNil>`
+   |                   |
+   |                   required by a bound introduced by this call
+   |
+   = note: The step being added requires parameter `&MissingParam`, but it has not been produced yet by any preceding step.
+help: the following other types implement trait `Plucker<Target, Index>`
+  --> src/frunk/plucker.rs
+   |
+   |   impl<Head, Tail> Plucker<Head, Here> for HCons<Head, Tail> {
+   |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `HCons<Head, Tail>` implements `Plucker<Head, Here>`
+...
+   | / impl<Head, Tail, FromTail, TailIndex> Plucker<FromTail, There<TailIndex>> for HCons<Head, Tail>
+   | | where
+   | |   Tail: Plucker<FromTail, TailIndex>,
+   | |_____________________________________^ `HCons<Head, Tail>` implements `Plucker<FromTail, There<TailIndex>>`
+...
+   |   impl<'a, Head, Tail: ToRef<'a>> Plucker<&'a Head, Here> for &'a HCons<Head, Tail> {
+   |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `&HCons<Head, Tail>` implements `Plucker<&Head, Here>`
+   = note: required for `&'a HCons<ProducedParam, HNil>` to implement `for<'a> BorrowJust<'a, HCons<MissingParam, HNil>, HCons<_, _>>`
+note: required by a bound in `then`
+  --> src/builder/flowing_process.rs
+   |
+   |   fn then<
+   |      ---- required by a bound in this associated function
+...
+   |     for<'a> &'a Self::Produces: BorrowJust<'a, OperationStep::Consumes, ProcessBeforeProducesToLastStepConsumesIndices>,
+   |                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `FlowingProcess::then`

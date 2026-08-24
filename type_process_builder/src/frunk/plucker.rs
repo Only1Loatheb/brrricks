@@ -7,6 +7,10 @@ pub struct Here;
 pub struct There<T>(PhantomData<T>);
 
 /// Trait for plucking/extracting an element by type from an `HList`.
+#[diagnostic::on_unimplemented(
+  message = "cannot consume parameter `{Target}`: it has not been produced by any previous step in this process flow",
+  note = "The step being added requires parameter `{Target}`, but it has not been produced yet by any preceding step."
+)]
 pub trait Plucker<Target, Index> {
   type Remainder;
 
