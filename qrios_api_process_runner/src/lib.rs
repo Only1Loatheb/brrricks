@@ -281,6 +281,7 @@ mod tests {
   use typenum::*;
 
   #[allow(clippy::too_many_lines)]
+  #[allow(clippy::unused_async_trait_impl)]
   #[tokio::test]
   async fn session_store_test() {
     use crate::QriosUssdApiService;

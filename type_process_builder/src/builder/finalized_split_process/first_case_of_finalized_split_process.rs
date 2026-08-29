@@ -61,7 +61,7 @@ where
       >,
     ) -> NextCase,
   ) -> NextCaseOfFinalizedSplitProcess<NextTag, SplitterProducesForNextCase, SplitterProducesForOtherCases, Self, NextCase>
-  {
+{
     NextCaseOfFinalizedSplitProcess {
       split_process_before: self,
       case_index: WILL_BE_RENUMBERED,
@@ -93,7 +93,7 @@ where
     Self,
     NextCase,
   >
-  {
+{
     FlowingCaseOfFinalizedSplitProcess {
       split_process_before: self,
       case_index: WILL_BE_RENUMBERED,

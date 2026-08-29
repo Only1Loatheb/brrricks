@@ -32,12 +32,12 @@ impl<ProcessBeforeProduces: ParamList, EverProduced: ParamList, Messages: Proces
     self.continue_run(process_before_produces, back_token).await
   }
 
-  async fn continue_run(
+  fn continue_run(
     &self,
     process_before_produces: Self::ProcessBeforeProduces,
     _back_token: Option<BackToken>,
-  ) -> IntermediateRunResult<Self::Produces, Self::Messages> {
-    Ok(IntermediateRunOutcome::Continue(process_before_produces))
+  ) -> impl Future<Output = IntermediateRunResult<Self::Produces, Self::Messages>> {
+    std::future::ready(Ok(IntermediateRunOutcome::Continue(process_before_produces)))
   }
 
   async fn run_subprocess(

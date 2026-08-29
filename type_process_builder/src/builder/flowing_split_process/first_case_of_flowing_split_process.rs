@@ -67,7 +67,7 @@ where
     Self,
     NextCase,
   >
-  {
+{
     FinalizedCaseOfFlowingSplitProcess {
       split_process_before: self,
       case_index: WILL_BE_RENUMBERED,
@@ -103,7 +103,7 @@ where
     NextCase,
     Indices,
   >
-  {
+{
     FlowingCaseOfFlowingSplitProcess {
       split_process_before: self,
       case_index: WILL_BE_RENUMBERED,

@@ -1,3 +1,4 @@
+#![allow(clippy::unused_async_trait_impl)]
 use anyhow::anyhow;
 use serde::{Deserialize, Serialize};
 use std::marker::PhantomData;

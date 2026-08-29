@@ -25,20 +25,20 @@ impl<EntryStep: Entry> FlowingProcess for EntryStep {
     Ok(IntermediateRunOutcome::Continue(result))
   }
 
-  async fn continue_run(
+  fn continue_run(
     &self,
     _: Self::ProcessBeforeProduces,
     _back_token: Option<BackToken>,
-  ) -> IntermediateRunResult<Self::Produces, Self::Messages> {
-    unreachable!("We never continue from entry step")
+  ) -> impl Future<Output = IntermediateRunResult<Self::Produces, Self::Messages>> {
+    std::future::ready(unreachable!("We never continue from entry step"))
   }
 
-  async fn run_subprocess(
+  fn run_subprocess(
     &self,
     _: Self::SubprocessConsumes,
     _back_token: Option<BackToken>,
-  ) -> IntermediateRunResult<Self::Produces, Self::Messages> {
-    unreachable!("Entry step never starts subprocess")
+  ) -> impl Future<Output = IntermediateRunResult<Self::Produces, Self::Messages>> {
+    std::future::ready(unreachable!("Entry step never starts subprocess"))
   }
 
   fn enumerate_steps(&mut self, last_used_index: StepIndex) -> StepIndex {

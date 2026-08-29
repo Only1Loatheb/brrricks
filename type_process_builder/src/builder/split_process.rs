@@ -122,7 +122,7 @@ pub trait SplitProcess<SplitterProducesForOtherCases: Send + Sync>: Sized + Send
   >
   where
     Self::SplitterProducesForFirstCase: Concat<Self::ProcessBeforeSplitProduces>,
-  {
+{
     FirstCaseOfFlowingSplitProcess {
       split_process_before: self,
       case_index: WILL_BE_RENUMBERED,

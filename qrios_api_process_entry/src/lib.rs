@@ -60,15 +60,25 @@ impl<Messages: ProcessMessages> Entry for DialedSessionEntry<Messages> {
   type Produces = HList![DialedSessionEntryParam];
   type Messages = Messages;
 
-  async fn handle(&self, mut consumes: SessionContext, shortcode_string: String) -> anyhow::Result<Self::Produces> {
-    let operator_value = consumes.pop().ok_or_else(|| anyhow!("Admin error or error on frontend."))?.1;
-    let msisdn_value = consumes.pop().ok_or_else(|| anyhow!("Admin error or error on frontend."))?.1;
-    let msisdn_str: String = postcard::from_bytes(&msisdn_value).map_err(|_| anyhow!("Admin error on frontend."))?;
-    let msisdn = Msisdn::from_string(&msisdn_str).ok_or_else(|| anyhow!("Admin error on frontend."))?;
-    Ok(hlist!(DialedSessionEntryParam(
-      msisdn,
-      postcard::from_bytes(&operator_value).map_err(|_| anyhow!("Admin error or error on frontend."))?,
-      ShortcodeString(shortcode_string)
-    )))
+  fn handle(
+    &self,
+    mut consumes: SessionContext,
+    shortcode_string: String,
+  ) -> impl Future<Output = anyhow::Result<Self::Produces>> {
+    fn from_session_context(
+      consumes: &mut SessionContext,
+      shortcode_string: String,
+    ) -> anyhow::Result<HList![DialedSessionEntryParam]> {
+      let operator_value = consumes.pop().ok_or_else(|| anyhow!("Admin error or error on frontend."))?.1;
+      let msisdn_value = consumes.pop().ok_or_else(|| anyhow!("Admin error or error on frontend."))?.1;
+      let msisdn_str: String = postcard::from_bytes(&msisdn_value).map_err(|_| anyhow!("Admin error on frontend."))?;
+      let msisdn = Msisdn::from_string(&msisdn_str).ok_or_else(|| anyhow!("Admin error on frontend."))?;
+      Ok(hlist!(DialedSessionEntryParam(
+        msisdn,
+        postcard::from_bytes(&operator_value).map_err(|_| anyhow!("Admin error or error on frontend."))?,
+        ShortcodeString(shortcode_string)
+      )))
+    }
+    std::future::ready(from_session_context(&mut consumes, shortcode_string))
   }
 }

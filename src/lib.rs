@@ -1,3 +1,4 @@
+#![allow(clippy::unused_async_trait_impl)]
 use serde::{Deserialize, Serialize};
 use type_process_builder::builder::{FinalizedProcess, FlowingProcess, RunnableProcess, SessionContext, SplitProcess};
 use type_process_builder::step::{

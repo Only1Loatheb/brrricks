@@ -93,7 +93,7 @@ where
 
 
 
-let result = api_impl.as_ref().post_ussdsessionevent_abort(
+  let result = api_impl.as_ref().post_ussdsessionevent_abort(
       
       &method,
       &host,
@@ -102,17 +102,17 @@ let result = api_impl.as_ref().post_ussdsessionevent_abort(
               &body,
   ).await;
 
-  let mut response = Response::builder();
-
   let resp = match result {
                                             Ok(rsp) => match rsp {
                                                 apis::developers_app_endpoints::PostUssdsessioneventAbortResponse::Status200_TheAbortingOfTheSessionHasBeenSuccessfullyHandledByTheDeveloper
                                                 => {
+                                                let mut response = Response::builder();
                                                   let mut response = response.status(200);
                                                   response.body(Body::empty())
                                                 },
                                                 apis::developers_app_endpoints::PostUssdsessioneventAbortResponse::Status204_TheAbortingOfTheSessionHasBeenSuccessfullyHandledByTheDeveloper
                                                 => {
+                                                let mut response = Response::builder();
                                                   let mut response = response.status(204);
                                                   response.body(Body::empty())
                                                 },
@@ -175,7 +175,7 @@ where
 
 
 
-let result = api_impl.as_ref().post_ussdsessionevent_close(
+  let result = api_impl.as_ref().post_ussdsessionevent_close(
       
       &method,
       &host,
@@ -184,17 +184,17 @@ let result = api_impl.as_ref().post_ussdsessionevent_close(
               &body,
   ).await;
 
-  let mut response = Response::builder();
-
   let resp = match result {
                                             Ok(rsp) => match rsp {
                                                 apis::developers_app_endpoints::PostUssdsessioneventCloseResponse::Status200_SessionEndHasBeenSuccessfullyHandledByTheDeveloper
                                                 => {
+                                                let mut response = Response::builder();
                                                   let mut response = response.status(200);
                                                   response.body(Body::empty())
                                                 },
                                                 apis::developers_app_endpoints::PostUssdsessioneventCloseResponse::Status204_SessionEndHasBeenSuccessfullyHandledByTheDeveloper
                                                 => {
+                                                let mut response = Response::builder();
                                                   let mut response = response.status(204);
                                                   response.body(Body::empty())
                                                 },
@@ -257,7 +257,7 @@ where
 
 
 
-let result = api_impl.as_ref().post_ussdsessionevent_continue(
+  let result = api_impl.as_ref().post_ussdsessionevent_continue(
       
       &method,
       &host,
@@ -266,13 +266,12 @@ let result = api_impl.as_ref().post_ussdsessionevent_continue(
               &body,
   ).await;
 
-  let mut response = Response::builder();
-
   let resp = match result {
                                             Ok(rsp) => match rsp {
                                                 apis::developers_app_endpoints::PostUssdsessioneventContinueResponse::Status200_SessionContinuationHasBeenSuccessfullyHandledByTheDeveloper
                                                     (body)
                                                 => {
+                                                let mut response = Response::builder();
                                                   let mut response = response.status(200);
                                                   {
                                                     let mut response_headers = response.headers_mut().unwrap();
@@ -347,7 +346,7 @@ where
 
 
 
-let result = api_impl.as_ref().post_ussdsessionevent_new(
+  let result = api_impl.as_ref().post_ussdsessionevent_new(
       
       &method,
       &host,
@@ -356,13 +355,12 @@ let result = api_impl.as_ref().post_ussdsessionevent_new(
               &body,
   ).await;
 
-  let mut response = Response::builder();
-
   let resp = match result {
                                             Ok(rsp) => match rsp {
                                                 apis::developers_app_endpoints::PostUssdsessioneventNewResponse::Status200_SessionStartHasBeenSuccessfullyHandledByTheDeveloper
                                                     (body)
                                                 => {
+                                                let mut response = Response::builder();
                                                   let mut response = response.status(200);
                                                   {
                                                     let mut response_headers = response.headers_mut().unwrap();

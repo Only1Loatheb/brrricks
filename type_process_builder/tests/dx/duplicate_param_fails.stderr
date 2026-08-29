@@ -1,8 +1,16 @@
-error[E0277]: cannot overwrite parameter `DuplicateParam`: it was already produced by a previous step in this process flow
+error[E0271]: type mismatch resolving `impl FlowingProcess<ProcessBeforeProduces = <MyEntry as FlowingProcess>::Produces, Produces = <<ProduceDuplicateParam as Operation>::Produces as Concat<<MyEntry as FlowingProcess>::Produces>>::Concatenated, SubprocessConsumes = <MyEntry as FlowingProcess>::SubprocessConsumes, Messages = <MyEntry as FlowingProcess>::Messages, EverProduced = <<ProduceDuplicateParam as Operation>::Produces as Concat<<MyEntry as FlowingProcess>::EverProduced>>::Concatenated> == impl FlowingProcess<ProcessBeforeProduces = <MyEntry as FlowingProcess>::Produces, Produces = <<ProduceDuplicateParam as Operation>::Produces as Concat<<MyEntry as FlowingProcess>::Produces>>::Concatenated, SubprocessConsumes = <MyEntry as FlowingProcess>::SubprocessConsumes, Messages = <MyEntry as FlowingProcess>::Messages, EverProduced = <<ProduceDuplicateParam as Operation>::Produces as Concat<<MyEntry as FlowingProcess>::EverProduced>>::Concatenated>`
   --> tests/dx/duplicate_param_fails.rs:44:19
    |
 44 |   let _ = MyEntry.then(ProduceDuplicateParam);
-   |                   ^^^^ the trait `PreventOverwritingParamInProcess<DuplicateParam>` is not implemented for `B1`
+   |                   ^^^^ types differ
+
+error[E0277]: cannot overwrite parameter `DuplicateParam`: it was already produced by a previous step in this process flow
+  --> tests/dx/duplicate_param_fails.rs:44:24
+   |
+44 |   let _ = MyEntry.then(ProduceDuplicateParam);
+   |                   ---- ^^^^^^^^^^^^^^^^^^^^^ the trait `PreventOverwritingParamInProcess<DuplicateParam>` is not implemented for `B1`
+   |                   |
+   |                   required by a bound introduced by this call
    |
    = note: The step being added produces parameter `DuplicateParam`, but a parameter with the same UID has already been produced by a preceding step. Define a new parameter type or set a different UID for `DuplicateParam`
 help: the trait `PreventOverwritingParamInProcess<Param>` is implemented for `B0`
@@ -11,8 +19,11 @@ help: the trait `PreventOverwritingParamInProcess<Param>` is implemented for `B0
    | impl<Param> PreventOverwritingParamInProcess<Param> for B0 {}
    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
    = note: required for `HCons<DuplicateParam, HNil>` to implement `type_process_builder::builder::concat::Concat<HCons<DuplicateParam, HNil>>`
-note: required by a bound in `type_process_builder::builder::FlowingProcess::then::{anon_assoc#0}`
+note: required by a bound in `then`
   --> src/builder/flowing_process.rs
    |
+   |   fn then<
+   |      ---- required by a bound in this associated function
+...
    |     OperationStep::Produces: ParamList + Concat<Self::Produces> + Concat<Self::EverProduced>,
-   |                                          ^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `FlowingProcess::then::{anon_assoc#0}`
+   |                                          ^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `FlowingProcess::then`
