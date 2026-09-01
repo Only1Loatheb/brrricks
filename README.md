@@ -7,11 +7,10 @@ Type-safe process modelling library
 **Step** is a unit of execution. Each step belongs to one of the
 [following archetypes](type_process_builder/src/step.rs): `Entry`, `Operation`, `Form`, `Splitter`, `FormSplitter`, or `Final`.
 
-**Process** is a composition of steps with a defined execution order, including conditional branches and
-early termination paths.
+**Process** is a composition of steps with a defined execution order, including conditional branches and early termination paths.
 
-**Parameter** (param) is a value produced by a step and carried forward across subsequent steps within the same process execution.
-Same process execution can span across multiple user interactions.
+**Parameter** (param) is a value produced by a step and carried forward across subsequent steps within the same process execution. Same process
+execution can span across multiple user interactions.
 
 ## Project goals
 
@@ -328,10 +327,11 @@ cargo xtask
 ```
 
 Some integration tests require Docker to be running on your machine to start containers for external dependencies (e.g., Postgres).
-   
+
 Bless the tests with:
+
 ```shell
-TRYBUILD=overwrite cargo test -p type_process_builder --test duplicate_param_tests
+TRYBUILD=overwrite cargo +nightly test -p type_process_builder --test duplicate_param_tests
 ```
 
 [//]: # (Redirect can be implemented with a Final step.)

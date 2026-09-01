@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 use type_process_builder::builder::*;
 use type_process_builder::frunk::to_ref::ToRef;
 use type_process_builder::step::{Entry, Operation, OperationOutcome, ProcessMessages};
-use type_process_builder::{hlist, impl_param_value, HList, HNil};
+use type_process_builder::{HList, HNil, hlist, impl_param_value};
 use typenum::*;
 
 #[derive(Deserialize, Serialize)]

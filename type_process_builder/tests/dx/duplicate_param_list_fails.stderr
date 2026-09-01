@@ -1,10 +1,10 @@
 error[E0277]: cannot include parameter: duplicate parameter UID for `ParamA` found in ParamList
-  --> tests/dx/duplicate_param_list_fails.rs:16:23
+  --> tests/dx/duplicate_param_list_fails.rs:16:21
    |
-16 |     assert_param_list(list);
-   |     ----------------- ^^^^ the trait `PreventDuplicateParamUidInParamList<ParamA>` is not implemented for `B1`
-   |     |
-   |     required by a bound introduced by this call
+16 |   assert_param_list(list);
+   |   ----------------- ^^^^ the trait `PreventDuplicateParamUidInParamList<ParamA>` is not implemented for `B1`
+   |   |
+   |   required by a bound introduced by this call
    |
    = note: Parameter `ParamA` appears multiple times in the parameter list, or multiple parameters share the same UID
 help: the trait `PreventDuplicateParamUidInParamList<Param>` is implemented for `B0`
