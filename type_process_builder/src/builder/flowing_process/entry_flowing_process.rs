@@ -30,6 +30,7 @@ impl<EntryStep: Entry> FlowingProcess for EntryStep {
     _: Self::ProcessBeforeProduces,
     _back_token: Option<BackToken>,
   ) -> impl Future<Output = IntermediateRunResult<Self::Produces, Self::Messages>> {
+    #[allow(unreachable_code)]
     std::future::ready(unreachable!("We never continue from entry step"))
   }
 
@@ -38,6 +39,7 @@ impl<EntryStep: Entry> FlowingProcess for EntryStep {
     _: Self::SubprocessConsumes,
     _back_token: Option<BackToken>,
   ) -> impl Future<Output = IntermediateRunResult<Self::Produces, Self::Messages>> {
+    #[allow(unreachable_code)]
     std::future::ready(unreachable!("Entry step never starts subprocess"))
   }
 

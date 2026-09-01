@@ -339,7 +339,8 @@ where
   /// The process execution will call [`crate::builder::SplitProcess::continue_run`] instead of this method.
   /// See [`FlowingProcess::show_split`] for design details.
   fn continue_run(&self, _process_before_produces: Self::ProcessBeforeProduces, _back_token: Option<BackToken>) -> impl Future<Output = IntermediateRunResult<Self::Produces, Self::Messages>> {
-   std::future::ready(unreachable!("continue_run from last case is unreachable. The process is always continued from SplitProcess"))
+   #[allow(unreachable_code)]
+std::future::ready(unreachable!("continue_run from last case is unreachable. The process is always continued from SplitProcess"))
   }
 
   async fn run_subprocess(&self, subprocess_consumes: Self::SubprocessConsumes, back_token: Option<BackToken>) -> IntermediateRunResult<Self::Produces, Self::Messages> {
