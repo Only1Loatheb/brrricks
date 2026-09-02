@@ -80,7 +80,8 @@ where
         <&ProcessBefore::Produces as BorrowJust<'_, FormStep::ValidateInputConsumes, _>>::borrow_just(
           &process_before_produces,
         );
-      let context: FormStep::Context = postcard::from_bytes(&form_context.ok_or(anyhow!("Missing FormContext"))?)?;
+      let context: FormStep::Context =
+        postcard::from_bytes(&form_context.ok_or_else(|| anyhow!("Missing FormContext"))?)?;
       match self.form_step.handle_input(last_step_consumes, user_input, context, back_token).await? {
         InputValidation::Successful(a) => Ok(IntermediateRunOutcome::Continue(a.concat(process_before_produces))),
         InputValidation::Retry(a, b) => Ok(IntermediateRunOutcome::RetryUserInput(a, postcard::to_allocvec(&b)?)),

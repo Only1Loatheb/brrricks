@@ -98,7 +98,8 @@ where
         <&ProcessBefore::Produces as BorrowJust<'_, SplitterStep::ValidateInputConsumes, _>>::borrow_just(
           &process_before_split_produced,
         );
-      let context: SplitterStep::Context = postcard::from_bytes(&form_context.ok_or(anyhow!("Missing FormContext"))?)?;
+      let context: SplitterStep::Context =
+        postcard::from_bytes(&form_context.ok_or_else(|| anyhow!("Missing FormContext"))?)?;
       match self.splitter.handle_input(last_step_consumes, user_input, context, back_token).await? {
         InputValidation::Successful(splitter_produces) => {
           let splitter_produces_to_other_cases = match splitter_produces {

@@ -131,10 +131,22 @@ where
   }
 
   /// <https://isocpp.org/blog/2014/06/stroustrup-lists>
+  /// Deserializes a [`ParamList`] from a [`SessionContext`].
+  /// Deserializing out-of-order or from a subset `ParamList` is supported, but can degrade parameter lookup
+  /// to linear scan ($O(N^2)$ worst-case for [`ParamList::deserialize`] invocation).
+  /// We use [`Vec::swap_remove`] because it acts as $O(1)$ [`Vec::pop`] with zero or one element swap and without ever
+  /// reallocating the vector.
+  /// To keep efficiency gains from using `swap_remove`, we need to serialize [`SessionContext`] in reversed order and
+  /// search from the back with [`Iterator::rposition`].
+  /// Head-first order is avoided because `swap_remove(0)` would move the last element to index 0 and that would
+  /// make us check elements that are unlikely to be used at the beginning of every search.
+  /// When deserializing in matching order, `rposition` finds [`Head`] on the first check ($O(1)$) and `swap_remove`
+  /// pops from the back with zero element moves, operating as an efficient LIFO stack ($O(N)$ overall).
   fn deserialize_from(mut session_context: SessionContext) -> anyhow::Result<Self> {
-    let index = session_context.iter().rposition(|(k, _)| *k == Head::UID::U32).ok_or({
-      let head_param_uid: ParamUID = Head::UID::U32;
-      anyhow!("Missing key: {head_param_uid}")
+    let index = session_context.iter().rposition(|(k, _)| *k == Head::UID::U32).ok_or_else(|| {
+      let type_name = std::any::type_name::<Head>();
+      let uid: ParamUID = Head::UID::U32;
+      anyhow!("Parameter {type_name} with UID {uid} is missing from SessionContext")
     })?;
     let (_, value) = session_context.swap_remove(index);
     let head: Head = postcard::from_bytes(&value)?;

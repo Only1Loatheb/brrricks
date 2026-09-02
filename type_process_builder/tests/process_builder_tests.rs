@@ -29,7 +29,7 @@ use type_process_builder::impl_param_value;
 #[derive(Deserialize, Serialize)]
 struct EntryParam(Msisdn, Operator, ShortcodeString);
 
-#[derive(Deserialize, Serialize)]
+#[derive(Deserialize, Serialize, PartialEq, Eq, Debug)]
 struct Split1Param;
 
 #[derive(Deserialize, Serialize)]
@@ -47,7 +47,7 @@ struct Case2Param;
 #[derive(Deserialize, Serialize)]
 struct CommonCaseParam;
 
-#[derive(Deserialize, Serialize)]
+#[derive(Deserialize, Serialize, PartialEq, Eq, Debug)]
 struct CaseOptionParam(pub u8);
 
 #[derive(Deserialize, Serialize)]
@@ -571,6 +571,16 @@ impl FormSplitter for InnerFormSplitter {
   }
 }
 
+#[test]
+fn test_param_list_out_of_order_deserialization() -> anyhow::Result<()> {
+  let list = hlist!(Split1Param, CaseOptionParam(1));
+  let context = list.serialize()?;
+  let reordered: HList![CaseOptionParam, Split1Param] = ParamList::deserialize(context)?;
+  assert_eq!(reordered.head, CaseOptionParam(1));
+  assert_eq!(reordered.tail.head, Split1Param);
+  Ok(())
+}
+
 #[tokio::test]
 async fn test_end() {
   let process = ExtractMsisdnOperatorAndShortcodeString.end(FinalNoConsumes).build("", 0);
@@ -632,7 +642,10 @@ async fn test_return_error_on_param_missing_from_context(
           None::<BackToken>,
         )
         .await;
-      assert!(run_outcome.is_err_and(|x| format!("{x}") == "Missing key: 0"));
+      assert!(run_outcome.is_err_and(|x| {
+        let err = format!("{x}");
+        err.starts_with("Parameter ") && err.ends_with(" with UID 0 is missing from SessionContext")
+      }));
     },
     RunOutcome::RetryUserInput(msg, _context) => {
       assert_eq!(msg, messages[messages_index]);
