@@ -13,6 +13,7 @@ use std::future::Future;
 
 pub trait FinalizedSplitProcess<SplitterProducesForOtherCases>: Sized + Send + Sync {
   // Please specify all associated types at the impl FinalizedSplitProcess side for inference to work.
+  type EntryConsumes: ParamList;
   type ProcessBeforeSplitProduces: ParamList;
   type SplitterProducesForThisCase: ParamList + Concat<Self::ProcessBeforeSplitProduces>;
   type SplitterTagForThisCase: Send + Sync;

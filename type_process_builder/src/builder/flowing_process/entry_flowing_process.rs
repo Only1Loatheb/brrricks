@@ -8,6 +8,7 @@ use crate::step::{BackToken, Entry, ProcessMessages};
 use std::future::Future;
 
 impl<Produces: ParamList, Messages: ProcessMessages> FlowingProcess for Entry<Produces, Messages> {
+  type EntryConsumes = Produces;
   type ProcessBeforeProduces = HNil;
   type Produces = Produces;
   type SubprocessConsumes = HNil;

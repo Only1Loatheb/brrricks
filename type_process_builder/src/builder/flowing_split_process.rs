@@ -16,6 +16,7 @@ use std::future::Future;
 /// Producing the same parameter types across different split cases is supported.
 pub trait FlowingSplitProcess<SplitterProducesForOtherCases>: Sized + Send + Sync {
   // Please specify all associated types at the impl FlowingSplitProcess side for inference to work.
+  type EntryConsumes: ParamList;
   type ProcessBeforeSplitProduces: ParamList;
   type SplitterProducesForThisCase: ParamList + Concat<Self::ProcessBeforeSplitProduces>;
   type EveryFlowingCaseProduces: ParamList; // already includes ProcessBeforeSplitProduces;

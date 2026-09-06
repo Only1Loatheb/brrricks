@@ -186,8 +186,9 @@ impl Final for DisplayAmount {
 }
 
 #[must_use]
-pub fn build_demo_process() -> RunnableProcess<impl FinalizedProcess<Messages = Messages>> {
-  entry::<HList![ShortcodeString], Messages>()
+pub fn build_demo_process()
+-> RunnableProcess<impl FinalizedProcess<Messages = Messages, EntryConsumes = HList![ShortcodeString]>> {
+  entry()
     .show_split(SelectAmountSource)
     .case_via(PredefinedAmount, |x| x)
     .case_via(CustomAmount, |x| x.show(AmountForm))

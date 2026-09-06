@@ -23,6 +23,7 @@ use std::future::Future;
 
 pub trait FlowingProcess: Sized + Send + Sync {
   // Please specify all associated types at the impl FlowingProcess side for inference to work.
+  type EntryConsumes: ParamList;
   type ProcessBeforeProduces: ParamList;
   type Produces: ParamList;
   type SubprocessConsumes: ParamList;
@@ -57,6 +58,7 @@ pub trait FlowingProcess: Sized + Send + Sync {
     self,
     step: OperationStep,
   ) -> impl FlowingProcess<
+    EntryConsumes = Self::EntryConsumes,
     ProcessBeforeProduces = Self::Produces,
     Produces = <OperationStep::Produces as Concat<Self::Produces>>::Concatenated,
     SubprocessConsumes = Self::SubprocessConsumes,
@@ -83,6 +85,7 @@ pub trait FlowingProcess: Sized + Send + Sync {
     self,
     step: FormStep,
   ) -> impl FlowingProcess<
+    EntryConsumes = Self::EntryConsumes,
     ProcessBeforeProduces = Self::Produces,
     Produces = <FormStep::Produces as Concat<Self::Produces>>::Concatenated,
     SubprocessConsumes = Self::SubprocessConsumes,
@@ -115,6 +118,7 @@ pub trait FlowingProcess: Sized + Send + Sync {
     step: SplitterStep,
   ) -> impl SplitProcess<
     SplitterProducesForOtherCases,
+    EntryConsumes = Self::EntryConsumes,
     ProcessBeforeSplitProduces = Self::Produces,
     SplitterProducesForFirstCase = SplitterProducesForFirstCase,
     SplitterTagForFirstCase = Tag,
@@ -195,6 +199,7 @@ pub trait FlowingProcess: Sized + Send + Sync {
     step: SplitterStep,
   ) -> impl SplitProcess<
     SplitterProducesForOtherCases,
+    EntryConsumes = Self::EntryConsumes,
     ProcessBeforeSplitProduces = Self::Produces,
     SplitterProducesForFirstCase = SplitterProducesForFirstCase,
     SplitterTagForFirstCase = Tag,
@@ -232,6 +237,7 @@ pub trait FlowingProcess: Sized + Send + Sync {
     self,
     step: FinalStep,
   ) -> impl FinalizedProcess<
+    EntryConsumes = Self::EntryConsumes,
     ProcessBeforeProduces = Self::Produces,
     SubprocessConsumes = Self::SubprocessConsumes,
     Messages = Self::Messages,

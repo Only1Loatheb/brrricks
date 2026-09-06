@@ -30,6 +30,7 @@ where
   for<'a> &'a ProcessBefore::Produces:
     BorrowJust<'a, OperationStep::Consumes, ProcessBeforeProducesToLastStepConsumesIndices>,
 {
+  type EntryConsumes = ProcessBefore::EntryConsumes;
   type ProcessBeforeProduces = ProcessBefore::Produces;
   type Produces = <OperationStep::Produces as Concat<ProcessBefore::Produces>>::Concatenated;
   type SubprocessConsumes = ProcessBefore::SubprocessConsumes;

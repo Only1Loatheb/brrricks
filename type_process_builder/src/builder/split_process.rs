@@ -19,6 +19,7 @@ use std::future::Future;
 /// We at least remove an illegal state of unfinalized finalized split process.
 pub trait SplitProcess<SplitterProducesForOtherCases: Send + Sync>: Sized + Send + Sync {
   // Please specify all associated types at the impl SplitProcess side for inference to work.
+  type EntryConsumes: ParamList;
   type ProcessBeforeSplitProduces: ParamList;
   type SplitterProducesForFirstCase: ParamList
     + Concat<Self::ProcessBeforeSplitProduces>
@@ -73,6 +74,7 @@ pub trait SplitProcess<SplitterProducesForOtherCases: Send + Sync>: Sized + Send
     _assumed_tag: Self::SplitterTagForFirstCase,
     create_case: impl FnOnce(
       Subprocess<
+        Self::EntryConsumes,
         <Self::SplitterProducesForFirstCase as Concat<Self::ProcessBeforeSplitProduces>>::Concatenated,
         <Self::SplitterProducesForFirstCase as Concat<Self::ProcessBeforeSplitEverProduced>>::Concatenated,
         Self::Messages,
@@ -92,6 +94,7 @@ pub trait SplitProcess<SplitterProducesForOtherCases: Send + Sync>: Sized + Send
       split_process_before: self,
       case_index: WILL_BE_RENUMBERED,
       this_case: create_case(subprocess::<
+        Self::EntryConsumes,
         <Self::SplitterProducesForFirstCase as Concat<Self::ProcessBeforeSplitProduces>>::Concatenated,
         <Self::SplitterProducesForFirstCase as Concat<Self::ProcessBeforeSplitEverProduced>>::Concatenated,
         Self::Messages,
@@ -109,6 +112,7 @@ pub trait SplitProcess<SplitterProducesForOtherCases: Send + Sync>: Sized + Send
     self,
     _assumed_tag: Self::SplitterTagForFirstCase,
     create_case: impl FnOnce(Subprocess<
+      Self::EntryConsumes,
       <Self::SplitterProducesForFirstCase as Concat<Self::ProcessBeforeSplitProduces>>::Concatenated,
       <Self::SplitterProducesForFirstCase as Concat<Self::ProcessBeforeSplitEverProduced>>::Concatenated,
       Self::Messages,
@@ -127,6 +131,7 @@ pub trait SplitProcess<SplitterProducesForOtherCases: Send + Sync>: Sized + Send
       split_process_before: self,
       case_index: WILL_BE_RENUMBERED,
       this_case: create_case(subprocess::<
+        Self::EntryConsumes,
         <Self::SplitterProducesForFirstCase as Concat<Self::ProcessBeforeSplitProduces>>::Concatenated,
         <Self::SplitterProducesForFirstCase as Concat<Self::ProcessBeforeSplitEverProduced>>::Concatenated,
         Self::Messages,

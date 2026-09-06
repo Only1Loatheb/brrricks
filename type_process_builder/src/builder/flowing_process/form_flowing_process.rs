@@ -43,6 +43,7 @@ where
   for<'a> &'a ProcessBefore::Produces:
     BorrowJust<'a, FormStep::ValidateInputConsumes, ProcessBeforeProducesToValidateInputConsumesIndices>,
 {
+  type EntryConsumes = ProcessBefore::EntryConsumes;
   type ProcessBeforeProduces = ProcessBefore::Produces;
   type Produces = <FormStep::Produces as Concat<ProcessBefore::Produces>>::Concatenated;
   type SubprocessConsumes = ProcessBefore::SubprocessConsumes;

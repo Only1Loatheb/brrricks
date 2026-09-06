@@ -43,6 +43,7 @@ where
   for<'a> &'a ProcessBefore::Produces:
     BorrowJust<'a, SplitterStep::Consumes, ProcessBeforeProducesToSplitterStepConsumesIndices>,
 {
+  type EntryConsumes = ProcessBefore::EntryConsumes;
   type ProcessBeforeSplitProduces = ProcessBefore::Produces;
   type SplitterProducesForFirstCase = SplitterProducesForFirstCase;
   type SplitterTagForFirstCase = Tag;

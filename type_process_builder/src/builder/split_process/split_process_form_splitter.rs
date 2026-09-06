@@ -55,6 +55,7 @@ where
   for<'a> &'a ProcessBefore::Produces:
     BorrowJust<'a, SplitterStep::ValidateInputConsumes, ProcessBeforeProducesToValidateInputConsumesIndices>,
 {
+  type EntryConsumes = ProcessBefore::EntryConsumes;
   type ProcessBeforeSplitProduces = ProcessBefore::Produces;
   type SplitterProducesForFirstCase = SplitterProducesForFirstCase;
   type SplitterTagForFirstCase = Tag;

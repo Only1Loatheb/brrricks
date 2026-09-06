@@ -28,7 +28,7 @@ use type_process_builder::builder::{
 };
 use type_process_builder::param_list::ParamList;
 use type_process_builder::step::{BackToken, ProcessMessages};
-use type_process_builder::{HCons, HNil, hlist};
+use type_process_builder::{HCons, HList, HNil, hlist};
 use typenum::Unsigned;
 
 pub struct Message(pub String);
@@ -39,7 +39,9 @@ impl ProcessMessages for Messages {
   type FinalMessage = Message;
 }
 
-pub struct QriosUssdApiService<Process: FinalizedProcess<Messages = Messages>> {
+type EntryConsumes = HList!(DialedSessionEntryParam);
+
+pub struct QriosUssdApiService<Process: FinalizedProcess<Messages = Messages, EntryConsumes = EntryConsumes>> {
   process: RunnableProcess<Process>,
   pool: PgPool,
   ordered_all_unique_param_uids: Vec<ParamUID>,
@@ -65,7 +67,9 @@ where
   }
 }
 
-impl<Process: FinalizedProcess<Messages = Messages, EverProduced: ParamUids>> QriosUssdApiService<Process> {
+impl<Process: FinalizedProcess<Messages = Messages, EntryConsumes = EntryConsumes, EverProduced: ParamUids>>
+  QriosUssdApiService<Process>
+{
   pub async fn new(process: RunnableProcess<Process>, pool: PgPool) -> Result<Self, sqlx::Error> {
     let ordered_all_unique_param_uids = <Process::EverProduced as ParamUids>::param_uids();
     create_session_context_table(&pool, &process, &ordered_all_unique_param_uids).await?;
@@ -74,11 +78,14 @@ impl<Process: FinalizedProcess<Messages = Messages, EverProduced: ParamUids>> Qr
   }
 }
 
-impl<Process: FinalizedProcess<Messages = Messages>> ErrorHandler<()> for QriosUssdApiService<Process> {}
+impl<Process: FinalizedProcess<Messages = Messages, EntryConsumes = EntryConsumes>> ErrorHandler<()>
+  for QriosUssdApiService<Process>
+{
+}
 
 #[allow(unused_variables)]
 #[async_trait]
-impl<Process: FinalizedProcess<Messages = Messages> + Sync>
+impl<Process: FinalizedProcess<Messages = Messages, EntryConsumes = EntryConsumes> + Sync>
   qrios_api_axum_server::apis::developers_app_endpoints::DevelopersAppEndpoints for QriosUssdApiService<Process>
 {
   /// I guess we could delete by [`AbortSession`] `session_id`
@@ -228,17 +235,15 @@ impl<Process: FinalizedProcess<Messages = Messages> + Sync>
       "etisalat" => Operator::etisalat,
       _ => Err(())?,
     };
-    let init_session_context = hlist!(DialedSessionEntryParam(
+    let entry_consumes: EntryConsumes = hlist!(DialedSessionEntryParam(
       Msisdn::from_string(&body.msisdn).ok_or(())?,
       operator,
       ShortcodeString(shortcode_string)
-    ))
-    .serialize()
-    .map_err(|_| ())?;
+    ));
     let run_result = self
       .process
       .resume_run(
-        init_session_context,
+        entry_consumes.serialize().map_err(|_| ())?,
         PreviousRunYieldedAt(StepIndex::MIN),
         String::new(),
         None::<FormContext>,

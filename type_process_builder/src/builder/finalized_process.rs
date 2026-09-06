@@ -12,6 +12,7 @@ use std::marker::PhantomData;
 
 pub trait FinalizedProcess: Sized + Send + Sync {
   // Please specify all associated types at the impl FinalizedProcess side for inference to work.
+  type EntryConsumes: ParamList;
   type ProcessBeforeProduces: ParamList;
   type SubprocessConsumes: ParamList;
   type Messages: ProcessMessages;
@@ -64,6 +65,7 @@ impl<
 where
   ProcessBefore::Produces: Extract<FinalStep::Consumes, ProcessBeforeProducesTransformToFinalConsumesIndices>,
 {
+  type EntryConsumes = ProcessBefore::EntryConsumes;
   type ProcessBeforeProduces = ProcessBefore::Produces;
   type SubprocessConsumes = ProcessBefore::SubprocessConsumes;
   type Messages = ProcessBefore::Messages;

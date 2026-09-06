@@ -7,13 +7,14 @@ use crate::step::ProcessMessages;
 use std::marker::PhantomData;
 
 // maybe can use dependent types and a trait, but is okay for now
-pub struct Subprocess<ProcessBeforeProduces, EverProduced, Messages> {
-  pub phantom_data: PhantomData<(ProcessBeforeProduces, EverProduced, Messages)>,
+pub struct Subprocess<EntryConsumes, ProcessBeforeProduces, EverProduced, Messages> {
+  pub phantom_data: PhantomData<(EntryConsumes, ProcessBeforeProduces, EverProduced, Messages)>,
 }
 
-impl<ProcessBeforeProduces: ParamList, EverProduced: ParamList, Messages: ProcessMessages> FlowingProcess
-  for Subprocess<ProcessBeforeProduces, EverProduced, Messages>
+impl<EntryConsumes: ParamList, ProcessBeforeProduces: ParamList, EverProduced: ParamList, Messages: ProcessMessages>
+  FlowingProcess for Subprocess<EntryConsumes, ProcessBeforeProduces, EverProduced, Messages>
 {
+  type EntryConsumes = EntryConsumes;
   type ProcessBeforeProduces = ProcessBeforeProduces;
   type Produces = ProcessBeforeProduces;
   type SubprocessConsumes = ProcessBeforeProduces;
@@ -54,7 +55,11 @@ impl<ProcessBeforeProduces: ParamList, EverProduced: ParamList, Messages: Proces
 }
 
 #[must_use]
-pub fn subprocess<ProcessBeforeProduces: ParamList, EverProduced: ParamList, Messages: ProcessMessages>()
--> Subprocess<ProcessBeforeProduces, EverProduced, Messages> {
+pub fn subprocess<
+  EntryConsumes: ParamList,
+  ProcessBeforeProduces: ParamList,
+  EverProduced: ParamList,
+  Messages: ProcessMessages,
+>() -> Subprocess<EntryConsumes, ProcessBeforeProduces, EverProduced, Messages> {
   Subprocess { phantom_data: Default::default() }
 }
