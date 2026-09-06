@@ -82,10 +82,10 @@ use typenum::{U0, U1};
 use type_process_builder::impl_param_value;
 
 #[derive(Deserialize, Serialize)]
-struct ShortcodeString(pub String);
+pub struct ShortcodeString(pub String);
 
 #[derive(Deserialize, Serialize)]
-struct Amount(pub u32);
+pub struct Amount(pub u32);
 
 impl_param_value! {
   ShortcodeString => U0,
@@ -180,8 +180,8 @@ impl Final for DisplayAmount {
   type FinalMessage = String;
 
   async fn handle(&self, consumes: Self::Consumes) -> anyhow::Result<String> {
-    let hlist_pat!(_shortcode_string, amount) = consumes;
-    Ok(format!("The amount was: {}. Good bye!", amount.0))
+    let hlist_pat!(shortcode_string, amount) = consumes;
+    Ok(format!("The amount was: {}. Thanks for dialing: {}!", amount.0, shortcode_string.0))
   }
 }
 
