@@ -1,24 +1,24 @@
 use crate::frunk::coproduct::Coproduct;
 use crate::frunk::to_ref::ToRef;
-use crate::param_list::{ParamList, SessionContext};
+use crate::param_list::ParamList;
 use serde::Serialize;
 use serde::de::DeserializeOwned;
 use std::future::Future;
+use std::marker::PhantomData;
 
 pub trait ProcessMessages: Send + Sync {
   type FormMessage: Send + Sync;
   type FinalMessage: Send + Sync;
 }
 
-// we could make all the methods generic over Serializer instead of using raw Vec<u8>
-pub trait Entry: Send + Sync {
-  type Produces: ParamList;
-  type Messages: ProcessMessages;
-  fn handle(
-    &self,
-    consumes: SessionContext,
-    initial_input: String,
-  ) -> impl Future<Output = anyhow::Result<Self::Produces>> + Send;
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Entry<Produces: ParamList, Messages: ProcessMessages> {
+  pub phantom_data: PhantomData<(Produces, Messages)>,
+}
+
+#[must_use]
+pub const fn entry<Produces: ParamList, Messages: ProcessMessages>() -> Entry<Produces, Messages> {
+  Entry { phantom_data: PhantomData }
 }
 
 #[derive(Debug, PartialEq, Eq)]

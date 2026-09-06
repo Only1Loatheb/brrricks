@@ -1,15 +1,10 @@
-use anyhow::anyhow;
 use serde::{Deserialize, Serialize};
-use std::marker::PhantomData;
 use std::ops::Not;
-use type_process_builder::builder::SessionContext;
 use type_process_builder::param_list::ParamValue;
-use type_process_builder::step::{Entry, ProcessMessages};
-use type_process_builder::{HList, hlist};
 use typenum::U0;
 
 #[derive(PartialEq, Debug, Eq, Clone, Copy, PartialOrd, Ord, Hash, Serialize, Deserialize)]
-pub struct Msisdn(u64);
+pub struct Msisdn(pub u64);
 impl Msisdn {
   pub fn from_string(string: &str) -> Option<Msisdn> {
     string
@@ -33,52 +28,10 @@ pub enum Operator {
 }
 
 #[derive(PartialEq, Debug, Eq, Clone, PartialOrd, Ord, Hash, Serialize, Deserialize)]
-pub struct ShortcodeString(String);
+pub struct ShortcodeString(pub String);
 
 #[derive(PartialEq, Debug, Eq, Clone, PartialOrd, Ord, Hash, Serialize, Deserialize)]
-pub struct DialedSessionEntryParam(Msisdn, Operator, ShortcodeString);
+pub struct DialedSessionEntryParam(pub Msisdn, pub Operator, pub ShortcodeString);
 impl ParamValue for DialedSessionEntryParam {
   type UID = U0;
-}
-
-pub struct DialedSessionEntry<Messages>(pub PhantomData<Messages>);
-
-impl<Messages> Default for DialedSessionEntry<Messages> {
-  fn default() -> Self {
-    Self::new()
-  }
-}
-
-impl<Messages> DialedSessionEntry<Messages> {
-  #[must_use]
-  pub fn new() -> Self {
-    DialedSessionEntry(PhantomData)
-  }
-}
-
-impl<Messages: ProcessMessages> Entry for DialedSessionEntry<Messages> {
-  type Produces = HList![DialedSessionEntryParam];
-  type Messages = Messages;
-
-  fn handle(
-    &self,
-    mut consumes: SessionContext,
-    shortcode_string: String,
-  ) -> impl Future<Output = anyhow::Result<Self::Produces>> {
-    fn from_session_context(
-      consumes: &mut SessionContext,
-      shortcode_string: String,
-    ) -> anyhow::Result<HList![DialedSessionEntryParam]> {
-      let operator_value = consumes.pop().ok_or_else(|| anyhow!("Admin error or error on frontend."))?.1;
-      let msisdn_value = consumes.pop().ok_or_else(|| anyhow!("Admin error or error on frontend."))?.1;
-      let msisdn_str: String = postcard::from_bytes(&msisdn_value).map_err(|_| anyhow!("Admin error on frontend."))?;
-      let msisdn = Msisdn::from_string(&msisdn_str).ok_or_else(|| anyhow!("Admin error on frontend."))?;
-      Ok(hlist!(DialedSessionEntryParam(
-        msisdn,
-        postcard::from_bytes(&operator_value).map_err(|_| anyhow!("Admin error or error on frontend."))?,
-        ShortcodeString(shortcode_string)
-      )))
-    }
-    std::future::ready(from_session_context(&mut consumes, shortcode_string))
-  }
 }

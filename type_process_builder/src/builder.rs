@@ -6,8 +6,8 @@ pub mod runnable_process;
 pub mod split_process;
 
 pub use crate::param_list::*;
-pub use crate::step::BackToken;
 use crate::step::ProcessMessages;
+pub use crate::step::{BackToken, Entry, entry};
 pub use finalized_process::*;
 pub use finalized_split_process::first_case_of_finalized_split_process::*;
 pub use finalized_split_process::next_case_of_finalized_split_process::*;

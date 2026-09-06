@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use type_process_builder::builder::*;
 use type_process_builder::frunk::to_ref::ToRef;
-use type_process_builder::step::{Entry, Operation, OperationOutcome, ProcessMessages};
+use type_process_builder::step::{Operation, OperationOutcome, ProcessMessages};
 use type_process_builder::{HList, HNil, hlist, impl_param_value};
 use typenum::*;
 
@@ -14,16 +14,6 @@ struct Messages;
 impl ProcessMessages for Messages {
   type FormMessage = String;
   type FinalMessage = String;
-}
-
-struct MyEntry;
-impl Entry for MyEntry {
-  type Produces = HList![DuplicateParam];
-  type Messages = Messages;
-
-  async fn handle(&self, _consumes: SessionContext, _initial_input: String) -> anyhow::Result<HList![DuplicateParam]> {
-    Ok(hlist!(DuplicateParam))
-  }
 }
 
 struct ProduceDuplicateParam;
@@ -41,5 +31,5 @@ impl Operation for ProduceDuplicateParam {
 }
 
 fn main() {
-  let _ = MyEntry.then(ProduceDuplicateParam);
+  let _ = entry::<HList![DuplicateParam], Messages>().then(ProduceDuplicateParam);
 }

@@ -1,16 +1,16 @@
-error[E0271]: type mismatch resolving `impl FlowingProcess<ProcessBeforeProduces = <MyEntry as FlowingProcess>::Produces, Produces = <<ProduceDuplicateParam as Operation>::Produces as Concat<<MyEntry as FlowingProcess>::Produces>>::Concatenated, SubprocessConsumes = <MyEntry as FlowingProcess>::SubprocessConsumes, Messages = <MyEntry as FlowingProcess>::Messages, EverProduced = <<ProduceDuplicateParam as Operation>::Produces as Concat<<MyEntry as FlowingProcess>::EverProduced>>::Concatenated> == impl FlowingProcess<ProcessBeforeProduces = <MyEntry as FlowingProcess>::Produces, Produces = <<ProduceDuplicateParam as Operation>::Produces as Concat<<MyEntry as FlowingProcess>::Produces>>::Concatenated, SubprocessConsumes = <MyEntry as FlowingProcess>::SubprocessConsumes, Messages = <MyEntry as FlowingProcess>::Messages, EverProduced = <<ProduceDuplicateParam as Operation>::Produces as Concat<<MyEntry as FlowingProcess>::EverProduced>>::Concatenated>`
-  --> tests/dx/duplicate_param_fails.rs:44:19
+error[E0271]: type mismatch resolving `impl FlowingProcess<ProcessBeforeProduces = <Entry<HCons<DuplicateParam, HNil>, Messages> as FlowingProcess>::Produces, Produces = <<ProduceDuplicateParam as Operation>::Produces as Concat<<Entry<HCons<DuplicateParam, HNil>, Messages> as FlowingProcess>::Produces>>::Concatenated, SubprocessConsumes = <Entry<HCons<DuplicateParam, HNil>, Messages> as FlowingProcess>::SubprocessConsumes, Messages = <Entry<HCons<DuplicateParam, HNil>, Messages> as FlowingProcess>::Messages, EverProduced = <<ProduceDuplicateParam as Operation>::Produces as Concat<<Entry<HCons<DuplicateParam, HNil>, Messages> as FlowingProcess>::EverProduced>>::Concatenated> == impl FlowingProcess<ProcessBeforeProduces = <Entry<HCons<DuplicateParam, HNil>, Messages> as FlowingProcess>::Produces, Produces = <<ProduceDuplicateParam as Operation>::Produces as Concat<<Entry<HCons<DuplicateParam, HNil>, Messages> as FlowingProcess>::Produces>>::Concatenated, SubprocessConsumes = <Entry<HCons<DuplicateParam, HNil>, Messages> as FlowingProcess>::SubprocessConsumes, Messages = <Entry<HCons<DuplicateParam, HNil>, Messages> as FlowingProcess>::Messages, EverProduced = <<ProduceDuplicateParam as Operation>::Produces as Concat<<Entry<HCons<DuplicateParam, HNil>, Messages> as FlowingProcess>::EverProduced>>::Concatenated>`
+  --> tests/dx/duplicate_param_fails.rs:34:55
    |
-44 |   let _ = MyEntry.then(ProduceDuplicateParam);
-   |                   ^^^^ types differ
+34 |   let _ = entry::<HList![DuplicateParam], Messages>().then(ProduceDuplicateParam);
+   |                                                       ^^^^ types differ
 
 error[E0277]: cannot overwrite parameter `DuplicateParam`: it was already produced by a previous step in this process flow
-  --> tests/dx/duplicate_param_fails.rs:44:24
+  --> tests/dx/duplicate_param_fails.rs:34:60
    |
-44 |   let _ = MyEntry.then(ProduceDuplicateParam);
-   |                   ---- ^^^^^^^^^^^^^^^^^^^^^ the trait `PreventOverwritingParamInProcess<DuplicateParam>` is not implemented for `B1`
-   |                   |
-   |                   required by a bound introduced by this call
+34 |   let _ = entry::<HList![DuplicateParam], Messages>().then(ProduceDuplicateParam);
+   |                                                       ---- ^^^^^^^^^^^^^^^^^^^^^ the trait `PreventOverwritingParamInProcess<DuplicateParam>` is not implemented for `B1`
+   |                                                       |
+   |                                                       required by a bound introduced by this call
    |
    = note: The step being added produces parameter `DuplicateParam`, but a parameter with the same UID has already been produced by a preceding step. Define a new parameter type or set a different UID for `DuplicateParam`
 help: the trait `PreventOverwritingParamInProcess<Param>` is implemented for `B0`

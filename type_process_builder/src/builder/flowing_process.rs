@@ -145,7 +145,7 @@ pub trait FlowingProcess: Sized + Send + Sync {
   /// The process execution will call [`SplitProcess::continue_run`] instead of the individual case
   /// [`FlowingProcess::continue_run`] method to avoid excessive nesting:
   /// ```compile_fail,E0425
-  /// let _ = EntryA
+  /// let _ = entry::<HNil, Msg>()
   ///   .show_split(SplitA, |subprocess|
   ///     subprocess
   ///       .case_via(Case1, |x| x)
@@ -160,8 +160,6 @@ pub trait FlowingProcess: Sized + Send + Sync {
   /// # use type_process_builder::{Coprod, HNil, ToRef};
   /// # struct Msg;
   /// # impl ProcessMessages for Msg { type FormMessage = String; type FinalMessage = String; }
-  /// # struct EntryA;
-  /// # impl Entry for EntryA { type Produces = HNil; type Messages = Msg; async fn handle(&self, _: SessionContext, _: String) -> anyhow::Result<HNil> { Ok(HNil) } }
   /// # struct Case1; struct Case2; struct SplitA;
   /// # impl FormSplitter for SplitA {
   /// #   type CreateFormConsumes = HNil; type ValidateInputConsumes = HNil; type Produces = Coprod![(Case1, HNil), (Case2, HNil)]; type Context = (); type Messages = Msg;
@@ -176,7 +174,7 @@ pub trait FlowingProcess: Sized + Send + Sync {
   /// # }
   /// # struct FinalA;
   /// # impl Final for FinalA { type Consumes = HNil; type FinalMessage = String; async fn handle(&self, _: HNil) -> anyhow::Result<String> { Ok("".into()) } }
-  /// let _ = EntryA
+  /// let _ = entry::<HNil, Msg>()
   ///   .show_split(SplitA)
   ///   .case_via(Case1, |x| x)
   ///   .case_via(Case2, |x| x.show(FormA))

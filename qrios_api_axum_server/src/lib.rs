@@ -7,6 +7,7 @@
     non_camel_case_types,
     unused_imports,
     unused_attributes,
+    unreachable_code,
 )]
 #![allow(
     clippy::derive_partial_eq_without_eq,

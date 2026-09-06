@@ -15,13 +15,13 @@ http = "1.0"
 headers = "0.4"
 axum-extra = "0.12"
 postcard = { version = "1.0", features = ["alloc"] }
+qrios_api_process_entry = { path = "../qrios_api_process_entry" }
 tracing = "0.1.44"
 typenum = "1.19.0"
 
 [dev-dependencies]
 qrios_api_reqwest_client = { path = "../qrios_api_reqwest_client" }
 tokio = { version = "1.0", features = ["macros", "rt"] }
-qrios_api_process_entry = { path = "../qrios_api_process_entry" }
 anyhow = "1.0.82"
 sqlx = { version = "0.8", features = ["runtime-tokio"] }
 tracing-subscriber = "0.3.22"

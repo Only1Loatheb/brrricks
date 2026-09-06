@@ -16,6 +16,7 @@ use qrios_api_axum_server::models::{
   ShowView, UssdAction, UssdActionResult, UssdSessionCommand, UssdSessionEventNewSession,
   UssdSessionEventNewSessionSessionInput, UssdView,
 };
+use qrios_api_process_entry::{DialedSessionEntryParam, Msisdn, Operator, ShortcodeString};
 use sqlx::PgPool;
 use std::collections::HashSet;
 use std::ops::Not;
@@ -27,7 +28,7 @@ use type_process_builder::builder::{
 };
 use type_process_builder::param_list::ParamList;
 use type_process_builder::step::{BackToken, ProcessMessages};
-use type_process_builder::{HCons, HNil};
+use type_process_builder::{HCons, HNil, hlist};
 use typenum::Unsigned;
 
 pub struct Message(pub String);
@@ -220,14 +221,26 @@ impl<Process: FinalizedProcess<Messages = Messages> + Sync>
       UssdSessionEventNewSessionSessionInput::Push(_) => todo!(),
       UssdSessionEventNewSessionSessionInput::Redirect(_) => todo!(),
     };
-    let init_session_context =
-      vec![(0, postcard::to_allocvec(&body.msisdn).unwrap()), (1, postcard::to_allocvec(&body.operator).unwrap())];
+    let operator = match &*body.operator {
+      "mtn" => Operator::mtn,
+      "airtel" => Operator::airtel,
+      "glo" => Operator::glo,
+      "etisalat" => Operator::etisalat,
+      _ => Err(())?,
+    };
+    let init_session_context = hlist!(DialedSessionEntryParam(
+      Msisdn::from_string(&body.msisdn).ok_or(())?,
+      operator,
+      ShortcodeString(shortcode_string)
+    ))
+    .serialize()
+    .map_err(|_| ())?;
     let run_result = self
       .process
       .resume_run(
         init_session_context,
         PreviousRunYieldedAt(StepIndex::MIN),
-        shortcode_string,
+        String::new(),
         None::<FormContext>,
         None::<BackToken>,
       )
@@ -272,13 +285,13 @@ impl<Process: FinalizedProcess<Messages = Messages> + Sync>
 #[cfg(test)]
 mod tests {
   use crate::{Message, Messages};
-  use qrios_api_process_entry::DialedSessionEntry;
+  use qrios_api_process_entry::DialedSessionEntryParam;
   use serde::{Deserialize, Serialize};
   use type_process_builder::builder::*;
   use type_process_builder::step::Final;
   use type_process_builder::step::*;
   use type_process_builder::{Coprod, HList, HNil, ToRef, hlist};
-  use typenum::*;
+  use typenum::{U1, U2, U3, U4};
 
   #[allow(clippy::too_many_lines)]
   #[allow(clippy::unused_async_trait_impl)]
@@ -406,7 +419,7 @@ mod tests {
       }
     }
 
-    let process = DialedSessionEntry::<Messages>::new()
+    let process = entry::<HList![DialedSessionEntryParam], Messages>()
       .show(AskForInputTwiceForm)
       .then(ProduceParamOperation)
       .show_split(TestFormSplitter)

@@ -1,8 +1,8 @@
 #![allow(clippy::unused_async_trait_impl)]
 use serde::{Deserialize, Serialize};
-use type_process_builder::builder::{FinalizedProcess, FlowingProcess, RunnableProcess, SessionContext, SplitProcess};
+use type_process_builder::builder::{FinalizedProcess, FlowingProcess, RunnableProcess, SplitProcess};
 use type_process_builder::step::{
-  BackToken, Entry, Final, Form, FormSplitter, FormWithContext, InputValidation, ProcessMessages,
+  BackToken, Final, Form, FormSplitter, FormWithContext, InputValidation, ProcessMessages, entry,
 };
 use type_process_builder::{Coprod, HList, HNil, ToRef, hlist, hlist_pat};
 use typenum::{U0, U1};
@@ -24,20 +24,6 @@ pub struct Messages;
 impl ProcessMessages for Messages {
   type FormMessage = String;
   type FinalMessage = String;
-}
-
-struct ShortcodeStringEntry;
-impl Entry for ShortcodeStringEntry {
-  type Produces = HList![ShortcodeString];
-  type Messages = Messages;
-
-  async fn handle(
-    &self,
-    _consumes: SessionContext,
-    shortcode_string: String,
-  ) -> anyhow::Result<HList![ShortcodeString]> {
-    Ok(hlist!(ShortcodeString(shortcode_string)))
-  }
 }
 
 struct PredefinedAmount;
@@ -129,7 +115,7 @@ impl Final for DisplayAmount {
 
 #[must_use]
 pub fn build_demo_process() -> RunnableProcess<impl FinalizedProcess<Messages = Messages>> {
-  ShortcodeStringEntry
+  entry::<HList![ShortcodeString], Messages>()
     .show_split(SelectAmountSource)
     .case_via(PredefinedAmount, |x| x)
     .case_via(CustomAmount, |x| x.show(AmountForm))

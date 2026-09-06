@@ -1,6 +1,8 @@
 #![allow(clippy::unused_async_trait_impl)]
-use anyhow::anyhow;
 use serde::{Deserialize, Serialize};
+
+#[allow(non_upper_case_globals)]
+const ExtractMsisdnOperatorAndShortcodeString: Entry<HList![EntryParam], Messages> = entry();
 use std::marker::PhantomData;
 use type_process_builder::builder::*;
 use type_process_builder::documentation_diagrams::{SessionState, in_memory_process_runner};
@@ -73,24 +75,6 @@ struct Messages;
 impl ProcessMessages for Messages {
   type FormMessage = String;
   type FinalMessage = String;
-}
-
-struct ExtractMsisdnOperatorAndShortcodeString;
-impl Entry for ExtractMsisdnOperatorAndShortcodeString {
-  type Produces = HList![EntryParam];
-  type Messages = Messages;
-
-  async fn handle(&self, mut consumes: SessionContext, initial_input: String) -> anyhow::Result<HList![EntryParam]> {
-    let operator_value = consumes.pop().ok_or_else(|| anyhow!("Admin error or error on frontend."))?.1;
-    let msisdn_value = consumes.pop().ok_or_else(|| anyhow!("Admin error or error on frontend."))?.1;
-    let msisdn_str: String = postcard::from_bytes(&msisdn_value).map_err(|_| anyhow!("Admin error on frontend."))?;
-    let msisdn = msisdn_str.parse::<u64>().map_err(|_| anyhow!("Admin error on frontend."))?;
-    Ok(hlist!(EntryParam(
-      Msisdn(msisdn),
-      postcard::from_bytes(&operator_value).map_err(|_| anyhow!("Admin error or error on frontend."))?,
-      ShortcodeString(initial_input)
-    )))
-  }
 }
 
 struct ProduceCaseParam1;
@@ -500,10 +484,9 @@ impl Operation for FinishProcessOperation {
 }
 
 fn session_init_value() -> SessionContext {
-  vec![
-    (0, postcard::to_allocvec(&"2340000000000".to_string()).unwrap()),
-    (1, postcard::to_allocvec(&Operator::MTN).unwrap()),
-  ]
+  hlist!(EntryParam(Msisdn(2_340_000_000_000), Operator::MTN, ShortcodeString("*123#".to_string())))
+    .serialize()
+    .unwrap()
 }
 
 struct TestFormSplitter;
@@ -610,7 +593,10 @@ async fn test_return_error_on_param_missing_from_init_value(
   let run_outcome = process
     .resume_run(init_value, PreviousRunYieldedAt(StepIndex::MIN), messages[0].into(), None, None::<BackToken>)
     .await;
-  assert!(run_outcome.is_err_and(|x| format!("{x}") == "Admin error or error on frontend."));
+  assert!(run_outcome.is_err_and(|x| {
+    let err = format!("{x}");
+    err.starts_with("Parameter ") && err.ends_with(" with UID 0 is missing from SessionContext")
+  }));
 }
 
 async fn test_return_error_on_param_missing_from_context(

@@ -3,26 +3,26 @@ use crate::builder::{
   SessionContext, StepIndex,
 };
 use crate::frunk::hlist::HNil;
-use crate::step::BackToken;
-use crate::step::Entry;
+use crate::param_list::ParamList;
+use crate::step::{BackToken, Entry, ProcessMessages};
+use std::future::Future;
 
-impl<EntryStep: Entry> FlowingProcess for EntryStep {
+impl<Produces: ParamList, Messages: ProcessMessages> FlowingProcess for Entry<Produces, Messages> {
   type ProcessBeforeProduces = HNil;
-  type Produces = EntryStep::Produces;
+  type Produces = Produces;
   type SubprocessConsumes = HNil;
-  type Messages = EntryStep::Messages;
-  type EverProduced = EntryStep::Produces;
+  type Messages = Messages;
+  type EverProduced = Produces;
 
-  async fn resume_run(
+  fn resume_run(
     &self,
     previous_run_produced: SessionContext,
     _: PreviousRunYieldedAt,
-    user_input: String,
+    _user_input: String,
     _form_context: MaybeFormContext,
     _back_token: Option<BackToken>,
-  ) -> IntermediateRunResult<Self::Produces, Self::Messages> {
-    let result: EntryStep::Produces = EntryStep::handle(self, previous_run_produced, user_input).await?;
-    Ok(IntermediateRunOutcome::Continue(result))
+  ) -> impl Future<Output = IntermediateRunResult<Self::Produces, Self::Messages>> {
+    std::future::ready(Produces::deserialize(previous_run_produced).map(IntermediateRunOutcome::Continue))
   }
 
   fn continue_run(
