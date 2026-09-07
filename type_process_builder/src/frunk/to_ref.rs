@@ -24,6 +24,6 @@ where
 
   #[inline(always)]
   fn to_ref(&'a self) -> Self::Ref {
-    HCons { head: &self.head, tail: self.tail.to_ref() }
+    HCons { tail: self.tail.to_ref(), head: &self.head }
   }
 }

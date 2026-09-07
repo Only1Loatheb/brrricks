@@ -81,32 +81,17 @@ macro_rules! impl_param_value {
   };
 }
 
-pub trait ParamList: HList + Send + Sync {
+pub trait ParamList: HList + Serialize + DeserializeOwned + Send + Sync {
   fn serialize_param_list(&self) -> anyhow::Result<SessionContext> {
-    let mut entries = Vec::with_capacity(Self::LEN);
-    self.serialize_into(&mut entries)?;
-    Ok(postcard::to_allocvec(&entries)?)
+    Ok(postcard::to_allocvec(self)?)
   }
-
-  fn serialize_into(&self, entries: &mut Vec<(ParamUID, Vec<u8>)>) -> anyhow::Result<()>;
 
   fn deserialize_param_list(session_context: SessionContext) -> anyhow::Result<Self> {
-    let entries: Vec<(ParamUID, Vec<u8>)> = postcard::from_bytes(&session_context)?;
-    Self::deserialize_from(entries)
-  }
-
-  fn deserialize_from(entries: Vec<(ParamUID, Vec<u8>)>) -> anyhow::Result<Self>;
-}
-
-impl ParamList for HNil {
-  fn serialize_into(&self, _: &mut Vec<(ParamUID, Vec<u8>)>) -> anyhow::Result<()> {
-    Ok(())
-  }
-
-  fn deserialize_from(_entries: Vec<(ParamUID, Vec<u8>)>) -> anyhow::Result<Self> {
-    Ok(HNil)
+    Ok(postcard::from_bytes(&session_context)?)
   }
 }
+
+impl ParamList for HNil {}
 
 #[diagnostic::on_unimplemented(
   message = "cannot include parameter: duplicate parameter UID for `{Param}` found in ParamList",
@@ -116,25 +101,7 @@ pub trait PreventDuplicateParamUidInParamList<Param> {}
 
 impl<Param> PreventDuplicateParamUidInParamList<Param> for B0 {}
 
-impl<Head: ParamValue, Tail: ParamList + Contains<Head>> ParamList for HCons<Head, Tail>
-where
-  <Tail as Contains<Head>>::IsContained: PreventDuplicateParamUidInParamList<Head>,
+impl<Head: ParamValue, Tail: ParamList + Contains<Head>> ParamList for HCons<Head, Tail> where
+  <Tail as Contains<Head>>::IsContained: PreventDuplicateParamUidInParamList<Head>
 {
-  fn serialize_into(&self, entries: &mut Vec<(ParamUID, Vec<u8>)>) -> anyhow::Result<()> {
-    self.tail.serialize_into(entries)?;
-    entries.push((Head::UID::U32, postcard::to_allocvec(&self.head)?));
-    Ok(())
-  }
-
-  fn deserialize_from(mut entries: Vec<(ParamUID, Vec<u8>)>) -> anyhow::Result<Self> {
-    let index = entries.iter().rposition(|(k, _)| *k == Head::UID::U32).ok_or_else(|| {
-      let type_name = std::any::type_name::<Head>();
-      let uid: ParamUID = Head::UID::U32;
-      anyhow::anyhow!("Parameter {type_name} with UID {uid} is missing from SessionContext")
-    })?;
-    let (_, value) = entries.swap_remove(index);
-    let head: Head = postcard::from_bytes(&value)?;
-    let tail = Tail::deserialize_from(entries)?;
-    Ok(HCons { head, tail })
-  }
 }

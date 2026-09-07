@@ -12,10 +12,25 @@ impl HList for HNil {
 }
 
 /// Represents a non-empty `HList`, holding a head element and a tail `HList`.
+///
+/// ### Field Declaration Order (`tail` before `head`)
+/// [postcard](https://docs.rs/postcard) encodes a struct as the elements that comprise it, in their order of definition (top to bottom).
+/// <https://postcard.jamesmunns.com/wire-format#28---struct>.
+/// By declaring `tail` before `head` we ensure that [`HCons`] is serialized like this `[Bytes of tail][Bytes of head]`
+/// in postcard's positional byte stream.
+///
+/// [`crate::builder`] methods put parameters produced by earlier [`crate::step`] in `tail`.
+/// Order of serialization and the method of building [`crate::param_list::ParamList`] ensures that earlier step's
+/// parameter list is always a strict byte-level prefix of a downstream step's parameter list when we take into
+/// account [`crate::step::Form`] and [`crate::step::FormSplitter`] steps that the user interacted with.
+/// During `Back` navigation, an earlier step deserializes its required prefix and leaves any unread
+/// trailing bytes in the [`crate::param_list::SessionContext`], enabling zero-overhead
+/// [`crate::builder::RunOutcome::Back`] navigation without storing UID for every [`crate::param_list::ParamValue`] in
+/// `SessionContext` or storing `SessionContext` for every form in the session.
 #[derive(PartialEq, Debug, Eq, Clone, Copy, PartialOrd, Ord, Hash, Default, serde::Serialize, serde::Deserialize)]
 pub struct HCons<H, T> {
-  pub head: H,
   pub tail: T,
+  pub head: H,
 }
 
 impl<H, T: HList> HList for HCons<H, T> {
@@ -30,8 +45,8 @@ macro_rules! hlist {
   ($a:expr) => { $crate::hlist![$a,] };
   ($a:expr, $($tok:tt)*) => {
     $crate::frunk::hlist::HCons {
-      head: $a,
       tail: $crate::hlist![$($tok)*],
+      head: $a,
     }
   };
 }
@@ -52,8 +67,8 @@ macro_rules! hlist_pat {
   };
   ($a:pat, $($tok:tt)*) => {
     $crate::frunk::hlist::HCons {
-      head: $a,
       tail: $crate::hlist_pat![$($tok)*],
+      head: $a,
     }
   };
 }

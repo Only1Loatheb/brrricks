@@ -71,8 +71,8 @@ impl<Process: FinalizedProcess<Messages = Messages, EntryConsumes = EntryConsume
 {
   pub async fn new(process: RunnableProcess<Process>, pool: PgPool) -> Result<Self, sqlx::Error> {
     let ordered_all_unique_param_uids = <Process::EverProduced as ParamUids>::param_uids();
-    create_session_context_table(&pool, &process, &ordered_all_unique_param_uids).await?;
-    let get_session_context_query = build_get_session_context_query(&process, &ordered_all_unique_param_uids);
+    create_session_context_table(&pool, &process).await?;
+    let get_session_context_query = build_get_session_context_query(&process);
     Ok(QriosUssdApiService { process, pool, ordered_all_unique_param_uids, get_session_context_query })
   }
 }
@@ -128,9 +128,7 @@ impl<Process: FinalizedProcess<Messages = Messages, EntryConsumes = EntryConsume
     };
     let session_id = uuid::Uuid::parse_str(&body.context_data).map_err(|_| ())?;
     let (previous_run_yielded_at, form_context, mut visited_form_steps, session_context) =
-      get_session_context(&self.pool, &self.get_session_context_query, session_id, &self.ordered_all_unique_param_uids)
-        .await
-        .map_err(|_| ())?;
+      get_session_context(&self.pool, &self.get_session_context_query, session_id).await.map_err(|_| ())?;
 
     let mut run_result = {
       let back_token = visited_form_steps.is_empty().not().then(create_back_token);

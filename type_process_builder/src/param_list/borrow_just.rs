@@ -28,6 +28,6 @@ where
       <&'a HCons<SourceHead, SourceTail> as Plucker<&'a TargetHead, IndexHead>>::Remainder,
     ) = self.pluck();
     let tail = remainder.borrow_just();
-    HCons { head, tail }
+    HCons { tail, head }
   }
 }

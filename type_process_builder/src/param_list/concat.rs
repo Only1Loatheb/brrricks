@@ -41,6 +41,6 @@ where
 
   #[inline(always)]
   fn concat(self, rhs: RHS) -> Self::Concatenated {
-    HCons { head: self.head, tail: self.tail.concat(rhs) }
+    HCons { tail: self.tail.concat(rhs), head: self.head }
   }
 }

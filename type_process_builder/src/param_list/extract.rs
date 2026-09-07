@@ -33,6 +33,6 @@ where
     let (head, remainder): (TargetHead, <HCons<SourceHead, SourceTail> as Plucker<TargetHead, IndexHead>>::Remainder) =
       self.pluck();
     let tail: TargetTail = remainder.extract();
-    HCons { head, tail }
+    HCons { tail, head }
   }
 }

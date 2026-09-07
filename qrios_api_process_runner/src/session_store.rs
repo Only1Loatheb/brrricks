@@ -1,15 +1,13 @@
 use sqlx::postgres::PgQueryResult;
 use sqlx::{Executor, PgPool, Row};
 use type_process_builder::builder::{
-  CurrentRunYieldedAt, FinalizedProcess, MaybeFormContext, ParamUID, PreviousRunYieldedAt, RunnableProcess,
-  SessionContext,
+  CurrentRunYieldedAt, FinalizedProcess, MaybeFormContext, PreviousRunYieldedAt, RunnableProcess, SessionContext,
 };
 use uuid::Uuid;
 
 pub async fn create_session_context_table<Process: FinalizedProcess>(
   pool: &PgPool,
   process: &RunnableProcess<Process>,
-  _ordered_all_unique_param_uids: &[ParamUID],
 ) -> Result<(), sqlx::Error> {
   sqlx::query("CREATE SCHEMA IF NOT EXISTS session_store").execute(pool).await?;
 
@@ -64,7 +62,6 @@ pub struct GetSessionContextQuery(String);
 /// WHERE id = $1
 pub fn build_get_session_context_query<Process: FinalizedProcess>(
   process: &RunnableProcess<Process>,
-  _ordered_all_unique_param_uids: &[ParamUID],
 ) -> GetSessionContextQuery {
   let table_name = qualified_table_name(process);
   let sql = format!(
@@ -77,7 +74,6 @@ pub async fn get_session_context(
   pool: &PgPool,
   sql: &GetSessionContextQuery,
   session_id: Uuid,
-  _ordered_all_unique_param_uids: &[ParamUID],
 ) -> Result<(PreviousRunYieldedAt, MaybeFormContext, Vec<i32>, SessionContext), sqlx::Error> {
   let row = sqlx::query(&sql.0).bind(session_id).fetch_one(pool).await?;
 

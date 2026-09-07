@@ -17,7 +17,7 @@ impl<Head, Tail> ThenKeep<Head, Tail> for B1 {
 
   #[inline(always)]
   fn filter(head: Head, tail: Tail) -> Self::Filtered {
-    HCons { head, tail }
+    HCons { tail, head }
   }
 }
 

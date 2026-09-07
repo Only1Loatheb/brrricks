@@ -35,7 +35,7 @@ where
   #[inline(always)]
   fn pluck(self) -> (FromTail, Self::Remainder) {
     let (target, tail_remainder) = <Tail as Plucker<FromTail, TailIndex>>::pluck(self.tail);
-    (target, HCons { head: self.head, tail: tail_remainder })
+    (target, HCons { tail: tail_remainder, head: self.head })
   }
 }
 
