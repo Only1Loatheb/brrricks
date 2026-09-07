@@ -4,7 +4,7 @@ pub trait HList: Sized {
 }
 
 /// Represents an empty `HList`.
-#[derive(PartialEq, Debug, Eq, Clone, Copy, PartialOrd, Ord, Hash, Default)]
+#[derive(PartialEq, Debug, Eq, Clone, Copy, PartialOrd, Ord, Hash, Default, serde::Serialize, serde::Deserialize)]
 pub struct HNil;
 
 impl HList for HNil {
@@ -12,7 +12,7 @@ impl HList for HNil {
 }
 
 /// Represents a non-empty `HList`, holding a head element and a tail `HList`.
-#[derive(PartialEq, Debug, Eq, Clone, Copy, PartialOrd, Ord, Hash, Default)]
+#[derive(PartialEq, Debug, Eq, Clone, Copy, PartialOrd, Ord, Hash, Default, serde::Serialize, serde::Deserialize)]
 pub struct HCons<H, T> {
   pub head: H,
   pub tail: T,

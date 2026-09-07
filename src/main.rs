@@ -31,7 +31,7 @@ async fn standard_io_process_runner(
     let user_input = input.trim();
     if state.session_context.is_empty() {
       let entry_consumes: EntryConsumes = hlist!(ShortcodeString(user_input.to_string()));
-      state.session_context = entry_consumes.serialize().expect("Failed to serialize session context");
+      state.session_context = entry_consumes.serialize_param_list().expect("Failed to serialize session context");
     }
     let result = in_memory_process_runner(&process, &mut state, user_input).await;
     match result {

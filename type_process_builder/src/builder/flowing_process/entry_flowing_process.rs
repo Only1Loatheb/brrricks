@@ -23,7 +23,7 @@ impl<Produces: ParamList, Messages: ProcessMessages> FlowingProcess for Entry<Pr
     _form_context: MaybeFormContext,
     _back_token: Option<BackToken>,
   ) -> impl Future<Output = IntermediateRunResult<Self::Produces, Self::Messages>> {
-    std::future::ready(Produces::deserialize(previous_run_produced).map(IntermediateRunOutcome::Continue))
+    std::future::ready(Produces::deserialize_param_list(previous_run_produced).map(IntermediateRunOutcome::Continue))
   }
 
   fn continue_run(

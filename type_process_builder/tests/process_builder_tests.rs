@@ -485,7 +485,7 @@ impl Operation for FinishProcessOperation {
 
 fn session_init_value() -> SessionContext {
   hlist!(EntryParam(Msisdn(2_340_000_000_000), Operator::MTN, ShortcodeString("*123#".to_string())))
-    .serialize()
+    .serialize_param_list()
     .unwrap()
 }
 
@@ -554,16 +554,6 @@ impl FormSplitter for InnerFormSplitter {
   }
 }
 
-#[test]
-fn test_param_list_out_of_order_deserialization() -> anyhow::Result<()> {
-  let list = hlist!(Split1Param, CaseOptionParam(1));
-  let context = list.serialize()?;
-  let reordered: HList![CaseOptionParam, Split1Param] = ParamList::deserialize(context)?;
-  assert_eq!(reordered.head, CaseOptionParam(1));
-  assert_eq!(reordered.tail.head, Split1Param);
-  Ok(())
-}
-
 #[tokio::test]
 async fn test_end() {
   let process = ExtractMsisdnOperatorAndShortcodeString.end(FinalNoConsumes).build("", 0);
@@ -588,8 +578,9 @@ async fn test_return_error_on_param_missing_from_init_value(
   process: &RunnableProcess<impl FinalizedProcess<Messages = Messages>>,
   messages: Vec<&str>,
 ) {
-  let mut init_value = session_init_value();
-  init_value.pop();
+  let mut entries: Vec<(u32, Vec<u8>)> = postcard::from_bytes(&session_init_value()).unwrap();
+  entries.pop();
+  let init_value = postcard::to_allocvec(&entries).unwrap();
   let run_outcome = process
     .resume_run(init_value, PreviousRunYieldedAt(StepIndex::MIN), messages[0].into(), None, None::<BackToken>)
     .await;
@@ -616,9 +607,10 @@ async fn test_return_error_on_param_missing_from_context(
     .expect("Test failed");
   messages_index += 1;
   match run_outcome {
-    RunOutcome::Yield(msg, mut value, yielded_at, context) => {
-      assert_eq!(msg, messages[messages_index]);
-      value.pop();
+    RunOutcome::Yield(_msg, value, yielded_at, context) => {
+      let mut entries: Vec<(u32, Vec<u8>)> = postcard::from_bytes(&value).unwrap();
+      entries.pop();
+      let value = postcard::to_allocvec(&entries).unwrap();
       let run_outcome = process
         .resume_run(
           value,

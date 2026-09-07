@@ -60,7 +60,7 @@ where
         IntermediateRunOutcome::Back => Ok(IntermediateRunOutcome::Back),
       }
     } else {
-      let process_before_produces = ProcessBefore::Produces::deserialize(previous_run_produced)?;
+      let process_before_produces = ProcessBefore::Produces::deserialize_param_list(previous_run_produced)?;
       self.continue_run(process_before_produces, back_token).await
     }
   }

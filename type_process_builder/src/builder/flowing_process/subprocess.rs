@@ -29,7 +29,7 @@ impl<EntryConsumes: ParamList, ProcessBeforeProduces: ParamList, EverProduced: P
     _form_context: MaybeFormContext,
     back_token: Option<BackToken>,
   ) -> IntermediateRunResult<Self::Produces, Self::Messages> {
-    let process_before_produces = ProcessBeforeProduces::deserialize(previous_run_produced)?;
+    let process_before_produces = ProcessBeforeProduces::deserialize_param_list(previous_run_produced)?;
     self.continue_run(process_before_produces, back_token).await
   }
 

@@ -73,10 +73,10 @@ where
         IntermediateRunOutcome::Back => Ok(IntermediateRunOutcome::Back),
       }
     } else if form_context.is_none() {
-      let process_before_produces = ProcessBefore::Produces::deserialize(previous_run_produced)?;
+      let process_before_produces = ProcessBefore::Produces::deserialize_param_list(previous_run_produced)?;
       self.continue_run(process_before_produces, back_token).await
     } else {
-      let process_before_produces = ProcessBefore::Produces::deserialize(previous_run_produced)?;
+      let process_before_produces = ProcessBefore::Produces::deserialize_param_list(previous_run_produced)?;
       let last_step_consumes =
         <&ProcessBefore::Produces as BorrowJust<'_, FormStep::ValidateInputConsumes, _>>::borrow_just(
           &process_before_produces,
@@ -103,7 +103,7 @@ where
     let FormWithContext(form, form_context) = self.form_step.create_form(last_step_consumes, back_token).await?;
     Ok(IntermediateRunOutcome::Yield(
       form,
-      process_before_produces.serialize()?,
+      process_before_produces.serialize_param_list()?,
       CurrentRunYieldedAt(self.step_index),
       postcard::to_allocvec(&form_context)?,
     ))

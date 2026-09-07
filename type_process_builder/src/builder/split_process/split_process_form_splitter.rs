@@ -91,10 +91,10 @@ where
         IntermediateRunOutcome::Back => Ok(IntermediateFinalizedSplitOutcome::Back),
       }
     } else if form_context.is_none() {
-      let process_before_split_produced = ProcessBefore::Produces::deserialize(previous_run_produced)?;
+      let process_before_split_produced = ProcessBefore::Produces::deserialize_param_list(previous_run_produced)?;
       self.continue_run(process_before_split_produced, back_token).await
     } else {
-      let process_before_split_produced = ProcessBefore::Produces::deserialize(previous_run_produced)?;
+      let process_before_split_produced = ProcessBefore::Produces::deserialize_param_list(previous_run_produced)?;
       let last_step_consumes =
         <&ProcessBefore::Produces as BorrowJust<'_, SplitterStep::ValidateInputConsumes, _>>::borrow_just(
           &process_before_split_produced,
@@ -137,7 +137,7 @@ where
     let FormWithContext(form, form_context) = self.splitter.create_form(splitter_step_consumes, back_token).await?;
     Ok(IntermediateFinalizedSplitOutcome::Yield(
       form,
-      process_before_split_produced.serialize()?,
+      process_before_split_produced.serialize_param_list()?,
       CurrentRunYieldedAt(self.step_index),
       postcard::to_allocvec(&form_context)?,
     ))

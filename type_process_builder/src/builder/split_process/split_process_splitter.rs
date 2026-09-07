@@ -79,7 +79,7 @@ where
         IntermediateRunOutcome::Back => Ok(IntermediateFinalizedSplitOutcome::Back),
       }
     } else {
-      let process_before_split_produced = ProcessBefore::Produces::deserialize(previous_run_produced)?;
+      let process_before_split_produced = ProcessBefore::Produces::deserialize_param_list(previous_run_produced)?;
       self.continue_run(process_before_split_produced, back_token).await
     }
   }
