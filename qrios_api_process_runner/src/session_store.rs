@@ -4,6 +4,7 @@ use type_process_builder::builder::{
   CurrentRunYieldedAt, FinalizedProcess, MaybeFormContext, ParamUID, PreviousRunYieldedAt, RunnableProcess,
   SessionContext,
 };
+use uuid::Uuid;
 
 pub async fn create_session_context_table<Process: FinalizedProcess>(
   pool: &PgPool,
@@ -21,7 +22,7 @@ pub async fn create_session_context_table<Process: FinalizedProcess>(
   let sql = format!(
     r"
     CREATE TABLE IF NOT EXISTS {table_name} (
-      id BIGSERIAL PRIMARY KEY,
+      id UUID PRIMARY KEY,
       previous_run_yielded_at INTEGER NOT NULL,
       form_context BYTEA,
       visited_form_steps BYTEA NOT NULL{param_columns})",
@@ -35,32 +36,39 @@ pub async fn create_session_context_table<Process: FinalizedProcess>(
 pub async fn create_session_context<Process: FinalizedProcess>(
   pool: &PgPool,
   process: &RunnableProcess<Process>,
+  id: Uuid,
   current_run_yielded_at: CurrentRunYieldedAt,
   form_context: MaybeFormContext,
   session_context: SessionContext,
-) -> Result<i64, sqlx::Error> {
-  let mut columns =
-    vec!["previous_run_yielded_at".to_string(), "form_context".to_string(), "visited_form_steps".to_string()];
-  let mut placeholders = vec!["$1".to_string(), "$2".to_string(), "$3".to_string()];
+) -> Result<(), sqlx::Error> {
+  let mut columns = vec![
+    "id".to_string(),
+    "previous_run_yielded_at".to_string(),
+    "form_context".to_string(),
+    "visited_form_steps".to_string(),
+  ];
+  let mut placeholders = vec!["$1".to_string(), "$2".to_string(), "$3".to_string(), "$4".to_string()];
 
   for (i, (col, _)) in session_context.iter().enumerate() {
     columns.push(format!("\"{col}\""));
-    placeholders.push(format!("${}", i + 4));
+    placeholders.push(format!("${}", i + 5));
   }
 
   let table_name = qualified_table_name(process);
-  let sql =
-    format!("INSERT INTO {table_name} ({}) VALUES ({}) RETURNING id;", columns.join(", "), placeholders.join(", "));
+  let sql = format!("INSERT INTO {table_name} ({}) VALUES ({});", columns.join(", "), placeholders.join(", "));
 
   let visited_steps_bytes =
     postcard::to_allocvec(&vec![current_run_yielded_at.0]).map_err(|e| sqlx::Error::Encode(Box::new(e)))?;
-  let mut query = sqlx::query(&sql).bind(current_run_yielded_at.0).bind(form_context).bind(visited_steps_bytes);
+  let mut query =
+    sqlx::query(&sql).bind(id).bind(current_run_yielded_at.0).bind(form_context).bind(visited_steps_bytes);
 
   for (_, value) in session_context {
     query = query.bind(value);
   }
 
-  query.fetch_one(pool).await?.try_get("id")
+  query.execute(pool).await?;
+
+  Ok(())
 }
 
 use sqlx::postgres::PgQueryResult;
@@ -89,7 +97,7 @@ pub fn build_get_session_context_query<Process: FinalizedProcess>(
 pub async fn get_session_context(
   pool: &PgPool,
   sql: &GetSessionContextQuery,
-  session_id: i64,
+  session_id: Uuid,
   ordered_all_unique_param_uids: &[ParamUID],
 ) -> Result<(PreviousRunYieldedAt, MaybeFormContext, Vec<i32>, SessionContext), sqlx::Error> {
   let row = sqlx::query(&sql.0).bind(session_id).fetch_one(pool).await?;
@@ -113,7 +121,7 @@ pub async fn get_session_context(
 pub async fn delete_session_context<Process: FinalizedProcess>(
   pool: &PgPool,
   process: &RunnableProcess<Process>,
-  id: i64,
+  id: Uuid,
 ) -> Result<u64, sqlx::Error> {
   let table_name = qualified_table_name(process);
 
@@ -133,7 +141,7 @@ fn qualified_table_name<Process: FinalizedProcess>(process: &RunnableProcess<Pro
 pub async fn increment_failed_input_validation_attempts<Process: FinalizedProcess>(
   pool: &PgPool,
   process: &RunnableProcess<Process>,
-  id: i64,
+  id: Uuid,
   form_context: Vec<u8>,
 ) -> Result<PgQueryResult, sqlx::Error> {
   let table_name = qualified_table_name(process);
@@ -145,7 +153,7 @@ pub async fn increment_failed_input_validation_attempts<Process: FinalizedProces
 pub async fn update_session_context<Process: FinalizedProcess>(
   pool: &PgPool,
   process: &RunnableProcess<Process>,
-  id: i64,
+  id: Uuid,
   current_run_yielded_at: CurrentRunYieldedAt,
   form_context: MaybeFormContext,
   visited_form_steps: Vec<i32>,

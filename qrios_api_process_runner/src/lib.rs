@@ -108,7 +108,7 @@ impl<Process: FinalizedProcess<Messages = Messages, EntryConsumes = EntryConsume
     header_params: &PostUssdsessioneventCloseHeaderParams,
     body: &CloseSession,
   ) -> Result<PostUssdsessioneventCloseResponse, ()> {
-    let session_id = body.context_data.parse::<i64>().map_err(|_| ())?;
+    let session_id = uuid::Uuid::parse_str(&body.context_data).map_err(|_| ())?;
     delete_session_context(&self.pool, &self.process, session_id).await.map_err(|_| ())?;
     Ok(PostUssdsessioneventCloseResponse::Status200_SessionEndHasBeenSuccessfullyHandledByTheDeveloper)
   }
@@ -127,7 +127,7 @@ impl<Process: FinalizedProcess<Messages = Messages, EntryConsumes = EntryConsume
       UssdActionResult::MerchantPaymentResult(_) => todo!(),
       UssdActionResult::ReturnFromRedirectResult(_) => todo!(),
     };
-    let session_id = body.context_data.parse::<i64>().map_err(|_| ())?;
+    let session_id = uuid::Uuid::parse_str(&body.context_data).map_err(|_| ())?;
     let (previous_run_yielded_at, form_context, mut visited_form_steps, session_context) =
       get_session_context(&self.pool, &self.get_session_context_query, session_id, &self.ordered_all_unique_param_uids)
         .await
@@ -173,7 +173,7 @@ impl<Process: FinalizedProcess<Messages = Messages, EntryConsumes = EntryConsume
         if is_back.not() {
           visited_form_steps.push(current_run_yielded_at.0);
         }
-        let id = update_session_context(
+        update_session_context(
           &self.pool,
           &self.process,
           session_id,
@@ -223,6 +223,7 @@ impl<Process: FinalizedProcess<Messages = Messages, EntryConsumes = EntryConsume
     header_params: &PostUssdsessioneventNewHeaderParams,
     body: &UssdSessionEventNewSession,
   ) -> Result<PostUssdsessioneventNewResponse, ()> {
+    let session_id = uuid::Uuid::parse_str(&body.session_id).unwrap_or_else(|_| uuid::Uuid::new_v4());
     let shortcode_string = match body.input.clone() {
       UssdSessionEventNewSessionSessionInput::Dial(x) => x.shortcode_string,
       UssdSessionEventNewSessionSessionInput::Push(_) => todo!(),
@@ -252,22 +253,23 @@ impl<Process: FinalizedProcess<Messages = Messages, EntryConsumes = EntryConsume
       .await;
     match run_result {
       Ok(RunOutcome::Yield(message, session_context, current_run_yielded_at, form_context)) => {
-        let id = create_session_context(
+        create_session_context(
           &self.pool,
           &self.process,
+          session_id,
           current_run_yielded_at,
           Some(form_context),
           session_context,
         )
         .await
         .map_err(|_| ())?;
-        Ok((id, UssdView::InputView(InputView { message: message.0, r_type: "InputView".into() })))
+        Ok((session_id, UssdView::InputView(InputView { message: message.0, r_type: "InputView".into() })))
       },
       Ok(RunOutcome::RetryUserInput(..)) => {
         unreachable!("We haven't prompted user for input yet")
       },
       Ok(RunOutcome::Finish(message)) => {
-        Ok((i64::MAX, UssdView::InfoView(InfoView { message: message.0, r_type: "InfoView".into() })))
+        Ok((uuid::Uuid::nil(), UssdView::InfoView(InfoView { message: message.0, r_type: "InfoView".into() })))
       },
       Ok(RunOutcome::Back) => Err(()),
       Err(e) => {
@@ -275,11 +277,11 @@ impl<Process: FinalizedProcess<Messages = Messages, EntryConsumes = EntryConsume
         Err(())
       },
     }
-    .map(|(id, ussd_view)| {
+    .map(|(session_id, ussd_view)| {
       PostUssdsessioneventNewResponse::Status200_SessionStartHasBeenSuccessfullyHandledByTheDeveloper(
         UssdSessionCommand {
           action: UssdAction::ShowView(ShowView { r_type: "ShowView".into(), view: ussd_view }),
-          context_data: id.to_string(),
+          context_data: session_id.to_string(),
           session_tag: None,
         },
       )
