@@ -2819,12 +2819,8 @@ async fn test_process_messages(
   process: &RunnableProcess<impl FinalizedProcess<Messages = Messages>>,
   messages: Vec<&str>,
 ) {
-  let mut state = SessionState {
-    session_context: session_init_value(),
-    previous_run_yielded_at: PreviousRunYieldedAt(StepIndex::MIN),
-    form_context: None,
-    visited_form_steps: Vec::new(),
-  };
+  let mut state =
+    SessionState { session_context: session_init_value(), form_context: None, visited_form_steps: Vec::new() };
   let mut index = 0;
   while index < messages.len() {
     let user_input = messages[index];

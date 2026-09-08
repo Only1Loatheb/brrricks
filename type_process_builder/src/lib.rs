@@ -25,7 +25,6 @@ pub mod documentation_diagrams {
 
   pub struct SessionState {
     pub session_context: SessionContext,
-    pub previous_run_yielded_at: PreviousRunYieldedAt,
     pub form_context: Option<FormContext>,
     pub visited_form_steps: Vec<StepIndex>,
   }
@@ -37,10 +36,12 @@ pub mod documentation_diagrams {
     user_input: &str,
   ) -> Result<String, String> {
     let back_token = if state.visited_form_steps.is_empty() { None } else { Some(create_back_token()) };
+    let previous_run_yielded_at =
+      PreviousRunYieldedAt(state.visited_form_steps.last().copied().unwrap_or(StepIndex::MIN));
     let mut run_outcome = process
       .resume_run(
         state.session_context.clone(),
-        state.previous_run_yielded_at.clone(),
+        previous_run_yielded_at,
         user_input.into(),
         state.form_context.clone(),
         back_token,
@@ -68,7 +69,6 @@ pub mod documentation_diagrams {
     match run_outcome {
       RunOutcome::Yield(msg, value, yielded_at, context) => {
         state.session_context = value;
-        state.previous_run_yielded_at = PreviousRunYieldedAt(yielded_at.0);
         state.form_context = Some(context);
         if was_backed.not() {
           state.visited_form_steps.push(yielded_at.0);

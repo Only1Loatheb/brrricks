@@ -100,8 +100,9 @@ impl<Process: FinalizedProcess<Messages = Messages, EntryConsumes = EntryConsume
       UssdActionResult::ReturnFromRedirectResult(_) => todo!(),
     };
     let session_id = uuid::Uuid::parse_str(&body.context_data).map_err(|_| ())?;
-    let (previous_run_yielded_at, form_context, mut visited_form_steps, session_context) =
+    let (form_context, mut visited_form_steps, session_context) =
       get_session_context(&self.pool, &self.get_session_context_query, session_id).await.map_err(|_| ())?;
+    let previous_run_yielded_at = PreviousRunYieldedAt(*visited_form_steps.last().ok_or(())?);
 
     let mut run_result = {
       let back_token = visited_form_steps.is_empty().not().then(create_back_token);
@@ -138,7 +139,6 @@ impl<Process: FinalizedProcess<Messages = Messages, EntryConsumes = EntryConsume
           &self.pool,
           &self.process,
           session_id,
-          current_run_yielded_at,
           Some(form_context),
           visited_form_steps,
           session_context,

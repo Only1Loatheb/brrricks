@@ -1,6 +1,6 @@
 use bricks::{Messages, ShortcodeString, build_demo_process};
 use std::io::Write;
-use type_process_builder::builder::{FinalizedProcess, PreviousRunYieldedAt, RunnableProcess, StepIndex};
+use type_process_builder::builder::{FinalizedProcess, RunnableProcess};
 use type_process_builder::documentation_diagrams::{SessionState, in_memory_process_runner};
 use type_process_builder::param_list::ParamList;
 use type_process_builder::{HList, hlist};
@@ -16,12 +16,7 @@ type EntryConsumes = HList!(ShortcodeString);
 async fn standard_io_process_runner(
   process: RunnableProcess<impl FinalizedProcess<Messages = Messages, EntryConsumes = EntryConsumes>>,
 ) -> std::io::Result<()> {
-  let mut state = SessionState {
-    session_context: Vec::new(),
-    previous_run_yielded_at: PreviousRunYieldedAt(StepIndex::MIN),
-    form_context: None,
-    visited_form_steps: Vec::new(),
-  };
+  let mut state = SessionState { session_context: Vec::new(), form_context: None, visited_form_steps: Vec::new() };
   println!("Enter a shortcode");
   loop {
     print!("> ");
