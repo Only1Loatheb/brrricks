@@ -1,9 +1,8 @@
 mod session_store;
 
 use crate::session_store::{
-  GetSessionContextQuery, build_get_session_context_query, create_session_context_batch, create_session_context_table,
-  delete_session_context_batch, get_session_context_batch, increment_failed_input_validation_attempts_batch,
-  update_session_context_batch,
+  create_session_context_batch, create_session_context_table, delete_session_context_batch, get_session_context_batch,
+  increment_failed_input_validation_attempts_batch, update_session_context_batch,
 };
 use async_trait::async_trait;
 use qrios_api_axum_server::apis::ErrorHandler;
@@ -76,7 +75,6 @@ pub enum SessionBatchCommand {
 fn spawn_session_batch_worker<Process: FinalizedProcess + 'static>(
   pool: PgPool,
   process: Arc<RunnableProcess<Process>>,
-  get_query: GetSessionContextQuery,
   mut rx: mpsc::Receiver<SessionBatchCommand>,
 ) {
   tokio::spawn(async move {
@@ -106,7 +104,7 @@ fn spawn_session_batch_worker<Process: FinalizedProcess + 'static>(
         }
       }
 
-      process_session_command_batch(&pool, &process, &get_query, commands).await;
+      process_session_command_batch(&pool, &process, commands).await;
     }
   });
 }
@@ -115,7 +113,6 @@ fn spawn_session_batch_worker<Process: FinalizedProcess + 'static>(
 async fn process_session_command_batch<Process: FinalizedProcess>(
   pool: &PgPool,
   process: &RunnableProcess<Process>,
-  get_query: &GetSessionContextQuery,
   commands: Vec<SessionBatchCommand>,
 ) {
   let mut creates = Vec::new();
@@ -183,7 +180,7 @@ async fn process_session_command_batch<Process: FinalizedProcess>(
       tx_map.insert(id, tx);
     }
 
-    let res = get_session_context_batch(pool, get_query, &ids).await;
+    let res = get_session_context_batch(pool, process, &ids).await;
     match res {
       Ok(results) => {
         for (id, form_ctx, visited_steps, session_ctx) in results {
@@ -287,8 +284,6 @@ async fn process_session_command_batch<Process: FinalizedProcess>(
 
 pub struct QriosUssdApiService<Process: FinalizedProcess<Messages = Messages, EntryConsumes = EntryConsumes>> {
   process: Arc<RunnableProcess<Process>>,
-  pool: PgPool,
-  get_session_context_query: GetSessionContextQuery,
   batch_tx: mpsc::Sender<SessionBatchCommand>,
 }
 
@@ -297,11 +292,10 @@ impl<Process: FinalizedProcess<Messages = Messages, EntryConsumes = EntryConsume
 {
   pub async fn new(process: RunnableProcess<Process>, pool: PgPool) -> Result<Self, sqlx::Error> {
     create_session_context_table(&pool, &process).await?;
-    let get_session_context_query = build_get_session_context_query(&process);
     let process = Arc::new(process);
     let (batch_tx, batch_rx) = mpsc::channel::<SessionBatchCommand>(1024);
-    spawn_session_batch_worker(pool.clone(), process.clone(), get_session_context_query.clone(), batch_rx);
-    Ok(QriosUssdApiService { process, pool, get_session_context_query, batch_tx })
+    spawn_session_batch_worker(pool, process.clone(), batch_rx);
+    Ok(QriosUssdApiService { process, batch_tx })
   }
 
   async fn db_create_session_context(

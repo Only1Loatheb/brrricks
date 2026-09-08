@@ -55,50 +55,16 @@ pub async fn create_session_context_batch<Process: FinalizedProcess>(
   Ok(())
 }
 
-pub async fn create_session_context<Process: FinalizedProcess>(
+pub async fn get_session_context_batch<Process: FinalizedProcess>(
   pool: &PgPool,
   process: &RunnableProcess<Process>,
-  id: Uuid,
-  current_run_yielded_at: CurrentRunYieldedAt,
-  form_context: MaybeFormContext,
-  session_context: SessionContext,
-) -> Result<(), sqlx::Error> {
-  create_session_context_batch(pool, process, &[id], &[current_run_yielded_at], &[form_context], &[session_context])
-    .await
-}
-
-#[derive(Clone)]
-pub struct GetSessionContextQuery(String);
-/// Builds:
-/// SELECT `id`, `form_context`, `visited_form_steps`, `session_context`
-/// FROM `session_store.process_version`
-/// WHERE id = `ANY($1::uuid`[])
-pub fn build_get_session_context_query<Process: FinalizedProcess>(
-  process: &RunnableProcess<Process>,
-) -> GetSessionContextQuery {
+  session_ids: &[Uuid],
+) -> Result<Vec<(Uuid, MaybeFormContext, Vec<i32>, SessionContext)>, sqlx::Error> {
   let table_name = qualified_table_name(process);
   let sql = format!(
     "SELECT id, form_context, visited_form_steps, session_context FROM {table_name} WHERE id = ANY($1::uuid[])"
   );
-  GetSessionContextQuery(sql)
-}
-
-pub async fn get_session_context(
-  pool: &PgPool,
-  sql: &GetSessionContextQuery,
-  session_id: Uuid,
-) -> Result<(MaybeFormContext, Vec<i32>, SessionContext), sqlx::Error> {
-  let mut results = get_session_context_batch(pool, sql, &[session_id]).await?;
-  let (_id, form_context, visited_form_steps, session_context) = results.pop().ok_or(sqlx::Error::RowNotFound)?;
-  Ok((form_context, visited_form_steps, session_context))
-}
-
-pub async fn get_session_context_batch(
-  pool: &PgPool,
-  sql: &GetSessionContextQuery,
-  session_ids: &[Uuid],
-) -> Result<Vec<(Uuid, MaybeFormContext, Vec<i32>, SessionContext)>, sqlx::Error> {
-  let rows = sqlx::query(&sql.0).bind(session_ids).fetch_all(pool).await?;
+  let rows = sqlx::query(&sql).bind(session_ids).fetch_all(pool).await?;
 
   let mut results = Vec::with_capacity(rows.len());
   for row in rows {
@@ -128,14 +94,6 @@ pub async fn delete_session_context_batch<Process: FinalizedProcess>(
   Ok(result.rows_affected())
 }
 
-pub async fn delete_session_context<Process: FinalizedProcess>(
-  pool: &PgPool,
-  process: &RunnableProcess<Process>,
-  id: Uuid,
-) -> Result<u64, sqlx::Error> {
-  delete_session_context_batch(pool, process, &[id]).await
-}
-
 fn qualified_table_name<Process: FinalizedProcess>(process: &RunnableProcess<Process>) -> String {
   let process_name = process.get_name();
   let process_version = process.get_version();
@@ -153,15 +111,6 @@ pub async fn increment_failed_input_validation_attempts_batch<Process: Finalized
     r"UPDATE {table_name} AS t SET form_context = u.form_context FROM UNNEST($1::uuid[], $2::bytea[]) AS u(id, form_context) WHERE t.id = u.id"
   );
   sqlx::query(&sql).bind(ids).bind(form_contexts).execute(pool).await
-}
-
-pub async fn increment_failed_input_validation_attempts<Process: FinalizedProcess>(
-  pool: &PgPool,
-  process: &RunnableProcess<Process>,
-  id: Uuid,
-  form_context: Vec<u8>,
-) -> Result<PgQueryResult, sqlx::Error> {
-  increment_failed_input_validation_attempts_batch(pool, process, &[id], &[form_context]).await
 }
 
 pub async fn update_session_context_batch<Process: FinalizedProcess>(
@@ -192,15 +141,4 @@ pub async fn update_session_context_batch<Process: FinalizedProcess>(
     .await?;
 
   Ok(())
-}
-
-pub async fn update_session_context<Process: FinalizedProcess>(
-  pool: &PgPool,
-  process: &RunnableProcess<Process>,
-  id: Uuid,
-  form_context: MaybeFormContext,
-  visited_form_steps: Vec<i32>,
-  session_context: SessionContext,
-) -> Result<(), sqlx::Error> {
-  update_session_context_batch(pool, process, &[id], &[form_context], &[visited_form_steps], &[session_context]).await
 }
