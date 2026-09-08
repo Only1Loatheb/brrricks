@@ -18,7 +18,6 @@ use qrios_api_axum_server::models::{
   UssdSessionEventNewSessionSessionInput, UssdView,
 };
 use qrios_api_process_entry::{DialedSessionEntryParam, Msisdn, Operator, ShortcodeString};
-use sqlx::postgres::PgQueryResult;
 use sqlx::PgPool;
 use std::collections::HashMap;
 use std::ops::Not;
@@ -221,7 +220,8 @@ async fn process_session_command_batch<Process: FinalizedProcess>(
       txs.push(tx);
     }
 
-    let res = update_session_context_batch(pool, process, &ids, &form_contexts, &visited_steps_list, &session_contexts).await;
+    let res =
+      update_session_context_batch(pool, process, &ids, &form_contexts, &visited_steps_list, &session_contexts).await;
     match res {
       Ok(()) => {
         for tx in txs {
@@ -294,7 +294,9 @@ pub struct QriosUssdApiService<Process: FinalizedProcess<Messages = Messages, En
   batch_tx: mpsc::Sender<SessionBatchCommand>,
 }
 
-impl<Process: FinalizedProcess<Messages = Messages, EntryConsumes = EntryConsumes>> QriosUssdApiService<Process> {
+impl<Process: FinalizedProcess<Messages = Messages, EntryConsumes = EntryConsumes> + 'static>
+  QriosUssdApiService<Process>
+{
   pub async fn new(process: RunnableProcess<Process>, pool: PgPool) -> Result<Self, sqlx::Error> {
     create_session_context_table(&pool, &process).await?;
     let get_session_context_query = build_get_session_context_query(&process);
@@ -314,13 +316,7 @@ impl<Process: FinalizedProcess<Messages = Messages, EntryConsumes = EntryConsume
     let (tx, rx) = oneshot::channel();
     self
       .batch_tx
-      .send(SessionBatchCommand::Create {
-        id,
-        current_run_yielded_at,
-        form_context,
-        session_context,
-        tx,
-      })
+      .send(SessionBatchCommand::Create { id, current_run_yielded_at, form_context, session_context, tx })
       .await
       .map_err(|_| sqlx::Error::PoolClosed)?;
     rx.await.map_err(|_| sqlx::Error::PoolClosed)?
@@ -331,11 +327,7 @@ impl<Process: FinalizedProcess<Messages = Messages, EntryConsumes = EntryConsume
     session_id: Uuid,
   ) -> Result<(MaybeFormContext, Vec<i32>, SessionContext), sqlx::Error> {
     let (tx, rx) = oneshot::channel();
-    self
-      .batch_tx
-      .send(SessionBatchCommand::Get { id: session_id, tx })
-      .await
-      .map_err(|_| sqlx::Error::PoolClosed)?;
+    self.batch_tx.send(SessionBatchCommand::Get { id: session_id, tx }).await.map_err(|_| sqlx::Error::PoolClosed)?;
     rx.await.map_err(|_| sqlx::Error::PoolClosed)?
   }
 
@@ -349,13 +341,7 @@ impl<Process: FinalizedProcess<Messages = Messages, EntryConsumes = EntryConsume
     let (tx, rx) = oneshot::channel();
     self
       .batch_tx
-      .send(SessionBatchCommand::Update {
-        id,
-        form_context,
-        visited_form_steps,
-        session_context,
-        tx,
-      })
+      .send(SessionBatchCommand::Update { id, form_context, visited_form_steps, session_context, tx })
       .await
       .map_err(|_| sqlx::Error::PoolClosed)?;
     rx.await.map_err(|_| sqlx::Error::PoolClosed)?
@@ -363,11 +349,7 @@ impl<Process: FinalizedProcess<Messages = Messages, EntryConsumes = EntryConsume
 
   async fn db_delete_session_context(&self, id: Uuid) -> Result<u64, sqlx::Error> {
     let (tx, rx) = oneshot::channel();
-    self
-      .batch_tx
-      .send(SessionBatchCommand::Delete { id, tx })
-      .await
-      .map_err(|_| sqlx::Error::PoolClosed)?;
+    self.batch_tx.send(SessionBatchCommand::Delete { id, tx }).await.map_err(|_| sqlx::Error::PoolClosed)?;
     rx.await.map_err(|_| sqlx::Error::PoolClosed)?
   }
 
@@ -375,7 +357,7 @@ impl<Process: FinalizedProcess<Messages = Messages, EntryConsumes = EntryConsume
     &self,
     id: Uuid,
     form_context: Vec<u8>,
-  ) -> Result<PgQueryResult, sqlx::Error> {
+  ) -> Result<u64, sqlx::Error> {
     let (tx, rx) = oneshot::channel();
     self
       .batch_tx
@@ -386,14 +368,14 @@ impl<Process: FinalizedProcess<Messages = Messages, EntryConsumes = EntryConsume
   }
 }
 
-impl<Process: FinalizedProcess<Messages = Messages, EntryConsumes = EntryConsumes>> ErrorHandler<()>
+impl<Process: FinalizedProcess<Messages = Messages, EntryConsumes = EntryConsumes> + 'static> ErrorHandler<()>
   for QriosUssdApiService<Process>
 {
 }
 
 #[allow(unused_variables)]
 #[async_trait]
-impl<Process: FinalizedProcess<Messages = Messages, EntryConsumes = EntryConsumes> + Sync>
+impl<Process: FinalizedProcess<Messages = Messages, EntryConsumes = EntryConsumes> + Sync + 'static>
   qrios_api_axum_server::apis::developers_app_endpoints::DevelopersAppEndpoints for QriosUssdApiService<Process>
 {
   /// I guess we could delete by [`AbortSession`] `session_id`
@@ -472,12 +454,7 @@ impl<Process: FinalizedProcess<Messages = Messages, EntryConsumes = EntryConsume
           visited_form_steps.push(current_run_yielded_at.0);
         }
         self
-          .db_update_session_context(
-            session_id,
-            Some(form_context),
-            visited_form_steps,
-            session_context,
-          )
+          .db_update_session_context(session_id, Some(form_context), visited_form_steps, session_context)
           .await
           .map_err(|_| ())?;
         Ok(UssdView::InputView(InputView { message: message.0, r_type: "InputView".into() }))
@@ -547,12 +524,7 @@ impl<Process: FinalizedProcess<Messages = Messages, EntryConsumes = EntryConsume
     match run_result {
       Ok(RunOutcome::Yield(message, session_context, current_run_yielded_at, form_context)) => {
         self
-          .db_create_session_context(
-            session_id,
-            current_run_yielded_at,
-            Some(form_context),
-            session_context,
-          )
+          .db_create_session_context(session_id, current_run_yielded_at, Some(form_context), session_context)
           .await
           .map_err(|_| ())?;
         Ok((session_id, UssdView::InputView(InputView { message: message.0, r_type: "InputView".into() })))

@@ -67,8 +67,6 @@ pub async fn create_session_context<Process: FinalizedProcess>(
     .await
 }
 
-
-
 #[derive(Clone)]
 pub struct GetSessionContextQuery(String);
 /// Builds:
