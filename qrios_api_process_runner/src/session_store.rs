@@ -26,6 +26,35 @@ pub async fn create_session_context_table<Process: FinalizedProcess>(
   Ok(())
 }
 
+pub async fn create_session_context_batch<Process: FinalizedProcess>(
+  pool: &PgPool,
+  process: &RunnableProcess<Process>,
+  ids: &[Uuid],
+  current_run_yielded_ats: &[CurrentRunYieldedAt],
+  form_contexts: &[MaybeFormContext],
+  session_contexts: &[SessionContext],
+) -> Result<(), sqlx::Error> {
+  let table_name = qualified_table_name(process);
+  let sql = format!(
+    "INSERT INTO {table_name} (id, form_context, visited_form_steps, session_context) SELECT * FROM UNNEST($1::uuid[], $2::bytea[], $3::bytea[], $4::bytea[]);"
+  );
+
+  let visited_steps_bytes_list = current_run_yielded_ats
+    .iter()
+    .map(|at| postcard::to_allocvec(&vec![at.0]).map_err(|e| sqlx::Error::Encode(Box::new(e))))
+    .collect::<Result<Vec<_>, _>>()?;
+
+  sqlx::query(&sql)
+    .bind(ids)
+    .bind(form_contexts)
+    .bind(visited_steps_bytes_list)
+    .bind(session_contexts)
+    .execute(pool)
+    .await?;
+
+  Ok(())
+}
+
 pub async fn create_session_context<Process: FinalizedProcess>(
   pool: &PgPool,
   process: &RunnableProcess<Process>,
@@ -34,29 +63,22 @@ pub async fn create_session_context<Process: FinalizedProcess>(
   form_context: MaybeFormContext,
   session_context: SessionContext,
 ) -> Result<(), sqlx::Error> {
-  let table_name = qualified_table_name(process);
-  let sql = format!(
-    "INSERT INTO {table_name} (id, form_context, visited_form_steps, session_context) VALUES ($1, $2, $3, $4);"
-  );
-
-  let visited_steps_bytes =
-    postcard::to_allocvec(&vec![current_run_yielded_at.0]).map_err(|e| sqlx::Error::Encode(Box::new(e)))?;
-
-  sqlx::query(&sql).bind(id).bind(form_context).bind(visited_steps_bytes).bind(session_context).execute(pool).await?;
-
-  Ok(())
+  create_session_context_batch(pool, process, &[id], &[current_run_yielded_at], &[form_context], &[session_context])
+    .await
 }
 
 pub struct GetSessionContextQuery(String);
 /// Builds:
-/// SELECT `form_context`, `visited_form_steps`, `session_context`
+/// SELECT `id`, `form_context`, `visited_form_steps`, `session_context`
 /// FROM `session_store.process_version`
-/// WHERE id = $1
+/// WHERE id = `ANY($1::uuid`[])
 pub fn build_get_session_context_query<Process: FinalizedProcess>(
   process: &RunnableProcess<Process>,
 ) -> GetSessionContextQuery {
   let table_name = qualified_table_name(process);
-  let sql = format!("SELECT form_context, visited_form_steps, session_context FROM {table_name} WHERE id = $1");
+  let sql = format!(
+    "SELECT id, form_context, visited_form_steps, session_context FROM {table_name} WHERE id = ANY($1::uuid[])"
+  );
   GetSessionContextQuery(sql)
 }
 
@@ -65,15 +87,44 @@ pub async fn get_session_context(
   sql: &GetSessionContextQuery,
   session_id: Uuid,
 ) -> Result<(MaybeFormContext, Vec<i32>, SessionContext), sqlx::Error> {
-  let row = sqlx::query(&sql.0).bind(session_id).fetch_one(pool).await?;
-
-  let form_context = row.try_get::<Option<Vec<u8>>, _>(0)?;
-  let visited_form_steps_bytes = row.try_get::<Vec<u8>, _>(1)?;
-  let visited_form_steps: Vec<i32> =
-    postcard::from_bytes(&visited_form_steps_bytes).map_err(|e| sqlx::Error::Decode(Box::new(e)))?;
-  let session_context = row.try_get::<Vec<u8>, _>(2)?;
-
+  let mut results = get_session_context_batch(pool, sql, &[session_id]).await?;
+  let (_id, form_context, visited_form_steps, session_context) = results.pop().ok_or(sqlx::Error::RowNotFound)?;
   Ok((form_context, visited_form_steps, session_context))
+}
+
+pub async fn get_session_context_batch(
+  pool: &PgPool,
+  sql: &GetSessionContextQuery,
+  session_ids: &[Uuid],
+) -> Result<Vec<(Uuid, MaybeFormContext, Vec<i32>, SessionContext)>, sqlx::Error> {
+  let rows = sqlx::query(&sql.0).bind(session_ids).fetch_all(pool).await?;
+
+  let mut results = Vec::with_capacity(rows.len());
+  for row in rows {
+    let id = row.try_get::<Uuid, _>(0)?;
+    let form_context = row.try_get::<Option<Vec<u8>>, _>(1)?;
+    let visited_form_steps_bytes = row.try_get::<Vec<u8>, _>(2)?;
+    let visited_form_steps: Vec<i32> =
+      postcard::from_bytes(&visited_form_steps_bytes).map_err(|e| sqlx::Error::Decode(Box::new(e)))?;
+    let session_context = row.try_get::<Vec<u8>, _>(3)?;
+    results.push((id, form_context, visited_form_steps, session_context));
+  }
+
+  Ok(results)
+}
+
+pub async fn delete_session_context_batch<Process: FinalizedProcess>(
+  pool: &PgPool,
+  process: &RunnableProcess<Process>,
+  ids: &[Uuid],
+) -> Result<u64, sqlx::Error> {
+  let table_name = qualified_table_name(process);
+
+  let sql = format!(r"DELETE FROM {table_name} WHERE id = ANY($1::uuid[])");
+
+  let result = sqlx::query(&sql).bind(ids).execute(pool).await?;
+
+  Ok(result.rows_affected())
 }
 
 pub async fn delete_session_context<Process: FinalizedProcess>(
@@ -81,13 +132,7 @@ pub async fn delete_session_context<Process: FinalizedProcess>(
   process: &RunnableProcess<Process>,
   id: Uuid,
 ) -> Result<u64, sqlx::Error> {
-  let table_name = qualified_table_name(process);
-
-  let sql = format!(r"DELETE FROM {table_name} WHERE id = $1");
-
-  let result = sqlx::query(&sql).bind(id).execute(pool).await?;
-
-  Ok(result.rows_affected())
+  delete_session_context_batch(pool, process, &[id]).await
 }
 
 fn qualified_table_name<Process: FinalizedProcess>(process: &RunnableProcess<Process>) -> String {
@@ -96,15 +141,56 @@ fn qualified_table_name<Process: FinalizedProcess>(process: &RunnableProcess<Pro
   format!("session_store.{process_name}_{process_version}")
 }
 
+pub async fn increment_failed_input_validation_attempts_batch<Process: FinalizedProcess>(
+  pool: &PgPool,
+  process: &RunnableProcess<Process>,
+  ids: &[Uuid],
+  form_contexts: &[Vec<u8>],
+) -> Result<PgQueryResult, sqlx::Error> {
+  let table_name = qualified_table_name(process);
+  let sql = format!(
+    r"UPDATE {table_name} AS t SET form_context = u.form_context FROM UNNEST($1::uuid[], $2::bytea[]) AS u(id, form_context) WHERE t.id = u.id"
+  );
+  sqlx::query(&sql).bind(ids).bind(form_contexts).execute(pool).await
+}
+
 pub async fn increment_failed_input_validation_attempts<Process: FinalizedProcess>(
   pool: &PgPool,
   process: &RunnableProcess<Process>,
   id: Uuid,
   form_context: Vec<u8>,
 ) -> Result<PgQueryResult, sqlx::Error> {
+  increment_failed_input_validation_attempts_batch(pool, process, &[id], &[form_context]).await
+}
+
+pub async fn update_session_context_batch<Process: FinalizedProcess>(
+  pool: &PgPool,
+  process: &RunnableProcess<Process>,
+  ids: &[Uuid],
+  form_contexts: &[MaybeFormContext],
+  visited_form_steps_list: &[Vec<i32>],
+  session_contexts: &[SessionContext],
+) -> Result<(), sqlx::Error> {
   let table_name = qualified_table_name(process);
-  let sql = format!(r"UPDATE {table_name} SET form_context = $1 WHERE id = $2");
-  sqlx::query(&sql).bind(form_context).bind(id).execute(pool).await
+
+  let sql = format!(
+    "UPDATE {table_name} AS t SET form_context = u.form_context, visited_form_steps = u.visited_form_steps, session_context = u.session_context FROM UNNEST($1::uuid[], $2::bytea[], $3::bytea[], $4::bytea[]) AS u(id, form_context, visited_form_steps, session_context) WHERE t.id = u.id;"
+  );
+
+  let visited_steps_bytes_list = visited_form_steps_list
+    .iter()
+    .map(|steps| postcard::to_allocvec(steps).map_err(|e| sqlx::Error::Encode(Box::new(e))))
+    .collect::<Result<Vec<_>, _>>()?;
+
+  sqlx::query(&sql)
+    .bind(ids)
+    .bind(form_contexts)
+    .bind(visited_steps_bytes_list)
+    .bind(session_contexts)
+    .execute(pool)
+    .await?;
+
+  Ok(())
 }
 
 pub async fn update_session_context<Process: FinalizedProcess>(
@@ -115,14 +201,5 @@ pub async fn update_session_context<Process: FinalizedProcess>(
   visited_form_steps: Vec<i32>,
   session_context: SessionContext,
 ) -> Result<(), sqlx::Error> {
-  let table_name = qualified_table_name(process);
-
-  let sql =
-    format!("UPDATE {table_name} SET form_context = $1, visited_form_steps = $2, session_context = $3 WHERE id = $4;");
-
-  let visited_steps_bytes = postcard::to_allocvec(&visited_form_steps).map_err(|e| sqlx::Error::Encode(Box::new(e)))?;
-
-  sqlx::query(&sql).bind(form_context).bind(visited_steps_bytes).bind(session_context).bind(id).execute(pool).await?;
-
-  Ok(())
+  update_session_context_batch(pool, process, &[id], &[form_context], &[visited_form_steps], &[session_context]).await
 }
