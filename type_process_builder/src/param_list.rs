@@ -11,8 +11,6 @@ pub mod extract;
 pub mod intersect;
 pub mod union;
 
-pub type ParamUID = u32;
-
 pub type SessionContext = Vec<u8>;
 
 /// Use [`typenum::op`] to generate UID if the desired typenum const is missing.
