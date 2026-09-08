@@ -84,10 +84,7 @@ fn spawn_session_batch_worker<Process: FinalizedProcess + 'static>(
     let batch_timeout = std::time::Duration::from_millis(5);
 
     loop {
-      let first_cmd = match rx.recv().await {
-        Some(cmd) => cmd,
-        None => break,
-      };
+      let Some(first_cmd) = rx.recv().await else { break };
 
       let mut commands = Vec::with_capacity(max_batch_size);
       commands.push(first_cmd);
@@ -114,6 +111,7 @@ fn spawn_session_batch_worker<Process: FinalizedProcess + 'static>(
   });
 }
 
+#[allow(clippy::too_many_lines, clippy::manual_let_else)]
 async fn process_session_command_batch<Process: FinalizedProcess>(
   pool: &PgPool,
   process: &RunnableProcess<Process>,
