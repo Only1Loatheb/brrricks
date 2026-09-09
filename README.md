@@ -318,7 +318,7 @@ Some integration tests require Docker to be running on your machine to start con
 Bless the tests with:
 
 ```shell
-TRYBUILD=overwrite cargo +nightly test -p type_process_builder --test duplicate_param_tests
+TRYBUILD=overwrite cargo +nightly test -p type_process_builder --test dx
 ```
 
 [//]: # (Redirect can be implemented with a Final step.)

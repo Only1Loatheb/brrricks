@@ -1,11 +1,11 @@
 #![allow(clippy::unused_async_trait_impl)]
+mod unit;
 use serde::{Deserialize, Serialize};
 
 #[allow(non_upper_case_globals)]
 const ExtractMsisdnOperatorAndShortcodeString: Entry<HList![EntryParam], Messages> = entry();
 use std::marker::PhantomData;
 use type_process_builder::builder::*;
-use type_process_builder::documentation_diagrams::{SessionState, in_memory_process_runner};
 use type_process_builder::frunk::to_ref::ToRef;
 use type_process_builder::step::{
   Entry, Final, Form, FormSplitter, FormWithContext, InputValidation, Operation, OperationOutcome, ProcessMessages,
@@ -481,12 +481,6 @@ impl Operation for FinishProcessOperation {
   ) -> anyhow::Result<OperationOutcome<Self::Produces, Self::FinalMessage>> {
     Ok(OperationOutcome::Finish("Operation finished".into()))
   }
-}
-
-fn session_init_value() -> SessionContext {
-  hlist!(EntryParam(Msisdn(2_340_000_000_000), Operator::MTN, ShortcodeString("*123#".to_string())))
-    .serialize_param_list()
-    .unwrap()
 }
 
 struct TestFormSplitter;
@@ -2819,19 +2813,11 @@ async fn test_process_messages(
   process: &RunnableProcess<impl FinalizedProcess<Messages = Messages>>,
   messages: Vec<&str>,
 ) {
-  let mut state =
-    SessionState { session_context: session_init_value(), form_context: None, visited_form_steps: Vec::new() };
-  let mut index = 0;
-  while index < messages.len() {
-    let user_input = messages[index];
-    index += 1;
-    let result = in_memory_process_runner(process, &mut state, user_input).await;
-    let expected_message = messages[index];
-    index += 1;
-    match result {
-      Ok(msg) | Err(msg) => {
-        assert_eq!(msg, expected_message);
-      },
-    }
-  }
+  unit::test_process_messages(process, session_init_value(), messages).await;
+}
+
+fn session_init_value() -> SessionContext {
+  hlist!(EntryParam(Msisdn(2_340_000_000_000), Operator::MTN, ShortcodeString("*123#".to_string())))
+    .serialize_param_list()
+    .unwrap()
 }
