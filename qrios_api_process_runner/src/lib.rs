@@ -2,8 +2,7 @@ mod session_store;
 
 use crate::session_store::{
   GetSessionContextQuery, build_get_session_context_query, create_session_context, create_session_context_table,
-  delete_session_context, get_session_step_context, pop_session_step_context_for_back_navigation,
-  update_session_step_context_for_back_navigation, update_session_step_context_for_next_interaction_with_same_form,
+  delete_session_context, get_session_context, increment_failed_input_validation_attempts, update_session_context,
 };
 use async_trait::async_trait;
 use qrios_api_axum_server::apis::ErrorHandler;
@@ -101,34 +100,31 @@ impl<Process: FinalizedProcess<Messages = Messages, EntryConsumes = EntryConsume
       UssdActionResult::ReturnFromRedirectResult(_) => todo!(),
     };
     let session_id = uuid::Uuid::parse_str(&body.session_id).map_err(|_| ())?;
-    let visited_form_step: i32 = body.context_data.parse().map_err(|_| ())?;
-    let (form_context, session_context, has_back) =
-      get_session_step_context(&self.pool, &self.get_session_context_query, session_id, visited_form_step)
-        .await
-        .map_err(|_| ())?;
-    let previous_run_yielded_at = PreviousRunYieldedAt(visited_form_step);
+    let (form_context, mut visited_form_steps, active_session_context_from_db) =
+      get_session_context(&self.pool, &self.get_session_context_query, session_id).await.map_err(|_| ())?;
 
-    let mut run_result = {
-      let back_token = has_back.then(create_back_token);
-      self
-        .process
-        .resume_run(session_context, previous_run_yielded_at, user_input.clone(), form_context, back_token)
-        .await
-    };
+    let (previous_step, active_session_context) =
+      visited_form_steps.last().cloned().unwrap_or((StepIndex::MIN, active_session_context_from_db));
+    let previous_run_yielded_at = PreviousRunYieldedAt(previous_step);
+    let back_token = (visited_form_steps.len() > 1).then(create_back_token);
 
-    let mut is_back = false;
+    let mut run_result = self
+      .process
+      .resume_run(active_session_context, previous_run_yielded_at, user_input.clone(), form_context, back_token)
+      .await;
+
+    let mut was_backed = false;
     if let Ok(RunOutcome::Back) = run_result {
-      is_back = true;
-      let (_target_form_context, target_step, target_session_context, has_back_target) =
-        pop_session_step_context_for_back_navigation(&self.pool, &self.process, session_id, visited_form_step)
-          .await
-          .map_err(|_| ())?;
-      let back_token = has_back_target.then(create_back_token);
+      was_backed = true;
+      visited_form_steps.pop();
+      let (target_step_index, target_session_context) =
+        visited_form_steps.last().cloned().expect("Cannot go back further");
+      let back_token = (visited_form_steps.len() > 1).then(create_back_token);
       run_result = self
         .process
         .resume_run(
           target_session_context,
-          PreviousRunYieldedAt(target_step),
+          PreviousRunYieldedAt(target_step_index),
           String::new(),
           None::<FormContext>,
           back_token,
@@ -136,66 +132,53 @@ impl<Process: FinalizedProcess<Messages = Messages, EntryConsumes = EntryConsume
         .await;
     }
 
-    let (ussd_view, yielded_step) = match run_result {
+    match run_result {
       Ok(RunOutcome::Yield(message, session_context, current_run_yielded_at, form_context)) => {
-        let yielded_step = current_run_yielded_at.0;
-        if is_back {
-          update_session_step_context_for_back_navigation(
-            &self.pool,
-            &self.process,
-            session_id,
-            yielded_step,
-            Some(form_context),
-            session_context,
-          )
-          .await
-          .map_err(|_| ())?;
+        if was_backed {
+          if let Some(last) = visited_form_steps.last_mut() {
+            *last = (current_run_yielded_at.0, session_context.clone());
+          }
         } else {
-          create_session_context(
-            &self.pool,
-            &self.process,
-            session_id,
-            current_run_yielded_at,
-            true,
-            Some(form_context),
-            session_context,
-          )
-          .await
-          .map_err(|_| ())?;
+          visited_form_steps.push((current_run_yielded_at.0, session_context.clone()));
         }
-        (UssdView::InputView(InputView { message: message.0, r_type: "InputView".into() }), yielded_step)
-      },
-      Ok(RunOutcome::RetryUserInput(message, form_context)) => {
-        update_session_step_context_for_next_interaction_with_same_form(
+        update_session_context(
           &self.pool,
           &self.process,
           session_id,
-          visited_form_step,
-          form_context,
+          Some(form_context),
+          &visited_form_steps,
+          &session_context,
         )
         .await
         .map_err(|_| ())?;
-        (UssdView::InputView(InputView { message: message.0, r_type: "InputView".into() }), visited_form_step)
+        Ok(UssdView::InputView(InputView { message: message.0, r_type: "InputView".into() }))
+      },
+      Ok(RunOutcome::RetryUserInput(message, form_context)) => {
+        increment_failed_input_validation_attempts(&self.pool, &self.process, session_id, form_context)
+          .await
+          .map_err(|_| ())?;
+        Ok(UssdView::InputView(InputView { message: message.0, r_type: "InputView".into() }))
       },
       Ok(RunOutcome::Finish(message)) => {
         delete_session_context(&self.pool, &self.process, session_id).await.map_err(|_| ())?;
-        (UssdView::InfoView(InfoView { message: message.0, r_type: "InfoView".into() }), 0)
+        Ok(UssdView::InfoView(InfoView { message: message.0, r_type: "InfoView".into() }))
       },
-      Ok(RunOutcome::Back) => return Err(()),
+      Ok(RunOutcome::Back) => Err(()),
       Err(e) => {
         tracing::error!("Resume session failed: {:?}", e);
         delete_session_context(&self.pool, &self.process, session_id).await.map_err(|_| ())?;
-        return Err(());
+        Err(())
       },
-    };
-
-    Ok(PostUssdsessioneventContinueResponse::Status200_SessionContinuationHasBeenSuccessfullyHandledByTheDeveloper(
-      UssdSessionCommand {
-        action: UssdAction::ShowView(ShowView { r_type: "ShowView".into(), view: ussd_view }),
-        context_data: yielded_step.to_string(),
-        session_tag: None,
-      },
-    ))
+    }
+    .map(|ussd_view| {
+      PostUssdsessioneventContinueResponse::Status200_SessionContinuationHasBeenSuccessfullyHandledByTheDeveloper(
+        UssdSessionCommand {
+          action: UssdAction::ShowView(ShowView { r_type: "ShowView".into(), view: ussd_view }),
+          context_data: session_id.to_string(),
+          session_tag: None,
+        },
+      )
+    })
   }
 
   async fn post_ussdsessionevent_new(
@@ -236,25 +219,24 @@ impl<Process: FinalizedProcess<Messages = Messages, EntryConsumes = EntryConsume
       .await;
     match run_result {
       Ok(RunOutcome::Yield(message, session_context, current_run_yielded_at, form_context)) => {
-        let yielded_step = current_run_yielded_at.0;
+        let visited_form_steps = vec![(current_run_yielded_at.0, session_context.clone())];
         create_session_context(
           &self.pool,
           &self.process,
           session_id,
-          current_run_yielded_at,
-          false,
+          &visited_form_steps,
           Some(form_context),
-          session_context,
+          &session_context,
         )
         .await
         .map_err(|_| ())?;
-        Ok((yielded_step, UssdView::InputView(InputView { message: message.0, r_type: "InputView".into() })))
+        Ok((session_id, UssdView::InputView(InputView { message: message.0, r_type: "InputView".into() })))
       },
       Ok(RunOutcome::RetryUserInput(..)) => {
         unreachable!("We haven't prompted user for input yet")
       },
       Ok(RunOutcome::Finish(message)) => {
-        Ok((0, UssdView::InfoView(InfoView { message: message.0, r_type: "InfoView".into() })))
+        Ok((uuid::Uuid::nil(), UssdView::InfoView(InfoView { message: message.0, r_type: "InfoView".into() })))
       },
       Ok(RunOutcome::Back) => Err(()),
       Err(e) => {
@@ -262,11 +244,11 @@ impl<Process: FinalizedProcess<Messages = Messages, EntryConsumes = EntryConsume
         Err(())
       },
     }
-    .map(|(yielded_step, ussd_view)| {
+    .map(|(session_id, ussd_view)| {
       PostUssdsessioneventNewResponse::Status200_SessionStartHasBeenSuccessfullyHandledByTheDeveloper(
         UssdSessionCommand {
           action: UssdAction::ShowView(ShowView { r_type: "ShowView".into(), view: ussd_view }),
-          context_data: yielded_step.to_string(),
+          context_data: session_id.to_string(),
           session_tag: None,
         },
       )
@@ -572,6 +554,328 @@ mod tests {
       },
       _ => panic!("Expected InfoView (Finish), got {:?}", resp.action),
     }
+
+    server.abort();
+  }
+
+  #[allow(clippy::too_many_lines)]
+  #[allow(clippy::unused_async_trait_impl)]
+  #[tokio::test]
+  async fn test_back_into_branch_after_implicit_merge_purge_postgres() {
+    use crate::QriosUssdApiService;
+    use qrios_api_reqwest_client::Client;
+    use std::sync::Arc;
+    use tokio::net::TcpListener;
+    #[allow(dead_code)]
+    #[derive(serde::Deserialize, serde::Serialize)]
+    struct EntryParam(pub u64);
+    #[derive(serde::Deserialize, serde::Serialize)]
+    struct CaseOptionParam(pub u8);
+    #[derive(serde::Deserialize, serde::Serialize)]
+    struct Branch1Param(pub u64);
+    #[derive(serde::Deserialize, serde::Serialize)]
+    struct SharedParam(pub u64);
+
+    type_process_builder::impl_param_value! {
+      EntryParam => typenum::U0,
+      CaseOptionParam => typenum::U1,
+      Branch1Param => typenum::U2,
+      SharedParam => typenum::U3,
+    }
+
+    struct ChooseCaseForm;
+    impl Form for ChooseCaseForm {
+      type CreateFormConsumes = HNil;
+      type ValidateInputConsumes = HNil;
+      type Produces = HList![CaseOptionParam];
+      type Context = ();
+      type Messages = Messages;
+
+      async fn create_form(
+        &self,
+        _consumes: <Self::CreateFormConsumes as ToRef<'_>>::Ref,
+        _back_token: Option<BackToken>,
+      ) -> anyhow::Result<FormWithContext<Message, ()>> {
+        Ok(FormWithContext(Message("Choose a case".into()), ()))
+      }
+
+      async fn handle_input(
+        &self,
+        _consumes: <Self::ValidateInputConsumes as ToRef<'_>>::Ref,
+        input: String,
+        _context: (),
+        _back_token: Option<BackToken>,
+      ) -> anyhow::Result<InputValidation<Self::Produces, Messages, ()>> {
+        let option = input.parse::<u8>().unwrap_or(1);
+        Ok(InputValidation::Successful(hlist!(CaseOptionParam(option))))
+      }
+    }
+
+    pub struct Case1;
+    pub struct Case2;
+
+    struct SelectCase;
+    impl Splitter for SelectCase {
+      type Consumes = HList![CaseOptionParam];
+      type Produces = Coprod![(Case1, HNil), (Case2, HNil)];
+
+      async fn handle(&self, consumes: <Self::Consumes as ToRef<'_>>::Ref) -> anyhow::Result<Self::Produces> {
+        Ok(match consumes.head.0 {
+          1 => Self::Produces::inject((Case1, HNil)),
+          _ => Self::Produces::inject((Case2, HNil)),
+        })
+      }
+    }
+
+    struct ProduceBranch1Data;
+    impl Operation for ProduceBranch1Data {
+      type Consumes = HNil;
+      type Produces = HList![Branch1Param, SharedParam];
+      type FinalMessage = Message;
+
+      async fn handle(
+        &self,
+        _consumes: <Self::Consumes as ToRef<'_>>::Ref,
+      ) -> anyhow::Result<OperationOutcome<Self::Produces, Self::FinalMessage>> {
+        Ok(OperationOutcome::Successful(hlist!(Branch1Param(0x1111), SharedParam(0x9999))))
+      }
+    }
+
+    struct ProduceBranch2Data;
+    impl Operation for ProduceBranch2Data {
+      type Consumes = HNil;
+      type Produces = HList![SharedParam];
+      type FinalMessage = Message;
+
+      async fn handle(
+        &self,
+        _consumes: <Self::Consumes as ToRef<'_>>::Ref,
+      ) -> anyhow::Result<OperationOutcome<Self::Produces, Self::FinalMessage>> {
+        Ok(OperationOutcome::Successful(hlist!(SharedParam(0x9999))))
+      }
+    }
+
+    struct Branch1Form;
+    impl Form for Branch1Form {
+      type CreateFormConsumes = HList![Branch1Param];
+      type ValidateInputConsumes = HNil;
+      type Produces = HNil;
+      type Context = ();
+      type Messages = Messages;
+
+      async fn create_form(
+        &self,
+        consumes: <Self::CreateFormConsumes as ToRef<'_>>::Ref,
+        _back_token: Option<BackToken>,
+      ) -> anyhow::Result<FormWithContext<Message, ()>> {
+        Ok(FormWithContext(Message(format!("Branch 1: {:#X}", consumes.head.0)), ()))
+      }
+
+      async fn handle_input(
+        &self,
+        _consumes: <Self::ValidateInputConsumes as ToRef<'_>>::Ref,
+        input: String,
+        _context: (),
+        back_token: Option<BackToken>,
+      ) -> anyhow::Result<InputValidation<HNil, Messages, ()>> {
+        if input == "0"
+          && let Some(t) = back_token
+        {
+          Ok(InputValidation::Back(t))
+        } else {
+          Ok(InputValidation::Successful(HNil))
+        }
+      }
+    }
+
+    struct PostMergeForm;
+    impl Form for PostMergeForm {
+      type CreateFormConsumes = HList![SharedParam];
+      type ValidateInputConsumes = HNil;
+      type Produces = HNil;
+      type Context = ();
+      type Messages = Messages;
+
+      async fn create_form(
+        &self,
+        consumes: <Self::CreateFormConsumes as ToRef<'_>>::Ref,
+        _back_token: Option<BackToken>,
+      ) -> anyhow::Result<FormWithContext<Message, ()>> {
+        Ok(FormWithContext(Message(format!("Post merge: {:#X}", consumes.head.0)), ()))
+      }
+
+      async fn handle_input(
+        &self,
+        _consumes: <Self::ValidateInputConsumes as ToRef<'_>>::Ref,
+        input: String,
+        _context: (),
+        back_token: Option<BackToken>,
+      ) -> anyhow::Result<InputValidation<HNil, Messages, ()>> {
+        if input == "0"
+          && let Some(t) = back_token
+        {
+          Ok(InputValidation::Back(t))
+        } else {
+          Ok(InputValidation::Successful(HNil))
+        }
+      }
+    }
+
+    struct FinalStep;
+    impl Final for FinalStep {
+      type Consumes = HNil;
+      type FinalMessage = Message;
+
+      async fn handle(&self, _consumes: Self::Consumes) -> anyhow::Result<Message> {
+        Ok(Message("Done".into()))
+      }
+    }
+
+    let process = entry::<HList![DialedSessionEntryParam], Messages>()
+      .show(ChooseCaseForm)
+      .split(SelectCase)
+      .case_via(Case1, |x| x.then(ProduceBranch1Data).show(Branch1Form))
+      .case_via(Case2, |x| x.then(ProduceBranch2Data))
+      .show(PostMergeForm)
+      .end(FinalStep)
+      .build("split_back_purge_process", 1);
+
+    let node = {
+      use testcontainers::runners::AsyncRunner;
+      use testcontainers_modules::postgres::Postgres;
+      Postgres::default().start().await.unwrap()
+    };
+    let service = {
+      use sqlx::PgPool;
+      let pool = {
+        let port = node.get_host_port_ipv4(5432).await.unwrap();
+        let connection_string = format!("postgres://postgres:postgres@127.0.0.1:{port}/postgres");
+        PgPool::connect(&connection_string).await.unwrap()
+      };
+      QriosUssdApiService::new(process, pool).await.expect("Failed to create service")
+    };
+    let app = qrios_api_axum_server::server::new(Arc::new(service));
+    let listener = TcpListener::bind("127.0.0.1:0").await.expect("Failed to bind random port");
+    let addr = listener.local_addr().expect("Failed to get server local address");
+    let server = tokio::spawn(async move {
+      axum::serve(listener, app).await.expect("Failed to start server");
+    });
+
+    let client = Client::new(format!("http://{addr}").as_str());
+    let test_session_id = uuid::Uuid::new_v4().to_string();
+
+    // 1. New Session -> Choose Case
+    let resp = client
+      .post_ussdsessionevent_new(
+        None,
+        &qrios_api_reqwest_client::types::UssdSessionEventNewSession {
+          app_id: "test_app".into(),
+          client_id: "test_client".into(),
+          input: qrios_api_reqwest_client::types::UssdSessionEventNewSessionSessionInput::Dial(
+            qrios_api_reqwest_client::types::Dial {
+              type_: qrios_api_reqwest_client::types::DialType::Dial,
+              shortcode_string: "*123#".to_string(),
+            },
+          ),
+          msisdn: "2341234567890".into(),
+          operator: qrios_api_reqwest_client::types::UssdSessionEventNewSessionOperator::Mtn,
+          session_id: test_session_id.clone(),
+        },
+      )
+      .await
+      .expect("Failed to start new session");
+
+    assert!(matches!(
+      &resp.action,
+      qrios_api_reqwest_client::types::UssdAction::ShowView(qrios_api_reqwest_client::types::ShowView {
+        view: qrios_api_reqwest_client::types::UssdView::InputView(qrios_api_reqwest_client::types::InputView { message, .. }),
+        ..
+      }) if message == "Choose a case"
+    ));
+
+    // 2. Select Case 1 -> Branch 1 Form
+    let resp = client
+      .post_ussdsessionevent_continue(
+        None,
+        &qrios_api_reqwest_client::types::ContinueSession {
+          app_id: "test_app".into(),
+          client_id: "test_client".into(),
+          context_data: resp.context_data.clone(),
+          result: qrios_api_reqwest_client::types::UssdActionResult::InputResult(
+            qrios_api_reqwest_client::types::InputResult {
+              type_: qrios_api_reqwest_client::types::InputResultType::InputResult,
+              value: "1".into(),
+            },
+          ),
+          session_id: test_session_id.clone(),
+        },
+      )
+      .await
+      .expect("Failed continue 1");
+
+    assert!(matches!(
+      &resp.action,
+      qrios_api_reqwest_client::types::UssdAction::ShowView(qrios_api_reqwest_client::types::ShowView {
+        view: qrios_api_reqwest_client::types::UssdView::InputView(qrios_api_reqwest_client::types::InputView { message, .. }),
+        ..
+      }) if message == "Branch 1: 0x1111"
+    ));
+
+    // 3. Continue from Branch 1 Form -> Post Merge Form
+    let resp = client
+      .post_ussdsessionevent_continue(
+        None,
+        &qrios_api_reqwest_client::types::ContinueSession {
+          app_id: "test_app".into(),
+          client_id: "test_client".into(),
+          context_data: resp.context_data.clone(),
+          result: qrios_api_reqwest_client::types::UssdActionResult::InputResult(
+            qrios_api_reqwest_client::types::InputResult {
+              type_: qrios_api_reqwest_client::types::InputResultType::InputResult,
+              value: "next".into(),
+            },
+          ),
+          session_id: test_session_id.clone(),
+        },
+      )
+      .await
+      .expect("Failed continue 2");
+
+    assert!(matches!(
+      &resp.action,
+      qrios_api_reqwest_client::types::UssdAction::ShowView(qrios_api_reqwest_client::types::ShowView {
+        view: qrios_api_reqwest_client::types::UssdView::InputView(qrios_api_reqwest_client::types::InputView { message, .. }),
+        ..
+      }) if message == "Post merge: 0x9999"
+    ));
+
+    // 4. Send "0" (Back) at Post Merge Form -> should navigate back to Branch 1 Form with restored session_context!
+    let resp = client
+      .post_ussdsessionevent_continue(
+        None,
+        &qrios_api_reqwest_client::types::ContinueSession {
+          app_id: "test_app".into(),
+          client_id: "test_client".into(),
+          context_data: resp.context_data.clone(),
+          result: qrios_api_reqwest_client::types::UssdActionResult::InputResult(
+            qrios_api_reqwest_client::types::InputResult {
+              type_: qrios_api_reqwest_client::types::InputResultType::InputResult,
+              value: "0".into(),
+            },
+          ),
+          session_id: test_session_id.clone(),
+        },
+      )
+      .await
+      .expect("Failed continue back");
+
+    assert!(matches!(
+      &resp.action,
+      qrios_api_reqwest_client::types::UssdAction::ShowView(qrios_api_reqwest_client::types::ShowView {
+        view: qrios_api_reqwest_client::types::UssdView::InputView(qrios_api_reqwest_client::types::InputView { message, .. }),
+        ..
+      }) if message == "Branch 1: 0x1111"
+    ));
 
     server.abort();
   }
