@@ -21,12 +21,10 @@ pub mod documentation_diagrams {
     FinalizedProcess, FormContext, PreviousRunYieldedAt, RunOutcome, RunnableProcess, SessionContext, StepIndex,
   };
   use crate::step::ProcessMessages;
-  use std::ops::Not;
 
   pub struct SessionState {
-    pub session_context: SessionContext,
     pub form_context: Option<FormContext>,
-    pub visited_form_steps: Vec<StepIndex>,
+    pub visited_form_steps: Vec<(StepIndex, SessionContext)>,
   }
 
   #[allow(clippy::missing_panics_doc)]
@@ -35,12 +33,13 @@ pub mod documentation_diagrams {
     state: &mut SessionState,
     user_input: &str,
   ) -> Result<String, String> {
-    let back_token = if state.visited_form_steps.is_empty() { None } else { Some(create_back_token()) };
-    let previous_run_yielded_at =
-      PreviousRunYieldedAt(state.visited_form_steps.last().copied().unwrap_or(StepIndex::MIN));
+    let back_token = if state.visited_form_steps.len() > 1 { Some(create_back_token()) } else { None };
+    let (previous_step, active_session_context) =
+      state.visited_form_steps.last().cloned().unwrap_or((StepIndex::MIN, SessionContext::default()));
+    let previous_run_yielded_at = PreviousRunYieldedAt(previous_step);
     let mut run_outcome = process
       .resume_run(
-        state.session_context.clone(),
+        active_session_context,
         previous_run_yielded_at,
         user_input.into(),
         state.form_context.clone(),
@@ -53,11 +52,12 @@ pub mod documentation_diagrams {
     if let RunOutcome::Back = run_outcome {
       was_backed = true;
       state.visited_form_steps.pop();
-      let target_step_index = *state.visited_form_steps.last().expect("Cannot go back further");
+      let (target_step_index, target_session_context) =
+        state.visited_form_steps.last().cloned().expect("Cannot go back further");
       let back_token = if state.visited_form_steps.len() > 1 { Some(create_back_token()) } else { None };
       run_outcome = process
         .resume_run(
-          state.session_context.clone(),
+          target_session_context,
           PreviousRunYieldedAt(target_step_index),
           String::new(),
           None::<FormContext>,
@@ -68,10 +68,13 @@ pub mod documentation_diagrams {
     }
     match run_outcome {
       RunOutcome::Yield(msg, value, yielded_at, context) => {
-        state.session_context = value;
         state.form_context = Some(context);
-        if was_backed.not() {
-          state.visited_form_steps.push(yielded_at.0);
+        if was_backed {
+          if let Some(last) = state.visited_form_steps.last_mut() {
+            *last = (yielded_at.0, value);
+          }
+        } else {
+          state.visited_form_steps.push((yielded_at.0, value));
         }
         Ok(msg)
       },

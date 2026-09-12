@@ -2,7 +2,8 @@ mod session_store;
 
 use crate::session_store::{
   GetSessionContextQuery, build_get_session_context_query, create_session_context, create_session_context_table,
-  delete_session_context, get_session_context, increment_failed_input_validation_attempts, update_session_context,
+  delete_session_context, get_session_step_context, pop_session_step_context_for_back_navigation,
+  update_session_step_context_for_back_navigation, update_session_step_context_for_next_interaction_with_same_form,
 };
 use async_trait::async_trait;
 use qrios_api_axum_server::apis::ErrorHandler;
@@ -18,7 +19,6 @@ use qrios_api_axum_server::models::{
 };
 use qrios_api_process_entry::{DialedSessionEntryParam, Msisdn, Operator, ShortcodeString};
 use sqlx::PgPool;
-use std::ops::Not;
 use type_process_builder::back_navigation::create_back_token;
 use type_process_builder::builder::{
   FinalizedProcess, FormContext, ParamList, PreviousRunYieldedAt, RunOutcome, RunnableProcess, StepIndex,
@@ -60,7 +60,6 @@ impl<Process: FinalizedProcess<Messages = Messages, EntryConsumes = EntryConsume
 impl<Process: FinalizedProcess<Messages = Messages, EntryConsumes = EntryConsumes> + Sync>
   qrios_api_axum_server::apis::developers_app_endpoints::DevelopersAppEndpoints for QriosUssdApiService<Process>
 {
-  /// I guess we could delete by [`AbortSession`] `session_id`
   async fn post_ussdsessionevent_abort(
     &self,
     method: &http::method::Method,
@@ -69,6 +68,8 @@ impl<Process: FinalizedProcess<Messages = Messages, EntryConsumes = EntryConsume
     header_params: &PostUssdsessioneventAbortHeaderParams,
     body: &AbortSession,
   ) -> Result<PostUssdsessioneventAbortResponse, ()> {
+    let session_id = uuid::Uuid::parse_str(&body.session_id).map_err(|_| ())?;
+    delete_session_context(&self.pool, &self.process, session_id).await.map_err(|_| ())?;
     Ok(PostUssdsessioneventAbortResponse::Status200_TheAbortingOfTheSessionHasBeenSuccessfullyHandledByTheDeveloper)
   }
 
@@ -80,7 +81,7 @@ impl<Process: FinalizedProcess<Messages = Messages, EntryConsumes = EntryConsume
     header_params: &PostUssdsessioneventCloseHeaderParams,
     body: &CloseSession,
   ) -> Result<PostUssdsessioneventCloseResponse, ()> {
-    let session_id = uuid::Uuid::parse_str(&body.context_data).map_err(|_| ())?;
+    let session_id = uuid::Uuid::parse_str(&body.session_id).map_err(|_| ())?;
     delete_session_context(&self.pool, &self.process, session_id).await.map_err(|_| ())?;
     Ok(PostUssdsessioneventCloseResponse::Status200_SessionEndHasBeenSuccessfullyHandledByTheDeveloper)
   }
@@ -93,36 +94,41 @@ impl<Process: FinalizedProcess<Messages = Messages, EntryConsumes = EntryConsume
     header_params: &PostUssdsessioneventContinueHeaderParams,
     body: &ContinueSession,
   ) -> Result<PostUssdsessioneventContinueResponse, ()> {
-    let user_input = match body.result.clone() {
+    let user_input = match body.result {
       UssdActionResult::EmbeddedProcessResult(_) => todo!(),
-      UssdActionResult::InputResult(input_result) => input_result.value,
+      UssdActionResult::InputResult(ref input_result) => &input_result.value,
       UssdActionResult::MerchantPaymentResult(_) => todo!(),
       UssdActionResult::ReturnFromRedirectResult(_) => todo!(),
     };
-    let session_id = uuid::Uuid::parse_str(&body.context_data).map_err(|_| ())?;
-    let (form_context, mut visited_form_steps, session_context) =
-      get_session_context(&self.pool, &self.get_session_context_query, session_id).await.map_err(|_| ())?;
-    let previous_run_yielded_at = PreviousRunYieldedAt(*visited_form_steps.last().ok_or(())?);
+    let session_id = uuid::Uuid::parse_str(&body.session_id).map_err(|_| ())?;
+    let visited_form_step: i32 = body.context_data.parse().map_err(|_| ())?;
+    let (form_context, session_context, has_back) =
+      get_session_step_context(&self.pool, &self.get_session_context_query, session_id, visited_form_step)
+        .await
+        .map_err(|_| ())?;
+    let previous_run_yielded_at = PreviousRunYieldedAt(visited_form_step);
 
     let mut run_result = {
-      let back_token = visited_form_steps.is_empty().not().then(create_back_token);
+      let back_token = has_back.then(create_back_token);
       self
         .process
-        .resume_run(session_context.clone(), previous_run_yielded_at, user_input, form_context, back_token)
+        .resume_run(session_context, previous_run_yielded_at, user_input.clone(), form_context, back_token)
         .await
     };
 
     let mut is_back = false;
     if let Ok(RunOutcome::Back) = run_result {
       is_back = true;
-      visited_form_steps.pop();
-      let target_step_index = *visited_form_steps.last().ok_or(())?;
-      let back_token = if visited_form_steps.len() > 1 { Some(create_back_token()) } else { None };
+      let (_target_form_context, target_step, target_session_context, has_back_target) =
+        pop_session_step_context_for_back_navigation(&self.pool, &self.process, session_id, visited_form_step)
+          .await
+          .map_err(|_| ())?;
+      let back_token = has_back_target.then(create_back_token);
       run_result = self
         .process
         .resume_run(
-          session_context.clone(),
-          PreviousRunYieldedAt(target_step_index),
+          target_session_context,
+          PreviousRunYieldedAt(target_step),
           String::new(),
           None::<FormContext>,
           back_token,
@@ -130,49 +136,66 @@ impl<Process: FinalizedProcess<Messages = Messages, EntryConsumes = EntryConsume
         .await;
     }
 
-    match run_result {
+    let (ussd_view, yielded_step) = match run_result {
       Ok(RunOutcome::Yield(message, session_context, current_run_yielded_at, form_context)) => {
-        if is_back.not() {
-          visited_form_steps.push(current_run_yielded_at.0);
+        let yielded_step = current_run_yielded_at.0;
+        if is_back {
+          update_session_step_context_for_back_navigation(
+            &self.pool,
+            &self.process,
+            session_id,
+            yielded_step,
+            Some(form_context),
+            session_context,
+          )
+          .await
+          .map_err(|_| ())?;
+        } else {
+          create_session_context(
+            &self.pool,
+            &self.process,
+            session_id,
+            current_run_yielded_at,
+            true,
+            Some(form_context),
+            session_context,
+          )
+          .await
+          .map_err(|_| ())?;
         }
-        update_session_context(
+        (UssdView::InputView(InputView { message: message.0, r_type: "InputView".into() }), yielded_step)
+      },
+      Ok(RunOutcome::RetryUserInput(message, form_context)) => {
+        update_session_step_context_for_next_interaction_with_same_form(
           &self.pool,
           &self.process,
           session_id,
-          Some(form_context),
-          visited_form_steps,
-          session_context,
+          visited_form_step,
+          form_context,
         )
         .await
         .map_err(|_| ())?;
-        Ok(UssdView::InputView(InputView { message: message.0, r_type: "InputView".into() }))
-      },
-      Ok(RunOutcome::RetryUserInput(message, form_context)) => {
-        increment_failed_input_validation_attempts(&self.pool, &self.process, session_id, form_context)
-          .await
-          .map_err(|_| ())?;
-        Ok(UssdView::InputView(InputView { message: message.0, r_type: "InputView".into() }))
+        (UssdView::InputView(InputView { message: message.0, r_type: "InputView".into() }), visited_form_step)
       },
       Ok(RunOutcome::Finish(message)) => {
         delete_session_context(&self.pool, &self.process, session_id).await.map_err(|_| ())?;
-        Ok(UssdView::InfoView(InfoView { message: message.0, r_type: "InfoView".into() }))
+        (UssdView::InfoView(InfoView { message: message.0, r_type: "InfoView".into() }), 0)
       },
-      Ok(RunOutcome::Back) => Err(()),
+      Ok(RunOutcome::Back) => return Err(()),
       Err(e) => {
         tracing::error!("Resume session failed: {:?}", e);
         delete_session_context(&self.pool, &self.process, session_id).await.map_err(|_| ())?;
-        Err(())
+        return Err(());
       },
-    }
-    .map(|ussd_view| {
-      PostUssdsessioneventContinueResponse::Status200_SessionContinuationHasBeenSuccessfullyHandledByTheDeveloper(
-        UssdSessionCommand {
-          action: UssdAction::ShowView(ShowView { r_type: "ShowView".into(), view: ussd_view }),
-          context_data: session_id.to_string(),
-          session_tag: None,
-        },
-      )
-    })
+    };
+
+    Ok(PostUssdsessioneventContinueResponse::Status200_SessionContinuationHasBeenSuccessfullyHandledByTheDeveloper(
+      UssdSessionCommand {
+        action: UssdAction::ShowView(ShowView { r_type: "ShowView".into(), view: ussd_view }),
+        context_data: yielded_step.to_string(),
+        session_tag: None,
+      },
+    ))
   }
 
   async fn post_ussdsessionevent_new(
@@ -184,8 +207,8 @@ impl<Process: FinalizedProcess<Messages = Messages, EntryConsumes = EntryConsume
     body: &UssdSessionEventNewSession,
   ) -> Result<PostUssdsessioneventNewResponse, ()> {
     let session_id = uuid::Uuid::parse_str(&body.session_id).unwrap_or_else(|_| uuid::Uuid::new_v4());
-    let shortcode_string = match body.input.clone() {
-      UssdSessionEventNewSessionSessionInput::Dial(x) => x.shortcode_string,
+    let shortcode_string = match body.input {
+      UssdSessionEventNewSessionSessionInput::Dial(ref x) => &x.shortcode_string,
       UssdSessionEventNewSessionSessionInput::Push(_) => todo!(),
       UssdSessionEventNewSessionSessionInput::Redirect(_) => todo!(),
     };
@@ -199,7 +222,7 @@ impl<Process: FinalizedProcess<Messages = Messages, EntryConsumes = EntryConsume
     let entry_consumes: EntryConsumes = hlist!(DialedSessionEntryParam(
       Msisdn::from_string(&body.msisdn).ok_or(())?,
       operator,
-      ShortcodeString(shortcode_string)
+      ShortcodeString(shortcode_string.clone())
     ));
     let run_result = self
       .process
@@ -213,23 +236,25 @@ impl<Process: FinalizedProcess<Messages = Messages, EntryConsumes = EntryConsume
       .await;
     match run_result {
       Ok(RunOutcome::Yield(message, session_context, current_run_yielded_at, form_context)) => {
+        let yielded_step = current_run_yielded_at.0;
         create_session_context(
           &self.pool,
           &self.process,
           session_id,
           current_run_yielded_at,
+          false,
           Some(form_context),
           session_context,
         )
         .await
         .map_err(|_| ())?;
-        Ok((session_id, UssdView::InputView(InputView { message: message.0, r_type: "InputView".into() })))
+        Ok((yielded_step, UssdView::InputView(InputView { message: message.0, r_type: "InputView".into() })))
       },
       Ok(RunOutcome::RetryUserInput(..)) => {
         unreachable!("We haven't prompted user for input yet")
       },
       Ok(RunOutcome::Finish(message)) => {
-        Ok((uuid::Uuid::nil(), UssdView::InfoView(InfoView { message: message.0, r_type: "InfoView".into() })))
+        Ok((0, UssdView::InfoView(InfoView { message: message.0, r_type: "InfoView".into() })))
       },
       Ok(RunOutcome::Back) => Err(()),
       Err(e) => {
@@ -237,11 +262,11 @@ impl<Process: FinalizedProcess<Messages = Messages, EntryConsumes = EntryConsume
         Err(())
       },
     }
-    .map(|(session_id, ussd_view)| {
+    .map(|(yielded_step, ussd_view)| {
       PostUssdsessioneventNewResponse::Status200_SessionStartHasBeenSuccessfullyHandledByTheDeveloper(
         UssdSessionCommand {
           action: UssdAction::ShowView(ShowView { r_type: "ShowView".into(), view: ussd_view }),
-          context_data: session_id.to_string(),
+          context_data: yielded_step.to_string(),
           session_tag: None,
         },
       )
@@ -417,6 +442,7 @@ mod tests {
     });
 
     let client = Client::new(format!("http://{addr}").as_str());
+    let test_session_id = uuid::Uuid::new_v4().to_string();
 
     let resp = client
       .post_ussdsessionevent_new(
@@ -432,7 +458,7 @@ mod tests {
           ),
           msisdn: "2341234567890".into(),
           operator: qrios_api_reqwest_client::types::UssdSessionEventNewSessionOperator::Mtn,
-          session_id: "test_session_1".into(),
+          session_id: test_session_id.clone(),
         },
       )
       .await
@@ -464,7 +490,7 @@ mod tests {
               value: "some input".into(),
             },
           ),
-          session_id: "test_session_1".into(),
+          session_id: test_session_id.clone(),
         },
       )
       .await
@@ -496,7 +522,7 @@ mod tests {
               value: "some input 2".into(),
             },
           ),
-          session_id: "test_session_1".into(),
+          session_id: test_session_id.clone(),
         },
       )
       .await
@@ -528,7 +554,7 @@ mod tests {
               value: "final input".into(),
             },
           ),
-          session_id: "test_session_1".into(),
+          session_id: test_session_id.clone(),
         },
       )
       .await

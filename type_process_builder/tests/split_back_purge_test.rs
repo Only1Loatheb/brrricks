@@ -182,7 +182,6 @@ impl Final for FinalStep {
 }
 
 #[tokio::test]
-#[should_panic(expected = "Hit the end of buffer")]
 async fn test_back_into_branch_after_implicit_merge_purge() {
   let process = entry::<HList![EntryParam], Messages>()
     .show(ChooseCaseForm)
@@ -203,7 +202,7 @@ async fn test_back_into_branch_after_implicit_merge_purge() {
       "Branch 1: 0x1111",
       "next",
       "Post merge: 0x9999",
-      "0", // Back at PostMergeForm -> attempts to navigate back to Branch1Form, panics with "Hit the end of buffer"
+      "0", // Back at PostMergeForm -> navigates back to Branch1Form with restored branch session_context
       "Branch 1: 0x1111",
     ],
   )

@@ -1,4 +1,4 @@
-use type_process_builder::builder::{FinalizedProcess, RunnableProcess, SessionContext};
+use type_process_builder::builder::{FinalizedProcess, RunnableProcess, SessionContext, StepIndex};
 use type_process_builder::documentation_diagrams::{SessionState, in_memory_process_runner};
 use type_process_builder::step::ProcessMessages;
 
@@ -8,7 +8,7 @@ pub async fn test_process_messages<Messages: ProcessMessages<FinalMessage = Stri
   messages: Vec<&str>,
 ) {
   let mut state =
-    SessionState { session_context: initial_session_context, form_context: None, visited_form_steps: Vec::new() };
+    SessionState { form_context: None, visited_form_steps: vec![(StepIndex::MIN, initial_session_context)] };
   let mut index = 0;
   while index < messages.len() {
     let user_input = messages[index];
