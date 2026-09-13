@@ -575,4 +575,326 @@ mod tests {
 
     server.abort();
   }
+
+  #[allow(clippy::too_many_lines)]
+  #[allow(clippy::unused_async_trait_impl)]
+  #[tokio::test]
+  async fn test_back_into_branch_after_implicit_merge_purge_postgres() {
+    use crate::QriosUssdApiService;
+    use qrios_api_reqwest_client::Client;
+    use std::sync::Arc;
+    use tokio::net::TcpListener;
+    #[allow(dead_code)]
+    #[derive(serde::Deserialize, serde::Serialize)]
+    struct EntryParam(pub u64);
+    #[derive(serde::Deserialize, serde::Serialize)]
+    struct CaseOptionParam(pub u8);
+    #[derive(serde::Deserialize, serde::Serialize)]
+    struct Branch1Param(pub u64);
+    #[derive(serde::Deserialize, serde::Serialize)]
+    struct SharedParam(pub u64);
+
+    type_process_builder::impl_param_value! {
+      EntryParam => typenum::U0,
+      CaseOptionParam => typenum::U1,
+      Branch1Param => typenum::U2,
+      SharedParam => typenum::U3,
+    }
+
+    struct ChooseCaseForm;
+    impl Form for ChooseCaseForm {
+      type CreateFormConsumes = HNil;
+      type ValidateInputConsumes = HNil;
+      type Produces = HList![CaseOptionParam];
+      type Context = ();
+      type Messages = Messages;
+
+      async fn create_form(
+        &self,
+        _consumes: <Self::CreateFormConsumes as ToRef<'_>>::Ref,
+        _back_token: Option<BackToken>,
+      ) -> anyhow::Result<FormWithContext<Message, ()>> {
+        Ok(FormWithContext(Message("Choose a case".into()), ()))
+      }
+
+      async fn handle_input(
+        &self,
+        _consumes: <Self::ValidateInputConsumes as ToRef<'_>>::Ref,
+        input: String,
+        _context: (),
+        _back_token: Option<BackToken>,
+      ) -> anyhow::Result<InputValidation<Self::Produces, Messages, ()>> {
+        let option = input.parse::<u8>().unwrap_or(1);
+        Ok(InputValidation::Successful(hlist!(CaseOptionParam(option))))
+      }
+    }
+
+    pub struct Case1;
+    pub struct Case2;
+
+    struct SelectCase;
+    impl Splitter for SelectCase {
+      type Consumes = HList![CaseOptionParam];
+      type Produces = Coprod![(Case1, HNil), (Case2, HNil)];
+
+      async fn handle(&self, consumes: <Self::Consumes as ToRef<'_>>::Ref) -> anyhow::Result<Self::Produces> {
+        Ok(match consumes.head.0 {
+          1 => Self::Produces::inject((Case1, HNil)),
+          _ => Self::Produces::inject((Case2, HNil)),
+        })
+      }
+    }
+
+    struct ProduceBranch1Data;
+    impl Operation for ProduceBranch1Data {
+      type Consumes = HNil;
+      type Produces = HList![Branch1Param, SharedParam];
+      type FinalMessage = Message;
+
+      async fn handle(
+        &self,
+        _consumes: <Self::Consumes as ToRef<'_>>::Ref,
+      ) -> anyhow::Result<OperationOutcome<Self::Produces, Self::FinalMessage>> {
+        Ok(OperationOutcome::Successful(hlist!(Branch1Param(0x1111), SharedParam(0x9999))))
+      }
+    }
+
+    struct ProduceBranch2Data;
+    impl Operation for ProduceBranch2Data {
+      type Consumes = HNil;
+      type Produces = HList![SharedParam];
+      type FinalMessage = Message;
+
+      async fn handle(
+        &self,
+        _consumes: <Self::Consumes as ToRef<'_>>::Ref,
+      ) -> anyhow::Result<OperationOutcome<Self::Produces, Self::FinalMessage>> {
+        Ok(OperationOutcome::Successful(hlist!(SharedParam(0x9999))))
+      }
+    }
+
+    struct Branch1Form;
+    impl Form for Branch1Form {
+      type CreateFormConsumes = HList![Branch1Param];
+      type ValidateInputConsumes = HNil;
+      type Produces = HNil;
+      type Context = ();
+      type Messages = Messages;
+
+      async fn create_form(
+        &self,
+        consumes: <Self::CreateFormConsumes as ToRef<'_>>::Ref,
+        _back_token: Option<BackToken>,
+      ) -> anyhow::Result<FormWithContext<Message, ()>> {
+        Ok(FormWithContext(Message(format!("Branch 1: {:#X}", consumes.head.0)), ()))
+      }
+
+      async fn handle_input(
+        &self,
+        _consumes: <Self::ValidateInputConsumes as ToRef<'_>>::Ref,
+        input: String,
+        _context: (),
+        back_token: Option<BackToken>,
+      ) -> anyhow::Result<InputValidation<HNil, Messages, ()>> {
+        if input == "0"
+          && let Some(t) = back_token
+        {
+          Ok(InputValidation::Back(t))
+        } else {
+          Ok(InputValidation::Successful(HNil))
+        }
+      }
+    }
+
+    struct PostMergeForm;
+    impl Form for PostMergeForm {
+      type CreateFormConsumes = HList![SharedParam];
+      type ValidateInputConsumes = HNil;
+      type Produces = HNil;
+      type Context = ();
+      type Messages = Messages;
+
+      async fn create_form(
+        &self,
+        consumes: <Self::CreateFormConsumes as ToRef<'_>>::Ref,
+        _back_token: Option<BackToken>,
+      ) -> anyhow::Result<FormWithContext<Message, ()>> {
+        Ok(FormWithContext(Message(format!("Post merge: {:#X}", consumes.head.0)), ()))
+      }
+
+      async fn handle_input(
+        &self,
+        _consumes: <Self::ValidateInputConsumes as ToRef<'_>>::Ref,
+        input: String,
+        _context: (),
+        back_token: Option<BackToken>,
+      ) -> anyhow::Result<InputValidation<HNil, Messages, ()>> {
+        if input == "0"
+          && let Some(t) = back_token
+        {
+          Ok(InputValidation::Back(t))
+        } else {
+          Ok(InputValidation::Successful(HNil))
+        }
+      }
+    }
+
+    struct FinalStep;
+    impl Final for FinalStep {
+      type Consumes = HNil;
+      type FinalMessage = Message;
+
+      async fn handle(&self, _consumes: Self::Consumes) -> anyhow::Result<Message> {
+        Ok(Message("Done".into()))
+      }
+    }
+
+    let process = entry::<HList![DialedSessionEntryParam], Messages>()
+      .show(ChooseCaseForm)
+      .split(SelectCase)
+      .case_via(Case1, |x| x.then(ProduceBranch1Data).show(Branch1Form))
+      .case_via(Case2, |x| x.then(ProduceBranch2Data))
+      .show(PostMergeForm)
+      .end(FinalStep)
+      .build("split_back_purge_process", 1);
+
+    let node = {
+      use testcontainers::runners::AsyncRunner;
+      use testcontainers_modules::postgres::Postgres;
+      Postgres::default().start().await.unwrap()
+    };
+    let service = {
+      use sqlx::PgPool;
+      let pool = {
+        let port = node.get_host_port_ipv4(5432).await.unwrap();
+        let connection_string = format!("postgres://postgres:postgres@127.0.0.1:{port}/postgres");
+        PgPool::connect(&connection_string).await.unwrap()
+      };
+      QriosUssdApiService::new(process, pool).await.expect("Failed to create service")
+    };
+    let app = qrios_api_axum_server::server::new(Arc::new(service));
+    let listener = TcpListener::bind("127.0.0.1:0").await.expect("Failed to bind random port");
+    let addr = listener.local_addr().expect("Failed to get server local address");
+    let server = tokio::spawn(async move {
+      axum::serve(listener, app).await.expect("Failed to start server");
+    });
+
+    let client = Client::new(format!("http://{addr}").as_str());
+    let test_session_id = uuid::Uuid::new_v4().to_string();
+
+    // 1. New Session -> Choose Case
+    let resp = client
+      .post_ussdsessionevent_new(
+        None,
+        &qrios_api_reqwest_client::types::UssdSessionEventNewSession {
+          app_id: "test_app".into(),
+          client_id: "test_client".into(),
+          input: qrios_api_reqwest_client::types::UssdSessionEventNewSessionSessionInput::Dial(
+            qrios_api_reqwest_client::types::Dial {
+              type_: qrios_api_reqwest_client::types::DialType::Dial,
+              shortcode_string: "*123#".to_string(),
+            },
+          ),
+          msisdn: "2341234567890".into(),
+          operator: qrios_api_reqwest_client::types::UssdSessionEventNewSessionOperator::Mtn,
+          session_id: test_session_id.clone(),
+        },
+      )
+      .await
+      .expect("Failed to start new session");
+
+    assert!(matches!(
+      &resp.action,
+      qrios_api_reqwest_client::types::UssdAction::ShowView(qrios_api_reqwest_client::types::ShowView {
+        view: qrios_api_reqwest_client::types::UssdView::InputView(qrios_api_reqwest_client::types::InputView { message, .. }),
+        ..
+      }) if message == "Choose a case"
+    ));
+
+    // 2. Select Case 1 -> Branch 1 Form
+    let resp = client
+      .post_ussdsessionevent_continue(
+        None,
+        &qrios_api_reqwest_client::types::ContinueSession {
+          app_id: "test_app".into(),
+          client_id: "test_client".into(),
+          context_data: resp.context_data.clone(),
+          result: qrios_api_reqwest_client::types::UssdActionResult::InputResult(
+            qrios_api_reqwest_client::types::InputResult {
+              type_: qrios_api_reqwest_client::types::InputResultType::InputResult,
+              value: "1".into(),
+            },
+          ),
+          session_id: test_session_id.clone(),
+        },
+      )
+      .await
+      .expect("Failed continue 1");
+
+    assert!(matches!(
+      &resp.action,
+      qrios_api_reqwest_client::types::UssdAction::ShowView(qrios_api_reqwest_client::types::ShowView {
+        view: qrios_api_reqwest_client::types::UssdView::InputView(qrios_api_reqwest_client::types::InputView { message, .. }),
+        ..
+      }) if message == "Branch 1: 0x1111"
+    ));
+
+    // 3. Continue from Branch 1 Form -> Post Merge Form
+    let resp = client
+      .post_ussdsessionevent_continue(
+        None,
+        &qrios_api_reqwest_client::types::ContinueSession {
+          app_id: "test_app".into(),
+          client_id: "test_client".into(),
+          context_data: resp.context_data.clone(),
+          result: qrios_api_reqwest_client::types::UssdActionResult::InputResult(
+            qrios_api_reqwest_client::types::InputResult {
+              type_: qrios_api_reqwest_client::types::InputResultType::InputResult,
+              value: "next".into(),
+            },
+          ),
+          session_id: test_session_id.clone(),
+        },
+      )
+      .await
+      .expect("Failed continue 2");
+
+    assert!(matches!(
+      &resp.action,
+      qrios_api_reqwest_client::types::UssdAction::ShowView(qrios_api_reqwest_client::types::ShowView {
+        view: qrios_api_reqwest_client::types::UssdView::InputView(qrios_api_reqwest_client::types::InputView { message, .. }),
+        ..
+      }) if message == "Post merge: 0x9999"
+    ));
+
+    // 4. Send "0" (Back) at Post Merge Form -> should navigate back to Branch 1 Form with restored session_context!
+    let resp = client
+      .post_ussdsessionevent_continue(
+        None,
+        &qrios_api_reqwest_client::types::ContinueSession {
+          app_id: "test_app".into(),
+          client_id: "test_client".into(),
+          context_data: resp.context_data.clone(),
+          result: qrios_api_reqwest_client::types::UssdActionResult::InputResult(
+            qrios_api_reqwest_client::types::InputResult {
+              type_: qrios_api_reqwest_client::types::InputResultType::InputResult,
+              value: "0".into(),
+            },
+          ),
+          session_id: test_session_id.clone(),
+        },
+      )
+      .await
+      .expect("Failed continue back");
+
+    assert!(matches!(
+      &resp.action,
+      qrios_api_reqwest_client::types::UssdAction::ShowView(qrios_api_reqwest_client::types::ShowView {
+        view: qrios_api_reqwest_client::types::UssdView::InputView(qrios_api_reqwest_client::types::InputView { message, .. }),
+        ..
+      }) if message == "Branch 1: 0x1111"
+    ));
+
+    server.abort();
+  }
 }
