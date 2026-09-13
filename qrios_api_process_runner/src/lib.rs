@@ -1,9 +1,10 @@
 mod session_store;
 
 use crate::session_store::{
-  GetSessionContextQuery, build_get_session_context_query, create_session_context, create_session_context_table,
-  delete_session_context, get_session_step_context, pop_session_step_context_for_back_navigation,
-  update_session_step_context_for_back_navigation, update_session_step_context_for_next_interaction_with_same_form,
+  create_session_context_batch, create_session_context_table, delete_session_context_batch,
+  get_session_step_context_batch, pop_session_step_context_for_back_navigation,
+  update_session_step_context_for_back_navigation_batch,
+  update_session_step_context_for_next_interaction_with_same_form_batch,
 };
 use async_trait::async_trait;
 use qrios_api_axum_server::apis::ErrorHandler;
@@ -19,12 +20,17 @@ use qrios_api_axum_server::models::{
 };
 use qrios_api_process_entry::{DialedSessionEntryParam, Msisdn, Operator, ShortcodeString};
 use sqlx::PgPool;
+use std::collections::HashMap;
+use std::sync::Arc;
+use tokio::sync::{mpsc, oneshot};
 use type_process_builder::back_navigation::create_back_token;
 use type_process_builder::builder::{
-  FinalizedProcess, FormContext, ParamList, PreviousRunYieldedAt, RunOutcome, RunnableProcess, StepIndex,
+  CurrentRunYieldedAt, FinalizedProcess, FormContext, MaybeFormContext, ParamList, PreviousRunYieldedAt, RunOutcome,
+  RunnableProcess, SessionContext, StepIndex,
 };
 use type_process_builder::step::{BackToken, ProcessMessages};
 use type_process_builder::{HList, hlist};
+use uuid::Uuid;
 
 pub struct Message(pub String);
 
@@ -36,28 +42,371 @@ impl ProcessMessages for Messages {
 
 type EntryConsumes = HList!(DialedSessionEntryParam);
 
-pub struct QriosUssdApiService<Process: FinalizedProcess<Messages = Messages, EntryConsumes = EntryConsumes>> {
-  process: RunnableProcess<Process>,
-  pool: PgPool,
-  get_session_context_query: GetSessionContextQuery,
+pub enum SessionBatchCommand {
+  Create {
+    id: Uuid,
+    visited_form_step: i32,
+    has_back: bool,
+    form_context: MaybeFormContext,
+    session_context: SessionContext,
+    tx: oneshot::Sender<Result<(), sqlx::Error>>,
+  },
+  Get {
+    id: Uuid,
+    visited_form_step: i32,
+    tx: oneshot::Sender<Result<(MaybeFormContext, SessionContext, bool), sqlx::Error>>,
+  },
+  Delete {
+    id: Uuid,
+    tx: oneshot::Sender<Result<u64, sqlx::Error>>,
+  },
+  UpdateNextInteraction {
+    id: Uuid,
+    visited_form_step: i32,
+    form_context: Vec<u8>,
+    tx: oneshot::Sender<Result<(), sqlx::Error>>,
+  },
+  UpdateBackNavigation {
+    id: Uuid,
+    visited_form_step: i32,
+    form_context: MaybeFormContext,
+    session_context: SessionContext,
+    tx: oneshot::Sender<Result<(), sqlx::Error>>,
+  },
 }
 
-impl<Process: FinalizedProcess<Messages = Messages, EntryConsumes = EntryConsumes>> QriosUssdApiService<Process> {
-  pub async fn new(process: RunnableProcess<Process>, pool: PgPool) -> Result<Self, sqlx::Error> {
-    create_session_context_table(&pool, &process).await?;
-    let get_session_context_query = build_get_session_context_query(&process);
-    Ok(QriosUssdApiService { process, pool, get_session_context_query })
+fn spawn_session_batch_worker<Process: FinalizedProcess + 'static>(
+  pool: PgPool,
+  process: Arc<RunnableProcess<Process>>,
+  mut rx: mpsc::Receiver<SessionBatchCommand>,
+) {
+  tokio::spawn(async move {
+    let max_batch_size = 64;
+    let batch_timeout = std::time::Duration::from_millis(5);
+
+    loop {
+      let Some(first_cmd) = rx.recv().await else { break };
+
+      let mut commands = Vec::with_capacity(max_batch_size);
+      commands.push(first_cmd);
+
+      let deadline = tokio::time::sleep(batch_timeout);
+      tokio::pin!(deadline);
+
+      while commands.len() < max_batch_size {
+        tokio::select! {
+          cmd = rx.recv() => {
+            match cmd {
+              Some(c) => commands.push(c),
+              None => break,
+            }
+          }
+          () = &mut deadline => {
+            break;
+          }
+        }
+      }
+
+      process_session_command_batch(&pool, &process, commands).await;
+    }
+  });
+}
+
+#[allow(clippy::too_many_lines, clippy::manual_let_else)]
+async fn process_session_command_batch<Process: FinalizedProcess>(
+  pool: &PgPool,
+  process: &RunnableProcess<Process>,
+  commands: Vec<SessionBatchCommand>,
+) {
+  let mut creates = Vec::new();
+  let mut gets = Vec::new();
+  let mut deletes = Vec::new();
+  let mut update_nexts = Vec::new();
+  let mut update_backs = Vec::new();
+
+  for cmd in commands {
+    match cmd {
+      SessionBatchCommand::Create { id, visited_form_step, has_back, form_context, session_context, tx } => {
+        creates.push((id, visited_form_step, has_back, form_context, session_context, tx));
+      },
+      SessionBatchCommand::Get { id, visited_form_step, tx } => {
+        gets.push((id, visited_form_step, tx));
+      },
+      SessionBatchCommand::Delete { id, tx } => {
+        deletes.push((id, tx));
+      },
+      SessionBatchCommand::UpdateNextInteraction { id, visited_form_step, form_context, tx } => {
+        update_nexts.push((id, visited_form_step, form_context, tx));
+      },
+      SessionBatchCommand::UpdateBackNavigation { id, visited_form_step, form_context, session_context, tx } => {
+        update_backs.push((id, visited_form_step, form_context, session_context, tx));
+      },
+    }
+  }
+
+  if !creates.is_empty() {
+    let mut ids = Vec::with_capacity(creates.len());
+    let mut steps = Vec::with_capacity(creates.len());
+    let mut backs = Vec::with_capacity(creates.len());
+    let mut form_contexts = Vec::with_capacity(creates.len());
+    let mut session_contexts = Vec::with_capacity(creates.len());
+    let mut txs = Vec::with_capacity(creates.len());
+
+    for (id, step, back, form_ctx, session_ctx, tx) in creates {
+      ids.push(id);
+      steps.push(step);
+      backs.push(back);
+      form_contexts.push(form_ctx);
+      session_contexts.push(session_ctx);
+      txs.push(tx);
+    }
+
+    let res =
+      create_session_context_batch(pool, process, &ids, &steps, &backs, &form_contexts, &session_contexts).await;
+    match res {
+      Ok(()) => {
+        for tx in txs {
+          let _ = tx.send(Ok(()));
+        }
+      },
+      Err(_) => {
+        for tx in txs {
+          let _ = tx.send(Err(sqlx::Error::PoolClosed));
+        }
+      },
+    }
+  }
+
+  if !gets.is_empty() {
+    let mut ids = Vec::with_capacity(gets.len());
+    let mut steps = Vec::with_capacity(gets.len());
+    let mut tx_map = HashMap::new();
+
+    for (id, step, tx) in gets {
+      ids.push(id);
+      steps.push(step);
+      tx_map.insert((id, step), tx);
+    }
+
+    let res = get_session_step_context_batch(pool, process, &ids, &steps).await;
+    match res {
+      Ok(results) => {
+        for (id, step, form_ctx, session_ctx, has_back) in results {
+          if let Some(tx) = tx_map.remove(&(id, step)) {
+            let _ = tx.send(Ok((form_ctx, session_ctx, has_back)));
+          }
+        }
+        for (_key, tx) in tx_map {
+          let _ = tx.send(Err(sqlx::Error::RowNotFound));
+        }
+      },
+      Err(_) => {
+        for (_key, tx) in tx_map {
+          let _ = tx.send(Err(sqlx::Error::PoolClosed));
+        }
+      },
+    }
+  }
+
+  if !deletes.is_empty() {
+    let mut ids = Vec::with_capacity(deletes.len());
+    let mut txs = Vec::with_capacity(deletes.len());
+
+    for (id, tx) in deletes {
+      ids.push(id);
+      txs.push(tx);
+    }
+
+    let res = delete_session_context_batch(pool, process, &ids).await;
+    match res {
+      Ok(affected) => {
+        for tx in txs {
+          let _ = tx.send(Ok(affected));
+        }
+      },
+      Err(_) => {
+        for tx in txs {
+          let _ = tx.send(Err(sqlx::Error::PoolClosed));
+        }
+      },
+    }
+  }
+
+  if !update_nexts.is_empty() {
+    let mut ids = Vec::with_capacity(update_nexts.len());
+    let mut steps = Vec::with_capacity(update_nexts.len());
+    let mut form_contexts = Vec::with_capacity(update_nexts.len());
+    let mut txs = Vec::with_capacity(update_nexts.len());
+
+    for (id, step, form_ctx, tx) in update_nexts {
+      ids.push(id);
+      steps.push(step);
+      form_contexts.push(form_ctx);
+      txs.push(tx);
+    }
+
+    let res = update_session_step_context_for_next_interaction_with_same_form_batch(
+      pool,
+      process,
+      &ids,
+      &steps,
+      &form_contexts,
+    )
+    .await;
+    match res {
+      Ok(()) => {
+        for tx in txs {
+          let _ = tx.send(Ok(()));
+        }
+      },
+      Err(_) => {
+        for tx in txs {
+          let _ = tx.send(Err(sqlx::Error::PoolClosed));
+        }
+      },
+    }
+  }
+
+  if !update_backs.is_empty() {
+    let mut ids = Vec::with_capacity(update_backs.len());
+    let mut steps = Vec::with_capacity(update_backs.len());
+    let mut form_contexts = Vec::with_capacity(update_backs.len());
+    let mut session_contexts = Vec::with_capacity(update_backs.len());
+    let mut txs = Vec::with_capacity(update_backs.len());
+
+    for (id, step, form_ctx, session_ctx, tx) in update_backs {
+      ids.push(id);
+      steps.push(step);
+      form_contexts.push(form_ctx);
+      session_contexts.push(session_ctx);
+      txs.push(tx);
+    }
+
+    let res = update_session_step_context_for_back_navigation_batch(
+      pool,
+      process,
+      &ids,
+      &steps,
+      &form_contexts,
+      &session_contexts,
+    )
+    .await;
+    match res {
+      Ok(()) => {
+        for tx in txs {
+          let _ = tx.send(Ok(()));
+        }
+      },
+      Err(_) => {
+        for tx in txs {
+          let _ = tx.send(Err(sqlx::Error::PoolClosed));
+        }
+      },
+    }
   }
 }
 
-impl<Process: FinalizedProcess<Messages = Messages, EntryConsumes = EntryConsumes>> ErrorHandler<()>
+pub struct QriosUssdApiService<Process: FinalizedProcess<Messages = Messages, EntryConsumes = EntryConsumes>> {
+  process: Arc<RunnableProcess<Process>>,
+  pool: PgPool,
+  batch_tx: mpsc::Sender<SessionBatchCommand>,
+}
+
+impl<Process: FinalizedProcess<Messages = Messages, EntryConsumes = EntryConsumes> + 'static>
+  QriosUssdApiService<Process>
+{
+  pub async fn new(process: RunnableProcess<Process>, pool: PgPool) -> Result<Self, sqlx::Error> {
+    create_session_context_table(&pool, &process).await?;
+    let process = Arc::new(process);
+    let (batch_tx, batch_rx) = mpsc::channel::<SessionBatchCommand>(1024);
+    spawn_session_batch_worker(pool.clone(), process.clone(), batch_rx);
+    Ok(QriosUssdApiService { process, pool, batch_tx })
+  }
+
+  async fn db_create_session_context(
+    &self,
+    id: Uuid,
+    current_run_yielded_at: CurrentRunYieldedAt,
+    has_back: bool,
+    form_context: MaybeFormContext,
+    session_context: SessionContext,
+  ) -> Result<(), sqlx::Error> {
+    let (tx, rx) = oneshot::channel();
+    self
+      .batch_tx
+      .send(SessionBatchCommand::Create {
+        id,
+        visited_form_step: current_run_yielded_at.0,
+        has_back,
+        form_context,
+        session_context,
+        tx,
+      })
+      .await
+      .map_err(|_| sqlx::Error::PoolClosed)?;
+    rx.await.map_err(|_| sqlx::Error::PoolClosed)?
+  }
+
+  async fn db_get_session_step_context(
+    &self,
+    session_id: Uuid,
+    visited_form_step: i32,
+  ) -> Result<(MaybeFormContext, SessionContext, bool), sqlx::Error> {
+    let (tx, rx) = oneshot::channel();
+    self
+      .batch_tx
+      .send(SessionBatchCommand::Get { id: session_id, visited_form_step, tx })
+      .await
+      .map_err(|_| sqlx::Error::PoolClosed)?;
+    rx.await.map_err(|_| sqlx::Error::PoolClosed)?
+  }
+
+  async fn db_delete_session_context(&self, id: Uuid) -> Result<u64, sqlx::Error> {
+    let (tx, rx) = oneshot::channel();
+    self.batch_tx.send(SessionBatchCommand::Delete { id, tx }).await.map_err(|_| sqlx::Error::PoolClosed)?;
+    rx.await.map_err(|_| sqlx::Error::PoolClosed)?
+  }
+
+  async fn db_update_session_step_context_for_next_interaction_with_same_form(
+    &self,
+    id: Uuid,
+    visited_form_step: i32,
+    form_context: Vec<u8>,
+  ) -> Result<(), sqlx::Error> {
+    let (tx, rx) = oneshot::channel();
+    self
+      .batch_tx
+      .send(SessionBatchCommand::UpdateNextInteraction { id, visited_form_step, form_context, tx })
+      .await
+      .map_err(|_| sqlx::Error::PoolClosed)?;
+    rx.await.map_err(|_| sqlx::Error::PoolClosed)?
+  }
+
+  async fn db_update_session_step_context_for_back_navigation(
+    &self,
+    id: Uuid,
+    visited_form_step: i32,
+    form_context: MaybeFormContext,
+    session_context: SessionContext,
+  ) -> Result<(), sqlx::Error> {
+    let (tx, rx) = oneshot::channel();
+    self
+      .batch_tx
+      .send(SessionBatchCommand::UpdateBackNavigation { id, visited_form_step, form_context, session_context, tx })
+      .await
+      .map_err(|_| sqlx::Error::PoolClosed)?;
+    rx.await.map_err(|_| sqlx::Error::PoolClosed)?
+  }
+}
+
+impl<Process: FinalizedProcess<Messages = Messages, EntryConsumes = EntryConsumes> + 'static> ErrorHandler<()>
   for QriosUssdApiService<Process>
 {
 }
 
 #[allow(unused_variables)]
 #[async_trait]
-impl<Process: FinalizedProcess<Messages = Messages, EntryConsumes = EntryConsumes> + Sync>
+impl<Process: FinalizedProcess<Messages = Messages, EntryConsumes = EntryConsumes> + Sync + 'static>
   qrios_api_axum_server::apis::developers_app_endpoints::DevelopersAppEndpoints for QriosUssdApiService<Process>
 {
   async fn post_ussdsessionevent_abort(
@@ -69,7 +418,7 @@ impl<Process: FinalizedProcess<Messages = Messages, EntryConsumes = EntryConsume
     body: &AbortSession,
   ) -> Result<PostUssdsessioneventAbortResponse, ()> {
     let session_id = uuid::Uuid::parse_str(&body.session_id).map_err(|_| ())?;
-    delete_session_context(&self.pool, &self.process, session_id).await.map_err(|_| ())?;
+    self.db_delete_session_context(session_id).await.map_err(|_| ())?;
     Ok(PostUssdsessioneventAbortResponse::Status200_TheAbortingOfTheSessionHasBeenSuccessfullyHandledByTheDeveloper)
   }
 
@@ -82,7 +431,7 @@ impl<Process: FinalizedProcess<Messages = Messages, EntryConsumes = EntryConsume
     body: &CloseSession,
   ) -> Result<PostUssdsessioneventCloseResponse, ()> {
     let session_id = uuid::Uuid::parse_str(&body.session_id).map_err(|_| ())?;
-    delete_session_context(&self.pool, &self.process, session_id).await.map_err(|_| ())?;
+    self.db_delete_session_context(session_id).await.map_err(|_| ())?;
     Ok(PostUssdsessioneventCloseResponse::Status200_SessionEndHasBeenSuccessfullyHandledByTheDeveloper)
   }
 
@@ -103,9 +452,7 @@ impl<Process: FinalizedProcess<Messages = Messages, EntryConsumes = EntryConsume
     let session_id = uuid::Uuid::parse_str(&body.session_id).map_err(|_| ())?;
     let visited_form_step: i32 = body.context_data.parse().map_err(|_| ())?;
     let (form_context, session_context, has_back) =
-      get_session_step_context(&self.pool, &self.get_session_context_query, session_id, visited_form_step)
-        .await
-        .map_err(|_| ())?;
+      self.db_get_session_step_context(session_id, visited_form_step).await.map_err(|_| ())?;
     let previous_run_yielded_at = PreviousRunYieldedAt(visited_form_step);
 
     let mut run_result = {
@@ -140,51 +487,42 @@ impl<Process: FinalizedProcess<Messages = Messages, EntryConsumes = EntryConsume
       Ok(RunOutcome::Yield(message, session_context, current_run_yielded_at, form_context)) => {
         let yielded_step = current_run_yielded_at.0;
         if is_back {
-          update_session_step_context_for_back_navigation(
-            &self.pool,
-            &self.process,
-            session_id,
-            yielded_step,
-            Some(form_context),
-            session_context,
-          )
-          .await
-          .map_err(|_| ())?;
+          self
+            .db_update_session_step_context_for_back_navigation(
+              session_id,
+              yielded_step,
+              Some(form_context),
+              session_context,
+            )
+            .await
+            .map_err(|_| ())?;
         } else {
-          create_session_context(
-            &self.pool,
-            &self.process,
-            session_id,
-            current_run_yielded_at,
-            true,
-            Some(form_context),
-            session_context,
-          )
-          .await
-          .map_err(|_| ())?;
+          self
+            .db_create_session_context(session_id, current_run_yielded_at, true, Some(form_context), session_context)
+            .await
+            .map_err(|_| ())?;
         }
         (UssdView::InputView(InputView { message: message.0, r_type: "InputView".into() }), yielded_step)
       },
       Ok(RunOutcome::RetryUserInput(message, form_context)) => {
-        update_session_step_context_for_next_interaction_with_same_form(
-          &self.pool,
-          &self.process,
-          session_id,
-          visited_form_step,
-          form_context,
-        )
-        .await
-        .map_err(|_| ())?;
+        self
+          .db_update_session_step_context_for_next_interaction_with_same_form(
+            session_id,
+            visited_form_step,
+            form_context,
+          )
+          .await
+          .map_err(|_| ())?;
         (UssdView::InputView(InputView { message: message.0, r_type: "InputView".into() }), visited_form_step)
       },
       Ok(RunOutcome::Finish(message)) => {
-        delete_session_context(&self.pool, &self.process, session_id).await.map_err(|_| ())?;
+        self.db_delete_session_context(session_id).await.map_err(|_| ())?;
         (UssdView::InfoView(InfoView { message: message.0, r_type: "InfoView".into() }), 0)
       },
       Ok(RunOutcome::Back) => return Err(()),
       Err(e) => {
         tracing::error!("Resume session failed: {:?}", e);
-        delete_session_context(&self.pool, &self.process, session_id).await.map_err(|_| ())?;
+        self.db_delete_session_context(session_id).await.map_err(|_| ())?;
         return Err(());
       },
     };
@@ -237,17 +575,10 @@ impl<Process: FinalizedProcess<Messages = Messages, EntryConsumes = EntryConsume
     match run_result {
       Ok(RunOutcome::Yield(message, session_context, current_run_yielded_at, form_context)) => {
         let yielded_step = current_run_yielded_at.0;
-        create_session_context(
-          &self.pool,
-          &self.process,
-          session_id,
-          current_run_yielded_at,
-          false,
-          Some(form_context),
-          session_context,
-        )
-        .await
-        .map_err(|_| ())?;
+        self
+          .db_create_session_context(session_id, current_run_yielded_at, false, Some(form_context), session_context)
+          .await
+          .map_err(|_| ())?;
         Ok((yielded_step, UssdView::InputView(InputView { message: message.0, r_type: "InputView".into() })))
       },
       Ok(RunOutcome::RetryUserInput(..)) => {
