@@ -4,27 +4,26 @@ error[E0271]: type mismatch resolving `impl FlowingProcess<EntryConsumes = <Entr
 38 |   let _ = entry::<HList![ProducedParam], Messages>().then(ConsumeMissingParam);
    |                                                      ^^^^ types differ
 
-error[E0277]: the trait bound `for<'a> &'a HCons<ProducedParam, HNil>: BorrowJust<'a, HCons<MissingParam, HNil>, _>` is not satisfied
+error[E0277]: the trait bound `for<'a> HCons<&'a ProducedParam, HNil>: Extract<HCons<&'a MissingParam, HNil>, _>` is not satisfied
   --> tests/dx/missing_param_fails.rs:38:59
    |
 38 |   let _ = entry::<HList![ProducedParam], Messages>().then(ConsumeMissingParam);
-   |                                                      ---- ^^^^^^^^^^^^^^^^^^^ the trait `for<'a> BorrowJust<'a, HCons<MissingParam, HNil>, _>` is not implemented for `&'a HCons<ProducedParam, HNil>`
+   |                                                      ---- ^^^^^^^^^^^^^^^^^^^ the trait `for<'a> Extract<HCons<&'a MissingParam, HNil>, _>` is not implemented for `HCons<&'a ProducedParam, HNil>`
    |                                                      |
    |                                                      required by a bound introduced by this call
    |
-help: the trait `BorrowJust<'a, HCons<MissingParam, HNil>, _>` is not implemented for `&'a HCons<ProducedParam, HNil>`
-      but trait `BorrowJust<'_, HCons<ProducedParam, HNil>, HCons<Here, HNil>>` is implemented for `&HCons<ProducedParam, HNil>`
-  --> src/param_list/borrow_just.rs
+help: the trait `Extract<HCons<&'a MissingParam, HNil>, _>` is not implemented for `HCons<&'a ProducedParam, HNil>`
+      but trait `Extract<HCons<&ProducedParam, HNil>, HCons<Here, HNil>>` is implemented for `HCons<&ProducedParam, HNil>`
+  --> src/param_list/extract.rs
    |
-   | / impl<'a, TargetHead: 'a, TargetTail, SourceHead: 'a, SourceTail: 'a, IndexHead, IndexTail>
-   | |   BorrowJust<'a, HCons<TargetHead, TargetTail>, HCons<IndexHead, IndexTail>> for &'a HCons<SourceHead, SourceTail>
+   | / impl<TargetHead, TargetTail, SourceHead, SourceTail, IndexHead, IndexTail>
+   | |   Extract<HCons<TargetHead, TargetTail>, HCons<IndexHead, IndexTail>> for HCons<SourceHead, SourceTail>
    | | where
-   | |   &'a HCons<SourceHead, SourceTail>: Plucker<&'a TargetHead, IndexHead>,
-   | |   <&'a HCons<SourceHead, SourceTail> as Plucker<&'a TargetHead, IndexHead>>::Remainder:
-   | |     BorrowJust<'a, TargetTail, IndexTail>,
-   | |   TargetTail: ToRef<'a>,
-   | |________________________^
+   | |   HCons<SourceHead, SourceTail>: Plucker<TargetHead, IndexHead>,
+   | |   <HCons<SourceHead, SourceTail> as Plucker<TargetHead, IndexHead>>::Remainder: Extract<TargetTail, IndexTail>,
+   | |_______________________________________________________________________________________________________________^
    = help: for that trait implementation, expected `ProducedParam`, found `MissingParam`
+   = note: required for `&'a HCons<ProducedParam, HNil>` to implement `for<'a> BorrowJust<'a, HCons<MissingParam, HNil>, _>`
 note: required by a bound in `then`
   --> src/builder/flowing_process.rs
    |

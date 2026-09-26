@@ -1,33 +1,16 @@
-use crate::frunk::hlist::{HCons, HNil};
-use crate::frunk::plucker::Plucker;
 use crate::frunk::to_ref::ToRef;
+use crate::param_list::extract::Extract;
 
 pub trait BorrowJust<'a, Target: ToRef<'a>, Indices> {
   fn borrow_just(self) -> <Target as ToRef<'a>>::Ref;
 }
 
-impl<Source> BorrowJust<'_, HNil, HNil> for Source {
-  #[inline(always)]
-  fn borrow_just(self) -> HNil {
-    HNil
-  }
-}
-
-impl<'a, TargetHead: 'a, TargetTail, SourceHead: 'a, SourceTail: 'a, IndexHead, IndexTail>
-  BorrowJust<'a, HCons<TargetHead, TargetTail>, HCons<IndexHead, IndexTail>> for &'a HCons<SourceHead, SourceTail>
+impl<'a, Source: ToRef<'a>, Target: ToRef<'a>, Indices> BorrowJust<'a, Target, Indices> for &'a Source
 where
-  &'a HCons<SourceHead, SourceTail>: Plucker<&'a TargetHead, IndexHead>,
-  <&'a HCons<SourceHead, SourceTail> as Plucker<&'a TargetHead, IndexHead>>::Remainder:
-    BorrowJust<'a, TargetTail, IndexTail>,
-  TargetTail: ToRef<'a>,
+  <Source as ToRef<'a>>::Ref: Extract<<Target as ToRef<'a>>::Ref, Indices>,
 {
   #[inline(always)]
-  fn borrow_just(self) -> HCons<&'a TargetHead, <TargetTail as ToRef<'a>>::Ref> {
-    let (head, remainder): (
-      &'a TargetHead,
-      <&'a HCons<SourceHead, SourceTail> as Plucker<&'a TargetHead, IndexHead>>::Remainder,
-    ) = self.pluck();
-    let tail = remainder.borrow_just();
-    HCons { tail, head }
+  fn borrow_just(self) -> <Target as ToRef<'a>>::Ref {
+    self.to_ref().extract()
   }
 }
