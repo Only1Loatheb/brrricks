@@ -22,8 +22,9 @@ help: the trait `PreventOverwritingParamInProcess<Param>` is implemented for `B0
 note: required by a bound in `then`
   --> src/builder/flowing_process.rs
    |
+   | pub trait FlowingProcess: Sized + Send + Sync {
+...
    |   fn then<
-   |      ---- required by a bound in this associated function
 ...
    |     OperationStep::Produces: ParamList + Concat<Self::Produces> + Concat<Self::EverProduced>,
    |                                          ^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `FlowingProcess::then`
