@@ -15,7 +15,6 @@ pub struct OperationFlowingProcess<
 > {
   pub process_before: ProcessBefore,
   pub last_step: OperationStep,
-  pub step_index: StepIndex,
   pub phantom_data: PhantomData<ProcessBeforeProducesToLastStepConsumesIndices>,
 }
 
@@ -45,23 +44,18 @@ where
     form_context: MaybeFormContext,
     back_token: Option<BackToken>,
   ) -> IntermediateRunResult<Self::Produces, Self::Messages> {
-    if previous_run_yielded_at.0 < self.step_index {
-      let process_before_output = self
-        .process_before
-        .resume_run(previous_run_produced, previous_run_yielded_at, user_input, form_context, back_token)
-        .await?;
-      match process_before_output {
-        IntermediateRunOutcome::Continue(process_before_produces) => {
-          self.continue_run(process_before_produces, back_token).await
-        },
-        IntermediateRunOutcome::Yield(a, b, c, d) => Ok(IntermediateRunOutcome::Yield(a, b, c, d)),
-        IntermediateRunOutcome::Finish(a) => Ok(IntermediateRunOutcome::Finish(a)),
-        IntermediateRunOutcome::RetryUserInput(a, b) => Ok(IntermediateRunOutcome::RetryUserInput(a, b)),
-        IntermediateRunOutcome::Back => Ok(IntermediateRunOutcome::Back),
-      }
-    } else {
-      let process_before_produces = ProcessBefore::Produces::deserialize_param_list(previous_run_produced)?;
-      self.continue_run(process_before_produces, back_token).await
+    let process_before_output = self
+      .process_before
+      .resume_run(previous_run_produced, previous_run_yielded_at, user_input, form_context, back_token)
+      .await?;
+    match process_before_output {
+      IntermediateRunOutcome::Continue(process_before_produces) => {
+        self.continue_run(process_before_produces, back_token).await
+      },
+      IntermediateRunOutcome::Yield(a, b, c, d) => Ok(IntermediateRunOutcome::Yield(a, b, c, d)),
+      IntermediateRunOutcome::Finish(a) => Ok(IntermediateRunOutcome::Finish(a)),
+      IntermediateRunOutcome::RetryUserInput(a, b) => Ok(IntermediateRunOutcome::RetryUserInput(a, b)),
+      IntermediateRunOutcome::Back => Ok(IntermediateRunOutcome::Back),
     }
   }
 
@@ -98,8 +92,6 @@ where
   }
 
   fn enumerate_steps(&mut self, last_used_index: StepIndex) -> StepIndex {
-    let used_index = self.process_before.enumerate_steps(last_used_index);
-    self.step_index = used_index + 1;
-    self.step_index
+    self.process_before.enumerate_steps(last_used_index)
   }
 }

@@ -19,7 +19,6 @@ pub struct SplitProcessSplitter<
 > {
   pub process_before: ProcessBefore,
   pub splitter: SplitterStep,
-  pub step_index: StepIndex,
   pub phantom_data: PhantomData<ProcessBeforeProducesToSplitterStepConsumesIndices>,
 }
 
@@ -64,23 +63,18 @@ where
     Coproduct<Self::SplitterProducesForFirstCase, SplitterProducesForOtherCases>,
     Self::Messages,
   > {
-    if previous_run_yielded_at.0 < self.step_index {
-      let process_before_output = self
-        .process_before
-        .resume_run(previous_run_produced, previous_run_yielded_at, user_input, form_context, back_token)
-        .await?;
-      match process_before_output {
-        IntermediateRunOutcome::Continue(process_before_split_produced) => {
-          self.continue_run(process_before_split_produced, back_token).await
-        },
-        IntermediateRunOutcome::Yield(a, b, c, d) => Ok(IntermediateFinalizedSplitOutcome::Yield(a, b, c, d)),
-        IntermediateRunOutcome::Finish(a) => Ok(IntermediateFinalizedSplitOutcome::Finish(a)),
-        IntermediateRunOutcome::RetryUserInput(a, b) => Ok(IntermediateFinalizedSplitOutcome::RetryUserInput(a, b)),
-        IntermediateRunOutcome::Back => Ok(IntermediateFinalizedSplitOutcome::Back),
-      }
-    } else {
-      let process_before_split_produced = ProcessBefore::Produces::deserialize_param_list(previous_run_produced)?;
-      self.continue_run(process_before_split_produced, back_token).await
+    let process_before_output = self
+      .process_before
+      .resume_run(previous_run_produced, previous_run_yielded_at, user_input, form_context, back_token)
+      .await?;
+    match process_before_output {
+      IntermediateRunOutcome::Continue(process_before_split_produced) => {
+        self.continue_run(process_before_split_produced, back_token).await
+      },
+      IntermediateRunOutcome::Yield(a, b, c, d) => Ok(IntermediateFinalizedSplitOutcome::Yield(a, b, c, d)),
+      IntermediateRunOutcome::Finish(a) => Ok(IntermediateFinalizedSplitOutcome::Finish(a)),
+      IntermediateRunOutcome::RetryUserInput(a, b) => Ok(IntermediateFinalizedSplitOutcome::RetryUserInput(a, b)),
+      IntermediateRunOutcome::Back => Ok(IntermediateFinalizedSplitOutcome::Back),
     }
   }
 
@@ -123,8 +117,6 @@ where
   }
 
   fn enumerate_steps(&mut self, last_used_index: StepIndex) -> StepIndex {
-    let used_index = self.process_before.enumerate_steps(last_used_index);
-    self.step_index = used_index + 1;
-    self.step_index
+    self.process_before.enumerate_steps(last_used_index)
   }
 }

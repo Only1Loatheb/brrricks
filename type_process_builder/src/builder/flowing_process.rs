@@ -69,12 +69,7 @@ pub trait FlowingProcess: Sized + Send + Sync {
     OperationStep::Produces: ParamList + Concat<Self::Produces> + Concat<Self::EverProduced>,
     for<'a> &'a Self::Produces: BorrowJust<'a, OperationStep::Consumes, ProcessBeforeProducesToLastStepConsumesIndices>,
   {
-    OperationFlowingProcess {
-      process_before: self,
-      last_step: step,
-      step_index: WILL_BE_RENUMBERED,
-      phantom_data: Default::default(),
-    }
+    OperationFlowingProcess { process_before: self, last_step: step, phantom_data: Default::default() }
   }
 
   fn show<
@@ -141,7 +136,6 @@ pub trait FlowingProcess: Sized + Send + Sync {
     > {
       process_before: self,
       splitter: step,
-      step_index: WILL_BE_RENUMBERED,
       phantom_data: Default::default(),
     }
   }
