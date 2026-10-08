@@ -7,7 +7,7 @@ edition = "2024"
 workspace = true
 
 [dependencies]
-type_process_builder = { path = "../type_process_builder" }
+type_process_builder = { path = "../type_process_builder", features = ["process-runner-api"] }
 qrios_api_axum_server = { path = "../qrios_api_axum_server", features = ["server"] }
 sqlx = { version = "0.8", features = ["postgres", "uuid"] }
 uuid = { version = "1.10", features = ["v4", "serde"] }

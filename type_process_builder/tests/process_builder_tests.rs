@@ -2809,6 +2809,156 @@ async fn test_flowing_split_subprocess_outcomes_flowing_and_finalized() {
   .await;
 }
 
+struct BackTokenInspectionForm1;
+impl Form for BackTokenInspectionForm1 {
+  type CreateFormConsumes = HNil;
+  type ValidateInputConsumes = HNil;
+  type Produces = HList![Case1Param];
+  type Context = EmptyFormContext;
+  type Messages = Messages;
+
+  async fn create_form(
+    &self,
+    _consumes: <Self::CreateFormConsumes as ToRef<'_>>::Ref,
+    back_token: Option<BackToken>,
+  ) -> anyhow::Result<FormWithContext<String, Self::Context>> {
+    Ok(FormWithContext(format!("Form1 back={}", back_token.is_some()), EmptyFormContext))
+  }
+
+  async fn handle_input(
+    &self,
+    _consumes: <Self::ValidateInputConsumes as ToRef<'_>>::Ref,
+    user_input: String,
+    _form_context: Self::Context,
+    back_token: Option<BackToken>,
+  ) -> anyhow::Result<InputValidation<Self::Produces, Messages, Self::Context>> {
+    if user_input == "0" {
+      if let Some(token) = back_token {
+        return Ok(InputValidation::Back(token));
+      }
+      return Ok(InputValidation::Retry("Form1 cannot go back".into(), EmptyFormContext));
+    }
+    Ok(InputValidation::Successful(hlist!(Case1Param)))
+  }
+}
+
+struct BackTokenInspectionForm2;
+impl Form for BackTokenInspectionForm2 {
+  type CreateFormConsumes = HNil;
+  type ValidateInputConsumes = HNil;
+  type Produces = HList![Case2Param];
+  type Context = EmptyFormContext;
+  type Messages = Messages;
+
+  async fn create_form(
+    &self,
+    _consumes: <Self::CreateFormConsumes as ToRef<'_>>::Ref,
+    back_token: Option<BackToken>,
+  ) -> anyhow::Result<FormWithContext<String, Self::Context>> {
+    Ok(FormWithContext(format!("Form2 back={}", back_token.is_some()), EmptyFormContext))
+  }
+
+  async fn handle_input(
+    &self,
+    _consumes: <Self::ValidateInputConsumes as ToRef<'_>>::Ref,
+    user_input: String,
+    _form_context: Self::Context,
+    back_token: Option<BackToken>,
+  ) -> anyhow::Result<InputValidation<Self::Produces, Messages, Self::Context>> {
+    if user_input == "0"
+      && let Some(token) = back_token
+    {
+      return Ok(InputValidation::Back(token));
+    }
+    Ok(InputValidation::Successful(hlist!(Case2Param)))
+  }
+}
+
+struct BackTokenInspectionForm3;
+impl Form for BackTokenInspectionForm3 {
+  type CreateFormConsumes = HNil;
+  type ValidateInputConsumes = HNil;
+  type Produces = HNil;
+  type Context = EmptyFormContext;
+  type Messages = Messages;
+
+  async fn create_form(
+    &self,
+    _consumes: <Self::CreateFormConsumes as ToRef<'_>>::Ref,
+    back_token: Option<BackToken>,
+  ) -> anyhow::Result<FormWithContext<String, Self::Context>> {
+    Ok(FormWithContext(format!("Form3 back={}", back_token.is_some()), EmptyFormContext))
+  }
+
+  async fn handle_input(
+    &self,
+    _consumes: <Self::ValidateInputConsumes as ToRef<'_>>::Ref,
+    user_input: String,
+    _form_context: Self::Context,
+    back_token: Option<BackToken>,
+  ) -> anyhow::Result<InputValidation<Self::Produces, Messages, Self::Context>> {
+    if user_input == "0"
+      && let Some(token) = back_token
+    {
+      return Ok(InputValidation::Back(token));
+    }
+    Ok(InputValidation::Finish("Done".into()))
+  }
+}
+
+#[tokio::test]
+async fn test_back_token_disabled_at_first_form_step() {
+  let process = ExtractMsisdnOperatorAndShortcodeString
+    .show(BackTokenInspectionForm1)
+    .show(BackTokenInspectionForm2)
+    .show(BackTokenInspectionForm3)
+    .end(FinalNoConsumes)
+    .build("", 0);
+
+  let messages = vec![
+    "*123#",
+    "Form1 back=false",
+    "next",
+    "Form2 back=true",
+    "next",
+    "Form3 back=true",
+    "0",
+    "Form2 back=true",
+    "0",
+    "Form1 back=true",
+    "0",
+    "Form1 back=false",
+    "0",
+    "Form1 cannot go back",
+  ];
+
+  test_process_messages(&process, messages).await;
+}
+
+#[tokio::test]
+async fn test_flowing_split_case1_ending_with_form_resume() {
+  let process = ExtractMsisdnOperatorAndShortcodeString
+    .show(ChooseCaseForm)
+    .split(SplitByThreeCaseOption)
+    .case_via(Case1, |x| x.show(OneInputRetryForm))
+    .case_via(Case2, |x| x.then(ProduceCaseParam2))
+    .case_via(Case3, |x| x.then(ProduceOnlyCase1Param))
+    .end(FinalNoConsumes)
+    .build("", 0);
+
+  let messages = vec![
+    "*123#",
+    "Choose a case",
+    "1",
+    "This will be discarded",
+    "10",
+    "This will be accepted",
+    "20",
+    "Empty good bye",
+  ];
+  test_process_messages(&process, messages).await;
+}
+
 async fn test_process_messages(
   process: &RunnableProcess<impl FinalizedProcess<Messages = Messages>>,
   messages: Vec<&str>,

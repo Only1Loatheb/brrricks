@@ -23,7 +23,6 @@ use sqlx::PgPool;
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::{mpsc, oneshot};
-use type_process_builder::back_navigation::create_back_token;
 use type_process_builder::builder::{
   CurrentRunYieldedAt, FinalizedProcess, FormContext, MaybeFormContext, ParamList, PreviousRunYieldedAt, RunOutcome,
   RunnableProcess, SessionContext, StepIndex,
@@ -456,7 +455,7 @@ impl<Process: FinalizedProcess<Messages = Messages, EntryConsumes = EntryConsume
     let previous_run_yielded_at = PreviousRunYieldedAt(visited_form_step);
 
     let mut run_result = {
-      let back_token = has_back.then(create_back_token);
+      let back_token = has_back.then(BackToken::create);
       self
         .process
         .resume_run(session_context, previous_run_yielded_at, user_input.clone(), form_context, back_token)
@@ -470,7 +469,7 @@ impl<Process: FinalizedProcess<Messages = Messages, EntryConsumes = EntryConsume
         pop_session_step_context_for_back_navigation(&self.pool, &self.process, session_id, visited_form_step)
           .await
           .map_err(|_| ())?;
-      let back_token = has_back_target.then(create_back_token);
+      let back_token = has_back_target.then(BackToken::create);
       run_result = self
         .process
         .resume_run(

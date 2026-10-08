@@ -41,6 +41,16 @@ pub trait Operation: Send + Sync {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct BackToken(pub(crate) ());
 
+impl BackToken {
+  /// Creates a [`BackToken`] that enables `InputValidation::Back` in form steps.
+  /// This method is intended for process runner modules.
+  #[cfg(feature = "process-runner-api")]
+  #[must_use]
+  pub fn create() -> Self {
+    Self(())
+  }
+}
+
 #[derive(Debug, PartialEq, Eq)]
 pub enum InputValidation<Produced, Messages: ProcessMessages, FormContext: Serialize> {
   Successful(Produced),

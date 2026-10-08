@@ -7,7 +7,8 @@ edition = "2024"
 workspace = true
 
 [features]
-docs = ["dep:simple-mermaid"]
+docs = ["dep:simple-mermaid", "process-runner-api"]
+process-runner-api = []
 
 [dependencies]
 serde = "1.0"
@@ -19,5 +20,5 @@ typenum = "1.0"
 [dev-dependencies]
 serde = { version = "1.0", features = ["derive"] }
 tokio = { version = "1.0", features = ["macros", "rt"] }
-type_process_builder = { path = ".", features = ["docs"] }
+type_process_builder = { path = ".", features = ["docs", "process-runner-api"] }
 trybuild = "1.0"

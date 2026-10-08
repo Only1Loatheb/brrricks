@@ -1,0 +1,13 @@
+# cargo-mutants configuration
+# See https://mutants.rs/
+
+exclude_re = [
+    # Non-form steps (splitters, operations, branch headers) never yield,
+    # so `previous_run_yielded_at.0` is strictly never equal to `self.step_index`.
+    "replace < with <= in .*resume_run",
+
+    # Equivalent mutants: Default::default() for unit types produces the exact same value.
+    "replace <impl .* for HNil>::.* with Default::default\\(\\)",
+    "replace <impl Extract<HNil, HNil> for Source>::extract -> HNil with Default::default\\(\\)",
+    "replace <impl FlowingProcess for Entry<.*>>::enumerate_steps .* with Default::default\\(\\)",
+]
