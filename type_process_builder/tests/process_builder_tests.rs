@@ -281,7 +281,7 @@ impl Final for SayGoodByAndConsumeCommonParams {
 struct CommonCaseParam1Form;
 impl Form for CommonCaseParam1Form {
   type CreateFormConsumes = HList![Split1Param];
-  type ValidateInputConsumes = HNil;
+  type ValidateInputConsumes = HList![Split1Param, CommonSplitParam];
   type Produces = HList![CommonCaseParam];
   type Context = EmptyFormContext;
   type Messages = Messages;
@@ -296,11 +296,12 @@ impl Form for CommonCaseParam1Form {
 
   async fn handle_input(
     &self,
-    _consumes: <Self::ValidateInputConsumes as ToRef<'_>>::Ref,
+    consumes: <Self::ValidateInputConsumes as ToRef<'_>>::Ref,
     _user_input: String,
     _form_context: Self::Context,
     _back_token: Option<BackToken>,
   ) -> anyhow::Result<InputValidation<Self::Produces, Messages, Self::Context>> {
+    let (_split1, _common_split): (&Split1Param, &CommonSplitParam) = (consumes.head, consumes.tail.head);
     Ok(InputValidation::Successful(hlist![CommonCaseParam]))
   }
 }

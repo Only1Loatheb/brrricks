@@ -1,5 +1,4 @@
 use crate::frunk::hlist::HCons;
-use crate::frunk::to_ref::ToRef;
 use std::marker::PhantomData;
 
 pub struct Here;
@@ -36,15 +35,5 @@ where
   fn pluck(self) -> (FromTail, Self::Remainder) {
     let (target, tail_remainder) = <Tail as Plucker<FromTail, TailIndex>>::pluck(self.tail);
     (target, HCons { tail: tail_remainder, head: self.head })
-  }
-}
-
-/// Implementation when target is reference and the pluck target is in head
-impl<'a, Head, Tail: ToRef<'a>> Plucker<&'a Head, Here> for &'a HCons<Head, Tail> {
-  type Remainder = <Tail as ToRef<'a>>::Ref;
-
-  #[inline(always)]
-  fn pluck(self) -> (&'a Head, Self::Remainder) {
-    (&self.head, self.tail.to_ref())
   }
 }

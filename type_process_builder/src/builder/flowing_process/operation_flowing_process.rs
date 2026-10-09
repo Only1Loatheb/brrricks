@@ -91,6 +91,7 @@ where
     }
   }
 
+  /// Assigning an index is unnecessary because a process never yields at [`Operation`] step
   fn enumerate_steps(&mut self, last_used_index: StepIndex) -> StepIndex {
     self.process_before.enumerate_steps(last_used_index)
   }
