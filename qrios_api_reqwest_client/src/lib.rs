@@ -293,6 +293,9 @@ The session will continue when this message is sent.*/
     ///      "enum": [
     ///        "ChooserView"
     ///      ]
+    ///    },
+    ///    "voiceSettings": {
+    ///      "$ref": "#/components/schemas/VoiceSettings"
     ///    }
     ///  }
     ///}
@@ -310,6 +313,12 @@ The session will continue when this message is sent.*/
         pub title: ::std::string::String,
         #[serde(rename = "type")]
         pub type_: ChooserViewType,
+        #[serde(
+            rename = "voiceSettings",
+            default,
+            skip_serializing_if = "::std::option::Option::is_none"
+        )]
+        pub voice_settings: ::std::option::Option<VoiceSettings>,
     }
     ///Text, that separates each item's accessKey and label when the ChooserView is rendered
     ///
@@ -1765,6 +1774,9 @@ The session will continue when this message is sent.*/
     ///      "enum": [
     ///        "InputView"
     ///      ]
+    ///    },
+    ///    "voiceSettings": {
+    ///      "$ref": "#/components/schemas/VoiceSettings"
     ///    }
     ///  }
     ///}
@@ -1776,6 +1788,12 @@ The session will continue when this message is sent.*/
         pub message: ::std::string::String,
         #[serde(rename = "type")]
         pub type_: InputViewType,
+        #[serde(
+            rename = "voiceSettings",
+            default,
+            skip_serializing_if = "::std::option::Option::is_none"
+        )]
+        pub voice_settings: ::std::option::Option<VoiceSettings>,
     }
     ///`InputViewType`
     ///
@@ -4728,6 +4746,161 @@ The session will continue when this message is sent.*/
                 })
         }
     }
+    ///Session timeout configuration
+    ///
+    /// <details><summary>JSON schema</summary>
+    ///
+    /// ```json
+    ///{
+    ///  "description": "Session timeout configuration",
+    ///  "type": "object",
+    ///  "required": [
+    ///    "durationMilliseconds",
+    ///    "strategy"
+    ///  ],
+    ///  "properties": {
+    ///    "durationMilliseconds": {
+    ///      "description": "Duration for timeout in milliseconds",
+    ///      "type": "integer",
+    ///      "format": "int64"
+    ///    },
+    ///    "strategy": {
+    ///      "description": "Timeout strategy: HANG_UP (Hang up on timeout) or REPEAT_PROMPT (Repeat prompt on timeout)",
+    ///      "examples": [
+    ///        "HANG_UP"
+    ///      ],
+    ///      "type": "string",
+    ///      "enum": [
+    ///        "HANG_UP",
+    ///        "REPEAT_PROMPT"
+    ///      ]
+    ///    }
+    ///  }
+    ///}
+    /// ```
+    /// </details>
+    #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+    pub struct ViewTimeout {
+        ///Duration for timeout in milliseconds
+        #[serde(rename = "durationMilliseconds")]
+        pub duration_milliseconds: i64,
+        ///Timeout strategy: HANG_UP (Hang up on timeout) or REPEAT_PROMPT (Repeat prompt on timeout)
+        pub strategy: ViewTimeoutStrategy,
+    }
+    ///Timeout strategy: HANG_UP (Hang up on timeout) or REPEAT_PROMPT (Repeat prompt on timeout)
+    ///
+    /// <details><summary>JSON schema</summary>
+    ///
+    /// ```json
+    ///{
+    ///  "description": "Timeout strategy: HANG_UP (Hang up on timeout) or REPEAT_PROMPT (Repeat prompt on timeout)",
+    ///  "examples": [
+    ///    "HANG_UP"
+    ///  ],
+    ///  "type": "string",
+    ///  "enum": [
+    ///    "HANG_UP",
+    ///    "REPEAT_PROMPT"
+    ///  ]
+    ///}
+    /// ```
+    /// </details>
+    #[derive(
+        ::serde::Deserialize,
+        ::serde::Serialize,
+        Clone,
+        Copy,
+        Debug,
+        Eq,
+        Hash,
+        Ord,
+        PartialEq,
+        PartialOrd
+    )]
+    pub enum ViewTimeoutStrategy {
+        #[serde(rename = "HANG_UP")]
+        HangUp,
+        #[serde(rename = "REPEAT_PROMPT")]
+        RepeatPrompt,
+    }
+    impl ::std::fmt::Display for ViewTimeoutStrategy {
+        fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+            match *self {
+                Self::HangUp => f.write_str("HANG_UP"),
+                Self::RepeatPrompt => f.write_str("REPEAT_PROMPT"),
+            }
+        }
+    }
+    impl ::std::str::FromStr for ViewTimeoutStrategy {
+        type Err = self::error::ConversionError;
+        fn from_str(
+            value: &str,
+        ) -> ::std::result::Result<Self, self::error::ConversionError> {
+            match value {
+                "HANG_UP" => Ok(Self::HangUp),
+                "REPEAT_PROMPT" => Ok(Self::RepeatPrompt),
+                _ => Err("invalid value".into()),
+            }
+        }
+    }
+    impl ::std::convert::TryFrom<&str> for ViewTimeoutStrategy {
+        type Error = self::error::ConversionError;
+        fn try_from(
+            value: &str,
+        ) -> ::std::result::Result<Self, self::error::ConversionError> {
+            value.parse()
+        }
+    }
+    impl ::std::convert::TryFrom<&::std::string::String> for ViewTimeoutStrategy {
+        type Error = self::error::ConversionError;
+        fn try_from(
+            value: &::std::string::String,
+        ) -> ::std::result::Result<Self, self::error::ConversionError> {
+            value.parse()
+        }
+    }
+    impl ::std::convert::TryFrom<::std::string::String> for ViewTimeoutStrategy {
+        type Error = self::error::ConversionError;
+        fn try_from(
+            value: ::std::string::String,
+        ) -> ::std::result::Result<Self, self::error::ConversionError> {
+            value.parse()
+        }
+    }
+    ///Voice specific settings
+    ///
+    /// <details><summary>JSON schema</summary>
+    ///
+    /// ```json
+    ///{
+    ///  "description": "Voice specific settings",
+    ///  "type": "object",
+    ///  "required": [
+    ///    "timeout"
+    ///  ],
+    ///  "properties": {
+    ///    "inputConfirmationPrompt": {
+    ///      "description": "Input confirmation prompt. The {input} placeholder is replaced by the actual user input.",
+    ///      "type": "string"
+    ///    },
+    ///    "timeout": {
+    ///      "$ref": "#/components/schemas/ViewTimeout"
+    ///    }
+    ///  }
+    ///}
+    /// ```
+    /// </details>
+    #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+    pub struct VoiceSettings {
+        ///Input confirmation prompt. The {input} placeholder is replaced by the actual user input.
+        #[serde(
+            rename = "inputConfirmationPrompt",
+            default,
+            skip_serializing_if = "::std::option::Option::is_none"
+        )]
+        pub input_confirmation_prompt: ::std::option::Option<::std::string::String>,
+        pub timeout: ViewTimeout,
+    }
     ///Merchant payment process will use a timeout when finalizing.
     ///
     /// <details><summary>JSON schema</summary>
@@ -4947,7 +5120,7 @@ The session will continue when this message is sent.*/
 
 Swagger is modified so that the generated client and server matches the examples. Schemas like 'NewSession.SessionInput.Dial' have their 'NewSession.SessionInput.' prefix removed so that server generates correctly. When server generated from swagger with 'NewSession.SessionInput.' prefix parses a request the field named r_type inside Rust struct NewSessionSessionInputDial will not be filled automatically, because "type" json field is already consumed at the wrapper level.
 
-Version: 1.6.4*/
+Version: 1.7.1*/
 pub struct Client {
     pub(crate) baseurl: String,
     pub(crate) client: reqwest::Client,
@@ -4983,7 +5156,7 @@ impl Client {
 }
 impl ClientInfo<()> for Client {
     fn api_version() -> &'static str {
-        "1.6.4"
+        "1.7.1"
     }
     fn baseurl(&self) -> &str {
         self.baseurl.as_str()

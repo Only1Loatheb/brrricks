@@ -501,7 +501,10 @@ impl<Process: FinalizedProcess<Messages = Messages, EntryConsumes = EntryConsume
             .await
             .map_err(|_| ())?;
         }
-        (UssdView::InputView(InputView { message: message.0, r_type: "InputView".into() }), yielded_step)
+        (
+          UssdView::InputView(InputView { message: message.0, voice_settings: None, r_type: "InputView".into() }),
+          yielded_step,
+        )
       },
       Ok(RunOutcome::RetryUserInput(message, form_context)) => {
         self
@@ -512,7 +515,10 @@ impl<Process: FinalizedProcess<Messages = Messages, EntryConsumes = EntryConsume
           )
           .await
           .map_err(|_| ())?;
-        (UssdView::InputView(InputView { message: message.0, r_type: "InputView".into() }), visited_form_step)
+        (
+          UssdView::InputView(InputView { message: message.0, voice_settings: None, r_type: "InputView".into() }),
+          visited_form_step,
+        )
       },
       Ok(RunOutcome::Finish(message)) => {
         self.db_delete_session_context(session_id).await.map_err(|_| ())?;
@@ -578,7 +584,10 @@ impl<Process: FinalizedProcess<Messages = Messages, EntryConsumes = EntryConsume
           .db_create_session_context(session_id, current_run_yielded_at, false, Some(form_context), session_context)
           .await
           .map_err(|_| ())?;
-        Ok((yielded_step, UssdView::InputView(InputView { message: message.0, r_type: "InputView".into() })))
+        Ok((
+          yielded_step,
+          UssdView::InputView(InputView { message: message.0, voice_settings: None, r_type: "InputView".into() }),
+        ))
       },
       Ok(RunOutcome::RetryUserInput(..)) => {
         unreachable!("We haven't prompted user for input yet")

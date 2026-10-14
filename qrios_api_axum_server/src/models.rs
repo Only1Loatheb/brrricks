@@ -502,6 +502,11 @@ pub struct ChooserView {
     #[serde(skip_serializing_if="Option::is_none")]
     pub separator: Option<String>,
 
+    #[serde(rename = "voiceSettings")]
+          #[validate(nested)]
+    #[serde(skip_serializing_if="Option::is_none")]
+    pub voice_settings: Option<models::VoiceSettings>,
+
     /// Note: inline enums are not fully supported by openapi-generator
     #[serde(default = "ChooserView::_name_for_r_type")]
     #[serde(serialize_with = "ChooserView::_serialize_r_type")]
@@ -532,6 +537,7 @@ impl ChooserView {
  title,
  items: None,
  separator: None,
+ voice_settings: None,
  r_type: Self::_name_for_r_type(),
         }
     }
@@ -557,6 +563,8 @@ impl std::fmt::Display for ChooserView {
                 ].join(",")
             }),
 
+            // Skipping voiceSettings in query parameter serialization
+
 
             Some("type".to_string()),
             Some(self.r_type.to_string()),
@@ -581,6 +589,7 @@ impl std::str::FromStr for ChooserView {
             pub title: Vec<String>,
             pub items: Vec<Vec<models::UssdViewChooserViewItem>>,
             pub separator: Vec<String>,
+            pub voice_settings: Vec<models::VoiceSettings>,
             pub r_type: Vec<String>,
         }
 
@@ -605,6 +614,8 @@ impl std::str::FromStr for ChooserView {
                     #[allow(clippy::redundant_clone)]
                     "separator" => intermediate_rep.separator.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
                     #[allow(clippy::redundant_clone)]
+                    "voiceSettings" => intermediate_rep.voice_settings.push(<models::VoiceSettings as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
+                    #[allow(clippy::redundant_clone)]
                     "type" => intermediate_rep.r_type.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
                     _ => return std::result::Result::Err("Unexpected key while parsing ChooserView".to_string())
                 }
@@ -619,6 +630,7 @@ impl std::str::FromStr for ChooserView {
             title: intermediate_rep.title.into_iter().next().ok_or_else(|| "title missing in ChooserView".to_string())?,
             items: intermediate_rep.items.into_iter().next(),
             separator: intermediate_rep.separator.into_iter().next(),
+            voice_settings: intermediate_rep.voice_settings.into_iter().next(),
             r_type: intermediate_rep.r_type.into_iter().next().ok_or_else(|| "type missing in ChooserView".to_string())?,
         })
     }
@@ -2667,6 +2679,11 @@ pub struct InputView {
           #[validate(custom(function = "check_xss_string"))]
     pub message: String,
 
+    #[serde(rename = "voiceSettings")]
+          #[validate(nested)]
+    #[serde(skip_serializing_if="Option::is_none")]
+    pub voice_settings: Option<models::VoiceSettings>,
+
     /// Note: inline enums are not fully supported by openapi-generator
     #[serde(default = "InputView::_name_for_r_type")]
     #[serde(serialize_with = "InputView::_serialize_r_type")]
@@ -2695,6 +2712,7 @@ impl InputView {
     pub fn new(message: String, ) -> InputView {
         InputView {
  message,
+ voice_settings: None,
  r_type: Self::_name_for_r_type(),
         }
     }
@@ -2709,6 +2727,8 @@ impl std::fmt::Display for InputView {
 
             Some("message".to_string()),
             Some(self.message.to_string()),
+
+            // Skipping voiceSettings in query parameter serialization
 
 
             Some("type".to_string()),
@@ -2732,6 +2752,7 @@ impl std::str::FromStr for InputView {
         #[allow(dead_code)]
         struct IntermediateRep {
             pub message: Vec<String>,
+            pub voice_settings: Vec<models::VoiceSettings>,
             pub r_type: Vec<String>,
         }
 
@@ -2753,6 +2774,8 @@ impl std::str::FromStr for InputView {
                     #[allow(clippy::redundant_clone)]
                     "message" => intermediate_rep.message.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
                     #[allow(clippy::redundant_clone)]
+                    "voiceSettings" => intermediate_rep.voice_settings.push(<models::VoiceSettings as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
+                    #[allow(clippy::redundant_clone)]
                     "type" => intermediate_rep.r_type.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
                     _ => return std::result::Result::Err("Unexpected key while parsing InputView".to_string())
                 }
@@ -2765,6 +2788,7 @@ impl std::str::FromStr for InputView {
         // Use the intermediate representation to return the struct
         std::result::Result::Ok(InputView {
             message: intermediate_rep.message.into_iter().next().ok_or_else(|| "message missing in InputView".to_string())?,
+            voice_settings: intermediate_rep.voice_settings.into_iter().next(),
             r_type: intermediate_rep.r_type.into_iter().next().ok_or_else(|| "type missing in InputView".to_string())?,
         })
     }
@@ -6496,6 +6520,272 @@ impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<UssdViewChoo
                     match <UssdViewChooserViewItem as std::str::FromStr>::from_str(value) {
                         std::result::Result::Ok(value) => std::result::Result::Ok(header::IntoHeaderValue(value)),
                         std::result::Result::Err(err) => std::result::Result::Err(format!(r#"Unable to convert header value '{value}' into UssdViewChooserViewItem - {err}"#))
+                    }
+             },
+             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Unable to convert header: {hdr_value:?} to string: {e}"#))
+        }
+    }
+}
+
+
+
+/// Session timeout configuration
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, validator::Validate)]
+#[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
+pub struct ViewTimeout {
+    /// Duration for timeout in milliseconds
+    #[serde(rename = "durationMilliseconds")]
+    pub duration_milliseconds: i64,
+
+    /// Timeout strategy: HANG_UP (Hang up on timeout) or REPEAT_PROMPT (Repeat prompt on timeout)
+    /// Note: inline enums are not fully supported by openapi-generator
+    #[serde(rename = "strategy")]
+          #[validate(custom(function = "check_xss_string"))]
+    pub strategy: String,
+
+}
+
+
+
+impl ViewTimeout {
+    #[allow(clippy::new_without_default, clippy::too_many_arguments)]
+    pub fn new(duration_milliseconds: i64, strategy: String, ) -> ViewTimeout {
+        ViewTimeout {
+ duration_milliseconds,
+ strategy,
+        }
+    }
+}
+
+/// Converts the ViewTimeout value to the Query Parameters representation (style=form, explode=false)
+/// specified in https://swagger.io/docs/specification/serialization/
+/// Should be implemented in a serde serializer
+impl std::fmt::Display for ViewTimeout {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let params: Vec<Option<String>> = vec![
+
+            Some("durationMilliseconds".to_string()),
+            Some(self.duration_milliseconds.to_string()),
+
+
+            Some("strategy".to_string()),
+            Some(self.strategy.to_string()),
+
+        ];
+
+        write!(f, "{}", params.into_iter().flatten().collect::<Vec<_>>().join(","))
+    }
+}
+
+/// Converts Query Parameters representation (style=form, explode=false) to a ViewTimeout value
+/// as specified in https://swagger.io/docs/specification/serialization/
+/// Should be implemented in a serde deserializer
+impl std::str::FromStr for ViewTimeout {
+    type Err = String;
+
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        /// An intermediate representation of the struct to use for parsing.
+        #[derive(Default)]
+        #[allow(dead_code)]
+        struct IntermediateRep {
+            pub duration_milliseconds: Vec<i64>,
+            pub strategy: Vec<String>,
+        }
+
+        let mut intermediate_rep = IntermediateRep::default();
+
+        // Parse into intermediate representation
+        let mut string_iter = s.split(',');
+        let mut key_result = string_iter.next();
+
+        while key_result.is_some() {
+            let val = match string_iter.next() {
+                Some(x) => x,
+                None => return std::result::Result::Err("Missing value while parsing ViewTimeout".to_string())
+            };
+
+            if let Some(key) = key_result {
+                #[allow(clippy::match_single_binding)]
+                match key {
+                    #[allow(clippy::redundant_clone)]
+                    "durationMilliseconds" => intermediate_rep.duration_milliseconds.push(<i64 as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
+                    #[allow(clippy::redundant_clone)]
+                    "strategy" => intermediate_rep.strategy.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
+                    _ => return std::result::Result::Err("Unexpected key while parsing ViewTimeout".to_string())
+                }
+            }
+
+            // Get the next key
+            key_result = string_iter.next();
+        }
+
+        // Use the intermediate representation to return the struct
+        std::result::Result::Ok(ViewTimeout {
+            duration_milliseconds: intermediate_rep.duration_milliseconds.into_iter().next().ok_or_else(|| "durationMilliseconds missing in ViewTimeout".to_string())?,
+            strategy: intermediate_rep.strategy.into_iter().next().ok_or_else(|| "strategy missing in ViewTimeout".to_string())?,
+        })
+    }
+}
+
+// Methods for converting between header::IntoHeaderValue<ViewTimeout> and HeaderValue
+
+#[cfg(feature = "server")]
+impl std::convert::TryFrom<header::IntoHeaderValue<ViewTimeout>> for HeaderValue {
+    type Error = String;
+
+    fn try_from(hdr_value: header::IntoHeaderValue<ViewTimeout>) -> std::result::Result<Self, Self::Error> {
+        let hdr_value = hdr_value.to_string();
+        match HeaderValue::from_str(&hdr_value) {
+             std::result::Result::Ok(value) => std::result::Result::Ok(value),
+             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Invalid header value for ViewTimeout - value: {hdr_value} is invalid {e}"#))
+        }
+    }
+}
+
+#[cfg(feature = "server")]
+impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<ViewTimeout> {
+    type Error = String;
+
+    fn try_from(hdr_value: HeaderValue) -> std::result::Result<Self, Self::Error> {
+        match hdr_value.to_str() {
+             std::result::Result::Ok(value) => {
+                    match <ViewTimeout as std::str::FromStr>::from_str(value) {
+                        std::result::Result::Ok(value) => std::result::Result::Ok(header::IntoHeaderValue(value)),
+                        std::result::Result::Err(err) => std::result::Result::Err(format!(r#"Unable to convert header value '{value}' into ViewTimeout - {err}"#))
+                    }
+             },
+             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Unable to convert header: {hdr_value:?} to string: {e}"#))
+        }
+    }
+}
+
+
+
+/// Voice specific settings
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, validator::Validate)]
+#[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
+pub struct VoiceSettings {
+    #[serde(rename = "timeout")]
+          #[validate(nested)]
+    pub timeout: models::ViewTimeout,
+
+    /// Input confirmation prompt. The {input} placeholder is replaced by the actual user input.
+    #[serde(rename = "inputConfirmationPrompt")]
+          #[validate(custom(function = "check_xss_string"))]
+    #[serde(skip_serializing_if="Option::is_none")]
+    pub input_confirmation_prompt: Option<String>,
+
+}
+
+
+
+impl VoiceSettings {
+    #[allow(clippy::new_without_default, clippy::too_many_arguments)]
+    pub fn new(timeout: models::ViewTimeout, ) -> VoiceSettings {
+        VoiceSettings {
+ timeout,
+ input_confirmation_prompt: None,
+        }
+    }
+}
+
+/// Converts the VoiceSettings value to the Query Parameters representation (style=form, explode=false)
+/// specified in https://swagger.io/docs/specification/serialization/
+/// Should be implemented in a serde serializer
+impl std::fmt::Display for VoiceSettings {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let params: Vec<Option<String>> = vec![
+            // Skipping timeout in query parameter serialization
+
+
+            self.input_confirmation_prompt.as_ref().map(|input_confirmation_prompt| {
+                [
+                    "inputConfirmationPrompt".to_string(),
+                    input_confirmation_prompt.to_string(),
+                ].join(",")
+            }),
+
+        ];
+
+        write!(f, "{}", params.into_iter().flatten().collect::<Vec<_>>().join(","))
+    }
+}
+
+/// Converts Query Parameters representation (style=form, explode=false) to a VoiceSettings value
+/// as specified in https://swagger.io/docs/specification/serialization/
+/// Should be implemented in a serde deserializer
+impl std::str::FromStr for VoiceSettings {
+    type Err = String;
+
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        /// An intermediate representation of the struct to use for parsing.
+        #[derive(Default)]
+        #[allow(dead_code)]
+        struct IntermediateRep {
+            pub timeout: Vec<models::ViewTimeout>,
+            pub input_confirmation_prompt: Vec<String>,
+        }
+
+        let mut intermediate_rep = IntermediateRep::default();
+
+        // Parse into intermediate representation
+        let mut string_iter = s.split(',');
+        let mut key_result = string_iter.next();
+
+        while key_result.is_some() {
+            let val = match string_iter.next() {
+                Some(x) => x,
+                None => return std::result::Result::Err("Missing value while parsing VoiceSettings".to_string())
+            };
+
+            if let Some(key) = key_result {
+                #[allow(clippy::match_single_binding)]
+                match key {
+                    #[allow(clippy::redundant_clone)]
+                    "timeout" => intermediate_rep.timeout.push(<models::ViewTimeout as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
+                    #[allow(clippy::redundant_clone)]
+                    "inputConfirmationPrompt" => intermediate_rep.input_confirmation_prompt.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
+                    _ => return std::result::Result::Err("Unexpected key while parsing VoiceSettings".to_string())
+                }
+            }
+
+            // Get the next key
+            key_result = string_iter.next();
+        }
+
+        // Use the intermediate representation to return the struct
+        std::result::Result::Ok(VoiceSettings {
+            timeout: intermediate_rep.timeout.into_iter().next().ok_or_else(|| "timeout missing in VoiceSettings".to_string())?,
+            input_confirmation_prompt: intermediate_rep.input_confirmation_prompt.into_iter().next(),
+        })
+    }
+}
+
+// Methods for converting between header::IntoHeaderValue<VoiceSettings> and HeaderValue
+
+#[cfg(feature = "server")]
+impl std::convert::TryFrom<header::IntoHeaderValue<VoiceSettings>> for HeaderValue {
+    type Error = String;
+
+    fn try_from(hdr_value: header::IntoHeaderValue<VoiceSettings>) -> std::result::Result<Self, Self::Error> {
+        let hdr_value = hdr_value.to_string();
+        match HeaderValue::from_str(&hdr_value) {
+             std::result::Result::Ok(value) => std::result::Result::Ok(value),
+             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Invalid header value for VoiceSettings - value: {hdr_value} is invalid {e}"#))
+        }
+    }
+}
+
+#[cfg(feature = "server")]
+impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<VoiceSettings> {
+    type Error = String;
+
+    fn try_from(hdr_value: HeaderValue) -> std::result::Result<Self, Self::Error> {
+        match hdr_value.to_str() {
+             std::result::Result::Ok(value) => {
+                    match <VoiceSettings as std::str::FromStr>::from_str(value) {
+                        std::result::Result::Ok(value) => std::result::Result::Ok(header::IntoHeaderValue(value)),
+                        std::result::Result::Err(err) => std::result::Result::Err(format!(r#"Unable to convert header value '{value}' into VoiceSettings - {err}"#))
                     }
              },
              std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Unable to convert header: {hdr_value:?} to string: {e}"#))

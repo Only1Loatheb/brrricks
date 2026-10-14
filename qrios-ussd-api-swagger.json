@@ -3,7 +3,7 @@
   "info": {
     "description": "Swagger is modified so that the generated client and server matches the examples. Schemas like 'NewSession.SessionInput.Dial' have their 'NewSession.SessionInput.' prefix removed so that server generates correctly. When server generated from swagger with 'NewSession.SessionInput.' prefix parses a request the field named r_type inside Rust struct NewSessionSessionInputDial will not be filled automatically, because \"type\" json field is already consumed at the wrapper level.",
     "title": "QRIOS USSD API documentation",
-    "version": "1.6.4"
+    "version": "1.7.1"
   },
   "servers": [
     {
@@ -268,6 +268,26 @@
                       },
                       "contextData": "devCorrelationId:12345"
                     }
+                  },
+                  "InputViewExampleWithTimeoutAndConfirmationPrompt": {
+                    "summary": "Display text to a user, expect input with custom timeout and confirmation prompt",
+                    "value": {
+                      "action": {
+                        "view": {
+                          "message": "Please provide Your account number:",
+                          "voiceSettings": {
+                            "timeout": {
+                              "durationMilliseconds": 5000,
+                              "strategy": "HANG_UP"
+                            },
+                            "inputConfirmationPrompt": "Please confirm your input of {input}"
+                          },
+                          "type": "InputView"
+                        },
+                        "type": "ShowView"
+                      },
+                      "contextData": "devCorrelationId:12345"
+                    }
                   }
                 }
               }
@@ -520,6 +540,26 @@
                           "type": "EmbeddedProcess"
                         },
                         "type": "RunProcess"
+                      },
+                      "contextData": "devCorrelationId:12345"
+                    }
+                  },
+                  "InputViewExampleWithTimeoutAndConfirmationPrompt": {
+                    "summary": "Display text to a user, expect input with custom timeout and confirmation prompt",
+                    "value": {
+                      "action": {
+                        "view": {
+                          "message": "Please provide Your account number:",
+                          "voiceSettings": {
+                            "timeout": {
+                              "durationMilliseconds": 5000,
+                              "strategy": "HANG_UP"
+                            },
+                            "inputConfirmationPrompt": "Please confirm your input of {input}"
+                          },
+                          "type": "InputView"
+                        },
+                        "type": "ShowView"
                       },
                       "contextData": "devCorrelationId:12345"
                     }
@@ -1786,6 +1826,9 @@
             "type": "string",
             "description": "Text, that separates each item's accessKey and label when the ChooserView is rendered"
           },
+          "voiceSettings": {
+            "$ref": "#/components/schemas/VoiceSettings"
+          },
           "type": {
             "type": "string",
             "example": "ChooserView",
@@ -1848,6 +1891,9 @@
             "type": "string",
             "description": "Message that will be displayed to the user, for example asking the user to input some value"
           },
+          "voiceSettings": {
+            "$ref": "#/components/schemas/VoiceSettings"
+          },
           "type": {
             "type": "string",
             "example": "InputView",
@@ -1857,6 +1903,46 @@
           }
         },
         "description": "A view with text; takes user input. The session will continue when this message is sent."
+      },
+      "ViewTimeout": {
+        "required": [
+          "durationMilliseconds",
+          "strategy"
+        ],
+        "type": "object",
+        "properties": {
+          "durationMilliseconds": {
+            "type": "integer",
+            "description": "Duration for timeout in milliseconds",
+            "format": "int64"
+          },
+          "strategy": {
+            "type": "string",
+            "description": "Timeout strategy: HANG_UP (Hang up on timeout) or REPEAT_PROMPT (Repeat prompt on timeout)",
+            "example": "HANG_UP",
+            "enum": [
+              "HANG_UP",
+              "REPEAT_PROMPT"
+            ]
+          }
+        },
+        "description": "Session timeout configuration"
+      },
+      "VoiceSettings": {
+        "required": [
+          "timeout"
+        ],
+        "type": "object",
+        "properties": {
+          "timeout": {
+            "$ref": "#/components/schemas/ViewTimeout"
+          },
+          "inputConfirmationPrompt": {
+            "type": "string",
+            "description": "Input confirmation prompt. The {input} placeholder is replaced by the actual user input."
+          }
+        },
+        "description": "Voice specific settings"
       }
     }
   }
