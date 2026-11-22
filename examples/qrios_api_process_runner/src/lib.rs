@@ -81,7 +81,7 @@ fn spawn_session_batch_worker<Process: FinalizedProcess + 'static>(
 ) {
   tokio::spawn(async move {
     let max_batch_size = 64;
-    let batch_timeout = std::time::Duration::from_millis(5);
+    let batch_timeout = std::time::Duration::from_millis(1);
 
     loop {
       let Some(first_cmd) = rx.recv().await else { break };
@@ -89,19 +89,30 @@ fn spawn_session_batch_worker<Process: FinalizedProcess + 'static>(
       let mut commands = Vec::with_capacity(max_batch_size);
       commands.push(first_cmd);
 
-      let deadline = tokio::time::sleep(batch_timeout);
-      tokio::pin!(deadline);
-
       while commands.len() < max_batch_size {
-        tokio::select! {
-          cmd = rx.recv() => {
-            match cmd {
-              Some(c) => commands.push(c),
-              None => break,
+        if let Ok(cmd) = rx.try_recv() {
+          commands.push(cmd);
+        } else {
+          break;
+        }
+      }
+
+      if commands.len() < max_batch_size {
+        let deadline = tokio::time::sleep(batch_timeout);
+        tokio::pin!(deadline);
+
+        while commands.len() < max_batch_size {
+          tokio::select! {
+            biased;
+            cmd = rx.recv() => {
+              match cmd {
+                Some(c) => commands.push(c),
+                None => break,
+              }
             }
-          }
-          () = &mut deadline => {
-            break;
+            () = &mut deadline => {
+              break;
+            }
           }
         }
       }
@@ -143,166 +154,178 @@ async fn process_session_command_batch<Process: FinalizedProcess>(
     }
   }
 
-  if !creates.is_empty() {
-    let mut ids = Vec::with_capacity(creates.len());
-    let mut steps = Vec::with_capacity(creates.len());
-    let mut backs = Vec::with_capacity(creates.len());
-    let mut form_contexts = Vec::with_capacity(creates.len());
-    let mut session_contexts = Vec::with_capacity(creates.len());
-    let mut txs = Vec::with_capacity(creates.len());
+  let creates_fut = async {
+    if !creates.is_empty() {
+      let mut ids = Vec::with_capacity(creates.len());
+      let mut steps = Vec::with_capacity(creates.len());
+      let mut backs = Vec::with_capacity(creates.len());
+      let mut form_contexts = Vec::with_capacity(creates.len());
+      let mut session_contexts = Vec::with_capacity(creates.len());
+      let mut txs = Vec::with_capacity(creates.len());
 
-    for (id, step, back, form_ctx, session_ctx, tx) in creates {
-      ids.push(id);
-      steps.push(step);
-      backs.push(back);
-      form_contexts.push(form_ctx);
-      session_contexts.push(session_ctx);
-      txs.push(tx);
-    }
+      for (id, step, back, form_ctx, session_ctx, tx) in creates {
+        ids.push(id);
+        steps.push(step);
+        backs.push(back);
+        form_contexts.push(form_ctx);
+        session_contexts.push(session_ctx);
+        txs.push(tx);
+      }
 
-    let res =
-      create_session_context_batch(pool, process, &ids, &steps, &backs, &form_contexts, &session_contexts).await;
-    match res {
-      Ok(()) => {
-        for tx in txs {
-          let _ = tx.send(Ok(()));
-        }
-      },
-      Err(_) => {
-        for tx in txs {
-          let _ = tx.send(Err(sqlx::Error::PoolClosed));
-        }
-      },
-    }
-  }
-
-  if !gets.is_empty() {
-    let mut ids = Vec::with_capacity(gets.len());
-    let mut steps = Vec::with_capacity(gets.len());
-    let mut tx_map = HashMap::new();
-
-    for (id, step, tx) in gets {
-      ids.push(id);
-      steps.push(step);
-      tx_map.insert((id, step), tx);
-    }
-
-    let res = get_session_step_context_batch(pool, process, &ids, &steps).await;
-    match res {
-      Ok(results) => {
-        for (id, step, form_ctx, session_ctx, has_back) in results {
-          if let Some(tx) = tx_map.remove(&(id, step)) {
-            let _ = tx.send(Ok((form_ctx, session_ctx, has_back)));
+      let res =
+        create_session_context_batch(pool, process, &ids, &steps, &backs, &form_contexts, &session_contexts).await;
+      match res {
+        Ok(()) => {
+          for tx in txs {
+            let _ = tx.send(Ok(()));
           }
-        }
-        for (_key, tx) in tx_map {
-          let _ = tx.send(Err(sqlx::Error::RowNotFound));
-        }
-      },
-      Err(_) => {
-        for (_key, tx) in tx_map {
-          let _ = tx.send(Err(sqlx::Error::PoolClosed));
-        }
-      },
+        },
+        Err(_) => {
+          for tx in txs {
+            let _ = tx.send(Err(sqlx::Error::PoolClosed));
+          }
+        },
+      }
     }
-  }
+  };
 
-  if !deletes.is_empty() {
-    let mut ids = Vec::with_capacity(deletes.len());
-    let mut txs = Vec::with_capacity(deletes.len());
+  let gets_fut = async {
+    if !gets.is_empty() {
+      let mut ids = Vec::with_capacity(gets.len());
+      let mut steps = Vec::with_capacity(gets.len());
+      let mut tx_map = HashMap::with_capacity(gets.len());
 
-    for (id, tx) in deletes {
-      ids.push(id);
-      txs.push(tx);
+      for (id, step, tx) in gets {
+        ids.push(id);
+        steps.push(step);
+        tx_map.insert((id, step), tx);
+      }
+
+      let res = get_session_step_context_batch(pool, process, &ids, &steps).await;
+      match res {
+        Ok(results) => {
+          for (id, step, form_ctx, session_ctx, has_back) in results {
+            if let Some(tx) = tx_map.remove(&(id, step)) {
+              let _ = tx.send(Ok((form_ctx, session_ctx, has_back)));
+            }
+          }
+          for (_key, tx) in tx_map {
+            let _ = tx.send(Err(sqlx::Error::RowNotFound));
+          }
+        },
+        Err(_) => {
+          for (_key, tx) in tx_map {
+            let _ = tx.send(Err(sqlx::Error::PoolClosed));
+          }
+        },
+      }
     }
+  };
 
-    let res = delete_session_context_batch(pool, process, &ids).await;
-    match res {
-      Ok(affected) => {
-        for tx in txs {
-          let _ = tx.send(Ok(affected));
-        }
-      },
-      Err(_) => {
-        for tx in txs {
-          let _ = tx.send(Err(sqlx::Error::PoolClosed));
-        }
-      },
+  let deletes_fut = async {
+    if !deletes.is_empty() {
+      let mut ids = Vec::with_capacity(deletes.len());
+      let mut txs = Vec::with_capacity(deletes.len());
+
+      for (id, tx) in deletes {
+        ids.push(id);
+        txs.push(tx);
+      }
+
+      let res = delete_session_context_batch(pool, process, &ids).await;
+      match res {
+        Ok(affected) => {
+          for tx in txs {
+            let _ = tx.send(Ok(affected));
+          }
+        },
+        Err(_) => {
+          for tx in txs {
+            let _ = tx.send(Err(sqlx::Error::PoolClosed));
+          }
+        },
+      }
     }
-  }
+  };
 
-  if !update_nexts.is_empty() {
-    let mut ids = Vec::with_capacity(update_nexts.len());
-    let mut steps = Vec::with_capacity(update_nexts.len());
-    let mut form_contexts = Vec::with_capacity(update_nexts.len());
-    let mut txs = Vec::with_capacity(update_nexts.len());
+  let update_nexts_fut = async {
+    if !update_nexts.is_empty() {
+      let mut ids = Vec::with_capacity(update_nexts.len());
+      let mut steps = Vec::with_capacity(update_nexts.len());
+      let mut form_contexts = Vec::with_capacity(update_nexts.len());
+      let mut txs = Vec::with_capacity(update_nexts.len());
 
-    for (id, step, form_ctx, tx) in update_nexts {
-      ids.push(id);
-      steps.push(step);
-      form_contexts.push(form_ctx);
-      txs.push(tx);
+      for (id, step, form_ctx, tx) in update_nexts {
+        ids.push(id);
+        steps.push(step);
+        form_contexts.push(form_ctx);
+        txs.push(tx);
+      }
+
+      let res = update_session_step_context_for_next_interaction_with_same_form_batch(
+        pool,
+        process,
+        &ids,
+        &steps,
+        &form_contexts,
+      )
+      .await;
+      match res {
+        Ok(()) => {
+          for tx in txs {
+            let _ = tx.send(Ok(()));
+          }
+        },
+        Err(_) => {
+          for tx in txs {
+            let _ = tx.send(Err(sqlx::Error::PoolClosed));
+          }
+        },
+      }
     }
+  };
 
-    let res = update_session_step_context_for_next_interaction_with_same_form_batch(
-      pool,
-      process,
-      &ids,
-      &steps,
-      &form_contexts,
-    )
-    .await;
-    match res {
-      Ok(()) => {
-        for tx in txs {
-          let _ = tx.send(Ok(()));
-        }
-      },
-      Err(_) => {
-        for tx in txs {
-          let _ = tx.send(Err(sqlx::Error::PoolClosed));
-        }
-      },
+  let update_backs_fut = async {
+    if !update_backs.is_empty() {
+      let mut ids = Vec::with_capacity(update_backs.len());
+      let mut steps = Vec::with_capacity(update_backs.len());
+      let mut form_contexts = Vec::with_capacity(update_backs.len());
+      let mut session_contexts = Vec::with_capacity(update_backs.len());
+      let mut txs = Vec::with_capacity(update_backs.len());
+
+      for (id, step, form_ctx, session_ctx, tx) in update_backs {
+        ids.push(id);
+        steps.push(step);
+        form_contexts.push(form_ctx);
+        session_contexts.push(session_ctx);
+        txs.push(tx);
+      }
+
+      let res = update_session_step_context_for_back_navigation_batch(
+        pool,
+        process,
+        &ids,
+        &steps,
+        &form_contexts,
+        &session_contexts,
+      )
+      .await;
+      match res {
+        Ok(()) => {
+          for tx in txs {
+            let _ = tx.send(Ok(()));
+          }
+        },
+        Err(_) => {
+          for tx in txs {
+            let _ = tx.send(Err(sqlx::Error::PoolClosed));
+          }
+        },
+      }
     }
-  }
+  };
 
-  if !update_backs.is_empty() {
-    let mut ids = Vec::with_capacity(update_backs.len());
-    let mut steps = Vec::with_capacity(update_backs.len());
-    let mut form_contexts = Vec::with_capacity(update_backs.len());
-    let mut session_contexts = Vec::with_capacity(update_backs.len());
-    let mut txs = Vec::with_capacity(update_backs.len());
-
-    for (id, step, form_ctx, session_ctx, tx) in update_backs {
-      ids.push(id);
-      steps.push(step);
-      form_contexts.push(form_ctx);
-      session_contexts.push(session_ctx);
-      txs.push(tx);
-    }
-
-    let res = update_session_step_context_for_back_navigation_batch(
-      pool,
-      process,
-      &ids,
-      &steps,
-      &form_contexts,
-      &session_contexts,
-    )
-    .await;
-    match res {
-      Ok(()) => {
-        for tx in txs {
-          let _ = tx.send(Ok(()));
-        }
-      },
-      Err(_) => {
-        for tx in txs {
-          let _ = tx.send(Err(sqlx::Error::PoolClosed));
-        }
-      },
-    }
-  }
+  tokio::join!(creates_fut, gets_fut, deletes_fut, update_nexts_fut, update_backs_fut);
 }
 
 pub struct QriosUssdApiService<Process: FinalizedProcess<Messages = Messages, EntryConsumes = EntryConsumes>> {
