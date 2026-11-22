@@ -59,7 +59,10 @@ where
   <ThisCase::EverProduced as Union<ProcessBefore::EverProduced>>::Union: ParamList,
 {
   pub fn case_end<
-    NextCase: FinalizedProcess<SubprocessConsumes=<SplitterProducesForNextCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated>,
+    NextCase: FinalizedProcess<
+      SubprocessConsumes=<SplitterProducesForNextCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
+      Messages = ProcessBefore::Messages,
+    >,
   >(
     self,
     _assumed_tag: NextTag,
@@ -264,7 +267,7 @@ where
 }
 
 /// Implementation for the last branch in the [`crate::builder::SplitProcess`].
-/// The only thing left from [`SplitterOutput`] is [`CNil`].
+/// The only thing left from [`crate::step::SplitterOutput`] is [`CNil`].
 impl<
   ThisTag: Send + Sync,
   SplitterProducesForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
@@ -344,7 +347,7 @@ where
     }
   }
 
-  /// The process execution will call [`crate::builder::SplitProcess::continue_run`] instead of this method.
+  /// The process execution will call [`crate::builder::split_process::sealed::SplitProcess::continue_run`] instead of this method.
   /// See [`FlowingProcess::show_split`] for design details.
   fn continue_run(&self, _process_before_produces: Self::ProcessBeforeProduces, _back_token: Option<BackToken>) -> impl Future<Output = IntermediateRunResult<Self::Produces, Self::Messages>> {
    #[allow(unreachable_code)]

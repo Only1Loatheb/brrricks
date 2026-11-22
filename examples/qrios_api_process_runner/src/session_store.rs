@@ -161,7 +161,7 @@ pub async fn update_session_step_context_for_back_navigation_batch<Process: Fina
 }
 
 fn qualified_table_name<Process: FinalizedProcess>(process: &RunnableProcess<Process>) -> String {
-  let process_name = process.get_name();
-  let process_version = process.get_version();
+  let process_name = process.name();
+  let process_version = process.version();
   format!("session_store.{process_name}_{process_version}")
 }

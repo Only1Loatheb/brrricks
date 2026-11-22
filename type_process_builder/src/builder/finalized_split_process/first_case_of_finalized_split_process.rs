@@ -49,6 +49,7 @@ where
   pub fn case_end<
     NextCase: FinalizedProcess<
       SubprocessConsumes=<SplitterProducesForNextCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
+      Messages = ProcessBefore::Messages,
     >,
   >(
     self,
@@ -78,7 +79,8 @@ where
 
   pub fn case_via<
     NextCase: FlowingProcess<
-      SubprocessConsumes=<SplitterProducesForNextCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated
+      SubprocessConsumes=<SplitterProducesForNextCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
+      Messages = ProcessBefore::Messages,
     >,
   >(
     self,

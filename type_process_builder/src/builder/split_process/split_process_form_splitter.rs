@@ -1,7 +1,7 @@
 use crate::builder::split_process::sealed;
 use crate::builder::{
   CurrentRunYieldedAt, FlowingProcess, IntermediateFinalizedSplitOutcome, IntermediateFinalizedSplitResult,
-  IntermediateRunOutcome, MaybeFormContext, ParamList, PreviousRunYieldedAt, SessionContext, StepIndex,
+  IntermediateRunOutcome, MaybeFormContext, ParamList, PreviousRunYieldedAt, ProcessError, SessionContext, StepIndex,
 };
 use crate::frunk::coproduct::Coproduct;
 use crate::param_list::borrow_just::BorrowJust;
@@ -9,7 +9,6 @@ use crate::param_list::concat::Concat;
 use crate::param_list::sealed::ParamList as _;
 use crate::step::BackToken;
 use crate::step::{FormSplitter, FormWithContext, InputValidation};
-use anyhow::anyhow;
 use std::marker::PhantomData;
 
 pub struct SplitProcessFormSplitter<
@@ -92,17 +91,15 @@ where
         IntermediateRunOutcome::RetryUserInput(a, b) => Ok(IntermediateFinalizedSplitOutcome::RetryUserInput(a, b)),
         IntermediateRunOutcome::Back => Ok(IntermediateFinalizedSplitOutcome::Back),
       }
-    } else if form_context.is_none() {
-      let process_before_split_produced = ProcessBefore::Produces::deserialize_param_list(previous_run_produced)?;
-      self.continue_run(process_before_split_produced, back_token).await
-    } else {
+    } else if previous_run_yielded_at.0 != self.step_index {
+      Err(ProcessError::InvalidStepIndex(previous_run_yielded_at.0))
+    } else if let Some(form_context) = form_context {
       let process_before_split_produced = ProcessBefore::Produces::deserialize_param_list(previous_run_produced)?;
       let last_step_consumes =
         <&ProcessBefore::Produces as BorrowJust<'_, SplitterStep::ValidateInputConsumes, _>>::borrow_just(
           &process_before_split_produced,
         );
-      let context: SplitterStep::Context =
-        postcard::from_bytes(&form_context.ok_or_else(|| anyhow!("Missing FormContext"))?)?;
+      let context: SplitterStep::Context = postcard::from_bytes(&form_context)?;
       match self.splitter.handle_input(last_step_consumes, user_input, context, back_token).await? {
         InputValidation::Successful(splitter_produces) => {
           let splitter_produces_to_other_cases = match splitter_produces {
@@ -120,6 +117,9 @@ where
         InputValidation::Finish(a) => Ok(IntermediateFinalizedSplitOutcome::Finish(a)),
         InputValidation::Back(_) => Ok(IntermediateFinalizedSplitOutcome::Back),
       }
+    } else {
+      let process_before_split_produced = ProcessBefore::Produces::deserialize_param_list(previous_run_produced)?;
+      self.continue_run(process_before_split_produced, back_token).await
     }
   }
 

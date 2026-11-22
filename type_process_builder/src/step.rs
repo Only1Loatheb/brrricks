@@ -43,7 +43,8 @@ pub struct BackToken(pub(crate) ());
 
 impl BackToken {
   /// Creates a [`BackToken`] that enables `InputValidation::Back` in form steps.
-  /// This method is intended for process runner modules.
+  ///
+  /// Intended for process runner crates.
   #[cfg(feature = "process-runner-api")]
   #[must_use]
   pub fn create() -> Self {
@@ -59,7 +60,7 @@ pub enum InputValidation<Produced, Messages: ProcessMessages, FormContext: Seria
   Back(BackToken),
 }
 
-pub struct FormWithContext<FormMessage, FromContext>(pub FormMessage, pub FromContext);
+pub struct FormWithContext<FormMessage, FormContext>(pub FormMessage, pub FormContext);
 
 pub trait Form: Send + Sync {
   type CreateFormConsumes: ParamList + for<'a> ToRef<'a>;
@@ -84,8 +85,13 @@ pub trait Form: Send + Sync {
 }
 
 pub trait SplitterOutput: crate::sealed::Sealed + Send + Sync {}
-impl<Tag: Send + Sync, ThisCase: ParamList, OtherCase: Send + Sync> SplitterOutput
-  for Coproduct<(Tag, ThisCase), OtherCase>
+impl<
+  FirstTag: Send + Sync,
+  FirstCase: ParamList,
+  SecondTag: Send + Sync,
+  SecondCase: ParamList,
+  OtherCases: Send + Sync,
+> SplitterOutput for Coproduct<(FirstTag, FirstCase), Coproduct<(SecondTag, SecondCase), OtherCases>>
 {
 }
 

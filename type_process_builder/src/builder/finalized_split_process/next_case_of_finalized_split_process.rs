@@ -53,6 +53,7 @@ NextCaseOfFinalizedSplitProcess<
 {
   pub fn case_end<NextCase: FinalizedProcess<
     SubprocessConsumes=<SplitterProducesForNextCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
+    Messages = ProcessBefore::Messages,
   >>(
     self,
     _assumed_tag: NextTag,
@@ -81,7 +82,8 @@ NextCaseOfFinalizedSplitProcess<
 
   pub fn case_via<
     NextCase: FlowingProcess<
-      SubprocessConsumes=<SplitterProducesForNextCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated
+      SubprocessConsumes=<SplitterProducesForNextCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
+      Messages = ProcessBefore::Messages,
     >,
   >(
     self,
@@ -242,7 +244,7 @@ where
 }
 
 /// Implementation for the last branch in the [`crate::builder::SplitProcess`].
-/// The only thing left from [`SplitterOutput`] is [`CNil`].
+/// The only thing left from [`crate::step::SplitterOutput`] is [`CNil`].
 impl<
   ThisTag: Send + Sync,
   SplitterProducesForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,

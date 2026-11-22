@@ -34,10 +34,23 @@ pub(crate) const WILL_BE_RENUMBERED: StepIndex = StepIndex::MAX;
 pub type FormContext = Vec<u8>;
 pub type MaybeFormContext = Option<FormContext>;
 
+#[derive(Debug, thiserror::Error)]
+pub enum ProcessError {
+  /// Failed to serialize or deserialize a [`SessionContext`] or [`FormContext`].
+  #[error("failed to serialize or deserialize process state: {0}")]
+  Serialization(#[from] postcard::Error),
+  /// The supplied [`PreviousRunYieldedAt`] does not match any valid resume point in the process.
+  #[error("invalid step index: {0}")]
+  InvalidStepIndex(StepIndex),
+  /// A user-implemented step returned an error.
+  #[error("step execution failed: {0}")]
+  Step(#[from] anyhow::Error),
+}
+
 pub(crate) use sealed::*;
 
 pub(crate) mod sealed {
-  use super::{CurrentRunYieldedAt, FormContext, ParamList, ProcessMessages, SessionContext};
+  use super::{CurrentRunYieldedAt, FormContext, ParamList, ProcessError, ProcessMessages, SessionContext};
 
   #[derive(Debug, PartialEq, Eq)]
   pub enum IntermediateRunOutcome<Produced: ParamList, Messages: ProcessMessages> {
@@ -48,7 +61,7 @@ pub(crate) mod sealed {
     Back,
   }
 
-  pub type IntermediateRunResult<Produced, Messages> = anyhow::Result<IntermediateRunOutcome<Produced, Messages>>;
+  pub type IntermediateRunResult<Produced, Messages> = Result<IntermediateRunOutcome<Produced, Messages>, ProcessError>;
 
   #[derive(Debug, PartialEq, Eq)]
   pub enum IntermediateFinalizedSplitOutcome<
@@ -67,8 +80,9 @@ pub(crate) mod sealed {
   }
 
   pub type IntermediateFinalizedSplitResult<ProcessBeforeSplitProduced, SplitterProducesForOtherCases, Messages> =
-    anyhow::Result<
+    Result<
       IntermediateFinalizedSplitOutcome<ProcessBeforeSplitProduced, SplitterProducesForOtherCases, Messages>,
+      ProcessError,
     >;
 
   #[derive(Debug, PartialEq, Eq)]
@@ -94,22 +108,28 @@ pub(crate) mod sealed {
     SplitterProducesForOtherCases,
     FlowingCaseProduced,
     Messages,
-  > = anyhow::Result<
+  > = Result<
     IntermediateFlowingSplitOutcome<
       ProcessBeforeSplitProduced,
       SplitterProducesForOtherCases,
       FlowingCaseProduced,
       Messages,
     >,
+    ProcessError,
   >;
 }
 
+/// Outcome of a single [`RunnableProcess::resume_run`] call.
 #[derive(Debug, PartialEq, Eq)]
 pub enum RunOutcome<Messages: ProcessMessages> {
+  /// Process paused at a form step; persist the returned context/step and present the form message.
   Yield(Messages::FormMessage, SessionContext, CurrentRunYieldedAt, FormContext),
+  /// Process completed with a final message.
   Finish(Messages::FinalMessage),
+  /// User input was rejected by the current form step; re-prompt with the updated [`FormContext`].
   RetryUserInput(Messages::FormMessage, FormContext),
+  /// User requested navigating back to the previous form step.
   Back,
 }
 
-pub type RunResult<Messages> = anyhow::Result<RunOutcome<Messages>>;
+pub type RunResult<Messages> = Result<RunOutcome<Messages>, ProcessError>;

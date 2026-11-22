@@ -52,7 +52,10 @@ where
   ThisCase::EverProduced: Union<ProcessBefore::EverProduced>,
 {
   pub fn case_end<
-    NextCase: FinalizedProcess<SubprocessConsumes=<SplitterProducesForNextCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated>,
+    NextCase: FinalizedProcess<
+      SubprocessConsumes=<SplitterProducesForNextCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
+      Messages = ProcessBefore::Messages,
+    >,
   >(
     self,
     _assumed_tag: NextTag,

@@ -2,13 +2,12 @@ use crate::builder::borrow_just::BorrowJust;
 use crate::builder::flowing_process::sealed;
 use crate::builder::{
   CurrentRunYieldedAt, FlowingProcess, IntermediateRunOutcome, IntermediateRunResult, MaybeFormContext, ParamList,
-  PreviousRunYieldedAt, SessionContext, StepIndex,
+  PreviousRunYieldedAt, ProcessError, SessionContext, StepIndex,
 };
 use crate::param_list::concat::Concat;
 use crate::param_list::sealed::ParamList as _;
 use crate::step::BackToken;
 use crate::step::{Form, FormWithContext, InputValidation};
-use anyhow::anyhow;
 use std::marker::PhantomData;
 
 pub struct FormFlowingProcess<
@@ -74,23 +73,24 @@ where
         IntermediateRunOutcome::RetryUserInput(a, b) => Ok(IntermediateRunOutcome::RetryUserInput(a, b)),
         IntermediateRunOutcome::Back => Ok(IntermediateRunOutcome::Back),
       }
-    } else if form_context.is_none() {
-      let process_before_produces = ProcessBefore::Produces::deserialize_param_list(previous_run_produced)?;
-      self.continue_run(process_before_produces, back_token).await
-    } else {
+    } else if previous_run_yielded_at.0 != self.step_index {
+      Err(ProcessError::InvalidStepIndex(previous_run_yielded_at.0))
+    } else if let Some(form_context) = form_context {
       let process_before_produces = ProcessBefore::Produces::deserialize_param_list(previous_run_produced)?;
       let last_step_consumes =
         <&ProcessBefore::Produces as BorrowJust<'_, FormStep::ValidateInputConsumes, _>>::borrow_just(
           &process_before_produces,
         );
-      let context: FormStep::Context =
-        postcard::from_bytes(&form_context.ok_or_else(|| anyhow!("Missing FormContext"))?)?;
+      let context: FormStep::Context = postcard::from_bytes(&form_context)?;
       match self.form_step.handle_input(last_step_consumes, user_input, context, back_token).await? {
         InputValidation::Successful(a) => Ok(IntermediateRunOutcome::Continue(a.concat(process_before_produces))),
         InputValidation::Retry(a, b) => Ok(IntermediateRunOutcome::RetryUserInput(a, postcard::to_allocvec(&b)?)),
         InputValidation::Finish(a) => Ok(IntermediateRunOutcome::Finish(a)),
         InputValidation::Back(_) => Ok(IntermediateRunOutcome::Back),
       }
+    } else {
+      let process_before_produces = ProcessBefore::Produces::deserialize_param_list(previous_run_produced)?;
+      self.continue_run(process_before_produces, back_token).await
     }
   }
 

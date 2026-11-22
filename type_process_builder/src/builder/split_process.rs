@@ -73,10 +73,9 @@ pub(crate) mod sealed {
   }
 }
 
-/// We enforce at least one cases in the split.
-/// We could remove an unnecessary option of implementing a linear proces with a series of splits with single case,
-/// but sometimes the need arises to have a select form with one option that is different from input form.
-/// We at least remove an illegal state of unfinalized finalized split process.
+/// A process state immediately after `.split(...)` or `.show_split(...)`, awaiting the first branch.
+/// Splits require at least two cases (enforced by [`crate::step::SplitterOutput`]); the first case
+/// transitions into a split-case state and subsequent cases complete the split once all variants are handled.
 pub trait SplitProcess<SplitterProducesForOtherCases: Send + Sync>:
   sealed::SplitProcess<SplitterProducesForOtherCases>
 {

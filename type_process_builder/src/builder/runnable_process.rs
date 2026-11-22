@@ -23,11 +23,11 @@ impl<UnderlyingProcess: FinalizedProcess> RunnableProcess<UnderlyingProcess> {
       .await
   }
 
-  pub fn get_name(&self) -> &'static str {
+  pub fn name(&self) -> &'static str {
     self.name
   }
 
-  pub fn get_version(&self) -> u32 {
+  pub fn version(&self) -> u32 {
     self.version
   }
 }

@@ -579,8 +579,7 @@ async fn test_return_error_on_param_missing_from_init_value(
     .resume_run(init_value, PreviousRunYieldedAt(StepIndex::MIN), messages[0].into(), None, None::<BackToken>)
     .await;
   assert!(
-    run_outcome
-      .is_err_and(|x| { x.downcast_ref::<postcard::Error>() == Some(&postcard::Error::DeserializeUnexpectedEnd) })
+    run_outcome.is_err_and(|x| matches!(x, ProcessError::Serialization(postcard::Error::DeserializeUnexpectedEnd)))
   );
 }
 
@@ -613,8 +612,7 @@ async fn test_return_error_on_param_missing_from_context(
         )
         .await;
       assert!(
-        run_outcome
-          .is_err_and(|x| { x.downcast_ref::<postcard::Error>() == Some(&postcard::Error::DeserializeUnexpectedEnd) })
+        run_outcome.is_err_and(|x| matches!(x, ProcessError::Serialization(postcard::Error::DeserializeUnexpectedEnd)))
       );
     },
     RunOutcome::RetryUserInput(msg, _context) => {
@@ -1042,8 +1040,8 @@ async fn test_select_finalized_case_after_flowing_case() {
 async fn test_runnable_process_metadata() {
   let process = ExtractMsisdnOperatorAndShortcodeString.end(FinalNoConsumes).build("test_process", 123);
 
-  assert_eq!(process.get_name(), "test_process");
-  assert_eq!(process.get_version(), 123);
+  assert_eq!(process.name(), "test_process");
+  assert_eq!(process.version(), 123);
 }
 
 #[tokio::test]
@@ -1812,17 +1810,46 @@ async fn test_direct_resume_run_step_index_outcomes() {
 
   let session_ctx = session_init_value();
 
-  let _ =
-    process.resume_run(session_ctx.clone(), PreviousRunYieldedAt(0), "*123#".into(), None, None::<BackToken>).await;
+  for invalid_idx in [0, 1, 2, 100] {
+    assert!(
+      process
+        .resume_run(session_ctx.clone(), PreviousRunYieldedAt(invalid_idx), "*123#".into(), None, None::<BackToken>)
+        .await
+        .is_err()
+    );
+  }
 
-  let _ =
-    process.resume_run(session_ctx.clone(), PreviousRunYieldedAt(1), "*123#".into(), None, None::<BackToken>).await;
+  let entry_only_process = ExtractMsisdnOperatorAndShortcodeString.end(FinalNoConsumes).build("", 0);
+  assert!(
+    entry_only_process
+      .resume_run(
+        session_ctx.clone(),
+        PreviousRunYieldedAt(StepIndex::MIN + 1),
+        "*123#".into(),
+        None,
+        None::<BackToken>,
+      )
+      .await
+      .is_err()
+  );
 
-  let _ =
-    process.resume_run(session_ctx.clone(), PreviousRunYieldedAt(2), "*123#".into(), None, None::<BackToken>).await;
-
-  let _ =
-    process.resume_run(session_ctx.clone(), PreviousRunYieldedAt(100), "*123#".into(), None, None::<BackToken>).await;
+  let form_splitter_process = ExtractMsisdnOperatorAndShortcodeString
+    .show_split(TestFormSplitter)
+    .case_end(Case1, |x| x.end(FinalNoConsumes))
+    .case_end(Case2, |x| x.end(FinalNoConsumes))
+    .build("", 0);
+  assert!(
+    form_splitter_process
+      .resume_run(
+        session_ctx.clone(),
+        PreviousRunYieldedAt(StepIndex::MIN + 100),
+        "*123#".into(),
+        None,
+        None::<BackToken>,
+      )
+      .await
+      .is_err()
+  );
 
   let split_process = ExtractMsisdnOperatorAndShortcodeString
     .show(ChooseCaseForm)
@@ -1842,16 +1869,28 @@ async fn test_direct_resume_run_step_index_outcomes() {
   .serialize_param_list()
   .unwrap();
 
-  for offset in 0..=10 {
-    let _ = split_process
-      .resume_run(
-        split_session_ctx.clone(),
-        PreviousRunYieldedAt(StepIndex::MIN + offset),
-        "*123#".into(),
-        None,
-        None::<BackToken>,
-      )
-      .await;
+  // Valid form step indices in split_process:
+  //   MIN     -> Entry
+  //   MIN + 1 -> ChooseCaseForm
+  //   MIN + 2 -> Case1 boundary (Subprocess, invalid)
+  //   MIN + 3 -> Case1 NoOpForm
+  //   MIN + 4 -> Case2 boundary (Subprocess, invalid)
+  //   MIN + 5 -> Case2 NoOpForm
+  //   >= MIN + 6 -> out of range (invalid)
+  for offset in [2, 4, 6, 7, 10] {
+    assert!(
+      split_process
+        .resume_run(
+          split_session_ctx.clone(),
+          PreviousRunYieldedAt(StepIndex::MIN + offset),
+          "*123#".into(),
+          None,
+          None::<BackToken>,
+        )
+        .await
+        .is_err(),
+      "expected error for invalid offset {offset}"
+    );
   }
 }
 

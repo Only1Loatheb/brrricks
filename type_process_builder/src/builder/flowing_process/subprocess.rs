@@ -1,7 +1,7 @@
 use crate::builder::flowing_process::sealed;
 use crate::builder::{
-  IntermediateRunOutcome, IntermediateRunResult, MaybeFormContext, ParamList, PreviousRunYieldedAt, SessionContext,
-  StepIndex,
+  IntermediateRunOutcome, IntermediateRunResult, MaybeFormContext, ParamList, PreviousRunYieldedAt, ProcessError,
+  SessionContext, StepIndex,
 };
 use crate::step::BackToken;
 use crate::step::ProcessMessages;
@@ -22,16 +22,15 @@ impl<EntryConsumes: ParamList, ProcessBeforeProduces: ParamList, EverProduced: P
   type Messages = Messages;
   type EverProduced = EverProduced; // Includes params produced specific for this case in split
 
-  async fn resume_run(
+  fn resume_run(
     &self,
-    previous_run_produced: SessionContext,
-    _previous_run_yielded_at: PreviousRunYieldedAt,
+    _previous_run_produced: SessionContext,
+    previous_run_yielded_at: PreviousRunYieldedAt,
     _user_input: String,
     _form_context: MaybeFormContext,
-    back_token: Option<BackToken>,
-  ) -> IntermediateRunResult<Self::Produces, Self::Messages> {
-    let process_before_produces = ProcessBeforeProduces::deserialize_param_list(previous_run_produced)?;
-    self.continue_run(process_before_produces, back_token).await
+    _back_token: Option<BackToken>,
+  ) -> impl Future<Output = IntermediateRunResult<Self::Produces, Self::Messages>> {
+    std::future::ready(Err(ProcessError::InvalidStepIndex(previous_run_yielded_at.0)))
   }
 
   fn continue_run(

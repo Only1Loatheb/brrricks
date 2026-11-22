@@ -1,3 +1,5 @@
+//! Type-safe process modelling library with compile-time flow and parameter invariants.
+
 pub mod builder;
 pub mod frunk;
 pub mod param_list;
