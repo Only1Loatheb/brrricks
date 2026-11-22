@@ -1,7 +1,7 @@
 use crate::frunk::hlist::{HCons, HNil};
 
 /// Trait to create reference representations of `HLists`.
-pub trait ToRef<'a> {
+pub trait ToRef<'a>: crate::sealed::Sealed {
   type Ref;
 
   fn to_ref(&'a self) -> Self::Ref;

@@ -21,7 +21,7 @@ pub(crate) fn generate_qrios_api_axum_server(project_dir: &Path) {
       "-g",
       "rust-axum",
       "-o",
-      "/local/qrios_api_axum_server",
+      "/local/examples/qrios_api_axum_server",
       "--additional-properties=packageName=qrios_api_axum_server,disableValidator=true",
     ])
     .status()
@@ -47,7 +47,7 @@ pub(crate) fn generate_qrios_api_reqwest_client(root: &Path) {
 
   let content = prettyplease::unparse(&ast);
 
-  let out_file = root.join("qrios_api_reqwest_client/src/lib.rs");
+  let out_file = root.join("examples/qrios_api_reqwest_client/src/lib.rs");
 
   fs::write(&out_file, content).expect("failed to write generated client");
 

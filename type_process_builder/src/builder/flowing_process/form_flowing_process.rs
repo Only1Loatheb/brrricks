@@ -1,9 +1,11 @@
 use crate::builder::borrow_just::BorrowJust;
+use crate::builder::flowing_process::sealed;
 use crate::builder::{
   CurrentRunYieldedAt, FlowingProcess, IntermediateRunOutcome, IntermediateRunResult, MaybeFormContext, ParamList,
   PreviousRunYieldedAt, SessionContext, StepIndex,
 };
 use crate::param_list::concat::Concat;
+use crate::param_list::sealed::ParamList as _;
 use crate::step::BackToken;
 use crate::step::{Form, FormWithContext, InputValidation};
 use anyhow::anyhow;
@@ -15,10 +17,10 @@ pub struct FormFlowingProcess<
   ProcessBeforeProducesToCreateFormConsumesIndices,
   ProcessBeforeProducesToValidateInputConsumesIndices,
 > {
-  pub process_before: ProcessBefore,
-  pub form_step: FormStep,
-  pub step_index: StepIndex,
-  pub phantom_data: PhantomData<(
+  pub(crate) process_before: ProcessBefore,
+  pub(crate) form_step: FormStep,
+  pub(crate) step_index: StepIndex,
+  pub(crate) phantom_data: PhantomData<(
     ProcessBeforeProducesToCreateFormConsumesIndices,
     ProcessBeforeProducesToValidateInputConsumesIndices,
   )>,
@@ -29,7 +31,7 @@ impl<
   FormStep: Form<Messages = ProcessBefore::Messages>,
   ProcessBeforeProducesToCreateFormConsumesIndices: Sync + Send,
   ProcessBeforeProducesToValidateInputConsumesIndices: Sync + Send,
-> FlowingProcess
+> sealed::FlowingProcess
   for FormFlowingProcess<
     ProcessBefore,
     FormStep,

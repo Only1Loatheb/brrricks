@@ -13,7 +13,7 @@ pub trait ProcessMessages: Send + Sync {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Entry<Produces: ParamList, Messages: ProcessMessages> {
-  pub phantom_data: PhantomData<(Produces, Messages)>,
+  pub(crate) phantom_data: PhantomData<(Produces, Messages)>,
 }
 
 #[must_use]
@@ -83,7 +83,7 @@ pub trait Form: Send + Sync {
   ) -> impl Future<Output = anyhow::Result<InputValidation<Self::Produces, Self::Messages, Self::Context>>> + Send;
 }
 
-pub trait SplitterOutput: Send + Sync {}
+pub trait SplitterOutput: crate::sealed::Sealed + Send + Sync {}
 impl<Tag: Send + Sync, ThisCase: ParamList, OtherCase: Send + Sync> SplitterOutput
   for Coproduct<(Tag, ThisCase), OtherCase>
 {

@@ -1,7 +1,9 @@
-use bricks::{Messages, ShortcodeString, build_demo_process};
+mod process;
+
+use in_memory_process_runner::{SessionState, in_memory_process_runner};
+use process::{Messages, ShortcodeString, build_demo_process};
 use std::io::Write;
-use type_process_builder::builder::{FinalizedProcess, RunnableProcess};
-use type_process_builder::documentation_diagrams::{SessionState, in_memory_process_runner};
+use type_process_builder::builder::{FinalizedProcess, RunnableProcess, StepIndex};
 use type_process_builder::param_list::ParamList;
 use type_process_builder::{HList, hlist};
 
@@ -27,7 +29,7 @@ async fn standard_io_process_runner(
     if state.visited_form_steps.is_empty() {
       let entry_consumes: EntryConsumes = hlist!(ShortcodeString(user_input.to_string()));
       let init_context = entry_consumes.serialize_param_list().expect("Failed to serialize session context");
-      state.visited_form_steps.push((type_process_builder::builder::StepIndex::MIN, init_context));
+      state.visited_form_steps.push((StepIndex::MIN, init_context));
     }
     let result = in_memory_process_runner(&process, &mut state, user_input).await;
     match result {

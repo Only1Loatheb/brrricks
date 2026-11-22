@@ -1,3 +1,4 @@
+use crate::builder::flowing_process::sealed;
 use crate::builder::{
   FlowingProcess, IntermediateRunOutcome, IntermediateRunResult, MaybeFormContext, ParamList, PreviousRunYieldedAt,
   SessionContext, StepIndex,
@@ -13,16 +14,16 @@ pub struct OperationFlowingProcess<
   OperationStep: Operation,
   ProcessBeforeProducesToLastStepConsumesIndices,
 > {
-  pub process_before: ProcessBefore,
-  pub last_step: OperationStep,
-  pub phantom_data: PhantomData<ProcessBeforeProducesToLastStepConsumesIndices>,
+  pub(crate) process_before: ProcessBefore,
+  pub(crate) last_step: OperationStep,
+  pub(crate) phantom_data: PhantomData<ProcessBeforeProducesToLastStepConsumesIndices>,
 }
 
 impl<
   ProcessBefore: FlowingProcess,
   OperationStep: Operation<FinalMessage = <ProcessBefore::Messages as ProcessMessages>::FinalMessage>,
   ProcessBeforeProducesToLastStepConsumesIndices: Sync + Send,
-> FlowingProcess
+> sealed::FlowingProcess
   for OperationFlowingProcess<ProcessBefore, OperationStep, ProcessBeforeProducesToLastStepConsumesIndices>
 where
   OperationStep::Produces: ParamList + Concat<ProcessBefore::Produces> + Concat<ProcessBefore::EverProduced>,

@@ -203,7 +203,7 @@ pub fn build_demo_process()
 To run the example process in your terminal, execute the following command:
 
 ```console
-cargo run
+cargo run --example demo
 ```
 
 ## Typical USSD service interaction flow

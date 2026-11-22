@@ -1821,7 +1821,38 @@ async fn test_direct_resume_run_step_index_outcomes() {
   let _ =
     process.resume_run(session_ctx.clone(), PreviousRunYieldedAt(2), "*123#".into(), None, None::<BackToken>).await;
 
-  let _ = process.resume_run(session_ctx, PreviousRunYieldedAt(100), "*123#".into(), None, None::<BackToken>).await;
+  let _ =
+    process.resume_run(session_ctx.clone(), PreviousRunYieldedAt(100), "*123#".into(), None, None::<BackToken>).await;
+
+  let split_process = ExtractMsisdnOperatorAndShortcodeString
+    .show(ChooseCaseForm)
+    .split(SplitByTwoCaseOption)
+    .case_via(Case1, |x| x.show(NoOpForm))
+    .case_via(Case2, |x| x.show(NoOpForm))
+    .end(FinalNoConsumes)
+    .build("", 0);
+
+  let split_session_ctx = hlist!(
+    Split1Param,
+    Split2Param,
+    CommonSplitParam,
+    CaseOptionParam(1),
+    EntryParam(Msisdn(2_340_000_000_000), Operator::MTN, ShortcodeString("*123#".to_string()))
+  )
+  .serialize_param_list()
+  .unwrap();
+
+  for offset in 0..=10 {
+    let _ = split_process
+      .resume_run(
+        split_session_ctx.clone(),
+        PreviousRunYieldedAt(StepIndex::MIN + offset),
+        "*123#".into(),
+        None,
+        None::<BackToken>,
+      )
+      .await;
+  }
 }
 
 #[tokio::test]

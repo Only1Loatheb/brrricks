@@ -12,9 +12,11 @@ pub enum Coproduct<H, T> {
 pub enum CNil {}
 
 /// Trait for injecting a value into a Coproduct by type.
-pub trait CoprodInjector<InjectType, Index> {
+pub trait CoprodInjector<InjectType, Index>: crate::sealed::Sealed {
   fn inject(to_insert: InjectType) -> Self;
 }
+
+impl<H, T> crate::sealed::Sealed for Coproduct<H, T> {}
 
 impl<I, Tail> CoprodInjector<I, Here> for Coproduct<I, Tail> {
   #[inline(always)]

@@ -1,13 +1,13 @@
+use crate::builder::flowing_process::sealed;
 use crate::builder::{
-  FlowingProcess, IntermediateRunOutcome, IntermediateRunResult, MaybeFormContext, PreviousRunYieldedAt,
-  SessionContext, StepIndex,
+  IntermediateRunOutcome, IntermediateRunResult, MaybeFormContext, PreviousRunYieldedAt, SessionContext, StepIndex,
 };
 use crate::frunk::hlist::HNil;
 use crate::param_list::ParamList;
 use crate::step::{BackToken, Entry, ProcessMessages};
 use std::future::Future;
 
-impl<Produces: ParamList, Messages: ProcessMessages> FlowingProcess for Entry<Produces, Messages> {
+impl<Produces: ParamList, Messages: ProcessMessages> sealed::FlowingProcess for Entry<Produces, Messages> {
   type EntryConsumes = Produces;
   type ProcessBeforeProduces = HNil;
   type Produces = Produces;

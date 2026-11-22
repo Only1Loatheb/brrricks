@@ -3,7 +3,7 @@ use crate::{HCons, HNil};
 use std::ops::BitOr;
 use typenum::{B0, Bit, IsEqual};
 
-pub trait Contains<Needle: ParamValue> {
+pub trait Contains<Needle: ParamValue>: crate::sealed::Sealed {
   type IsContained: Bit;
 }
 

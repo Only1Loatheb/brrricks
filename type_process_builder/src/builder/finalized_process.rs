@@ -3,64 +3,74 @@ use crate::builder::runnable_process::RunnableProcess;
 use crate::builder::{
   IntermediateRunOutcome, MaybeFormContext, PreviousRunYieldedAt, RunOutcome, RunResult, SessionContext, StepIndex,
 };
-use crate::param_list::ParamList;
 use crate::param_list::extract::Extract;
 use crate::step::BackToken;
 use crate::step::{Final, ProcessMessages};
-use std::future::Future;
 use std::marker::PhantomData;
 
-pub trait FinalizedProcess: Sized + Send + Sync {
-  // Please specify all associated types at the impl FinalizedProcess side for inference to work.
-  type EntryConsumes: ParamList;
-  type ProcessBeforeProduces: ParamList;
-  type SubprocessConsumes: ParamList;
-  type Messages: ProcessMessages;
-  type EverProduced: ParamList;
+pub(crate) mod sealed {
+  use crate::builder::{MaybeFormContext, PreviousRunYieldedAt, RunResult, SessionContext, StepIndex};
+  use crate::param_list::ParamList;
+  use crate::step::{BackToken, ProcessMessages};
+  use std::future::Future;
 
-  fn resume_run(
-    &self,
-    previous_run_produced: SessionContext,
-    previous_run_yielded_at: PreviousRunYieldedAt,
-    user_input: String,
-    form_context: MaybeFormContext,
-    back_token: Option<BackToken>,
-  ) -> impl Future<Output = RunResult<Self::Messages>> + Send;
+  pub trait FinalizedProcess: Sized + Send + Sync {
+    // Please specify all associated types at the impl FinalizedProcess side for inference to work.
+    type EntryConsumes: ParamList;
+    type ProcessBeforeProduces: ParamList;
+    type SubprocessConsumes: ParamList;
+    type Messages: ProcessMessages;
+    type EverProduced: ParamList;
 
-  fn continue_run(
-    &self,
-    process_before_produces: Self::ProcessBeforeProduces,
-    back_token: Option<BackToken>,
-  ) -> impl Future<Output = RunResult<Self::Messages>> + Send;
+    fn resume_run(
+      &self,
+      previous_run_produced: SessionContext,
+      previous_run_yielded_at: PreviousRunYieldedAt,
+      user_input: String,
+      form_context: MaybeFormContext,
+      back_token: Option<BackToken>,
+    ) -> impl Future<Output = RunResult<Self::Messages>> + Send;
 
-  fn run_subprocess(
-    &self,
-    subprocess_consumes: Self::SubprocessConsumes,
-    back_token: Option<BackToken>,
-  ) -> impl Future<Output = RunResult<Self::Messages>> + Send;
+    fn continue_run(
+      &self,
+      process_before_produces: Self::ProcessBeforeProduces,
+      back_token: Option<BackToken>,
+    ) -> impl Future<Output = RunResult<Self::Messages>> + Send;
 
-  fn build(self, name: &'static str, version: u32) -> RunnableProcess<Self> {
-    RunnableProcess::new(self, name, version)
+    fn run_subprocess(
+      &self,
+      subprocess_consumes: Self::SubprocessConsumes,
+      back_token: Option<BackToken>,
+    ) -> impl Future<Output = RunResult<Self::Messages>> + Send;
+
+    fn enumerate_steps(&mut self, last_used_index: StepIndex) -> StepIndex;
   }
-
-  fn enumerate_steps(&mut self, last_used_index: StepIndex) -> StepIndex;
 }
+
+pub trait FinalizedProcess: sealed::FinalizedProcess {
+  fn build(mut self, name: &'static str, version: u32) -> RunnableProcess<Self> {
+    self.enumerate_steps(StepIndex::MIN);
+    RunnableProcess { finalized_process: self, name, version }
+  }
+}
+
+impl<T: sealed::FinalizedProcess> FinalizedProcess for T {}
 
 pub struct FlowingFinalizedProcess<
   ProcessBefore: FlowingProcess,
   FinalStep: Final<FinalMessage = <ProcessBefore::Messages as ProcessMessages>::FinalMessage>,
   ProcessBeforeProducesTransformToFinalConsumesIndices,
 > {
-  pub process_before: ProcessBefore,
-  pub final_step: FinalStep,
-  pub phantom_data: PhantomData<ProcessBeforeProducesTransformToFinalConsumesIndices>,
+  pub(crate) process_before: ProcessBefore,
+  pub(crate) final_step: FinalStep,
+  pub(crate) phantom_data: PhantomData<ProcessBeforeProducesTransformToFinalConsumesIndices>,
 }
 
 impl<
   ProcessBefore: FlowingProcess,
   FinalStep: Final<FinalMessage = <ProcessBefore::Messages as ProcessMessages>::FinalMessage>,
   ProcessBeforeProducesTransformToFinalConsumesIndices: Sync + Send,
-> FinalizedProcess
+> sealed::FinalizedProcess
   for FlowingFinalizedProcess<ProcessBefore, FinalStep, ProcessBeforeProducesTransformToFinalConsumesIndices>
 where
   ProcessBefore::Produces: Extract<FinalStep::Consumes, ProcessBeforeProducesTransformToFinalConsumesIndices>,

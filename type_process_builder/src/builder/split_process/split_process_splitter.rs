@@ -1,6 +1,7 @@
+use crate::builder::split_process::sealed;
 use crate::builder::{
   FlowingProcess, IntermediateFinalizedSplitOutcome, IntermediateFinalizedSplitResult, IntermediateRunOutcome,
-  MaybeFormContext, ParamList, PreviousRunYieldedAt, SessionContext, SplitProcess, StepIndex,
+  MaybeFormContext, ParamList, PreviousRunYieldedAt, SessionContext, StepIndex,
 };
 use crate::frunk::coproduct::Coproduct;
 use crate::param_list::borrow_just::BorrowJust;
@@ -17,9 +18,9 @@ pub struct SplitProcessSplitter<
   SplitterStep: Splitter<Produces = Coproduct<(Tag, SplitterProducesForFirstCase), SplitterProducesForOtherCases>>,
   ProcessBeforeProducesToSplitterStepConsumesIndices,
 > {
-  pub process_before: ProcessBefore,
-  pub splitter: SplitterStep,
-  pub phantom_data: PhantomData<ProcessBeforeProducesToSplitterStepConsumesIndices>,
+  pub(crate) process_before: ProcessBefore,
+  pub(crate) splitter: SplitterStep,
+  pub(crate) phantom_data: PhantomData<ProcessBeforeProducesToSplitterStepConsumesIndices>,
 }
 
 impl<
@@ -29,7 +30,7 @@ impl<
   SplitterProducesForOtherCases: Send + Sync,
   SplitterStep: Splitter<Produces = Coproduct<(Tag, SplitterProducesForFirstCase), SplitterProducesForOtherCases>>,
   ProcessBeforeProducesToSplitterStepConsumesIndices: Sync + Send,
-> SplitProcess<SplitterProducesForOtherCases>
+> sealed::SplitProcess<SplitterProducesForOtherCases>
   for SplitProcessSplitter<
     Tag,
     ProcessBefore,

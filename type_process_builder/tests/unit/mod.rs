@@ -1,5 +1,5 @@
+use in_memory_process_runner::{SessionState, in_memory_process_runner};
 use type_process_builder::builder::{FinalizedProcess, RunnableProcess, SessionContext, StepIndex};
-use type_process_builder::documentation_diagrams::{SessionState, in_memory_process_runner};
 use type_process_builder::step::ProcessMessages;
 
 pub async fn test_process_messages<Messages: ProcessMessages<FinalMessage = String, FormMessage = String>>(

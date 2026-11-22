@@ -3,10 +3,16 @@ use crate::builder::{ParamList, ParamValue};
 use crate::param_list::PreventDuplicateParamUidInParamList;
 use crate::{HCons, HNil};
 use typenum::{B0, B1};
+mod sealed {
+  pub trait Sealed {}
+  impl Sealed for typenum::B0 {}
+  impl Sealed for typenum::B1 {}
+}
+
 ////////// IfNotKeep //////////
 
 /// Like [`crate::param_list::intersect::ThenKeep`], but the logic is negated and omits the method to construct the value
-pub trait IfNotKeep<Head, Tail> {
+pub trait IfNotKeep<Head, Tail>: sealed::Sealed {
   type Filtered;
 }
 

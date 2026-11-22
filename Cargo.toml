@@ -1,21 +1,20 @@
-[package]
-name = "bricks"
-version = "0.1.0"
-edition = "2024"
-rust-version = "1.99.0"
-
-[lints]
-workspace = true
-
 [workspace]
-members = ["type_process_builder", "qrios_api_process_runner", "qrios_api_axum_server", "qrios_api_reqwest_client", "xtask"]
-
-[dependencies]
-type_process_builder = { path = "type_process_builder", features = ["docs", "process-runner-api"] }
-anyhow = "1.0"
-serde = { version = "1.0", features = ["derive"] }
-typenum = { version = "1.0" }
-tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
+resolver = "3"
+members = [
+  "type_process_builder",
+  "examples/in_memory_process_runner",
+  "examples/qrios_api_process_runner",
+  "examples/qrios_api_process_entry",
+  "examples/qrios_api_axum_server",
+  "examples/qrios_api_reqwest_client",
+  "xtask",
+]
+default-members = [
+  "type_process_builder",
+  "examples/in_memory_process_runner",
+  "examples/qrios_api_process_runner",
+  "examples/qrios_api_process_entry",
+]
 
 [workspace.lints.clippy]
 all = { level = "deny", priority = -1 }

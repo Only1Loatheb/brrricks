@@ -3,14 +3,14 @@ use crate::frunk::plucker::Plucker;
 
 /// Trait for pulling out some subset of an `HList`, using type inference.
 /// Like `Sculptor`, but ignores the remainder.
-pub trait Extract<Target, Indices> {
+pub trait Extract<Target, Indices>: crate::sealed::Sealed {
   fn extract(self) -> Target;
 }
 
 /// Implementation for when the target is an empty `HList` (`HNil`)
 ///
 /// Index type is `HNil` because we don't need an index for finding `HNil`
-impl<Source> Extract<HNil, HNil> for Source {
+impl<Source: crate::sealed::Sealed> Extract<HNil, HNil> for Source {
   #[inline(always)]
   fn extract(self) -> HNil {
     HNil

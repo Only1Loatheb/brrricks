@@ -1,19 +1,14 @@
 use crate::builder::finalized_process::FinalizedProcess;
-use crate::builder::{MaybeFormContext, PreviousRunYieldedAt, RunResult, SessionContext, StepIndex};
+use crate::builder::{MaybeFormContext, PreviousRunYieldedAt, RunResult, SessionContext};
 use crate::step::BackToken;
 
 pub struct RunnableProcess<UnderlyingProcess: FinalizedProcess> {
-  finalized_process: UnderlyingProcess, // shouldn't be public
-  name: &'static str,                   // immutable
-  version: u32,                         // immutable
+  pub(crate) finalized_process: UnderlyingProcess,
+  pub(crate) name: &'static str,
+  pub(crate) version: u32,
 }
 
 impl<UnderlyingProcess: FinalizedProcess> RunnableProcess<UnderlyingProcess> {
-  pub fn new(mut finalized_process: UnderlyingProcess, name: &'static str, version: u32) -> Self {
-    finalized_process.enumerate_steps(StepIndex::MIN);
-    Self { finalized_process, name, version }
-  }
-
   pub async fn resume_run(
     &self,
     previous_run_produced: SessionContext,

@@ -3,11 +3,17 @@ use crate::param_list::ParamValue;
 use crate::param_list::contains::Contains;
 use typenum::{B0, B1};
 
+mod sealed {
+  pub trait Sealed {}
+  impl Sealed for typenum::B0 {}
+  impl Sealed for typenum::B1 {}
+}
+
 ////////// ThenKeep //////////
 
 /// Like [`crate::param_list::union::IfNotKeep`], but the logic is negated and exposes runtime method for
 /// constructing the value
-pub trait ThenKeep<Head, Tail> {
+pub trait ThenKeep<Head, Tail>: sealed::Sealed {
   type Filtered;
   fn filter(head: Head, tail: Tail) -> Self::Filtered;
 }
@@ -32,7 +38,7 @@ impl<Head, Tail> ThenKeep<Head, Tail> for B0 {
 
 ////////// Intersection //////////
 
-pub trait Intersect<RHS> {
+pub trait Intersect<RHS>: crate::sealed::Sealed {
   type Intersection;
 
   fn intersect(self) -> Self::Intersection;

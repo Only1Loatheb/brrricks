@@ -1,9 +1,15 @@
 use crate::frunk::to_ref::ToRef;
 use crate::param_list::extract::Extract;
 
-pub trait BorrowJust<'a, Target: ToRef<'a>, Indices> {
+mod sealed {
+  pub trait Sealed {}
+}
+
+pub trait BorrowJust<'a, Target: ToRef<'a>, Indices>: sealed::Sealed {
   fn borrow_just(self) -> <Target as ToRef<'a>>::Ref;
 }
+
+impl<'a, Source: ToRef<'a>> sealed::Sealed for &'a Source {}
 
 impl<'a, Source: ToRef<'a>, Target: ToRef<'a>, Indices> BorrowJust<'a, Target, Indices> for &'a Source
 where

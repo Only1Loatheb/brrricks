@@ -79,25 +79,42 @@ macro_rules! impl_param_value {
   };
 }
 
-pub trait ParamList: HList + Serialize + DeserializeOwned + Send + Sync {
+pub(crate) mod sealed {
+  use super::SessionContext;
+  use serde::Serialize;
+  use serde::de::DeserializeOwned;
+
+  pub trait ParamList: Serialize + DeserializeOwned + Send + Sync {
+    fn deserialize_param_list(session_context: SessionContext) -> anyhow::Result<Self> {
+      Ok(postcard::from_bytes(&session_context)?)
+    }
+  }
+
+  pub trait Sealed {}
+  impl Sealed for typenum::B0 {}
+}
+
+pub trait ParamList: sealed::ParamList + HList + Serialize + DeserializeOwned + Send + Sync {
   fn serialize_param_list(&self) -> anyhow::Result<SessionContext> {
     Ok(postcard::to_allocvec(self)?)
   }
-
-  fn deserialize_param_list(session_context: SessionContext) -> anyhow::Result<Self> {
-    Ok(postcard::from_bytes(&session_context)?)
-  }
 }
 
+impl sealed::ParamList for HNil {}
 impl ParamList for HNil {}
 
 #[diagnostic::on_unimplemented(
   message = "cannot include parameter: duplicate parameter UID for `{Param}` found in ParamList",
   note = "Parameter `{Param}` appears multiple times in the parameter list, or multiple parameters share the same UID"
 )]
-pub trait PreventDuplicateParamUidInParamList<Param> {}
+pub trait PreventDuplicateParamUidInParamList<Param>: sealed::Sealed {}
 
 impl<Param> PreventDuplicateParamUidInParamList<Param> for B0 {}
+
+impl<Head: ParamValue, Tail: ParamList + Contains<Head>> sealed::ParamList for HCons<Head, Tail> where
+  <Tail as Contains<Head>>::IsContained: PreventDuplicateParamUidInParamList<Head>
+{
+}
 
 impl<Head: ParamValue, Tail: ParamList + Contains<Head>> ParamList for HCons<Head, Tail> where
   <Tail as Contains<Head>>::IsContained: PreventDuplicateParamUidInParamList<Head>

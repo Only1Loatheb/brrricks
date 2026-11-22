@@ -1,80 +1,82 @@
-use crate::step::BackToken;
 pub mod finalized_case_of_flowing_split_process;
 pub mod first_case_of_flowing_split_process;
 pub mod flowing_case_of_finalized_split_process;
 pub mod flowing_case_of_flowing_split_process;
 
-use crate::builder::{
-  IntermediateFlowingSplitResult, MaybeFormContext, PreviousRunYieldedAt, SessionContext, StepIndex,
-};
-use crate::frunk::coproduct::Coproduct;
-use crate::param_list::ParamList;
-use crate::param_list::concat::Concat;
-use crate::step::ProcessMessages;
-use std::future::Future;
+pub(crate) mod sealed {
+  use crate::builder::{
+    IntermediateFlowingSplitResult, MaybeFormContext, PreviousRunYieldedAt, SessionContext, StepIndex,
+  };
+  use crate::frunk::coproduct::Coproduct;
+  use crate::param_list::ParamList;
+  use crate::param_list::concat::Concat;
+  use crate::step::{BackToken, ProcessMessages};
+  use std::future::Future;
 
-/// Producing the same parameter types across different split cases is supported.
-pub trait FlowingSplitProcess<SplitterProducesForOtherCases>: Sized + Send + Sync {
-  // Please specify all associated types at the impl FlowingSplitProcess side for inference to work.
-  type EntryConsumes: ParamList;
-  type ProcessBeforeSplitProduces: ParamList;
-  type SplitterProducesForThisCase: ParamList + Concat<Self::ProcessBeforeSplitProduces>;
-  type EveryFlowingCaseProduces: ParamList; // already includes ProcessBeforeSplitProduces;
-  type SubprocessConsumes: ParamList;
-  type Messages: ProcessMessages;
-  type ProcessBeforeSplitEverProduced: ParamList;
-  type EverProduced: ParamList;
+  pub trait FlowingSplitProcess<SplitterProducesForOtherCases>: Sized + Send + Sync {
+    // Please specify all associated types at the impl FlowingSplitProcess side for inference to work.
+    type EntryConsumes: ParamList;
+    type ProcessBeforeSplitProduces: ParamList;
+    type SplitterProducesForThisCase: ParamList + Concat<Self::ProcessBeforeSplitProduces>;
+    type EveryFlowingCaseProduces: ParamList; // already includes ProcessBeforeSplitProduces;
+    type SubprocessConsumes: ParamList;
+    type Messages: ProcessMessages;
+    type ProcessBeforeSplitEverProduced: ParamList;
+    type EverProduced: ParamList;
 
-  fn resume_run(
-    &self,
-    previous_run_produced: SessionContext,
-    previous_run_yielded_at: PreviousRunYieldedAt,
-    user_input: String,
-    form_context: MaybeFormContext,
-    back_token: Option<BackToken>,
-  ) -> impl Future<
-    Output = IntermediateFlowingSplitResult<
-      Self::ProcessBeforeSplitProduces,
-      SplitterProducesForOtherCases,
-      Self::EveryFlowingCaseProduces,
-      Self::Messages,
-    >,
-  > + Send;
+    fn resume_run(
+      &self,
+      previous_run_produced: SessionContext,
+      previous_run_yielded_at: PreviousRunYieldedAt,
+      user_input: String,
+      form_context: MaybeFormContext,
+      back_token: Option<BackToken>,
+    ) -> impl Future<
+      Output = IntermediateFlowingSplitResult<
+        Self::ProcessBeforeSplitProduces,
+        SplitterProducesForOtherCases,
+        Self::EveryFlowingCaseProduces,
+        Self::Messages,
+      >,
+    > + Send;
 
-  /// When a [`crate::builder::flowing_process::FlowingProcess`] is added to handle split case
-  /// the top level process has to pass to the case what process before split produces and what splitter produced for it
-  /// The [`crate::builder::flowing_process::FlowingProcess::then`] concatenates params produced in the step with all
-  /// the consumes.
-  /// We can extract what process before split produced from case outcome
-  fn continue_run(
-    &self,
-    process_before_split_produced: Self::ProcessBeforeSplitProduces,
-    splitter_produces_for_this_case_or_other_cases_consumes: Coproduct<
-      Self::SplitterProducesForThisCase,
-      SplitterProducesForOtherCases,
-    >,
-    back_token: Option<BackToken>,
-  ) -> impl Future<
-    Output = IntermediateFlowingSplitResult<
-      Self::ProcessBeforeSplitProduces,
-      SplitterProducesForOtherCases,
-      Self::EveryFlowingCaseProduces,
-      Self::Messages,
-    >,
-  > + Send;
+    /// When a [`crate::builder::flowing_process::FlowingProcess`] is added to handle split case
+    /// the top level process has to pass to the case what process before split produces and what splitter produced for it
+    /// The [`crate::builder::flowing_process::FlowingProcess::then`] concatenates params produced in the step with all
+    /// the consumes.
+    /// We can extract what process before split produced from case outcome
+    fn continue_run(
+      &self,
+      process_before_split_produced: Self::ProcessBeforeSplitProduces,
+      splitter_produces_for_this_case_or_other_cases_consumes: Coproduct<
+        Self::SplitterProducesForThisCase,
+        SplitterProducesForOtherCases,
+      >,
+      back_token: Option<BackToken>,
+    ) -> impl Future<
+      Output = IntermediateFlowingSplitResult<
+        Self::ProcessBeforeSplitProduces,
+        SplitterProducesForOtherCases,
+        Self::EveryFlowingCaseProduces,
+        Self::Messages,
+      >,
+    > + Send;
 
-  fn run_split_subprocess(
-    &self,
-    subprocess_consumes: Self::SubprocessConsumes,
-    back_token: Option<BackToken>,
-  ) -> impl Future<
-    Output = IntermediateFlowingSplitResult<
-      Self::ProcessBeforeSplitProduces,
-      SplitterProducesForOtherCases,
-      Self::EveryFlowingCaseProduces,
-      Self::Messages,
-    >,
-  > + Send;
+    fn run_split_subprocess(
+      &self,
+      subprocess_consumes: Self::SubprocessConsumes,
+      back_token: Option<BackToken>,
+    ) -> impl Future<
+      Output = IntermediateFlowingSplitResult<
+        Self::ProcessBeforeSplitProduces,
+        SplitterProducesForOtherCases,
+        Self::EveryFlowingCaseProduces,
+        Self::Messages,
+      >,
+    > + Send;
 
-  fn enumerate_steps(&mut self, last_used_index: StepIndex) -> StepIndex;
+    fn enumerate_steps(&mut self, last_used_index: StepIndex) -> StepIndex;
+  }
 }
+
+pub(crate) use sealed::FlowingSplitProcess;

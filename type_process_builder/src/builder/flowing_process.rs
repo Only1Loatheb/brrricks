@@ -1,4 +1,3 @@
-use crate::step::BackToken;
 pub mod entry_flowing_process;
 pub mod form_flowing_process;
 pub mod operation_flowing_process;
@@ -10,47 +9,54 @@ use crate::builder::form_flowing_process::FormFlowingProcess;
 use crate::builder::operation_flowing_process::OperationFlowingProcess;
 use crate::builder::split_process_form_splitter::SplitProcessFormSplitter;
 use crate::builder::split_process_splitter::SplitProcessSplitter;
-use crate::builder::{
-  IntermediateRunResult, MaybeFormContext, PreviousRunYieldedAt, ProcessMessages, SessionContext, SplitProcess,
-  StepIndex, WILL_BE_RENUMBERED,
-};
+use crate::builder::{ProcessMessages, SplitProcess, WILL_BE_RENUMBERED};
 use crate::frunk::coproduct::Coproduct;
 use crate::param_list::ParamList;
 use crate::param_list::concat::Concat;
 use crate::param_list::extract::Extract;
 use crate::step::{Final, Form, FormSplitter, Operation, Splitter};
-use std::future::Future;
 
-pub trait FlowingProcess: Sized + Send + Sync {
-  // Please specify all associated types at the impl FlowingProcess side for inference to work.
-  type EntryConsumes: ParamList;
-  type ProcessBeforeProduces: ParamList;
-  type Produces: ParamList;
-  type SubprocessConsumes: ParamList;
-  type Messages: ProcessMessages;
-  type EverProduced: ParamList;
+pub(crate) mod sealed {
+  use crate::builder::{IntermediateRunResult, MaybeFormContext, PreviousRunYieldedAt, SessionContext, StepIndex};
+  use crate::param_list::ParamList;
+  use crate::step::{BackToken, ProcessMessages};
+  use std::future::Future;
 
-  fn resume_run(
-    &self,
-    previous_run_produced: SessionContext,
-    previous_run_yielded_at: PreviousRunYieldedAt,
-    user_input: String,
-    form_context: MaybeFormContext,
-    back_token: Option<BackToken>,
-  ) -> impl Future<Output = IntermediateRunResult<Self::Produces, Self::Messages>> + Send;
+  pub trait FlowingProcess: Sized + Send + Sync {
+    // Please specify all associated types at the impl FlowingProcess side for inference to work.
+    type EntryConsumes: ParamList;
+    type ProcessBeforeProduces: ParamList;
+    type Produces: ParamList;
+    type SubprocessConsumes: ParamList;
+    type Messages: ProcessMessages;
+    type EverProduced: ParamList;
 
-  fn continue_run(
-    &self,
-    process_before_produces: Self::ProcessBeforeProduces,
-    back_token: Option<BackToken>,
-  ) -> impl Future<Output = IntermediateRunResult<Self::Produces, Self::Messages>> + Send;
+    fn resume_run(
+      &self,
+      previous_run_produced: SessionContext,
+      previous_run_yielded_at: PreviousRunYieldedAt,
+      user_input: String,
+      form_context: MaybeFormContext,
+      back_token: Option<BackToken>,
+    ) -> impl Future<Output = IntermediateRunResult<Self::Produces, Self::Messages>> + Send;
 
-  fn run_subprocess(
-    &self,
-    subprocess_consumes: Self::SubprocessConsumes,
-    back_token: Option<BackToken>,
-  ) -> impl Future<Output = IntermediateRunResult<Self::Produces, Self::Messages>> + Send;
+    fn continue_run(
+      &self,
+      process_before_produces: Self::ProcessBeforeProduces,
+      back_token: Option<BackToken>,
+    ) -> impl Future<Output = IntermediateRunResult<Self::Produces, Self::Messages>> + Send;
 
+    fn run_subprocess(
+      &self,
+      subprocess_consumes: Self::SubprocessConsumes,
+      back_token: Option<BackToken>,
+    ) -> impl Future<Output = IntermediateRunResult<Self::Produces, Self::Messages>> + Send;
+
+    fn enumerate_steps(&mut self, last_used_index: StepIndex) -> StepIndex;
+  }
+}
+
+pub trait FlowingProcess: sealed::FlowingProcess {
   fn then<
     OperationStep: Operation<FinalMessage = <Self::Messages as ProcessMessages>::FinalMessage>,
     ProcessBeforeProducesToLastStepConsumesIndices: Sync + Send,
@@ -140,8 +146,8 @@ pub trait FlowingProcess: Sized + Send + Sync {
     }
   }
 
-  /// The process execution will call [`SplitProcess::continue_run`] instead of the individual case
-  /// [`FlowingProcess::continue_run`] method to avoid excessive nesting:
+  /// The process execution will call `SplitProcess::continue_run` instead of the individual case
+  /// `FlowingProcess::continue_run` method to avoid excessive nesting:
   /// ```compile_fail,E0425
   /// let _ = entry::<HNil, Msg>()
   ///   .show_split(SplitA, |subprocess|
@@ -242,6 +248,6 @@ pub trait FlowingProcess: Sized + Send + Sync {
   {
     FlowingFinalizedProcess { process_before: self, final_step: step, phantom_data: Default::default() }
   }
-
-  fn enumerate_steps(&mut self, last_used_index: StepIndex) -> StepIndex;
 }
+
+impl<T: sealed::FlowingProcess> FlowingProcess for T {}

@@ -1,10 +1,11 @@
 /// Typeclass for `HList` (Heterogeneous List) behaviour.
-pub trait HList: Sized {}
+pub trait HList: crate::sealed::Sealed + Sized {}
 
 /// Represents an empty `HList`.
 #[derive(PartialEq, Debug, Eq, Clone, Copy, PartialOrd, Ord, Hash, Default, serde::Serialize, serde::Deserialize)]
 pub struct HNil;
 
+impl crate::sealed::Sealed for HNil {}
 impl HList for HNil {}
 
 /// Represents a non-empty `HList`, holding a head element and a tail `HList`.
@@ -31,6 +32,7 @@ pub struct HCons<H, T> {
   pub head: H,
 }
 
+impl<H, T> crate::sealed::Sealed for HCons<H, T> {}
 impl<H, T: HList> HList for HCons<H, T> {}
 
 /// Construct an `HList` value from arguments.

@@ -1,3 +1,5 @@
+use crate::builder::flowing_process;
+use crate::builder::flowing_split_process::sealed;
 use crate::builder::subprocess::{Subprocess, subprocess};
 use crate::builder::{
   FinalizedCaseOfFlowingSplitProcess, FinalizedProcess, FlowingProcess, FlowingSplitProcess,
@@ -21,10 +23,10 @@ pub struct FlowingCaseOfFlowingSplitProcess<
   Indices: Sync + Send,
 >
 {
-  pub split_process_before: ProcessBefore,
-  pub case_index: StepIndex,
-  pub this_case: ThisCase,
-  pub phantom_data: PhantomData<(
+  pub(crate) split_process_before: ProcessBefore,
+  pub(crate) case_index: StepIndex,
+  pub(crate) this_case: ThisCase,
+  pub(crate) phantom_data: PhantomData<(
     ThisTag,
     SplitterProducesForThisCase,
     SplitterProducesForOtherCases,
@@ -146,7 +148,7 @@ impl<
     Messages=ProcessBefore::Messages,
   >,
   Indices: Sync + Send,
-> FlowingSplitProcess<SplitterProducesForOtherCases>
+> sealed::FlowingSplitProcess<SplitterProducesForOtherCases>
 for FlowingCaseOfFlowingSplitProcess<
   ThisTag,
   SplitterProducesForThisCase,
@@ -287,7 +289,7 @@ impl<
     Messages=ProcessBefore::Messages,
   >,
   Indices: Sync + Send,
-> FlowingProcess
+> flowing_process::sealed::FlowingProcess
 for FlowingCaseOfFlowingSplitProcess<
   ThisTag,
   SplitterProducesForThisCase,

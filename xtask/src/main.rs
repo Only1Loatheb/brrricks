@@ -47,7 +47,7 @@ fn update_readme(root: &Path) {
     &root.join("README.md"),
     "## Process builder states",
   );
-  update_example_in_readme(&root.join("README.md"), &root.join("src/lib.rs"));
+  update_example_in_readme(&root.join("README.md"), &root.join("type_process_builder/examples/demo/process.rs"));
 }
 
 fn update_diagram_in_readme(diagram_path: &Path, readme_path: &Path, section_header: &str) {

@@ -1,3 +1,5 @@
+use crate::builder::finalized_process;
+use crate::builder::finalized_split_process::sealed;
 use crate::builder::subprocess::{Subprocess, subprocess};
 use crate::builder::{
   FinalizedProcess, FinalizedSplitProcess, FlowingCaseOfFinalizedSplitProcess, FlowingProcess,
@@ -17,10 +19,10 @@ pub struct NextCaseOfFinalizedSplitProcess<
   ProcessBefore: FinalizedSplitProcess<Coproduct<(ThisTag, SplitterProducesForThisCase), SplitterProducesForOtherCases>>,
   ThisCase: FinalizedProcess<SubprocessConsumes=<SplitterProducesForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated>,
 > {
-  pub split_process_before: ProcessBefore,
-  pub case_index: StepIndex,
-  pub this_case: ThisCase,
-  pub phantom_data: PhantomData<(ThisTag, SplitterProducesForThisCase, SplitterProducesForOtherCases)>,
+  pub(crate) split_process_before: ProcessBefore,
+  pub(crate) case_index: StepIndex,
+  pub(crate) this_case: ThisCase,
+  pub(crate) phantom_data: PhantomData<(ThisTag, SplitterProducesForThisCase, SplitterProducesForOtherCases)>,
 }
 
 impl<
@@ -121,7 +123,7 @@ impl<
     SubprocessConsumes=<SplitterProducesForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
     Messages=ProcessBefore::Messages,
   >,
-> FinalizedSplitProcess<SplitterProducesForOtherCases>
+> sealed::FinalizedSplitProcess<SplitterProducesForOtherCases>
 for NextCaseOfFinalizedSplitProcess<
   ThisTag,
   SplitterProducesForThisCase,
@@ -249,7 +251,7 @@ impl<
     SubprocessConsumes=<SplitterProducesForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
     Messages=ProcessBefore::Messages,
   >,
-> FinalizedProcess
+> finalized_process::sealed::FinalizedProcess
 for NextCaseOfFinalizedSplitProcess<ThisTag, SplitterProducesForThisCase, CNil, ProcessBefore, ThisCase>
 where
   ThisCase::EverProduced: Union<ProcessBefore::EverProduced>,

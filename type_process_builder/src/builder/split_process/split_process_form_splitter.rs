@@ -1,10 +1,12 @@
+use crate::builder::split_process::sealed;
 use crate::builder::{
   CurrentRunYieldedAt, FlowingProcess, IntermediateFinalizedSplitOutcome, IntermediateFinalizedSplitResult,
-  IntermediateRunOutcome, MaybeFormContext, ParamList, PreviousRunYieldedAt, SessionContext, SplitProcess, StepIndex,
+  IntermediateRunOutcome, MaybeFormContext, ParamList, PreviousRunYieldedAt, SessionContext, StepIndex,
 };
 use crate::frunk::coproduct::Coproduct;
 use crate::param_list::borrow_just::BorrowJust;
 use crate::param_list::concat::Concat;
+use crate::param_list::sealed::ParamList as _;
 use crate::step::BackToken;
 use crate::step::{FormSplitter, FormWithContext, InputValidation};
 use anyhow::anyhow;
@@ -19,10 +21,10 @@ pub struct SplitProcessFormSplitter<
   ProcessBeforeProducesToCreateFormConsumesIndices,
   ProcessBeforeProducesToValidateInputConsumesIndices,
 > {
-  pub process_before: ProcessBefore,
-  pub splitter: SplitterStep,
-  pub step_index: StepIndex,
-  pub phantom_data: PhantomData<(
+  pub(crate) process_before: ProcessBefore,
+  pub(crate) splitter: SplitterStep,
+  pub(crate) step_index: StepIndex,
+  pub(crate) phantom_data: PhantomData<(
     ProcessBeforeProducesToCreateFormConsumesIndices,
     ProcessBeforeProducesToValidateInputConsumesIndices,
   )>,
@@ -39,7 +41,7 @@ impl<
     >,
   ProcessBeforeProducesToCreateFormConsumesIndices: Sync + Send,
   ProcessBeforeProducesToValidateInputConsumesIndices: Sync + Send,
-> SplitProcess<SplitterProducesForOtherCases>
+> sealed::SplitProcess<SplitterProducesForOtherCases>
   for SplitProcessFormSplitter<
     Tag,
     ProcessBefore,

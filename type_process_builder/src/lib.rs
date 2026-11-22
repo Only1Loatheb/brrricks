@@ -3,6 +3,10 @@ pub mod frunk;
 pub mod param_list;
 pub mod step;
 
+mod sealed {
+  pub trait Sealed {}
+}
+
 pub use frunk::coproduct::{CNil, CoprodInjector, Coproduct};
 pub use frunk::hlist::{HCons, HList, HNil};
 pub use frunk::plucker::{Here, Plucker, There};
@@ -13,76 +17,4 @@ pub use frunk::to_ref::ToRef;
 #[cfg(feature = "docs")]
 #[doc = simple_mermaid::mermaid!("../doc/brrricks_app_session_flow.mmd")]
 #[doc = simple_mermaid::mermaid!("../doc/process_builder_states.mmd")]
-#[cfg_attr(not(feature = "docs"), doc = "")]
-#[cfg(feature = "process-runner-api")]
-pub mod documentation_diagrams {
-  use crate::builder::{
-    FinalizedProcess, FormContext, PreviousRunYieldedAt, RunOutcome, RunnableProcess, SessionContext, StepIndex,
-  };
-  use crate::step::{BackToken, ProcessMessages};
-
-  pub struct SessionState {
-    pub form_context: Option<FormContext>,
-    pub visited_form_steps: Vec<(StepIndex, SessionContext)>,
-  }
-
-  #[allow(clippy::missing_panics_doc)]
-  pub async fn in_memory_process_runner<Messages: ProcessMessages<FinalMessage = String, FormMessage = String>>(
-    process: &RunnableProcess<impl FinalizedProcess<Messages = Messages>>,
-    state: &mut SessionState,
-    user_input: &str,
-  ) -> Result<String, String> {
-    let back_token = if state.visited_form_steps.len() > 1 { Some(BackToken::create()) } else { None };
-    let (previous_step, active_session_context) =
-      state.visited_form_steps.last().cloned().unwrap_or((StepIndex::MIN, SessionContext::default()));
-    let previous_run_yielded_at = PreviousRunYieldedAt(previous_step);
-    let mut run_outcome = process
-      .resume_run(
-        active_session_context,
-        previous_run_yielded_at,
-        user_input.into(),
-        state.form_context.clone(),
-        back_token,
-      )
-      .await
-      .expect("Test failed");
-
-    let mut was_backed = false;
-    if let RunOutcome::Back = run_outcome {
-      was_backed = true;
-      state.visited_form_steps.pop();
-      let (target_step_index, target_session_context) =
-        state.visited_form_steps.last().cloned().expect("Cannot go back further");
-      let back_token = if state.visited_form_steps.len() > 1 { Some(BackToken::create()) } else { None };
-      run_outcome = process
-        .resume_run(
-          target_session_context,
-          PreviousRunYieldedAt(target_step_index),
-          String::new(),
-          None::<FormContext>,
-          back_token,
-        )
-        .await
-        .expect("Test failed");
-    }
-    match run_outcome {
-      RunOutcome::Yield(msg, value, yielded_at, context) => {
-        state.form_context = Some(context);
-        if was_backed {
-          if let Some(last) = state.visited_form_steps.last_mut() {
-            *last = (yielded_at.0, value);
-          }
-        } else {
-          state.visited_form_steps.push((yielded_at.0, value));
-        }
-        Ok(msg)
-      },
-      RunOutcome::RetryUserInput(msg, context) => {
-        state.form_context = Some(context);
-        Ok(msg)
-      },
-      RunOutcome::Finish(msg) => Err(msg),
-      RunOutcome::Back => unreachable!(),
-    }
-  }
-}
+pub mod documentation_diagrams {}

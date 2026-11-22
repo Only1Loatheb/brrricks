@@ -10,7 +10,7 @@ pub struct There<T>(PhantomData<T>);
   message = "cannot consume parameter `{Target}`: it has not been produced by any previous step in this process flow",
   note = "The step being added requires parameter `{Target}`, but it has not been produced yet by any preceding step."
 )]
-pub trait Plucker<Target, Index> {
+pub trait Plucker<Target, Index>: crate::sealed::Sealed {
   type Remainder;
 
   fn pluck(self) -> (Target, Self::Remainder);
