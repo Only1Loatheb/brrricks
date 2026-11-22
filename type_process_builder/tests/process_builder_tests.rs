@@ -507,11 +507,11 @@ impl FormSplitter for TestFormSplitter {
     failed: Self::Context,
     back_token: Option<BackToken>,
   ) -> anyhow::Result<InputValidation<Self::Produces, Messages, Self::Context>> {
-    match (user_input.as_str(), failed) {
-      ("0", _) if let Some(token) = back_token => Ok(InputValidation::Back(token)),
-      ("retry", 0) => Ok(InputValidation::Retry("retry again".into(), failed + 1)),
-      ("finish", _) => Ok(InputValidation::Finish("finished early".into())),
-      ("1", _) => Ok(InputValidation::Successful(Self::Produces::inject((Case1, hlist![Split1Param])))),
+    match (user_input.as_str(), failed, back_token) {
+      ("0", _, Some(token)) => Ok(InputValidation::Back(token)),
+      ("retry", 0, _) => Ok(InputValidation::Retry("retry again".into(), failed + 1)),
+      ("finish", _, _) => Ok(InputValidation::Finish("finished early".into())),
+      ("1", _, _) => Ok(InputValidation::Successful(Self::Produces::inject((Case1, hlist![Split1Param])))),
       _ => Ok(InputValidation::Successful(Self::Produces::inject((Case2, hlist![Split2Param])))),
     }
   }

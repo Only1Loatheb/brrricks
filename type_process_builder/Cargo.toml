@@ -1,11 +1,11 @@
 [package]
 name = "type_process_builder"
-version = "0.1.0"
-edition = "2024"
-rust-version = "1.99.0"
+version.workspace = true
+edition.workspace = true
+rust-version = "1.88.0"
 description = "Type-safe process modelling library with compile-time flow and parameter invariants"
-license = "MIT OR Apache-2.0"
-repository = "https://github.com/Only1Loatheb/brrricks"
+license.workspace = true
+repository.workspace = true
 readme = "../README.md"
 keywords = ["type-state", "process", "workflow", "ussd", "builder"]
 categories = ["asynchronous", "rust-patterns"]
