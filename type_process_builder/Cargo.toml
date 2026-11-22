@@ -22,7 +22,6 @@ process-runner-api = []
 all-features = true
 
 [dependencies]
-anyhow = "1.0"
 serde = { version = "1.0", features = ["derive"] }
 thiserror = "2.0"
 postcard = { version = "1.0", features = ["alloc"] }
@@ -31,6 +30,7 @@ typenum = "1.0"
 
 [dev-dependencies]
 in_memory_process_runner = { path = "../examples/in_memory_process_runner" }
+thiserror = "2.0"
 tokio = { version = "1.0", features = ["macros", "rt", "rt-multi-thread"] }
 type_process_builder = { path = ".", features = ["docs", "process-runner-api"] }
 trybuild = "1.0"

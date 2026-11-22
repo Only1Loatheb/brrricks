@@ -1,3 +1,4 @@
+use crate::builder::MapProcessError;
 use crate::builder::finalized_split_process::sealed;
 use crate::builder::subprocess::{Subprocess, subprocess};
 use crate::builder::{
@@ -5,6 +6,7 @@ use crate::builder::{
   IntermediateFinalizedSplitResult, MaybeFormContext, NextCaseOfFinalizedSplitProcess, ParamList, PreviousRunYieldedAt,
   RunOutcome, SessionContext, SplitProcess, StepIndex, WILL_BE_RENUMBERED,
 };
+use crate::error_list::union::CoprodUnion;
 use crate::frunk::coproduct::Coproduct;
 use crate::param_list::concat::Concat;
 use crate::param_list::union::Union;
@@ -17,11 +19,13 @@ pub struct FirstCaseOfFinalizedSplitProcess<
   SplitterProducesForOtherCases: Send + Sync,
   ProcessBefore: SplitProcess<SplitterProducesForOtherCases>,
   ThisCase: FinalizedProcess,
+  ErrorUnionIndices: Sync + Send,
 > {
   pub(crate) split_process_before: ProcessBefore,
   pub(crate) case_index: StepIndex,
   pub(crate) this_case: ThisCase,
-  pub(crate) phantom_data: PhantomData<(ThisTag, SplitterProducesForThisCase, SplitterProducesForOtherCases)>,
+  pub(crate) phantom_data:
+    PhantomData<(ThisTag, SplitterProducesForThisCase, SplitterProducesForOtherCases, ErrorUnionIndices)>,
 }
 
 impl<
@@ -35,6 +39,7 @@ impl<
       >>::Concatenated,
       Messages = ProcessBefore::Messages,
     >,
+  ErrorUnionIndices: Sync + Send,
 >
   FirstCaseOfFinalizedSplitProcess<
     ProcessBefore::SplitterTagForFirstCase,
@@ -42,15 +47,18 @@ impl<
     Coproduct<(NextTag, SplitterProducesForNextCase), SplitterProducesForOtherCases>,
     ProcessBefore,
     ThisCase,
+    ErrorUnionIndices,
   >
 where
   ThisCase::EverProduced: Union<ProcessBefore::EverProduced>,
+  ThisCase::Errors: CoprodUnion<ProcessBefore::Errors, ErrorUnionIndices>,
 {
   pub fn case_end<
     NextCase: FinalizedProcess<
       SubprocessConsumes=<SplitterProducesForNextCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
       Messages = ProcessBefore::Messages,
     >,
+    NextErrorIndices: Sync + Send,
   >(
     self,
     _assumed_tag: NextTag,
@@ -62,8 +70,14 @@ where
         ProcessBefore::Messages,
       >,
     ) -> NextCase,
-  ) -> NextCaseOfFinalizedSplitProcess<NextTag, SplitterProducesForNextCase, SplitterProducesForOtherCases, Self, NextCase>
-{
+  ) -> NextCaseOfFinalizedSplitProcess<
+    NextTag,
+    SplitterProducesForNextCase,
+    SplitterProducesForOtherCases,
+    Self,
+    NextCase,
+    NextErrorIndices,
+  >{
     NextCaseOfFinalizedSplitProcess {
       split_process_before: self,
       case_index: WILL_BE_RENUMBERED,
@@ -82,6 +96,7 @@ where
       SubprocessConsumes=<SplitterProducesForNextCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
       Messages = ProcessBefore::Messages,
     >,
+    NextErrorIndices: Sync + Send,
   >(
     self,
     _assumed_tag: NextTag,
@@ -97,8 +112,8 @@ where
     SplitterProducesForOtherCases,
     Self,
     NextCase,
-  >
-{
+    NextErrorIndices,
+  >{
     FlowingCaseOfFinalizedSplitProcess {
       split_process_before: self,
       case_index: WILL_BE_RENUMBERED,
@@ -122,6 +137,7 @@ impl<
       >>::Concatenated,
       Messages = ProcessBefore::Messages,
     >,
+  ErrorUnionIndices: Sync + Send,
 > sealed::FinalizedSplitProcess<SplitterProducesForOtherCases>
   for FirstCaseOfFinalizedSplitProcess<
     ProcessBefore::SplitterTagForFirstCase,
@@ -129,10 +145,12 @@ impl<
     SplitterProducesForOtherCases,
     ProcessBefore,
     ThisCase,
+    ErrorUnionIndices,
   >
 where
   ThisCase::EverProduced: Union<ProcessBefore::EverProduced>,
   <ThisCase::EverProduced as Union<ProcessBefore::EverProduced>>::Union: ParamList,
+  ThisCase::Errors: CoprodUnion<ProcessBefore::Errors, ErrorUnionIndices>,
 {
   type EntryConsumes = ProcessBefore::EntryConsumes;
   type ProcessBeforeSplitProduces = ProcessBefore::ProcessBeforeSplitProduces;
@@ -142,6 +160,7 @@ where
   type Messages = ProcessBefore::Messages;
   type ProcessBeforeSplitEverProduced = ProcessBefore::ProcessBeforeSplitEverProduced;
   type EverProduced = <ThisCase::EverProduced as Union<ProcessBefore::EverProduced>>::Union;
+  type Errors = <ThisCase::Errors as CoprodUnion<ProcessBefore::Errors, ErrorUnionIndices>>::Union;
 
   async fn resume_run(
     &self,
@@ -150,13 +169,18 @@ where
     user_input: String,
     form_context: MaybeFormContext,
     back_token: Option<BackToken>,
-  ) -> IntermediateFinalizedSplitResult<Self::ProcessBeforeSplitProduces, SplitterProducesForOtherCases, Self::Messages>
-  {
+  ) -> IntermediateFinalizedSplitResult<
+    Self::ProcessBeforeSplitProduces,
+    SplitterProducesForOtherCases,
+    Self::Messages,
+    Self::Errors,
+  > {
     if previous_run_yielded_at.0 < self.case_index {
       let process_before_output = self
         .split_process_before
         .resume_run(previous_run_produced, previous_run_yielded_at, user_input, form_context, back_token)
-        .await?;
+        .await
+        .map_rhs::<ThisCase::Errors, _>()?;
       match process_before_output {
         IntermediateFinalizedSplitOutcome::GoToCase {
           process_before_split_produced,
@@ -175,7 +199,8 @@ where
       match self
         .this_case
         .resume_run(previous_run_produced, previous_run_yielded_at, user_input, form_context, back_token)
-        .await?
+        .await
+        .map_lhs()?
       {
         RunOutcome::Yield(a, b, c, d) => Ok(IntermediateFinalizedSplitOutcome::Yield(a, b, c, d)),
         RunOutcome::Finish(a) => Ok(IntermediateFinalizedSplitOutcome::Finish(a)),
@@ -193,12 +218,16 @@ where
       SplitterProducesForOtherCases,
     >,
     back_token: Option<BackToken>,
-  ) -> IntermediateFinalizedSplitResult<Self::ProcessBeforeSplitProduces, SplitterProducesForOtherCases, Self::Messages>
-  {
+  ) -> IntermediateFinalizedSplitResult<
+    Self::ProcessBeforeSplitProduces,
+    SplitterProducesForOtherCases,
+    Self::Messages,
+    Self::Errors,
+  > {
     match splitter_produces_for_this_case_or_other_cases_consumes {
       Coproduct::Inl(splitter_produces_for_this_case) => {
         let this_case_consumes = splitter_produces_for_this_case.concat(process_before_split_produced);
-        match self.this_case.run_subprocess(this_case_consumes, back_token).await? {
+        match self.this_case.run_subprocess(this_case_consumes, back_token).await.map_lhs()? {
           RunOutcome::Yield(a, b, c, d) => Ok(IntermediateFinalizedSplitOutcome::Yield(a, b, c, d)),
           RunOutcome::Finish(a) => Ok(IntermediateFinalizedSplitOutcome::Finish(a)),
           RunOutcome::RetryUserInput(a, b) => Ok(IntermediateFinalizedSplitOutcome::RetryUserInput(a, b)),
@@ -216,9 +245,17 @@ where
     &self,
     subprocess_consumes: Self::SubprocessConsumes,
     back_token: Option<BackToken>,
-  ) -> IntermediateFinalizedSplitResult<Self::ProcessBeforeSplitProduces, SplitterProducesForOtherCases, Self::Messages>
-  {
-    let process_before_output = self.split_process_before.run_subprocess(subprocess_consumes, back_token).await?;
+  ) -> IntermediateFinalizedSplitResult<
+    Self::ProcessBeforeSplitProduces,
+    SplitterProducesForOtherCases,
+    Self::Messages,
+    Self::Errors,
+  > {
+    let process_before_output = self
+      .split_process_before
+      .run_subprocess(subprocess_consumes, back_token)
+      .await
+      .map_rhs::<ThisCase::Errors, _>()?;
     match process_before_output {
       IntermediateFinalizedSplitOutcome::GoToCase {
         process_before_split_produced,

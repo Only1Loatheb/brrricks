@@ -1,0 +1,18 @@
+error[E0277]: cannot include error: duplicate error UID for `ErrorA` found in ErrorCoproduct
+  --> tests/dx/duplicate_error_coproduct_fails.rs:15:28
+   |
+15 |   assert_error_coproduct::<Coprod!(ErrorA, ErrorA)>();
+   |                            ^^^^^^^^^^^^^^^^^^^^^^^ the trait `PreventDuplicateErrorUidInCoproduct<ErrorA>` is not implemented for `B1`
+   |
+   = note: Error `ErrorA` appears multiple times in the error coproduct, or multiple errors share the same UID
+help: the trait `PreventDuplicateErrorUidInCoproduct<Err>` is implemented for `B0`
+  --> src/error_list.rs
+   |
+   | impl<Err> PreventDuplicateErrorUidInCoproduct<Err> for B0 {}
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   = note: required for `Coproduct<ErrorA, Coproduct<ErrorA, CNil>>` to implement `ErrorCoproduct`
+note: required by a bound in `assert_error_coproduct`
+  --> tests/dx/duplicate_error_coproduct_fails.rs:12:30
+   |
+12 | fn assert_error_coproduct<T: ErrorCoproduct>() {}
+   |                              ^^^^^^^^^^^^^^ required by this bound in `assert_error_coproduct`

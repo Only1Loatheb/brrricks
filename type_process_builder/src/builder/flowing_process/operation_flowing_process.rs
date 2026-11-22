@@ -1,8 +1,11 @@
+use crate::builder::MapProcessError;
+use crate::builder::MapStepErr;
 use crate::builder::flowing_process::sealed;
 use crate::builder::{
   FlowingProcess, IntermediateRunOutcome, IntermediateRunResult, MaybeFormContext, ParamList, PreviousRunYieldedAt,
   SessionContext, StepIndex,
 };
+use crate::error_list::union::CoprodUnion;
 use crate::param_list::borrow_just::BorrowJust;
 use crate::param_list::concat::Concat;
 use crate::step::BackToken;
@@ -13,20 +16,28 @@ pub struct OperationFlowingProcess<
   ProcessBefore: FlowingProcess,
   OperationStep: Operation,
   ProcessBeforeProducesToLastStepConsumesIndices,
+  ErrorUnionIndices,
 > {
   pub(crate) process_before: ProcessBefore,
   pub(crate) last_step: OperationStep,
-  pub(crate) phantom_data: PhantomData<ProcessBeforeProducesToLastStepConsumesIndices>,
+  pub(crate) phantom_data: PhantomData<(ProcessBeforeProducesToLastStepConsumesIndices, ErrorUnionIndices)>,
 }
 
 impl<
   ProcessBefore: FlowingProcess,
   OperationStep: Operation<FinalMessage = <ProcessBefore::Messages as ProcessMessages>::FinalMessage>,
   ProcessBeforeProducesToLastStepConsumesIndices: Sync + Send,
+  ErrorUnionIndices: Sync + Send,
 > sealed::FlowingProcess
-  for OperationFlowingProcess<ProcessBefore, OperationStep, ProcessBeforeProducesToLastStepConsumesIndices>
+  for OperationFlowingProcess<
+    ProcessBefore,
+    OperationStep,
+    ProcessBeforeProducesToLastStepConsumesIndices,
+    ErrorUnionIndices,
+  >
 where
   OperationStep::Produces: ParamList + Concat<ProcessBefore::Produces> + Concat<ProcessBefore::EverProduced>,
+  OperationStep::Error: CoprodUnion<ProcessBefore::Errors, ErrorUnionIndices>,
   for<'a> &'a ProcessBefore::Produces:
     BorrowJust<'a, OperationStep::Consumes, ProcessBeforeProducesToLastStepConsumesIndices>,
 {
@@ -36,6 +47,7 @@ where
   type SubprocessConsumes = ProcessBefore::SubprocessConsumes;
   type Messages = ProcessBefore::Messages;
   type EverProduced = <OperationStep::Produces as Concat<ProcessBefore::EverProduced>>::Concatenated;
+  type Errors = <OperationStep::Error as CoprodUnion<ProcessBefore::Errors, ErrorUnionIndices>>::Union;
 
   async fn resume_run(
     &self,
@@ -44,11 +56,12 @@ where
     user_input: String,
     form_context: MaybeFormContext,
     back_token: Option<BackToken>,
-  ) -> IntermediateRunResult<Self::Produces, Self::Messages> {
+  ) -> IntermediateRunResult<Self::Produces, Self::Messages, Self::Errors> {
     let process_before_output = self
       .process_before
       .resume_run(previous_run_produced, previous_run_yielded_at, user_input, form_context, back_token)
-      .await?;
+      .await
+      .map_rhs::<OperationStep::Error, _>()?;
     match process_before_output {
       IntermediateRunOutcome::Continue(process_before_produces) => {
         self.continue_run(process_before_produces, back_token).await
@@ -64,9 +77,9 @@ where
     &self,
     process_before_produces: Self::ProcessBeforeProduces,
     _back_token: Option<BackToken>,
-  ) -> IntermediateRunResult<Self::Produces, Self::Messages> {
+  ) -> IntermediateRunResult<Self::Produces, Self::Messages, Self::Errors> {
     let last_step_consumes = (&process_before_produces).borrow_just();
-    let last_step_outcome = self.last_step.handle(last_step_consumes).await?;
+    let last_step_outcome = self.last_step.handle(last_step_consumes).await.map_step_lhs()?;
     Ok(match last_step_outcome {
       OperationOutcome::Successful(last_step_output) => {
         IntermediateRunOutcome::Continue(last_step_output.concat(process_before_produces))
@@ -79,8 +92,9 @@ where
     &self,
     subprocess_consumes: Self::SubprocessConsumes,
     back_token: Option<BackToken>,
-  ) -> IntermediateRunResult<Self::Produces, Self::Messages> {
-    let process_before_output = self.process_before.run_subprocess(subprocess_consumes, back_token).await?;
+  ) -> IntermediateRunResult<Self::Produces, Self::Messages, Self::Errors> {
+    let process_before_output =
+      self.process_before.run_subprocess(subprocess_consumes, back_token).await.map_rhs::<OperationStep::Error, _>()?;
     match process_before_output {
       IntermediateRunOutcome::Continue(process_before_produces) => {
         self.continue_run(process_before_produces, back_token).await

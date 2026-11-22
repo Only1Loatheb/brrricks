@@ -16,7 +16,7 @@ impl<UnderlyingProcess: FinalizedProcess> RunnableProcess<UnderlyingProcess> {
     user_input: String,
     form_context: MaybeFormContext,
     back_token: Option<BackToken>,
-  ) -> RunResult<UnderlyingProcess::Messages> {
+  ) -> RunResult<UnderlyingProcess::Messages, UnderlyingProcess::Errors> {
     self
       .finalized_process
       .resume_run(previous_run_produced, previous_run_yielded_at, user_input, form_context, back_token)

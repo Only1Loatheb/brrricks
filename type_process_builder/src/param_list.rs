@@ -81,13 +81,12 @@ macro_rules! impl_param_value {
 
 pub(crate) mod sealed {
   use super::SessionContext;
-  use crate::builder::ProcessError;
   use serde::Serialize;
   use serde::de::DeserializeOwned;
 
   pub trait ParamList: Serialize + DeserializeOwned + Send + Sync {
-    fn deserialize_param_list(session_context: SessionContext) -> Result<Self, ProcessError> {
-      Ok(postcard::from_bytes(&session_context)?)
+    fn deserialize_param_list(session_context: SessionContext) -> Result<Self, postcard::Error> {
+      postcard::from_bytes(&session_context)
     }
   }
 
@@ -96,8 +95,8 @@ pub(crate) mod sealed {
 }
 
 pub trait ParamList: sealed::ParamList + HList + Serialize + DeserializeOwned + Send + Sync {
-  fn serialize_param_list(&self) -> Result<SessionContext, crate::builder::ProcessError> {
-    Ok(postcard::to_allocvec(self)?)
+  fn serialize_param_list(&self) -> Result<SessionContext, postcard::Error> {
+    postcard::to_allocvec(self)
   }
 }
 

@@ -12,6 +12,7 @@ pub(crate) mod sealed {
   use crate::builder::{
     IntermediateFinalizedSplitResult, MaybeFormContext, ParamList, PreviousRunYieldedAt, SessionContext, StepIndex,
   };
+  use crate::error_list::ErrorCoproduct;
   use crate::frunk::coproduct::Coproduct;
   use crate::param_list::concat::Concat;
   use crate::step::{BackToken, ProcessMessages};
@@ -29,6 +30,7 @@ pub(crate) mod sealed {
     type Messages: ProcessMessages;
     type ProcessBeforeSplitEverProduced: ParamList;
     type EverProduced: ParamList;
+    type Errors: ErrorCoproduct;
 
     fn resume_run(
       &self,
@@ -42,6 +44,7 @@ pub(crate) mod sealed {
         Self::ProcessBeforeSplitProduces,
         Coproduct<Self::SplitterProducesForFirstCase, SplitterProducesForOtherCases>,
         Self::Messages,
+        Self::Errors,
       >,
     > + Send;
 
@@ -54,6 +57,7 @@ pub(crate) mod sealed {
         Self::ProcessBeforeSplitProduces,
         Coproduct<Self::SplitterProducesForFirstCase, SplitterProducesForOtherCases>,
         Self::Messages,
+        Self::Errors,
       >,
     > + Send;
 
@@ -66,6 +70,7 @@ pub(crate) mod sealed {
         Self::ProcessBeforeSplitProduces,
         Coproduct<Self::SplitterProducesForFirstCase, SplitterProducesForOtherCases>,
         Self::Messages,
+        Self::Errors,
       >,
     > + Send;
 
@@ -79,7 +84,7 @@ pub(crate) mod sealed {
 pub trait SplitProcess<SplitterProducesForOtherCases: Send + Sync>:
   sealed::SplitProcess<SplitterProducesForOtherCases>
 {
-  fn case_end<ThisCase: FinalizedProcess<Messages = Self::Messages>>(
+  fn case_end<ThisCase: FinalizedProcess<Messages = Self::Messages>, ErrorUnionIndices: Sync + Send>(
     self,
     _assumed_tag: Self::SplitterTagForFirstCase,
     create_case: impl FnOnce(
@@ -96,6 +101,7 @@ pub trait SplitProcess<SplitterProducesForOtherCases: Send + Sync>:
     SplitterProducesForOtherCases,
     Self,
     ThisCase,
+    ErrorUnionIndices,
   >
   where
     Self::SplitterProducesForFirstCase: Concat<Self::ProcessBeforeSplitProduces>,
@@ -118,6 +124,7 @@ pub trait SplitProcess<SplitterProducesForOtherCases: Send + Sync>:
       SubprocessConsumes=<Self::SplitterProducesForFirstCase as Concat<Self::ProcessBeforeSplitProduces>>::Concatenated,
       Messages = Self::Messages,
     >,
+    ErrorUnionIndices: Sync + Send,
   >(
     self,
     _assumed_tag: Self::SplitterTagForFirstCase,
@@ -133,6 +140,7 @@ pub trait SplitProcess<SplitterProducesForOtherCases: Send + Sync>:
     SplitterProducesForOtherCases,
     Self,
     ThisCase,
+    ErrorUnionIndices,
   >
   where
     Self::SplitterProducesForFirstCase: Concat<Self::ProcessBeforeSplitProduces>,

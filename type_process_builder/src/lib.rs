@@ -1,6 +1,7 @@
 //! Type-safe process modelling library with compile-time flow and parameter invariants.
 
 pub mod builder;
+pub mod error_list;
 pub mod frunk;
 pub mod param_list;
 pub mod step;

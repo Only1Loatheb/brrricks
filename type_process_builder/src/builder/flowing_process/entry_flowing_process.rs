@@ -3,6 +3,7 @@ use crate::builder::{
   IntermediateRunOutcome, IntermediateRunResult, MaybeFormContext, PreviousRunYieldedAt, ProcessError, SessionContext,
   StepIndex,
 };
+use crate::frunk::coproduct::CNil;
 use crate::frunk::hlist::HNil;
 use crate::param_list::ParamList;
 use crate::step::{BackToken, Entry, ProcessMessages};
@@ -15,6 +16,7 @@ impl<Produces: ParamList, Messages: ProcessMessages> sealed::FlowingProcess for 
   type SubprocessConsumes = HNil;
   type Messages = Messages;
   type EverProduced = Produces;
+  type Errors = CNil;
 
   fn resume_run(
     &self,
@@ -23,9 +25,11 @@ impl<Produces: ParamList, Messages: ProcessMessages> sealed::FlowingProcess for 
     _user_input: String,
     _form_context: MaybeFormContext,
     _back_token: Option<BackToken>,
-  ) -> impl Future<Output = IntermediateRunResult<Self::Produces, Self::Messages>> {
+  ) -> impl Future<Output = IntermediateRunResult<Self::Produces, Self::Messages, Self::Errors>> {
     let result = if previous_run_yielded_at.0 == StepIndex::MIN {
-      Produces::deserialize_param_list(previous_run_produced).map(IntermediateRunOutcome::Continue)
+      Produces::deserialize_param_list(previous_run_produced)
+        .map(IntermediateRunOutcome::Continue)
+        .map_err(ProcessError::from)
     } else {
       Err(ProcessError::InvalidStepIndex(previous_run_yielded_at.0))
     };
@@ -36,7 +40,7 @@ impl<Produces: ParamList, Messages: ProcessMessages> sealed::FlowingProcess for 
     &self,
     _: Self::ProcessBeforeProduces,
     _back_token: Option<BackToken>,
-  ) -> impl Future<Output = IntermediateRunResult<Self::Produces, Self::Messages>> {
+  ) -> impl Future<Output = IntermediateRunResult<Self::Produces, Self::Messages, Self::Errors>> {
     #[allow(unreachable_code)]
     std::future::ready(unreachable!("We never continue from entry step"))
   }
@@ -45,7 +49,7 @@ impl<Produces: ParamList, Messages: ProcessMessages> sealed::FlowingProcess for 
     &self,
     _: Self::SubprocessConsumes,
     _back_token: Option<BackToken>,
-  ) -> impl Future<Output = IntermediateRunResult<Self::Produces, Self::Messages>> {
+  ) -> impl Future<Output = IntermediateRunResult<Self::Produces, Self::Messages, Self::Errors>> {
     #[allow(unreachable_code)]
     std::future::ready(unreachable!("Entry step never starts subprocess"))
   }

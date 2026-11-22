@@ -1,3 +1,4 @@
+use crate::builder::MapProcessError;
 use crate::builder::flowing_process;
 use crate::builder::flowing_split_process::sealed;
 use crate::builder::subprocess::{Subprocess, subprocess};
@@ -7,6 +8,7 @@ use crate::builder::{
   IntermediateRunOutcome, IntermediateRunResult, MaybeFormContext, ParamList, PreviousRunYieldedAt, SessionContext,
   StepIndex, WILL_BE_RENUMBERED,
 };
+use crate::error_list::union::CoprodUnion;
 use crate::frunk::coproduct::{CNil, Coproduct};
 use crate::param_list::concat::Concat;
 use crate::param_list::union::Union;
@@ -21,6 +23,7 @@ pub struct FlowingCaseOfFinalizedSplitProcess<
   ThisCase: FlowingProcess<SubprocessConsumes=
   <SplitterProducesForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated
   >,
+  ErrorUnionIndices: Sync + Send,
 >
 {
   pub(crate) split_process_before: ProcessBefore,
@@ -30,6 +33,7 @@ pub struct FlowingCaseOfFinalizedSplitProcess<
     ThisTag,
     SplitterProducesForThisCase,
     SplitterProducesForOtherCases,
+    ErrorUnionIndices,
   )>,
 }
 
@@ -46,6 +50,7 @@ impl<
     SubprocessConsumes=<SplitterProducesForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
     Messages=ProcessBefore::Messages,
   >,
+  ErrorUnionIndices: Sync + Send,
 >
 FlowingCaseOfFinalizedSplitProcess<
   ThisTag,
@@ -53,16 +58,19 @@ FlowingCaseOfFinalizedSplitProcess<
   Coproduct<(NextTag, SplitterProducesForNextCase), SplitterProducesForOtherCases>,
   ProcessBefore,
   ThisCase,
+  ErrorUnionIndices,
 >
 where
   ThisCase::EverProduced: Union<ProcessBefore::EverProduced>,
   <ThisCase::EverProduced as Union<ProcessBefore::EverProduced>>::Union: ParamList,
+  ThisCase::Errors: CoprodUnion<ProcessBefore::Errors, ErrorUnionIndices>,
 {
   pub fn case_end<
     NextCase: FinalizedProcess<
       SubprocessConsumes=<SplitterProducesForNextCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
       Messages = ProcessBefore::Messages,
     >,
+    NextErrorIndices: Sync + Send,
   >(
     self,
     _assumed_tag: NextTag,
@@ -78,6 +86,7 @@ where
     SplitterProducesForOtherCases,
     Self,
     NextCase,
+    NextErrorIndices,
   >
   {
     FinalizedCaseOfFlowingSplitProcess {
@@ -100,6 +109,7 @@ where
       Messages=ProcessBefore::Messages,
     >,
     Indices: Sync + Send,
+    NextErrorIndices: Sync + Send,
   >(
     self,
     _assumed_tag: NextTag,
@@ -116,6 +126,7 @@ where
     Self,
     NextCase,
     Indices,
+    NextErrorIndices,
   >
   {
     FlowingCaseOfFlowingSplitProcess {
@@ -142,6 +153,7 @@ impl<
     Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
     Messages=ProcessBefore::Messages,
   >,
+  ErrorUnionIndices: Sync + Send,
 > sealed::FlowingSplitProcess<SplitterProducesForOtherCases>
 for FlowingCaseOfFinalizedSplitProcess<
   ThisTag,
@@ -149,10 +161,12 @@ for FlowingCaseOfFinalizedSplitProcess<
   SplitterProducesForOtherCases,
   ProcessBefore,
   ThisCase,
+  ErrorUnionIndices,
 >
 where
   ThisCase::EverProduced: Union<ProcessBefore::EverProduced>,
   <ThisCase::EverProduced as Union<ProcessBefore::EverProduced>>::Union: ParamList,
+  ThisCase::Errors: CoprodUnion<ProcessBefore::Errors, ErrorUnionIndices>,
 {
   type EntryConsumes = ProcessBefore::EntryConsumes;
   type ProcessBeforeSplitProduces = ProcessBefore::ProcessBeforeSplitProduces;
@@ -162,6 +176,7 @@ where
   type Messages = ProcessBefore::Messages;
   type ProcessBeforeSplitEverProduced = ProcessBefore::ProcessBeforeSplitEverProduced;
   type EverProduced = <ThisCase::EverProduced as Union<ProcessBefore::EverProduced>>::Union;
+  type Errors = <ThisCase::Errors as CoprodUnion<ProcessBefore::Errors, ErrorUnionIndices>>::Union;
 
   async fn resume_run(
     &self,
@@ -171,12 +186,13 @@ where
     form_context: MaybeFormContext,
     back_token: Option<BackToken>,
   ) -> IntermediateFlowingSplitResult<Self::ProcessBeforeSplitProduces, SplitterProducesForOtherCases,
-    Self::EveryFlowingCaseProduces, Self::Messages> {
+    Self::EveryFlowingCaseProduces, Self::Messages, Self::Errors> {
     if previous_run_yielded_at.0 < self.case_index {
       let process_before_output = self
         .split_process_before
         .resume_run(previous_run_produced, previous_run_yielded_at, user_input, form_context, back_token)
-        .await?;
+        .await
+        .map_rhs::<ThisCase::Errors, _>()?;
       match process_before_output {
         IntermediateFinalizedSplitOutcome::GoToCase {
           process_before_split_produced,
@@ -200,7 +216,7 @@ where
         user_input,
         form_context,
         back_token,
-      ).await? {
+      ).await.map_lhs()? {
         IntermediateRunOutcome::Continue(a) => Ok(IntermediateFlowingSplitOutcome::Continue(a)),
         IntermediateRunOutcome::Yield(a, b, c, d) => Ok(IntermediateFlowingSplitOutcome::Yield(a, b, c, d)),
         IntermediateRunOutcome::Finish(a) => Ok(IntermediateFlowingSplitOutcome::Finish(a)),
@@ -219,11 +235,11 @@ where
     >,
     back_token: Option<BackToken>,
   ) -> IntermediateFlowingSplitResult<Self::ProcessBeforeSplitProduces, SplitterProducesForOtherCases,
-    Self::EveryFlowingCaseProduces, Self::Messages> {
+    Self::EveryFlowingCaseProduces, Self::Messages, Self::Errors> {
     match splitter_produces_for_this_case_or_other_cases_consumes {
       Coproduct::Inl(splitter_produces_for_this_case) => {
         let this_case_consumes = splitter_produces_for_this_case.concat(process_before_split_produced);
-        match self.this_case.run_subprocess(this_case_consumes, back_token).await? {
+        match self.this_case.run_subprocess(this_case_consumes, back_token).await.map_lhs()? {
           IntermediateRunOutcome::Continue(a) => Ok(IntermediateFlowingSplitOutcome::Continue(a)),
           IntermediateRunOutcome::Yield(a, b, c, d) => Ok(IntermediateFlowingSplitOutcome::Yield(a, b, c, d)),
           IntermediateRunOutcome::Finish(a) => Ok(IntermediateFlowingSplitOutcome::Finish(a)),
@@ -239,8 +255,12 @@ where
   }
 
   async fn run_split_subprocess(&self, subprocess_consumes: Self::SubprocessConsumes, back_token: Option<BackToken>) ->
-  IntermediateFlowingSplitResult<Self::ProcessBeforeSplitProduces, SplitterProducesForOtherCases, Self::EveryFlowingCaseProduces, Self::Messages> {
-    let process_before_output = self.split_process_before.run_split_subprocess(subprocess_consumes, back_token).await?;
+  IntermediateFlowingSplitResult<Self::ProcessBeforeSplitProduces, SplitterProducesForOtherCases, Self::EveryFlowingCaseProduces, Self::Messages, Self::Errors> {
+    let process_before_output = self
+      .split_process_before
+      .run_split_subprocess(subprocess_consumes, back_token)
+      .await
+      .map_rhs::<ThisCase::Errors, _>()?;
     match process_before_output {
       IntermediateFinalizedSplitOutcome::GoToCase {
         process_before_split_produced,
@@ -276,6 +296,7 @@ impl<
     SubprocessConsumes=<SplitterProducesForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
     Messages=ProcessBefore::Messages,
   >,
+  ErrorUnionIndices: Sync + Send,
 > flowing_process::sealed::FlowingProcess
 for FlowingCaseOfFinalizedSplitProcess<
   ThisTag,
@@ -283,10 +304,12 @@ for FlowingCaseOfFinalizedSplitProcess<
   CNil,
   ProcessBefore,
   ThisCase,
+  ErrorUnionIndices,
 >
 where
   ThisCase::EverProduced: Union<ProcessBefore::EverProduced>,
   <ThisCase::EverProduced as Union<ProcessBefore::EverProduced>>::Union: ParamList,
+  ThisCase::Errors: CoprodUnion<ProcessBefore::Errors, ErrorUnionIndices>,
 {
   type EntryConsumes = ProcessBefore::EntryConsumes;
   type ProcessBeforeProduces = ProcessBefore::ProcessBeforeSplitProduces;
@@ -294,6 +317,7 @@ where
   type SubprocessConsumes = ProcessBefore::SubprocessConsumes;
   type Messages = ProcessBefore::Messages;
   type EverProduced = <ThisCase::EverProduced as Union<ProcessBefore::EverProduced>>::Union;
+  type Errors = <ThisCase::Errors as CoprodUnion<ProcessBefore::Errors, ErrorUnionIndices>>::Union;
 
   async fn resume_run(
     &self,
@@ -302,12 +326,13 @@ where
     user_input: String,
     form_context: MaybeFormContext,
     back_token: Option<BackToken>,
-  ) -> IntermediateRunResult<Self::Produces, Self::Messages> {
+  ) -> IntermediateRunResult<Self::Produces, Self::Messages, Self::Errors> {
     if previous_run_yielded_at.0 < self.case_index {
       let process_before_output = self
         .split_process_before
         .resume_run(previous_run_produced, previous_run_yielded_at, user_input, form_context, back_token)
-        .await?;
+        .await
+        .map_rhs::<ThisCase::Errors, _>()?;
       match process_before_output {
         IntermediateFinalizedSplitOutcome::GoToCase {
           process_before_split_produced,
@@ -315,7 +340,7 @@ where
         } => match splitter_produces_to_other_cases {
           Coproduct::Inl((_pd, produces_to_this_case)) => {
             let this_case_consumes = produces_to_this_case.concat(process_before_split_produced);
-            match self.this_case.run_subprocess(this_case_consumes, back_token).await? {
+            match self.this_case.run_subprocess(this_case_consumes, back_token).await.map_lhs()? {
               IntermediateRunOutcome::Continue(this_case_produced) => Ok(IntermediateRunOutcome::Continue(this_case_produced)),
               IntermediateRunOutcome::Yield(a, b, c, d) => Ok(IntermediateRunOutcome::Yield(a, b, c, d)),
               IntermediateRunOutcome::Finish(a) => Ok(IntermediateRunOutcome::Finish(a)),
@@ -337,7 +362,7 @@ where
         user_input,
         form_context,
         back_token,
-      ).await? {
+      ).await.map_lhs()? {
         IntermediateRunOutcome::Continue(a) => Ok(IntermediateRunOutcome::Continue(a)),
         IntermediateRunOutcome::Yield(a, b, c, d) => Ok(IntermediateRunOutcome::Yield(a, b, c, d)),
         IntermediateRunOutcome::Finish(a) => Ok(IntermediateRunOutcome::Finish(a)),
@@ -349,13 +374,17 @@ where
 
   /// The process execution will call [`crate::builder::split_process::sealed::SplitProcess::continue_run`] instead of this method.
   /// See [`FlowingProcess::show_split`] for design details.
-  fn continue_run(&self, _process_before_produces: Self::ProcessBeforeProduces, _back_token: Option<BackToken>) -> impl Future<Output = IntermediateRunResult<Self::Produces, Self::Messages>> {
+  fn continue_run(&self, _process_before_produces: Self::ProcessBeforeProduces, _back_token: Option<BackToken>) -> impl Future<Output = IntermediateRunResult<Self::Produces, Self::Messages, Self::Errors>> {
    #[allow(unreachable_code)]
 std::future::ready(unreachable!("continue_run from last case is unreachable. The process is always continued from SplitProcess"))
   }
 
-  async fn run_subprocess(&self, subprocess_consumes: Self::SubprocessConsumes, back_token: Option<BackToken>) -> IntermediateRunResult<Self::Produces, Self::Messages> {
-    let process_before_output = self.split_process_before.run_split_subprocess(subprocess_consumes, back_token).await?;
+  async fn run_subprocess(&self, subprocess_consumes: Self::SubprocessConsumes, back_token: Option<BackToken>) -> IntermediateRunResult<Self::Produces, Self::Messages, Self::Errors> {
+    let process_before_output = self
+      .split_process_before
+      .run_split_subprocess(subprocess_consumes, back_token)
+      .await
+      .map_rhs::<ThisCase::Errors, _>()?;
     match process_before_output {
       IntermediateFinalizedSplitOutcome::GoToCase {
         process_before_split_produced,
@@ -363,7 +392,7 @@ std::future::ready(unreachable!("continue_run from last case is unreachable. The
       } => match splitter_produces_to_other_cases {
         Coproduct::Inl((_pd, produces_to_this_case)) => {
           let this_case_consumes = produces_to_this_case.concat(process_before_split_produced);
-          match self.this_case.run_subprocess(this_case_consumes, back_token).await? {
+          match self.this_case.run_subprocess(this_case_consumes, back_token).await.map_lhs()? {
             IntermediateRunOutcome::Continue(this_case_produced) => Ok(IntermediateRunOutcome::Continue(this_case_produced)),
             IntermediateRunOutcome::Yield(a, b, c, d) => Ok(IntermediateRunOutcome::Yield(a, b, c, d)),
             IntermediateRunOutcome::Finish(a) => Ok(IntermediateRunOutcome::Finish(a)),

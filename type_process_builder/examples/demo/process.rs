@@ -4,7 +4,7 @@ use type_process_builder::builder::{FinalizedProcess, FlowingProcess, RunnablePr
 use type_process_builder::step::{
   BackToken, Final, Form, FormSplitter, FormWithContext, InputValidation, ProcessMessages, entry,
 };
-use type_process_builder::{Coprod, HList, HNil, ToRef, hlist, hlist_pat};
+use type_process_builder::{CNil, Coprod, HList, HNil, ToRef, hlist, hlist_pat};
 use typenum::{U0, U1};
 
 use type_process_builder::impl_param_value;
@@ -35,12 +35,13 @@ impl FormSplitter for SelectAmountSource {
   type Produces = Coprod![(PredefinedAmount, HList![Amount]), (CustomAmount, HNil)];
   type Context = EmptyFormContext;
   type Messages = Messages;
+  type Error = CNil;
 
   async fn create_form(
     &self,
     _consumes: <Self::CreateFormConsumes as ToRef<'_>>::Ref,
     back_token: Option<BackToken>,
-  ) -> anyhow::Result<FormWithContext<String, Self::Context>> {
+  ) -> Result<FormWithContext<String, Self::Context>, Self::Error> {
     let string = back_token.map_or("Enter 1 for 100 or 2 for custom amount".into(), |_| {
       "Enter 1 for 100 or 2 for custom amount. 0 to go back".into()
     });
@@ -53,7 +54,7 @@ impl FormSplitter for SelectAmountSource {
     user_input: String,
     _form_context: Self::Context,
     back_token: Option<BackToken>,
-  ) -> anyhow::Result<InputValidation<Self::Produces, Messages, Self::Context>> {
+  ) -> Result<InputValidation<Self::Produces, Messages, Self::Context>, Self::Error> {
     Ok(match (user_input.as_str(), back_token) {
       ("0", Some(back_token)) => InputValidation::Back(back_token),
       ("1", _) => InputValidation::Successful(Self::Produces::inject((PredefinedAmount, hlist!(Amount(100))))),
@@ -73,12 +74,13 @@ impl Form for AmountForm {
   type Produces = HList![Amount];
   type Context = EmptyFormContext;
   type Messages = Messages;
+  type Error = CNil;
 
   async fn create_form(
     &self,
     _consumes: <Self::CreateFormConsumes as ToRef<'_>>::Ref,
     back_token: Option<BackToken>,
-  ) -> anyhow::Result<FormWithContext<String, Self::Context>> {
+  ) -> Result<FormWithContext<String, Self::Context>, Self::Error> {
     let string = back_token.map_or("Enter a number".into(), |_| "Enter a number. 0 to go back".into());
     Ok(FormWithContext(string, EmptyFormContext))
   }
@@ -89,7 +91,7 @@ impl Form for AmountForm {
     user_input: String,
     _form_context: Self::Context,
     back_token: Option<BackToken>,
-  ) -> anyhow::Result<InputValidation<Self::Produces, Messages, Self::Context>> {
+  ) -> Result<InputValidation<Self::Produces, Messages, Self::Context>, Self::Error> {
     if user_input == "0"
       && let Some(token) = back_token
     {
@@ -106,8 +108,9 @@ struct DisplayAmount;
 impl Final for DisplayAmount {
   type Consumes = HList![ShortcodeString, Amount];
   type FinalMessage = String;
+  type Error = CNil;
 
-  async fn handle(&self, consumes: Self::Consumes) -> anyhow::Result<String> {
+  async fn handle(&self, consumes: Self::Consumes) -> Result<String, Self::Error> {
     let hlist_pat!(shortcode_string, amount) = consumes;
     Ok(format!("The amount was: {}. Thanks for dialing: {}!", amount.0, shortcode_string.0))
   }

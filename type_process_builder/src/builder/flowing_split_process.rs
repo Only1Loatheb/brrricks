@@ -7,6 +7,7 @@ pub(crate) mod sealed {
   use crate::builder::{
     IntermediateFlowingSplitResult, MaybeFormContext, PreviousRunYieldedAt, SessionContext, StepIndex,
   };
+  use crate::error_list::ErrorCoproduct;
   use crate::frunk::coproduct::Coproduct;
   use crate::param_list::ParamList;
   use crate::param_list::concat::Concat;
@@ -23,6 +24,7 @@ pub(crate) mod sealed {
     type Messages: ProcessMessages;
     type ProcessBeforeSplitEverProduced: ParamList;
     type EverProduced: ParamList;
+    type Errors: ErrorCoproduct;
 
     fn resume_run(
       &self,
@@ -37,6 +39,7 @@ pub(crate) mod sealed {
         SplitterProducesForOtherCases,
         Self::EveryFlowingCaseProduces,
         Self::Messages,
+        Self::Errors,
       >,
     > + Send;
 
@@ -59,6 +62,7 @@ pub(crate) mod sealed {
         SplitterProducesForOtherCases,
         Self::EveryFlowingCaseProduces,
         Self::Messages,
+        Self::Errors,
       >,
     > + Send;
 
@@ -72,6 +76,7 @@ pub(crate) mod sealed {
         SplitterProducesForOtherCases,
         Self::EveryFlowingCaseProduces,
         Self::Messages,
+        Self::Errors,
       >,
     > + Send;
 

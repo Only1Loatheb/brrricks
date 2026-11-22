@@ -36,7 +36,7 @@ pre-push:
       cargo +nightly clippy --all-targets --all-features -p type_process_builder -p in_memory_process_runner -p qrios_api_process_runner -p qrios_api_process_entry
     - |
       cargo +nightly llvm-cov --package type_process_builder \
-      --fail-under-regions 76 --fail-under-functions 92 --fail-under-lines 88
+      --fail-under-regions 77 --fail-under-functions 92 --fail-under-lines 88
 #    - cargo +nightly mutants -p type_process_builder --jobs 8
     - cargo +nightly test -p qrios_api_process_runner
     - cargo +nightly xtask

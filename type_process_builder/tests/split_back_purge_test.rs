@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use type_process_builder::builder::*;
 use type_process_builder::frunk::to_ref::ToRef;
 use type_process_builder::step::*;
-use type_process_builder::{Coprod, HList, HNil, hlist, impl_param_value};
+use type_process_builder::{CNil, Coprod, HList, HNil, hlist, impl_param_value};
 use typenum::*;
 use unit::test_process_messages;
 
@@ -35,6 +35,7 @@ impl ProcessMessages for Messages {
 
 struct ChooseCaseForm;
 impl Form for ChooseCaseForm {
+  type Error = CNil;
   type CreateFormConsumes = HNil;
   type ValidateInputConsumes = HNil;
   type Produces = HList![CaseOptionParam];
@@ -45,7 +46,7 @@ impl Form for ChooseCaseForm {
     &self,
     _consumes: <Self::CreateFormConsumes as ToRef<'_>>::Ref,
     _back_token: Option<BackToken>,
-  ) -> anyhow::Result<FormWithContext<String, ()>> {
+  ) -> Result<FormWithContext<String, ()>, Self::Error> {
     Ok(FormWithContext("Choose a case".into(), ()))
   }
 
@@ -55,7 +56,7 @@ impl Form for ChooseCaseForm {
     input: String,
     _context: (),
     _back_token: Option<BackToken>,
-  ) -> anyhow::Result<InputValidation<Self::Produces, Messages, ()>> {
+  ) -> Result<InputValidation<Self::Produces, Messages, ()>, Self::Error> {
     let option = input.parse::<u8>().unwrap_or(1);
     Ok(InputValidation::Successful(hlist!(CaseOptionParam(option))))
   }
@@ -66,10 +67,11 @@ pub struct Case2;
 
 struct SelectCase;
 impl Splitter for SelectCase {
+  type Error = CNil;
   type Consumes = HList![CaseOptionParam];
   type Produces = Coprod![(Case1, HNil), (Case2, HNil)];
 
-  async fn handle(&self, consumes: <Self::Consumes as ToRef<'_>>::Ref) -> anyhow::Result<Self::Produces> {
+  async fn handle(&self, consumes: <Self::Consumes as ToRef<'_>>::Ref) -> Result<Self::Produces, Self::Error> {
     Ok(match consumes.head.0 {
       1 => Self::Produces::inject((Case1, HNil)),
       _ => Self::Produces::inject((Case2, HNil)),
@@ -79,6 +81,7 @@ impl Splitter for SelectCase {
 
 struct ProduceBranch1Data;
 impl Operation for ProduceBranch1Data {
+  type Error = CNil;
   type Consumes = HNil;
   type Produces = HList![Branch1Param, SharedParam];
   type FinalMessage = String;
@@ -86,13 +89,14 @@ impl Operation for ProduceBranch1Data {
   async fn handle(
     &self,
     _consumes: <Self::Consumes as ToRef<'_>>::Ref,
-  ) -> anyhow::Result<OperationOutcome<Self::Produces, Self::FinalMessage>> {
+  ) -> Result<OperationOutcome<Self::Produces, Self::FinalMessage>, Self::Error> {
     Ok(OperationOutcome::Successful(hlist!(Branch1Param(0x1111), SharedParam(0x9999))))
   }
 }
 
 struct ProduceBranch2Data;
 impl Operation for ProduceBranch2Data {
+  type Error = CNil;
   type Consumes = HNil;
   type Produces = HList![SharedParam];
   type FinalMessage = String;
@@ -100,13 +104,14 @@ impl Operation for ProduceBranch2Data {
   async fn handle(
     &self,
     _consumes: <Self::Consumes as ToRef<'_>>::Ref,
-  ) -> anyhow::Result<OperationOutcome<Self::Produces, Self::FinalMessage>> {
+  ) -> Result<OperationOutcome<Self::Produces, Self::FinalMessage>, Self::Error> {
     Ok(OperationOutcome::Successful(hlist!(SharedParam(0x9999))))
   }
 }
 
 struct Branch1Form;
 impl Form for Branch1Form {
+  type Error = CNil;
   type CreateFormConsumes = HList![Branch1Param];
   type ValidateInputConsumes = HNil;
   type Produces = HNil;
@@ -117,7 +122,7 @@ impl Form for Branch1Form {
     &self,
     consumes: <Self::CreateFormConsumes as ToRef<'_>>::Ref,
     _back_token: Option<BackToken>,
-  ) -> anyhow::Result<FormWithContext<String, ()>> {
+  ) -> Result<FormWithContext<String, ()>, Self::Error> {
     Ok(FormWithContext(format!("Branch 1: {:#X}", consumes.head.0), ()))
   }
 
@@ -127,7 +132,7 @@ impl Form for Branch1Form {
     input: String,
     _context: (),
     back_token: Option<BackToken>,
-  ) -> anyhow::Result<InputValidation<HNil, Messages, ()>> {
+  ) -> Result<InputValidation<HNil, Messages, ()>, Self::Error> {
     if input == "0"
       && let Some(t) = back_token
     {
@@ -140,6 +145,7 @@ impl Form for Branch1Form {
 
 struct PostMergeForm;
 impl Form for PostMergeForm {
+  type Error = CNil;
   type CreateFormConsumes = HList![SharedParam];
   type ValidateInputConsumes = HNil;
   type Produces = HNil;
@@ -150,7 +156,7 @@ impl Form for PostMergeForm {
     &self,
     consumes: <Self::CreateFormConsumes as ToRef<'_>>::Ref,
     _back_token: Option<BackToken>,
-  ) -> anyhow::Result<FormWithContext<String, ()>> {
+  ) -> Result<FormWithContext<String, ()>, Self::Error> {
     Ok(FormWithContext(format!("Post merge: {:#X}", consumes.head.0), ()))
   }
 
@@ -160,7 +166,7 @@ impl Form for PostMergeForm {
     input: String,
     _context: (),
     back_token: Option<BackToken>,
-  ) -> anyhow::Result<InputValidation<HNil, Messages, ()>> {
+  ) -> Result<InputValidation<HNil, Messages, ()>, Self::Error> {
     if input == "0"
       && let Some(t) = back_token
     {
@@ -173,10 +179,11 @@ impl Form for PostMergeForm {
 
 struct FinalStep;
 impl Final for FinalStep {
+  type Error = CNil;
   type Consumes = HNil;
   type FinalMessage = String;
 
-  async fn handle(&self, _consumes: Self::Consumes) -> anyhow::Result<String> {
+  async fn handle(&self, _consumes: Self::Consumes) -> Result<String, Self::Error> {
     Ok("Done".into())
   }
 }

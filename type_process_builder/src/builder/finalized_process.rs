@@ -1,8 +1,11 @@
+use crate::builder::MapProcessError;
+use crate::builder::MapStepErr;
 use crate::builder::flowing_process::FlowingProcess;
 use crate::builder::runnable_process::RunnableProcess;
 use crate::builder::{
   IntermediateRunOutcome, MaybeFormContext, PreviousRunYieldedAt, RunOutcome, RunResult, SessionContext, StepIndex,
 };
+use crate::error_list::union::CoprodUnion;
 use crate::param_list::extract::Extract;
 use crate::step::BackToken;
 use crate::step::{Final, ProcessMessages};
@@ -10,6 +13,7 @@ use std::marker::PhantomData;
 
 pub(crate) mod sealed {
   use crate::builder::{MaybeFormContext, PreviousRunYieldedAt, RunResult, SessionContext, StepIndex};
+  use crate::error_list::ErrorCoproduct;
   use crate::param_list::ParamList;
   use crate::step::{BackToken, ProcessMessages};
   use std::future::Future;
@@ -21,6 +25,7 @@ pub(crate) mod sealed {
     type SubprocessConsumes: ParamList;
     type Messages: ProcessMessages;
     type EverProduced: ParamList;
+    type Errors: ErrorCoproduct;
 
     fn resume_run(
       &self,
@@ -29,19 +34,19 @@ pub(crate) mod sealed {
       user_input: String,
       form_context: MaybeFormContext,
       back_token: Option<BackToken>,
-    ) -> impl Future<Output = RunResult<Self::Messages>> + Send;
+    ) -> impl Future<Output = RunResult<Self::Messages, Self::Errors>> + Send;
 
     fn continue_run(
       &self,
       process_before_produces: Self::ProcessBeforeProduces,
       back_token: Option<BackToken>,
-    ) -> impl Future<Output = RunResult<Self::Messages>> + Send;
+    ) -> impl Future<Output = RunResult<Self::Messages, Self::Errors>> + Send;
 
     fn run_subprocess(
       &self,
       subprocess_consumes: Self::SubprocessConsumes,
       back_token: Option<BackToken>,
-    ) -> impl Future<Output = RunResult<Self::Messages>> + Send;
+    ) -> impl Future<Output = RunResult<Self::Messages, Self::Errors>> + Send;
 
     fn enumerate_steps(&mut self, last_used_index: StepIndex) -> StepIndex;
   }
@@ -60,19 +65,27 @@ pub struct FlowingFinalizedProcess<
   ProcessBefore: FlowingProcess,
   FinalStep: Final<FinalMessage = <ProcessBefore::Messages as ProcessMessages>::FinalMessage>,
   ProcessBeforeProducesTransformToFinalConsumesIndices,
+  ErrorUnionIndices,
 > {
   pub(crate) process_before: ProcessBefore,
   pub(crate) final_step: FinalStep,
-  pub(crate) phantom_data: PhantomData<ProcessBeforeProducesTransformToFinalConsumesIndices>,
+  pub(crate) phantom_data: PhantomData<(ProcessBeforeProducesTransformToFinalConsumesIndices, ErrorUnionIndices)>,
 }
 
 impl<
   ProcessBefore: FlowingProcess,
   FinalStep: Final<FinalMessage = <ProcessBefore::Messages as ProcessMessages>::FinalMessage>,
   ProcessBeforeProducesTransformToFinalConsumesIndices: Sync + Send,
+  ErrorUnionIndices: Sync + Send,
 > sealed::FinalizedProcess
-  for FlowingFinalizedProcess<ProcessBefore, FinalStep, ProcessBeforeProducesTransformToFinalConsumesIndices>
+  for FlowingFinalizedProcess<
+    ProcessBefore,
+    FinalStep,
+    ProcessBeforeProducesTransformToFinalConsumesIndices,
+    ErrorUnionIndices,
+  >
 where
+  FinalStep::Error: CoprodUnion<ProcessBefore::Errors, ErrorUnionIndices>,
   ProcessBefore::Produces: Extract<FinalStep::Consumes, ProcessBeforeProducesTransformToFinalConsumesIndices>,
 {
   type EntryConsumes = ProcessBefore::EntryConsumes;
@@ -80,6 +93,7 @@ where
   type SubprocessConsumes = ProcessBefore::SubprocessConsumes;
   type Messages = ProcessBefore::Messages;
   type EverProduced = ProcessBefore::EverProduced;
+  type Errors = <FinalStep::Error as CoprodUnion<ProcessBefore::Errors, ErrorUnionIndices>>::Union;
 
   async fn resume_run(
     // check where to resume when copying and pasting to finalized proces with finalized process instead of last case
@@ -89,11 +103,12 @@ where
     user_input: String,
     form_context: MaybeFormContext,
     back_token: Option<BackToken>,
-  ) -> RunResult<Self::Messages> {
+  ) -> RunResult<Self::Messages, Self::Errors> {
     let outcome = self
       .process_before
       .resume_run(previous_run_produced, previous_run_yielded_at, user_input, form_context, back_token)
-      .await?;
+      .await
+      .map_rhs::<FinalStep::Error, _>()?;
     match outcome {
       IntermediateRunOutcome::Continue(val) => self.continue_run(val, back_token).await,
       IntermediateRunOutcome::Yield(a, b, c, d) => Ok(RunOutcome::Yield(a, b, c, d)),
@@ -107,16 +122,17 @@ where
     &self,
     process_before_produces: Self::ProcessBeforeProduces,
     _back_token: Option<BackToken>,
-  ) -> RunResult<Self::Messages> {
-    Ok(RunOutcome::Finish(self.final_step.handle(process_before_produces.extract()).await?))
+  ) -> RunResult<Self::Messages, Self::Errors> {
+    Ok(RunOutcome::Finish(self.final_step.handle(process_before_produces.extract()).await.map_step_lhs()?))
   }
 
   async fn run_subprocess(
     &self,
     subprocess_consumes: Self::SubprocessConsumes,
     back_token: Option<BackToken>,
-  ) -> RunResult<Self::Messages> {
-    let outcome = self.process_before.run_subprocess(subprocess_consumes, back_token).await?;
+  ) -> RunResult<Self::Messages, Self::Errors> {
+    let outcome =
+      self.process_before.run_subprocess(subprocess_consumes, back_token).await.map_rhs::<FinalStep::Error, _>()?;
     match outcome {
       IntermediateRunOutcome::Continue(val) => self.continue_run(val, back_token).await,
       IntermediateRunOutcome::Yield(a, b, c, d) => Ok(RunOutcome::Yield(a, b, c, d)),

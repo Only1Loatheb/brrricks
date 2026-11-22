@@ -3,6 +3,7 @@ use crate::builder::{
   IntermediateRunOutcome, IntermediateRunResult, MaybeFormContext, ParamList, PreviousRunYieldedAt, ProcessError,
   SessionContext, StepIndex,
 };
+use crate::frunk::coproduct::CNil;
 use crate::step::BackToken;
 use crate::step::ProcessMessages;
 use std::marker::PhantomData;
@@ -21,6 +22,7 @@ impl<EntryConsumes: ParamList, ProcessBeforeProduces: ParamList, EverProduced: P
   type SubprocessConsumes = ProcessBeforeProduces;
   type Messages = Messages;
   type EverProduced = EverProduced; // Includes params produced specific for this case in split
+  type Errors = CNil;
 
   fn resume_run(
     &self,
@@ -29,7 +31,7 @@ impl<EntryConsumes: ParamList, ProcessBeforeProduces: ParamList, EverProduced: P
     _user_input: String,
     _form_context: MaybeFormContext,
     _back_token: Option<BackToken>,
-  ) -> impl Future<Output = IntermediateRunResult<Self::Produces, Self::Messages>> {
+  ) -> impl Future<Output = IntermediateRunResult<Self::Produces, Self::Messages, Self::Errors>> {
     std::future::ready(Err(ProcessError::InvalidStepIndex(previous_run_yielded_at.0)))
   }
 
@@ -37,7 +39,7 @@ impl<EntryConsumes: ParamList, ProcessBeforeProduces: ParamList, EverProduced: P
     &self,
     process_before_produces: Self::ProcessBeforeProduces,
     _back_token: Option<BackToken>,
-  ) -> impl Future<Output = IntermediateRunResult<Self::Produces, Self::Messages>> {
+  ) -> impl Future<Output = IntermediateRunResult<Self::Produces, Self::Messages, Self::Errors>> {
     std::future::ready(Ok(IntermediateRunOutcome::Continue(process_before_produces)))
   }
 
@@ -45,7 +47,7 @@ impl<EntryConsumes: ParamList, ProcessBeforeProduces: ParamList, EverProduced: P
     &self,
     subprocess_consumes: Self::SubprocessConsumes,
     back_token: Option<BackToken>,
-  ) -> IntermediateRunResult<Self::Produces, Self::Messages> {
+  ) -> IntermediateRunResult<Self::Produces, Self::Messages, Self::Errors> {
     self.continue_run(subprocess_consumes, back_token).await
   }
 
