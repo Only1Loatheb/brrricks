@@ -6675,16 +6675,23 @@ pub struct VoiceSettings {
     #[serde(skip_serializing_if="Option::is_none")]
     pub input_confirmation_prompt: Option<String>,
 
+    /// Allowed input modes for speech-to-text: SPEECH_OR_KEYPAD, KEYPAD_ONLY, SPEECH_ONLY
+    /// Note: inline enums are not fully supported by openapi-generator
+    #[serde(rename = "sttInput")]
+          #[validate(custom(function = "check_xss_string"))]
+    pub stt_input: String,
+
 }
 
 
 
 impl VoiceSettings {
     #[allow(clippy::new_without_default, clippy::too_many_arguments)]
-    pub fn new(timeout: models::ViewTimeout, ) -> VoiceSettings {
+    pub fn new(timeout: models::ViewTimeout, stt_input: String, ) -> VoiceSettings {
         VoiceSettings {
  timeout,
  input_confirmation_prompt: None,
+ stt_input,
         }
     }
 }
@@ -6705,6 +6712,10 @@ impl std::fmt::Display for VoiceSettings {
                 ].join(",")
             }),
 
+
+            Some("sttInput".to_string()),
+            Some(self.stt_input.to_string()),
+
         ];
 
         write!(f, "{}", params.into_iter().flatten().collect::<Vec<_>>().join(","))
@@ -6724,6 +6735,7 @@ impl std::str::FromStr for VoiceSettings {
         struct IntermediateRep {
             pub timeout: Vec<models::ViewTimeout>,
             pub input_confirmation_prompt: Vec<String>,
+            pub stt_input: Vec<String>,
         }
 
         let mut intermediate_rep = IntermediateRep::default();
@@ -6745,6 +6757,8 @@ impl std::str::FromStr for VoiceSettings {
                     "timeout" => intermediate_rep.timeout.push(<models::ViewTimeout as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
                     #[allow(clippy::redundant_clone)]
                     "inputConfirmationPrompt" => intermediate_rep.input_confirmation_prompt.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
+                    #[allow(clippy::redundant_clone)]
+                    "sttInput" => intermediate_rep.stt_input.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
                     _ => return std::result::Result::Err("Unexpected key while parsing VoiceSettings".to_string())
                 }
             }
@@ -6757,6 +6771,7 @@ impl std::str::FromStr for VoiceSettings {
         std::result::Result::Ok(VoiceSettings {
             timeout: intermediate_rep.timeout.into_iter().next().ok_or_else(|| "timeout missing in VoiceSettings".to_string())?,
             input_confirmation_prompt: intermediate_rep.input_confirmation_prompt.into_iter().next(),
+            stt_input: intermediate_rep.stt_input.into_iter().next().ok_or_else(|| "sttInput missing in VoiceSettings".to_string())?,
         })
     }
 }

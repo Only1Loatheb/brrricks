@@ -4876,12 +4876,25 @@ The session will continue when this message is sent.*/
     ///  "description": "Voice specific settings",
     ///  "type": "object",
     ///  "required": [
+    ///    "sttInput",
     ///    "timeout"
     ///  ],
     ///  "properties": {
     ///    "inputConfirmationPrompt": {
     ///      "description": "Input confirmation prompt. The {input} placeholder is replaced by the actual user input.",
     ///      "type": "string"
+    ///    },
+    ///    "sttInput": {
+    ///      "description": "Allowed input modes for speech-to-text: SPEECH_OR_KEYPAD, KEYPAD_ONLY, SPEECH_ONLY",
+    ///      "examples": [
+    ///        "SPEECH_OR_KEYPAD"
+    ///      ],
+    ///      "type": "string",
+    ///      "enum": [
+    ///        "SPEECH_OR_KEYPAD",
+    ///        "KEYPAD_ONLY",
+    ///        "SPEECH_ONLY"
+    ///      ]
     ///    },
     ///    "timeout": {
     ///      "$ref": "#/components/schemas/ViewTimeout"
@@ -4899,7 +4912,95 @@ The session will continue when this message is sent.*/
             skip_serializing_if = "::std::option::Option::is_none"
         )]
         pub input_confirmation_prompt: ::std::option::Option<::std::string::String>,
+        ///Allowed input modes for speech-to-text: SPEECH_OR_KEYPAD, KEYPAD_ONLY, SPEECH_ONLY
+        #[serde(rename = "sttInput")]
+        pub stt_input: VoiceSettingsSttInput,
         pub timeout: ViewTimeout,
+    }
+    ///Allowed input modes for speech-to-text: SPEECH_OR_KEYPAD, KEYPAD_ONLY, SPEECH_ONLY
+    ///
+    /// <details><summary>JSON schema</summary>
+    ///
+    /// ```json
+    ///{
+    ///  "description": "Allowed input modes for speech-to-text: SPEECH_OR_KEYPAD, KEYPAD_ONLY, SPEECH_ONLY",
+    ///  "examples": [
+    ///    "SPEECH_OR_KEYPAD"
+    ///  ],
+    ///  "type": "string",
+    ///  "enum": [
+    ///    "SPEECH_OR_KEYPAD",
+    ///    "KEYPAD_ONLY",
+    ///    "SPEECH_ONLY"
+    ///  ]
+    ///}
+    /// ```
+    /// </details>
+    #[derive(
+        ::serde::Deserialize,
+        ::serde::Serialize,
+        Clone,
+        Copy,
+        Debug,
+        Eq,
+        Hash,
+        Ord,
+        PartialEq,
+        PartialOrd
+    )]
+    pub enum VoiceSettingsSttInput {
+        #[serde(rename = "SPEECH_OR_KEYPAD")]
+        SpeechOrKeypad,
+        #[serde(rename = "KEYPAD_ONLY")]
+        KeypadOnly,
+        #[serde(rename = "SPEECH_ONLY")]
+        SpeechOnly,
+    }
+    impl ::std::fmt::Display for VoiceSettingsSttInput {
+        fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+            match *self {
+                Self::SpeechOrKeypad => f.write_str("SPEECH_OR_KEYPAD"),
+                Self::KeypadOnly => f.write_str("KEYPAD_ONLY"),
+                Self::SpeechOnly => f.write_str("SPEECH_ONLY"),
+            }
+        }
+    }
+    impl ::std::str::FromStr for VoiceSettingsSttInput {
+        type Err = self::error::ConversionError;
+        fn from_str(
+            value: &str,
+        ) -> ::std::result::Result<Self, self::error::ConversionError> {
+            match value {
+                "SPEECH_OR_KEYPAD" => Ok(Self::SpeechOrKeypad),
+                "KEYPAD_ONLY" => Ok(Self::KeypadOnly),
+                "SPEECH_ONLY" => Ok(Self::SpeechOnly),
+                _ => Err("invalid value".into()),
+            }
+        }
+    }
+    impl ::std::convert::TryFrom<&str> for VoiceSettingsSttInput {
+        type Error = self::error::ConversionError;
+        fn try_from(
+            value: &str,
+        ) -> ::std::result::Result<Self, self::error::ConversionError> {
+            value.parse()
+        }
+    }
+    impl ::std::convert::TryFrom<&::std::string::String> for VoiceSettingsSttInput {
+        type Error = self::error::ConversionError;
+        fn try_from(
+            value: &::std::string::String,
+        ) -> ::std::result::Result<Self, self::error::ConversionError> {
+            value.parse()
+        }
+    }
+    impl ::std::convert::TryFrom<::std::string::String> for VoiceSettingsSttInput {
+        type Error = self::error::ConversionError;
+        fn try_from(
+            value: ::std::string::String,
+        ) -> ::std::result::Result<Self, self::error::ConversionError> {
+            value.parse()
+        }
     }
     ///Merchant payment process will use a timeout when finalizing.
     ///
@@ -5120,7 +5221,7 @@ The session will continue when this message is sent.*/
 
 Swagger is modified so that the generated client and server matches the examples. Schemas like 'NewSession.SessionInput.Dial' have their 'NewSession.SessionInput.' prefix removed so that server generates correctly. When server generated from swagger with 'NewSession.SessionInput.' prefix parses a request the field named r_type inside Rust struct NewSessionSessionInputDial will not be filled automatically, because "type" json field is already consumed at the wrapper level.
 
-Version: 1.7.1*/
+Version: 1.8.0*/
 pub struct Client {
     pub(crate) baseurl: String,
     pub(crate) client: reqwest::Client,
@@ -5156,7 +5257,7 @@ impl Client {
 }
 impl ClientInfo<()> for Client {
     fn api_version() -> &'static str {
-        "1.7.1"
+        "1.8.0"
     }
     fn baseurl(&self) -> &str {
         self.baseurl.as_str()

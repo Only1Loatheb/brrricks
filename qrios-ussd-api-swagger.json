@@ -3,7 +3,7 @@
   "info": {
     "description": "Swagger is modified so that the generated client and server matches the examples. Schemas like 'NewSession.SessionInput.Dial' have their 'NewSession.SessionInput.' prefix removed so that server generates correctly. When server generated from swagger with 'NewSession.SessionInput.' prefix parses a request the field named r_type inside Rust struct NewSessionSessionInputDial will not be filled automatically, because \"type\" json field is already consumed at the wrapper level.",
     "title": "QRIOS USSD API documentation",
-    "version": "1.7.1"
+    "version": "1.8.0"
   },
   "servers": [
     {
@@ -280,7 +280,8 @@
                               "durationMilliseconds": 5000,
                               "strategy": "HANG_UP"
                             },
-                            "inputConfirmationPrompt": "Please confirm your input of {input}"
+                            "inputConfirmationPrompt": "Please confirm your input of {input}",
+                            "sttInput": "SPEECH_OR_KEYPAD"
                           },
                           "type": "InputView"
                         },
@@ -555,7 +556,8 @@
                               "durationMilliseconds": 5000,
                               "strategy": "HANG_UP"
                             },
-                            "inputConfirmationPrompt": "Please confirm your input of {input}"
+                            "inputConfirmationPrompt": "Please confirm your input of {input}",
+                            "sttInput": "SPEECH_OR_KEYPAD"
                           },
                           "type": "InputView"
                         },
@@ -1930,7 +1932,8 @@
       },
       "VoiceSettings": {
         "required": [
-          "timeout"
+          "timeout",
+          "sttInput"
         ],
         "type": "object",
         "properties": {
@@ -1940,6 +1943,16 @@
           "inputConfirmationPrompt": {
             "type": "string",
             "description": "Input confirmation prompt. The {input} placeholder is replaced by the actual user input."
+          },
+          "sttInput": {
+            "type": "string",
+            "description": "Allowed input modes for speech-to-text: SPEECH_OR_KEYPAD, KEYPAD_ONLY, SPEECH_ONLY",
+            "example": "SPEECH_OR_KEYPAD",
+            "enum": [
+              "SPEECH_OR_KEYPAD",
+              "KEYPAD_ONLY",
+              "SPEECH_ONLY"
+            ]
           }
         },
         "description": "Voice specific settings"
