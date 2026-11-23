@@ -363,3 +363,33 @@ async fn test_infallible_process_has_cnil_errors() {
     process.resume_run(empty_ctx(), PreviousRunYieldedAt(StepIndex::MIN), String::new(), None, None).await;
   assert_eq!(res.unwrap(), RunOutcome::Finish("ok".into()));
 }
+
+#[cfg(all(test, target_pointer_width = "64"))]
+mod size_asserts {
+  use super::ProcessError;
+  use crate::{Coprod, impl_step_error};
+  use typenum::*;
+
+  #[derive(Debug, thiserror::Error)]
+  #[error("network error")]
+  struct NetworkError(#[source] std::io::Error);
+
+  #[derive(Debug, thiserror::Error)]
+  #[error("other error")]
+  struct OtherError(#[source] std::io::Error);
+
+  #[derive(Debug, thiserror::Error)]
+  #[error("other error")]
+  struct AnotherError(#[source] std::io::Error);
+
+  impl_step_error! {
+    NetworkError =>  U0,
+    OtherError =>  U1,
+    AnotherError =>  U2,
+  }
+
+  const _: () = assert!(size_of::<ProcessError<Coprod!(NetworkError, OtherError, AnotherError)>>() == 16);
+  const _: () = assert!(size_of::<ProcessError<Coprod!(NetworkError, OtherError)>>() == 16);
+  const _: () = assert!(size_of::<ProcessError<Coprod!(NetworkError)>>() == 16);
+  const _: () = assert!(size_of::<ProcessError<crate::CNil>>() == 8);
+}
