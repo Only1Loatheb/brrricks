@@ -1,5 +1,4 @@
-use crate::builder::MapProcessError;
-use crate::builder::MapStepErr;
+use crate::builder::IntoProcessError;
 use crate::builder::split_process::sealed;
 use crate::builder::{
   CurrentRunYieldedAt, FlowingProcess, IntermediateFinalizedSplitOutcome, IntermediateFinalizedSplitResult,
@@ -92,7 +91,7 @@ where
         .process_before
         .resume_run(previous_run_produced, previous_run_yielded_at, user_input, form_context, back_token)
         .await
-        .map_rhs::<SplitterStep::Error, _>()?;
+        .into_process_err()?;
       match process_before_output {
         IntermediateRunOutcome::Continue(process_before_split_produced) => {
           self.continue_run(process_before_split_produced, back_token).await
@@ -103,15 +102,16 @@ where
         IntermediateRunOutcome::Back => Ok(IntermediateFinalizedSplitOutcome::Back),
       }
     } else if previous_run_yielded_at.0 != self.step_index {
-      Err(ProcessError::InvalidStepIndex(previous_run_yielded_at.0))
+      Err(ProcessError::invalid_step_index(previous_run_yielded_at.0))
     } else if let Some(form_context) = form_context {
-      let process_before_split_produced = ProcessBefore::Produces::deserialize_param_list(previous_run_produced)?;
+      let process_before_split_produced =
+        ProcessBefore::Produces::deserialize_param_list(previous_run_produced).into_process_err()?;
       let last_step_consumes =
         <&ProcessBefore::Produces as BorrowJust<'_, SplitterStep::ValidateInputConsumes, _>>::borrow_just(
           &process_before_split_produced,
         );
-      let context: SplitterStep::Context = postcard::from_bytes(&form_context)?;
-      match self.splitter.handle_input(last_step_consumes, user_input, context, back_token).await.map_step_lhs()? {
+      let context: SplitterStep::Context = postcard::from_bytes(&form_context).into_process_err()?;
+      match self.splitter.handle_input(last_step_consumes, user_input, context, back_token).await.into_process_err()? {
         InputValidation::Successful(splitter_produces) => {
           let splitter_produces_to_other_cases = match splitter_produces {
             Coproduct::Inl(a) => Coproduct::Inl(a.1),
@@ -123,13 +123,14 @@ where
           })
         },
         InputValidation::Retry(a, b) => {
-          Ok(IntermediateFinalizedSplitOutcome::RetryUserInput(a, postcard::to_allocvec(&b)?))
+          Ok(IntermediateFinalizedSplitOutcome::RetryUserInput(a, postcard::to_allocvec(&b).into_process_err()?))
         },
         InputValidation::Finish(a) => Ok(IntermediateFinalizedSplitOutcome::Finish(a)),
         InputValidation::Back(_) => Ok(IntermediateFinalizedSplitOutcome::Back),
       }
     } else {
-      let process_before_split_produced = ProcessBefore::Produces::deserialize_param_list(previous_run_produced)?;
+      let process_before_split_produced =
+        ProcessBefore::Produces::deserialize_param_list(previous_run_produced).into_process_err()?;
       self.continue_run(process_before_split_produced, back_token).await
     }
   }
@@ -149,12 +150,12 @@ where
         &process_before_split_produced,
       );
     let FormWithContext(form, form_context) =
-      self.splitter.create_form(splitter_step_consumes, back_token).await.map_step_lhs()?;
+      self.splitter.create_form(splitter_step_consumes, back_token).await.into_process_err()?;
     Ok(IntermediateFinalizedSplitOutcome::Yield(
       form,
-      process_before_split_produced.serialize_param_list()?,
+      process_before_split_produced.serialize_param_list().into_process_err()?,
       CurrentRunYieldedAt(self.step_index),
-      postcard::to_allocvec(&form_context)?,
+      postcard::to_allocvec(&form_context).into_process_err()?,
     ))
   }
 
@@ -169,7 +170,7 @@ where
     Self::Errors,
   > {
     let process_before_output =
-      self.process_before.run_subprocess(subprocess_consumes, back_token).await.map_rhs::<SplitterStep::Error, _>()?;
+      self.process_before.run_subprocess(subprocess_consumes, back_token).await.into_process_err()?;
     match process_before_output {
       IntermediateRunOutcome::Continue(process_before_split_produced) => {
         self.continue_run(process_before_split_produced, back_token).await

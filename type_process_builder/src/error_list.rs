@@ -10,6 +10,8 @@ pub mod union;
 /// across a process using compile-time UIDs.
 ///
 /// Use [`crate::impl_step_error!`] to implement this trait and check for duplicate UIDs at compile time.
+/// `U0` and `U1` are reserved for built-in [`crate::builder::SerializationError`] and
+/// [`crate::builder::InvalidStepIndexError`]; [`crate::impl_step_error!`] offsets user UIDs by `+2` automatically.
 pub trait StepError: Error + Send + Sync + 'static {
   type UID: Unsigned;
 }
@@ -59,7 +61,7 @@ pub trait StepError: Error + Send + Sync + 'static {
 macro_rules! impl_step_error {
   ($type:ty, $uid:ty) => {
     impl $crate::error_list::StepError for $type {
-      type UID = $uid;
+      type UID = <$uid as ::core::ops::Add<$crate::typenum::U2>>::Output;
     }
   };
   ($($type:ty => $uid:ty),* $(,)?) => {
@@ -67,6 +69,7 @@ macro_rules! impl_step_error {
       $crate::impl_step_error!($type, $uid);
     )*
     const _: () = {
+      #[allow(dead_code)]
       trait DuplicateErrorUidInMacroInvocation {}
       $(
         impl DuplicateErrorUidInMacroInvocation for $uid {}
@@ -89,11 +92,32 @@ pub trait PreventDuplicateErrorUidInCoproduct<Err>: sealed::Sealed {}
 impl<Err> PreventDuplicateErrorUidInCoproduct<Err> for B0 {}
 
 /// Sealed marker trait for a deduplicated [`Coproduct`] of [`StepError`]s (terminated by [`CNil`]).
-pub trait ErrorCoproduct: crate::sealed::Sealed + Error + Send + Sync + 'static {}
-
-impl ErrorCoproduct for CNil {}
-
-impl<Head: StepError, Tail: ErrorCoproduct + CoprodContains<Head>> ErrorCoproduct for Coproduct<Head, Tail> where
-  <Tail as CoprodContains<Head>>::IsContained: PreventDuplicateErrorUidInCoproduct<Head>
-{
+pub trait ErrorCoproduct: crate::sealed::Sealed + Send + Sync + 'static {
+  #[doc(hidden)]
+  fn into_anyhow(self) -> anyhow::Error;
 }
+
+impl ErrorCoproduct for CNil {
+  #[inline(always)]
+  fn into_anyhow(self) -> anyhow::Error {
+    match self {}
+  }
+}
+
+impl<Head: StepError, Tail: ErrorCoproduct + CoprodContains<Head>> ErrorCoproduct for Coproduct<Head, Tail>
+where
+  <Tail as CoprodContains<Head>>::IsContained: PreventDuplicateErrorUidInCoproduct<Head>,
+{
+  #[inline(always)]
+  fn into_anyhow(self) -> anyhow::Error {
+    match self {
+      Coproduct::Inl(h) => anyhow::Error::new(h),
+      Coproduct::Inr(t) => t.into_anyhow(),
+    }
+  }
+}
+
+/// Marker trait proving that [`ErrorCoproduct`] `Self` contains step error `E`.
+pub trait ContainsError<E: StepError>: ErrorCoproduct {}
+
+impl<E: StepError, C: ErrorCoproduct + CoprodContains<E, IsContained = typenum::B1>> ContainsError<E> for C {}

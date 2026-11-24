@@ -14,6 +14,8 @@ pub use frunk::coproduct::{CNil, CoprodInjector, Coproduct};
 pub use frunk::hlist::{HCons, HList, HNil};
 pub use frunk::plucker::{Here, Plucker, There};
 pub use frunk::to_ref::ToRef;
+#[doc(hidden)]
+pub use typenum;
 
 // cargo doc --no-deps --package type_process_builder --features docs
 /// View the diagrams

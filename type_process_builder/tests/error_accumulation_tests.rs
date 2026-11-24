@@ -188,21 +188,29 @@ async fn test_linear_error_accumulation_and_deduplication() {
 
   let err =
     process.resume_run(empty_ctx(), PreviousRunYieldedAt(StepIndex::MIN), String::new(), None, None).await.unwrap_err();
-  // Verify exact deduplicated Coproduct type: Coprod![NetworkError, DbError]
-  let ProcessError::Step(step_err) = err else {
-    panic!("expected step error");
-  };
-  match step_err {
-    Coproduct::Inl(NetworkError(_)) => panic!("unexpected NetworkError"),
-    Coproduct::Inr(Coproduct::Inl(DbError(msg))) => {
-      assert_eq!(msg, "op_a");
-      assert_eq!(format!("{step_err}"), "db error: op_a");
-      assert!(step_err.source().is_none());
-    },
-    Coproduct::Inr(Coproduct::Inr(cnil)) => match cnil {},
-  }
+  // Targeted check via downcast_ref (type-checked against ErrorCoproduct)
+  assert_eq!(err.downcast_ref::<DbError>(), Some(&DbError("op_a")));
+  assert!(!err.is::<NetworkError>());
+  assert_eq!(format!("{err}"), "db error: op_a");
+  assert!(err.source().is_none());
 
-  // Trigger NetworkError (and check Display + Error::source())
+  // Exhaustive handling via peel() + extract()
+  let db = match err.peel() {
+    Ok(NetworkError(_)) => panic!("unexpected NetworkError"),
+    Err(rem) => match rem.peel() {
+      Ok(db) => db,
+      Err(rem) => match rem.peel() {
+        Ok(ser) => panic!("unexpected SerializationError: {ser}"),
+        Err(rem) => {
+          let idx = rem.extract();
+          panic!("unexpected InvalidStepIndexError: {idx}");
+        },
+      },
+    },
+  };
+  assert_eq!(db, DbError("op_a"));
+
+  // Trigger NetworkError (and check Display, Debug, Error::source(), and downcast)
   let process_b =
     entry::<HNil, Messages>().then(FailOpA(false)).then(FailOpB(true)).end(FailFinal(false)).build("p", 0);
   let err_b = process_b
@@ -210,10 +218,12 @@ async fn test_linear_error_accumulation_and_deduplication() {
     .await
     .unwrap_err();
   assert!(err_b.to_string().contains("network error"));
-  let ProcessError::Step(step_err_b) = err_b else {
-    panic!("expected step error");
-  };
-  assert!(step_err_b.source().is_some());
+  assert!(format!("{err_b:?}").contains("network error"));
+  assert!(err_b.is::<NetworkError>());
+  assert!(err_b.source().is_some());
+  let err_b = err_b.downcast::<DbError>().unwrap_err();
+  let net_err = err_b.downcast::<NetworkError>().expect("expected NetworkError");
+  assert!(net_err.source().is_some());
 
   // Trigger FailFinal error
   let process_f =
@@ -223,6 +233,7 @@ async fn test_linear_error_accumulation_and_deduplication() {
     .await
     .unwrap_err();
   assert!(err_f.to_string().contains("db error: final"));
+  assert_eq!(err_f.downcast_ref::<DbError>(), Some(&DbError("final")));
 }
 
 #[tokio::test]
@@ -346,7 +357,7 @@ async fn test_split_branch_error_accumulation() {
 }
 
 #[tokio::test]
-async fn test_infallible_process_has_cnil_errors() {
+async fn test_infallible_process_has_library_errors() {
   struct InfallibleFinal;
   impl Final for InfallibleFinal {
     type Consumes = HNil;
@@ -359,9 +370,19 @@ async fn test_infallible_process_has_cnil_errors() {
   }
 
   let process = entry::<HNil, Messages>().end(InfallibleFinal).build("infallible", 0);
-  let res: Result<RunOutcome<Messages>, ProcessError<CNil>> =
+  let res: Result<RunOutcome<Messages>, ProcessError<type_process_builder::builder::LibraryErrors>> =
     process.resume_run(empty_ctx(), PreviousRunYieldedAt(StepIndex::MIN), String::new(), None, None).await;
   assert_eq!(res.unwrap(), RunOutcome::Finish("ok".into()));
+
+  let idx_err =
+    process.resume_run(empty_ctx(), PreviousRunYieldedAt(999), String::new(), None, None).await.unwrap_err();
+  assert!(idx_err.to_string().contains("invalid step index: 999"));
+  let idx = idx_err.peel().unwrap_err().extract();
+  assert_eq!(idx.0, 999);
+
+  let ser_err = type_process_builder::builder::SerializationError(postcard::Error::DeserializeUnexpectedEnd);
+  assert!(ser_err.to_string().contains("failed to serialize or deserialize process state"));
+  assert!(ser_err.source().is_some());
 }
 
 #[cfg(all(test, target_pointer_width = "64"))]
@@ -379,17 +400,21 @@ mod size_asserts {
   struct OtherError(#[source] std::io::Error);
 
   #[derive(Debug, thiserror::Error)]
-  #[error("other error")]
+  #[error("another error")]
   struct AnotherError(#[source] std::io::Error);
+
+  #[derive(Debug, thiserror::Error)]
+  #[error("huge error")]
+  #[allow(dead_code)]
+  struct HugeError([u8; 1024]);
 
   impl_step_error! {
     NetworkError =>  U0,
     OtherError =>  U1,
     AnotherError =>  U2,
+    HugeError => U3,
   }
 
-  const _: () = assert!(size_of::<ProcessError<Coprod!(NetworkError, OtherError, AnotherError)>>() == 16);
-  const _: () = assert!(size_of::<ProcessError<Coprod!(NetworkError, OtherError)>>() == 16);
-  const _: () = assert!(size_of::<ProcessError<Coprod!(NetworkError)>>() == 16);
+  const _: () = assert!(size_of::<ProcessError<Coprod!(NetworkError, OtherError, AnotherError, HugeError)>>() == 8);
   const _: () = assert!(size_of::<ProcessError<crate::CNil>>() == 8);
 }

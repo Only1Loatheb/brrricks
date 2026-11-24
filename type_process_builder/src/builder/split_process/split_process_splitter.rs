@@ -1,5 +1,4 @@
-use crate::builder::MapProcessError;
-use crate::builder::MapStepErr;
+use crate::builder::IntoProcessError;
 use crate::builder::split_process::sealed;
 use crate::builder::{
   FlowingProcess, IntermediateFinalizedSplitOutcome, IntermediateFinalizedSplitResult, IntermediateRunOutcome,
@@ -77,7 +76,7 @@ where
       .process_before
       .resume_run(previous_run_produced, previous_run_yielded_at, user_input, form_context, back_token)
       .await
-      .map_rhs::<SplitterStep::Error, _>()?;
+      .into_process_err()?;
     match process_before_output {
       IntermediateRunOutcome::Continue(process_before_split_produced) => {
         self.continue_run(process_before_split_produced, back_token).await
@@ -100,10 +99,11 @@ where
     Self::Errors,
   > {
     let splitter_step_consumes = (&process_before_split_produced).borrow_just();
-    let splitter_produces_to_other_cases = match self.splitter.handle(splitter_step_consumes).await.map_step_lhs()? {
-      Coproduct::Inl(a) => Coproduct::Inl(a.1),
-      Coproduct::Inr(b) => Coproduct::Inr(b),
-    };
+    let splitter_produces_to_other_cases =
+      match self.splitter.handle(splitter_step_consumes).await.into_process_err()? {
+        Coproduct::Inl(a) => Coproduct::Inl(a.1),
+        Coproduct::Inr(b) => Coproduct::Inr(b),
+      };
     Ok(IntermediateFinalizedSplitOutcome::GoToCase { process_before_split_produced, splitter_produces_to_other_cases })
   }
 
@@ -118,7 +118,7 @@ where
     Self::Errors,
   > {
     let process_before_output =
-      self.process_before.run_subprocess(subprocess_consumes, back_token).await.map_rhs::<SplitterStep::Error, _>()?;
+      self.process_before.run_subprocess(subprocess_consumes, back_token).await.into_process_err()?;
     match process_before_output {
       IntermediateRunOutcome::Continue(process_before_split_produced) => {
         self.continue_run(process_before_split_produced, back_token).await

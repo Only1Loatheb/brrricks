@@ -1,5 +1,4 @@
-use crate::builder::MapProcessError;
-use crate::builder::MapStepErr;
+use crate::builder::IntoProcessError;
 use crate::builder::flowing_process::FlowingProcess;
 use crate::builder::runnable_process::RunnableProcess;
 use crate::builder::{
@@ -108,7 +107,7 @@ where
       .process_before
       .resume_run(previous_run_produced, previous_run_yielded_at, user_input, form_context, back_token)
       .await
-      .map_rhs::<FinalStep::Error, _>()?;
+      .into_process_err()?;
     match outcome {
       IntermediateRunOutcome::Continue(val) => self.continue_run(val, back_token).await,
       IntermediateRunOutcome::Yield(a, b, c, d) => Ok(RunOutcome::Yield(a, b, c, d)),
@@ -123,7 +122,7 @@ where
     process_before_produces: Self::ProcessBeforeProduces,
     _back_token: Option<BackToken>,
   ) -> RunResult<Self::Messages, Self::Errors> {
-    Ok(RunOutcome::Finish(self.final_step.handle(process_before_produces.extract()).await.map_step_lhs()?))
+    Ok(RunOutcome::Finish(self.final_step.handle(process_before_produces.extract()).await.into_process_err()?))
   }
 
   async fn run_subprocess(
@@ -131,8 +130,7 @@ where
     subprocess_consumes: Self::SubprocessConsumes,
     back_token: Option<BackToken>,
   ) -> RunResult<Self::Messages, Self::Errors> {
-    let outcome =
-      self.process_before.run_subprocess(subprocess_consumes, back_token).await.map_rhs::<FinalStep::Error, _>()?;
+    let outcome = self.process_before.run_subprocess(subprocess_consumes, back_token).await.into_process_err()?;
     match outcome {
       IntermediateRunOutcome::Continue(val) => self.continue_run(val, back_token).await,
       IntermediateRunOutcome::Yield(a, b, c, d) => Ok(RunOutcome::Yield(a, b, c, d)),

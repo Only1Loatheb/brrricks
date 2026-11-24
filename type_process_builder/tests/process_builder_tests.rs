@@ -594,7 +594,7 @@ async fn test_split() {
 }
 
 async fn test_return_error_on_param_missing_from_init_value(
-  process: &RunnableProcess<impl FinalizedProcess<Messages = Messages>>,
+  process: &RunnableProcess<impl FinalizedProcess<Messages = Messages, Errors: ContainsError<SerializationError>>>,
   messages: Vec<&str>,
 ) {
   let mut init_value = session_init_value();
@@ -602,13 +602,13 @@ async fn test_return_error_on_param_missing_from_init_value(
   let run_outcome = process
     .resume_run(init_value, PreviousRunYieldedAt(StepIndex::MIN), messages[0].into(), None, None::<BackToken>)
     .await;
-  assert!(
-    run_outcome.is_err_and(|x| matches!(x, ProcessError::Serialization(postcard::Error::DeserializeUnexpectedEnd)))
-  );
+  assert!(run_outcome.is_err_and(|x| {
+    x.downcast_ref::<SerializationError>().is_some_and(|e| matches!(e.0, postcard::Error::DeserializeUnexpectedEnd))
+  }));
 }
 
 async fn test_return_error_on_param_missing_from_context(
-  process: &RunnableProcess<impl FinalizedProcess<Messages = Messages>>,
+  process: &RunnableProcess<impl FinalizedProcess<Messages = Messages, Errors: ContainsError<SerializationError>>>,
   messages: Vec<&str>,
 ) {
   let mut messages_index = 0;
@@ -635,9 +635,9 @@ async fn test_return_error_on_param_missing_from_context(
           None::<BackToken>,
         )
         .await;
-      assert!(
-        run_outcome.is_err_and(|x| matches!(x, ProcessError::Serialization(postcard::Error::DeserializeUnexpectedEnd)))
-      );
+      assert!(run_outcome.is_err_and(|x| {
+        x.downcast_ref::<SerializationError>().is_some_and(|e| matches!(e.0, postcard::Error::DeserializeUnexpectedEnd))
+      }));
     },
     RunOutcome::RetryUserInput(msg, _context) => {
       assert_eq!(msg, messages[messages_index]);

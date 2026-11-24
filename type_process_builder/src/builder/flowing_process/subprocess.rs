@@ -32,7 +32,7 @@ impl<EntryConsumes: ParamList, ProcessBeforeProduces: ParamList, EverProduced: P
     _form_context: MaybeFormContext,
     _back_token: Option<BackToken>,
   ) -> impl Future<Output = IntermediateRunResult<Self::Produces, Self::Messages, Self::Errors>> {
-    std::future::ready(Err(ProcessError::InvalidStepIndex(previous_run_yielded_at.0)))
+    std::future::ready(Err(ProcessError::invalid_step_index(previous_run_yielded_at.0)))
   }
 
   fn continue_run(

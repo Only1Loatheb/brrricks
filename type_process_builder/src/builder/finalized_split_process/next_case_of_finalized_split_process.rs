@@ -1,4 +1,4 @@
-use crate::builder::MapProcessError;
+use crate::builder::IntoProcessError;
 use crate::builder::finalized_process;
 use crate::builder::finalized_split_process::sealed;
 use crate::builder::subprocess::{Subprocess, subprocess};
@@ -175,7 +175,7 @@ where
         .split_process_before
         .resume_run(previous_run_produced, previous_run_yielded_at, user_input, form_context, back_token)
         .await
-        .map_rhs::<ThisCase::Errors, _>()?;
+        .into_process_err()?;
       match process_before_output {
         IntermediateFinalizedSplitOutcome::GoToCase {
           process_before_split_produced,
@@ -196,7 +196,7 @@ where
     } else {
       match self.this_case.resume_run(
         previous_run_produced, previous_run_yielded_at, user_input, form_context, back_token,
-      ).await.map_lhs()? {
+      ).await.into_process_err()? {
         RunOutcome::Yield(a, b, c, d) => Ok(IntermediateFinalizedSplitOutcome::Yield(a, b, c, d)),
         RunOutcome::Finish(a) => Ok(IntermediateFinalizedSplitOutcome::Finish(a)),
         RunOutcome::RetryUserInput(a, b) => Ok(IntermediateFinalizedSplitOutcome::RetryUserInput(a, b)),
@@ -217,7 +217,7 @@ where
     match splitter_produces_for_this_case_or_other_cases_consumes {
       Coproduct::Inl(splitter_produces_for_this_case) => {
         let this_case_consumes = splitter_produces_for_this_case.concat(process_before_split_produced);
-        match self.this_case.run_subprocess(this_case_consumes, back_token).await.map_lhs()? {
+        match self.this_case.run_subprocess(this_case_consumes, back_token).await.into_process_err()? {
           RunOutcome::Yield(a, b, c, d) => Ok(IntermediateFinalizedSplitOutcome::Yield(a, b, c, d)),
           RunOutcome::Finish(a) => Ok(IntermediateFinalizedSplitOutcome::Finish(a)),
           RunOutcome::RetryUserInput(a, b) => Ok(IntermediateFinalizedSplitOutcome::RetryUserInput(a, b)),
@@ -237,7 +237,7 @@ where
       .split_process_before
       .run_split_subprocess(subprocess_consumes, back_token)
       .await
-      .map_rhs::<ThisCase::Errors, _>()?;
+      .into_process_err()?;
     match process_before_output {
       IntermediateFinalizedSplitOutcome::GoToCase {
         process_before_split_produced,
@@ -302,7 +302,7 @@ where
         .split_process_before
         .resume_run(previous_run_produced, previous_run_yielded_at, user_input, form_context, back_token)
         .await
-        .map_rhs::<ThisCase::Errors, _>()?;
+        .into_process_err()?;
       match process_before_output {
         IntermediateFinalizedSplitOutcome::GoToCase {
           process_before_split_produced,
@@ -314,7 +314,7 @@ where
               .this_case
               .run_subprocess(this_case_consumes, back_token)
               .await
-              .map_lhs()
+              .into_process_err()
           }
           Coproduct::Inr(c_nil) => match c_nil {},
         },
@@ -326,7 +326,7 @@ where
     } else {
       match self.this_case.resume_run(
         previous_run_produced, previous_run_yielded_at, user_input, form_context, back_token,
-      ).await.map_lhs()? {
+      ).await.into_process_err()? {
         RunOutcome::Yield(a, b, c, d) => Ok(RunOutcome::Yield(a, b, c, d)),
         RunOutcome::Finish(a) => Ok(RunOutcome::Finish(a)),
         RunOutcome::RetryUserInput(a, b) => Ok(RunOutcome::RetryUserInput(a, b)),
@@ -340,7 +340,7 @@ where
       .this_case
       .run_subprocess(this_case_consumes, back_token)
       .await
-      .map_lhs()
+      .into_process_err()
   }
 
   async fn run_subprocess(&self, subprocess_consumes: Self::SubprocessConsumes, back_token: Option<BackToken>) -> RunResult<Self::Messages, Self::Errors> {

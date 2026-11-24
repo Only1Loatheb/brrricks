@@ -1,5 +1,4 @@
-use crate::builder::MapProcessError;
-use crate::builder::MapStepErr;
+use crate::builder::IntoProcessError;
 use crate::builder::flowing_process::sealed;
 use crate::builder::{
   FlowingProcess, IntermediateRunOutcome, IntermediateRunResult, MaybeFormContext, ParamList, PreviousRunYieldedAt,
@@ -61,7 +60,7 @@ where
       .process_before
       .resume_run(previous_run_produced, previous_run_yielded_at, user_input, form_context, back_token)
       .await
-      .map_rhs::<OperationStep::Error, _>()?;
+      .into_process_err()?;
     match process_before_output {
       IntermediateRunOutcome::Continue(process_before_produces) => {
         self.continue_run(process_before_produces, back_token).await
@@ -79,7 +78,7 @@ where
     _back_token: Option<BackToken>,
   ) -> IntermediateRunResult<Self::Produces, Self::Messages, Self::Errors> {
     let last_step_consumes = (&process_before_produces).borrow_just();
-    let last_step_outcome = self.last_step.handle(last_step_consumes).await.map_step_lhs()?;
+    let last_step_outcome = self.last_step.handle(last_step_consumes).await.into_process_err()?;
     Ok(match last_step_outcome {
       OperationOutcome::Successful(last_step_output) => {
         IntermediateRunOutcome::Continue(last_step_output.concat(process_before_produces))
@@ -94,7 +93,7 @@ where
     back_token: Option<BackToken>,
   ) -> IntermediateRunResult<Self::Produces, Self::Messages, Self::Errors> {
     let process_before_output =
-      self.process_before.run_subprocess(subprocess_consumes, back_token).await.map_rhs::<OperationStep::Error, _>()?;
+      self.process_before.run_subprocess(subprocess_consumes, back_token).await.into_process_err()?;
     match process_before_output {
       IntermediateRunOutcome::Continue(process_before_produces) => {
         self.continue_run(process_before_produces, back_token).await

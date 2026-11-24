@@ -1,9 +1,8 @@
 use crate::builder::flowing_process::sealed;
 use crate::builder::{
-  IntermediateRunOutcome, IntermediateRunResult, MaybeFormContext, PreviousRunYieldedAt, ProcessError, SessionContext,
-  StepIndex,
+  IntermediateRunOutcome, IntermediateRunResult, LibraryErrors, MaybeFormContext, PreviousRunYieldedAt, ProcessError,
+  SessionContext, StepIndex,
 };
-use crate::frunk::coproduct::CNil;
 use crate::frunk::hlist::HNil;
 use crate::param_list::ParamList;
 use crate::step::{BackToken, Entry, ProcessMessages};
@@ -16,7 +15,7 @@ impl<Produces: ParamList, Messages: ProcessMessages> sealed::FlowingProcess for 
   type SubprocessConsumes = HNil;
   type Messages = Messages;
   type EverProduced = Produces;
-  type Errors = CNil;
+  type Errors = LibraryErrors;
 
   fn resume_run(
     &self,
@@ -29,9 +28,9 @@ impl<Produces: ParamList, Messages: ProcessMessages> sealed::FlowingProcess for 
     let result = if previous_run_yielded_at.0 == StepIndex::MIN {
       Produces::deserialize_param_list(previous_run_produced)
         .map(IntermediateRunOutcome::Continue)
-        .map_err(ProcessError::from)
+        .map_err(ProcessError::from_serialization)
     } else {
-      Err(ProcessError::InvalidStepIndex(previous_run_yielded_at.0))
+      Err(ProcessError::invalid_step_index(previous_run_yielded_at.0))
     };
     std::future::ready(result)
   }

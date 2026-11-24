@@ -17,9 +17,11 @@ help: the following other types implement trait `CoprodInjector<InjectType, Inde
    | | where
    | |   Tail: CoprodInjector<I, TailIndex>,
    | |_____________________________________^ `Coproduct<Head, Tail>` implements `CoprodInjector<I, There<TailIndex>>`
-   = note: required for `Coproduct<ErrorA, CNil>` to implement `CoprodInjector<ErrorB, There<_>>`
-   = note: required for `B1` to implement `IfNotKeepError<ErrorB, Coproduct<ErrorA, CNil>, There<_>>`
-   = note: required for `Coproduct<ErrorB, CNil>` to implement `CoprodUnion<Coproduct<ErrorA, CNil>, Coproduct<There<_>, CNil>>`
+   = note: required for `Coproduct<InvalidStepIndexError, CNil>` to implement `CoprodInjector<ErrorB, There<_>>`
+   = note: 2 redundant requirements hidden
+   = note: required for `Coproduct<ErrorA, Coproduct<SerializationError, Coproduct<InvalidStepIndexError, CNil>>>` to implement `CoprodInjector<ErrorB, There<There<There<_>>>>`
+   = note: required for `B1` to implement `IfNotKeepError<ErrorB, Coproduct<ErrorA, Coproduct<SerializationError, Coproduct<InvalidStepIndexError, CNil>>>, There<There<There<_>>>>`
+   = note: required for `Coproduct<ErrorB, CNil>` to implement `CoprodUnion<Coproduct<ErrorA, Coproduct<SerializationError, Coproduct<InvalidStepIndexError, CNil>>>, Coproduct<There<There<There<_>>>, CNil>>`
 note: required by a bound in `then`
   --> src/builder/flowing_process.rs
    |
@@ -46,9 +48,11 @@ help: the following other types implement trait `CoprodInjector<InjectType, Inde
    | | where
    | |   Tail: CoprodInjector<I, TailIndex>,
    | |_____________________________________^ `Coproduct<Head, Tail>` implements `CoprodInjector<I, There<TailIndex>>`
-   = note: required for `Coproduct<ErrorA, CNil>` to implement `CoprodInjector<ErrorB, There<_>>`
-   = note: required for `B1` to implement `IfNotKeepError<ErrorB, Coproduct<ErrorA, CNil>, There<_>>`
-   = note: required for `<Step2 as Operation>::Error` to implement `CoprodUnion<<impl type_process_builder::builder::FlowingProcess + flowing_process::sealed::FlowingProcess<EntryConsumes = <type_process_builder::builder::Entry<HNil, Messages> as flowing_process::sealed::FlowingProcess>::EntryConsumes, ProcessBeforeProduces = <type_process_builder::builder::Entry<HNil, Messages> as flowing_process::sealed::FlowingProcess>::Produces, Produces = <<Step1 as Operation>::Produces as type_process_builder::builder::concat::Concat<<type_process_builder::builder::Entry<HNil, Messages> as flowing_process::sealed::FlowingProcess>::Produces>>::Concatenated, SubprocessConsumes = <type_process_builder::builder::Entry<HNil, Messages> as flowing_process::sealed::FlowingProcess>::SubprocessConsumes, Messages = <type_process_builder::builder::Entry<HNil, Messages> as flowing_process::sealed::FlowingProcess>::Messages, EverProduced = <<Step1 as Operation>::Produces as type_process_builder::builder::concat::Concat<<type_process_builder::builder::Entry<HNil, Messages> as flowing_process::sealed::FlowingProcess>::EverProduced>>::Concatenated, Errors = <<Step1 as Operation>::Error as CoprodUnion<<type_process_builder::builder::Entry<HNil, Messages> as flowing_process::sealed::FlowingProcess>::Errors, Coproduct<(), CNil>>>::Union> as flowing_process::sealed::FlowingProcess>::Errors, Coproduct<There<_>, CNil>>`
+   = note: required for `Coproduct<InvalidStepIndexError, CNil>` to implement `CoprodInjector<ErrorB, There<_>>`
+   = note: 2 redundant requirements hidden
+   = note: required for `Coproduct<ErrorA, Coproduct<SerializationError, Coproduct<InvalidStepIndexError, CNil>>>` to implement `CoprodInjector<ErrorB, There<There<There<_>>>>`
+   = note: required for `B1` to implement `IfNotKeepError<ErrorB, Coproduct<ErrorA, Coproduct<SerializationError, Coproduct<InvalidStepIndexError, CNil>>>, There<There<There<_>>>>`
+   = note: required for `<Step2 as Operation>::Error` to implement `CoprodUnion<<impl type_process_builder::builder::FlowingProcess + flowing_process::sealed::FlowingProcess<EntryConsumes = <type_process_builder::builder::Entry<HNil, Messages> as flowing_process::sealed::FlowingProcess>::EntryConsumes, ProcessBeforeProduces = <type_process_builder::builder::Entry<HNil, Messages> as flowing_process::sealed::FlowingProcess>::Produces, Produces = <<Step1 as Operation>::Produces as type_process_builder::builder::concat::Concat<<type_process_builder::builder::Entry<HNil, Messages> as flowing_process::sealed::FlowingProcess>::Produces>>::Concatenated, SubprocessConsumes = <type_process_builder::builder::Entry<HNil, Messages> as flowing_process::sealed::FlowingProcess>::SubprocessConsumes, Messages = <type_process_builder::builder::Entry<HNil, Messages> as flowing_process::sealed::FlowingProcess>::Messages, EverProduced = <<Step1 as Operation>::Produces as type_process_builder::builder::concat::Concat<<type_process_builder::builder::Entry<HNil, Messages> as flowing_process::sealed::FlowingProcess>::EverProduced>>::Concatenated, Errors = <<Step1 as Operation>::Error as CoprodUnion<<type_process_builder::builder::Entry<HNil, Messages> as flowing_process::sealed::FlowingProcess>::Errors, Coproduct<(), CNil>>>::Union> as flowing_process::sealed::FlowingProcess>::Errors, Coproduct<There<There<There<_>>>, CNil>>`
 note: required by a bound in `type_process_builder::builder::FlowingProcess::then::{anon_assoc#0}`
   --> src/builder/flowing_process.rs
    |
