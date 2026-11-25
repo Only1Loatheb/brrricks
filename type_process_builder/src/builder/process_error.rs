@@ -83,8 +83,13 @@ impl<StepErrors: ErrorCoproduct> ProcessError<StepErrors> {
   }
 
   #[inline(always)]
+  pub(crate) fn from_concrete<E: StepError>(err: E) -> Self {
+    Self { inner: anyhow::Error::new(err), _marker: PhantomData }
+  }
+
+  #[inline(always)]
   pub(crate) fn from_step_error<E: ErrorCoproduct>(err: E) -> Self {
-    Self { inner: err.into_anyhow(), _marker: PhantomData }
+    err.into_process_error()
   }
 
   #[inline(always)]

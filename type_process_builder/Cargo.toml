@@ -34,3 +34,5 @@ thiserror = "2.0"
 tokio = { version = "1.0", features = ["macros", "rt", "rt-multi-thread"] }
 type_process_builder = { path = ".", features = ["docs", "process-runner-api"] }
 ui_test = "0.30"
+public-api = { version = "0.52", default-features = false }
+rustdoc-json = "0.9"

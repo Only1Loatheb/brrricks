@@ -79,8 +79,14 @@ macro_rules! impl_step_error {
 }
 
 mod sealed {
+  use super::ErrorCoproduct;
+
   pub trait Sealed {}
   impl Sealed for typenum::B0 {}
+
+  pub trait ConvertStepError {
+    fn into_process_error<Target: ErrorCoproduct>(self) -> crate::builder::ProcessError<Target>;
+  }
 }
 
 #[diagnostic::on_unimplemented(
@@ -92,29 +98,33 @@ pub trait PreventDuplicateErrorUidInCoproduct<Err>: sealed::Sealed {}
 impl<Err> PreventDuplicateErrorUidInCoproduct<Err> for B0 {}
 
 /// Sealed marker trait for a deduplicated [`Coproduct`] of [`StepError`]s (terminated by [`CNil`]).
-pub trait ErrorCoproduct: crate::sealed::Sealed + Send + Sync + 'static {
-  #[doc(hidden)]
-  fn into_anyhow(self) -> anyhow::Error;
-}
+pub trait ErrorCoproduct: crate::sealed::Sealed + sealed::ConvertStepError + Send + Sync + 'static {}
 
-impl ErrorCoproduct for CNil {
+impl sealed::ConvertStepError for CNil {
   #[inline(always)]
-  fn into_anyhow(self) -> anyhow::Error {
+  fn into_process_error<Target: ErrorCoproduct>(self) -> crate::builder::ProcessError<Target> {
     match self {}
   }
 }
 
-impl<Head: StepError, Tail: ErrorCoproduct + CoprodContains<Head>> ErrorCoproduct for Coproduct<Head, Tail>
+impl ErrorCoproduct for CNil {}
+
+impl<Head: StepError, Tail: ErrorCoproduct + CoprodContains<Head>> sealed::ConvertStepError for Coproduct<Head, Tail>
 where
   <Tail as CoprodContains<Head>>::IsContained: PreventDuplicateErrorUidInCoproduct<Head>,
 {
   #[inline(always)]
-  fn into_anyhow(self) -> anyhow::Error {
+  fn into_process_error<Target: ErrorCoproduct>(self) -> crate::builder::ProcessError<Target> {
     match self {
-      Coproduct::Inl(h) => anyhow::Error::new(h),
-      Coproduct::Inr(t) => t.into_anyhow(),
+      Coproduct::Inl(h) => crate::builder::ProcessError::from_concrete(h),
+      Coproduct::Inr(t) => t.into_process_error(),
     }
   }
+}
+
+impl<Head: StepError, Tail: ErrorCoproduct + CoprodContains<Head>> ErrorCoproduct for Coproduct<Head, Tail> where
+  <Tail as CoprodContains<Head>>::IsContained: PreventDuplicateErrorUidInCoproduct<Head>
+{
 }
 
 /// Marker trait proving that [`ErrorCoproduct`] `Self` contains step error `E`.
