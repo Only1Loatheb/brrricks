@@ -2,7 +2,7 @@
 name = "type_process_builder"
 version.workspace = true
 edition.workspace = true
-rust-version = "1.88.0"
+rust-version = "1.92.0"
 description = "Type-safe process modelling library with compile-time flow and parameter invariants"
 license.workspace = true
 repository.workspace = true

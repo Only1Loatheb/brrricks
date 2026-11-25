@@ -190,20 +190,20 @@ async fn test_linear_error_accumulation_and_deduplication() {
     process.resume_run(empty_ctx(), PreviousRunYieldedAt(StepIndex::MIN), String::new(), None, None).await.unwrap_err();
   // Targeted check via downcast_ref (type-checked against ErrorCoproduct)
   assert_eq!(err.downcast_ref::<DbError>(), Some(&DbError("op_a")));
-  assert!(!err.is::<NetworkError>());
+  assert!(err.downcast_ref::<NetworkError>().is_none());
   assert_eq!(format!("{err}"), "db error: op_a");
   assert!(err.source().is_none());
 
-  // Exhaustive handling via peel() + extract()
+  // Exhaustive handling via peel() + CNil absurd()
   let db = match err.peel() {
     Ok(NetworkError(_)) => panic!("unexpected NetworkError"),
     Err(rem) => match rem.peel() {
       Ok(db) => db,
       Err(rem) => match rem.peel() {
         Ok(ser) => panic!("unexpected SerializationError: {ser}"),
-        Err(rem) => {
-          let idx = rem.extract();
-          panic!("unexpected InvalidStepIndexError: {idx}");
+        Err(rem) => match rem.peel() {
+          Ok(idx) => panic!("unexpected InvalidStepIndexError: {idx}"),
+          Err(cnil) => cnil.absurd(),
         },
       },
     },
@@ -219,7 +219,7 @@ async fn test_linear_error_accumulation_and_deduplication() {
     .unwrap_err();
   assert!(err_b.to_string().contains("network error"));
   assert!(format!("{err_b:?}").contains("network error"));
-  assert!(err_b.is::<NetworkError>());
+  assert!(err_b.downcast_ref::<NetworkError>().is_some());
   assert!(err_b.source().is_some());
   let err_b = err_b.downcast::<DbError>().unwrap_err();
   let net_err = err_b.downcast::<NetworkError>().expect("expected NetworkError");
@@ -377,7 +377,7 @@ async fn test_infallible_process_has_library_errors() {
   let idx_err =
     process.resume_run(empty_ctx(), PreviousRunYieldedAt(999), String::new(), None, None).await.unwrap_err();
   assert!(idx_err.to_string().contains("invalid step index: 999"));
-  let idx = idx_err.peel().unwrap_err().extract();
+  let idx = idx_err.peel().unwrap_err().peel().unwrap_or_else(|cnil| cnil.absurd());
   assert_eq!(idx.0, 999);
 
   let ser_err = type_process_builder::builder::SerializationError(postcard::Error::DeserializeUnexpectedEnd);

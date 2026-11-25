@@ -92,17 +92,6 @@ impl<StepErrors: ErrorCoproduct> ProcessError<StepErrors> {
     ProcessError { inner: self.inner, _marker: PhantomData }
   }
 
-  /// Returns `true` if this error is of concrete type `E`.
-  ///
-  /// Only compiles when `E` is a member of `StepErrors`.
-  #[must_use]
-  pub fn is<E: StepError>(&self) -> bool
-  where
-    StepErrors: ContainsError<E>,
-  {
-    self.inner.is::<E>()
-  }
-
   /// Attempts to borrow this error as concrete type `E`.
   ///
   /// Only compiles when `E` is a member of `StepErrors`.
@@ -136,15 +125,14 @@ where
   }
 }
 
-impl<Head: StepError> ProcessError<crate::Coproduct<Head, crate::CNil>> {
-  /// Extracts the sole remaining error variant once all other variants have been peeled off.
+impl ProcessError<crate::CNil> {
+  /// Proves at compile time that all error variants have been exhaustively handled.
   ///
-  /// # Panics
-  /// Never panics for errors produced by the process builder (the type-level `StepErrors`
-  /// coproduct guarantees `Head` is the only possible variant).
-  #[must_use]
-  pub fn extract(self) -> Head {
-    self.inner.downcast::<Head>().expect("ProcessError contained an error type outside its StepErrors coproduct")
+  /// Because `ProcessError<CNil>` cannot be constructed, reaching this method means every
+  /// possible error in the process's [`ErrorCoproduct`] has been peeled off. If a new error
+  /// is added to or removed from the process, the compiler will reject the caller's code.
+  pub fn absurd(self) -> ! {
+    unreachable!("ProcessError<CNil> is uninhabited: {}", self.inner)
   }
 }
 
