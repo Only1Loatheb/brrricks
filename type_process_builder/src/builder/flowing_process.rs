@@ -10,6 +10,7 @@ use crate::builder::form_flowing_process::FormFlowingProcess;
 use crate::builder::operation_flowing_process::OperationFlowingProcess;
 use crate::builder::split_process_form_splitter::SplitProcessFormSplitter;
 use crate::builder::split_process_splitter::SplitProcessSplitter;
+use crate::builder::subprocess_finalized_process::SubprocessFinalizedProcess;
 use crate::builder::subprocess_flowing_process::SubprocessFlowingProcess;
 use crate::builder::{ProcessMessages, SplitProcess, WILL_BE_RENUMBERED};
 use crate::error_list::union::CoprodUnion;
@@ -339,7 +340,7 @@ pub trait FlowingProcess: sealed::FlowingProcess {
     Self::Produces: Extract<Sub::SubprocessConsumes, ProcessBeforeProducesToSubprocessConsumesIndices>,
     Sub::Errors: CoprodUnion<Self::Errors, ErrorUnionIndices>,
 {
-    crate::builder::finalized_process::subprocess_finalized_process::SubprocessFinalizedProcess {
+    SubprocessFinalizedProcess {
       process_before: self,
       sub_process: sub,
       sub_start_index: WILL_BE_RENUMBERED,

@@ -2,7 +2,7 @@
 name = "in_memory_process_runner"
 version.workspace = true
 edition.workspace = true
-rust-version.workspace = true
+rust-version = "1.92.0"
 publish = false
 
 [lints]
