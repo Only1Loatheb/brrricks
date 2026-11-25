@@ -14,7 +14,6 @@ pub struct SubprocessFlowingProcess<
   ProcessBefore: FlowingProcess,
   Sub: FlowingProcess,
   ProcessBeforeProducesToSubprocessConsumesIndices,
-  SubProducesExtractIndices,
   SubEverProducedExtractIndices,
   ErrorUnionIndices,
 > {
@@ -22,19 +21,14 @@ pub struct SubprocessFlowingProcess<
   pub(crate) sub_process: Sub,
   pub(crate) sub_start_index: StepIndex,
   pub(crate) sub_end_index: StepIndex,
-  pub(crate) phantom_data: PhantomData<(
-    ProcessBeforeProducesToSubprocessConsumesIndices,
-    SubProducesExtractIndices,
-    SubEverProducedExtractIndices,
-    ErrorUnionIndices,
-  )>,
+  pub(crate) phantom_data:
+    PhantomData<(ProcessBeforeProducesToSubprocessConsumesIndices, SubEverProducedExtractIndices, ErrorUnionIndices)>,
 }
 
 impl<
   ProcessBefore: FlowingProcess,
   Sub: FlowingProcess<Messages = ProcessBefore::Messages>,
   ProcessBeforeProducesToSubprocessConsumesIndices: Sync + Send,
-  SubProducesExtractIndices: Sync + Send,
   SubEverProducedExtractIndices: Sync + Send,
   ErrorUnionIndices: Sync + Send,
 > sealed::FlowingProcess
@@ -42,26 +36,34 @@ impl<
     ProcessBefore,
     Sub,
     ProcessBeforeProducesToSubprocessConsumesIndices,
-    SubProducesExtractIndices,
     SubEverProducedExtractIndices,
     ErrorUnionIndices,
   >
 where
-  Sub::Produces: Extract<Sub::SubprocessConsumes, SubProducesExtractIndices>,
-  <Sub::Produces as Extract<Sub::SubprocessConsumes, SubProducesExtractIndices>>::Remainder:
-    ParamList + Concat<ProcessBefore::Produces>,
+  ProcessBefore::Produces: Extract<Sub::SubprocessConsumes, ProcessBeforeProducesToSubprocessConsumesIndices>,
+  <ProcessBefore::Produces as Extract<
+    Sub::SubprocessConsumes,
+    ProcessBeforeProducesToSubprocessConsumesIndices,
+  >>::Remainder: ParamList,
+  Sub::Produces: Concat<
+    <ProcessBefore::Produces as Extract<
+      Sub::SubprocessConsumes,
+      ProcessBeforeProducesToSubprocessConsumesIndices,
+    >>::Remainder,
+  >,
   Sub::EverProduced: Extract<Sub::SubprocessConsumes, SubEverProducedExtractIndices>,
   <Sub::EverProduced as Extract<Sub::SubprocessConsumes, SubEverProducedExtractIndices>>::Remainder:
     ParamList + Concat<ProcessBefore::EverProduced>,
-  ProcessBefore::Produces: Extract<Sub::SubprocessConsumes, ProcessBeforeProducesToSubprocessConsumesIndices>,
   Sub::Errors: CoprodUnion<ProcessBefore::Errors, ErrorUnionIndices>,
 {
   type EntryConsumes = ProcessBefore::EntryConsumes;
   type ProcessBeforeProduces = ProcessBefore::Produces;
-  type Produces =
-    <<Sub::Produces as Extract<Sub::SubprocessConsumes, SubProducesExtractIndices>>::Remainder as Concat<
-      ProcessBefore::Produces,
-    >>::Concatenated;
+  type Produces = <Sub::Produces as Concat<
+    <ProcessBefore::Produces as Extract<
+      Sub::SubprocessConsumes,
+      ProcessBeforeProducesToSubprocessConsumesIndices,
+    >>::Remainder,
+  >>::Concatenated;
   type SubprocessConsumes = ProcessBefore::SubprocessConsumes;
   type Messages = ProcessBefore::Messages;
   type EverProduced =
@@ -101,9 +103,13 @@ where
         .into_process_err()?;
       match outcome {
         IntermediateRunOutcome::Continue(sub_produces) => {
-          let outer_produces = ProcessBefore::Produces::deserialize_param_list(outer_ctx).into_process_err()?;
-          let (_, new_params) = sub_produces.extract_with_remainder();
-          Ok(IntermediateRunOutcome::Continue(new_params.concat(outer_produces)))
+          let outer_remainder =
+            <ProcessBefore::Produces as Extract<
+              Sub::SubprocessConsumes,
+              ProcessBeforeProducesToSubprocessConsumesIndices,
+            >>::Remainder::deserialize_param_list(outer_ctx)
+            .into_process_err()?;
+          Ok(IntermediateRunOutcome::Continue(sub_produces.concat(outer_remainder)))
         },
         IntermediateRunOutcome::Yield(msg, new_sub_ctx, yielded_at, form_ctx) => {
           let packed = postcard::to_allocvec(&(outer_ctx, new_sub_ctx)).into_process_err()?;
@@ -123,16 +129,14 @@ where
     process_before_produces: Self::ProcessBeforeProduces,
     back_token: Option<BackToken>,
   ) -> IntermediateRunResult<Self::Produces, Self::Messages, Self::Errors> {
-    let outer_ctx = process_before_produces.serialize_param_list().into_process_err()?;
-    let sub_consumes: Sub::SubprocessConsumes = process_before_produces.extract();
+    let (sub_consumes, outer_remainder): (Sub::SubprocessConsumes, _) = process_before_produces.extract_with_remainder();
     let outcome = self.sub_process.run_subprocess(sub_consumes, back_token).await.into_process_err()?;
     match outcome {
       IntermediateRunOutcome::Continue(sub_produces) => {
-        let outer_produces = ProcessBefore::Produces::deserialize_param_list(outer_ctx).into_process_err()?;
-        let (_, new_params) = sub_produces.extract_with_remainder();
-        Ok(IntermediateRunOutcome::Continue(new_params.concat(outer_produces)))
+        Ok(IntermediateRunOutcome::Continue(sub_produces.concat(outer_remainder)))
       },
       IntermediateRunOutcome::Yield(msg, sub_ctx, yielded_at, form_ctx) => {
+        let outer_ctx = outer_remainder.serialize_param_list().into_process_err()?;
         let packed = postcard::to_allocvec(&(outer_ctx, sub_ctx)).into_process_err()?;
         Ok(IntermediateRunOutcome::Yield(msg, packed, yielded_at, form_ctx))
       },

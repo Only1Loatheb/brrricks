@@ -90,7 +90,6 @@ pub trait FlowingProcess: sealed::FlowingProcess {
   fn then_via<
     Sub: FlowingProcess<Messages = Self::Messages>,
     ProcessBeforeProducesToSubprocessConsumesIndices: Sync + Send,
-    SubProducesExtractIndices: Sync + Send,
     SubEverProducedExtractIndices: Sync + Send,
     ErrorUnionIndices: Sync + Send,
   >(
@@ -99,8 +98,11 @@ pub trait FlowingProcess: sealed::FlowingProcess {
   ) -> impl FlowingProcess<
     EntryConsumes = Self::EntryConsumes,
     ProcessBeforeProduces = Self::Produces,
-    Produces = <<Sub::Produces as Extract<Sub::SubprocessConsumes, SubProducesExtractIndices>>::Remainder as Concat<
-      Self::Produces,
+    Produces = <Sub::Produces as Concat<
+      <Self::Produces as Extract<
+        Sub::SubprocessConsumes,
+        ProcessBeforeProducesToSubprocessConsumesIndices,
+      >>::Remainder,
     >>::Concatenated,
     SubprocessConsumes = Self::SubprocessConsumes,
     Messages = Self::Messages,
@@ -111,13 +113,20 @@ pub trait FlowingProcess: sealed::FlowingProcess {
     Errors = <Sub::Errors as CoprodUnion<Self::Errors, ErrorUnionIndices>>::Union,
   >
   where
-    Sub::Produces: Extract<Sub::SubprocessConsumes, SubProducesExtractIndices>,
-    <Sub::Produces as Extract<Sub::SubprocessConsumes, SubProducesExtractIndices>>::Remainder:
-      ParamList + Concat<Self::Produces>,
+    Self::Produces: Extract<Sub::SubprocessConsumes, ProcessBeforeProducesToSubprocessConsumesIndices>,
+    <Self::Produces as Extract<
+      Sub::SubprocessConsumes,
+      ProcessBeforeProducesToSubprocessConsumesIndices,
+    >>::Remainder: ParamList,
+    Sub::Produces: Concat<
+      <Self::Produces as Extract<
+        Sub::SubprocessConsumes,
+        ProcessBeforeProducesToSubprocessConsumesIndices,
+      >>::Remainder,
+    >,
     Sub::EverProduced: Extract<Sub::SubprocessConsumes, SubEverProducedExtractIndices>,
     <Sub::EverProduced as Extract<Sub::SubprocessConsumes, SubEverProducedExtractIndices>>::Remainder:
       ParamList + Concat<Self::EverProduced>,
-    Self::Produces: Extract<Sub::SubprocessConsumes, ProcessBeforeProducesToSubprocessConsumesIndices>,
     Sub::Errors: CoprodUnion<Self::Errors, ErrorUnionIndices>,
 {
     SubprocessFlowingProcess {
