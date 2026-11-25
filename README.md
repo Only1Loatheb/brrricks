@@ -209,6 +209,10 @@ To run the example process in your terminal, execute the following command:
 cargo run --example demo
 ```
 
+## Process-scoped error handling
+
+Process-level errors are registered at by a step, deduplicated at compile time, and can be exhaustively handled at the process scope.
+
 ## Typical USSD service interaction flow
 
 ```mermaid
@@ -277,10 +281,10 @@ flowchart TD
     end
     FinalizedProcess(Finalized Process) -- " build " --> RunnableProcess(Runnable Process)
     Start -- " Entry Step " --> FlowingProcess(Flowing Process)
-    FlowingProcess -- " Final Step " --> FinalizedProcess
+    FlowingProcess -- " Final Step<br>or Finalized Process " --> FinalizedProcess
     FlowingProcess -- " Splitter Step<br>or Form Splitter Step " --> FinalizedSplitProcess
     Loop:::noEdge
-    Loop(" Operation Step<br>or Form Step ") --- FlowingProcess
+    Loop(" Operation Step,<br>Form Step,<br>or Flowing Process ") --- FlowingProcess
     Loop --> FlowingProcess
     FinalizedSplitProcess -- " Flowing Process " --> FlowingSplitProcess
     FinalizedSplitProcess -- " Finalized Process " --> finalized_split_cases_final
