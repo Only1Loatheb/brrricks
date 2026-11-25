@@ -1,3 +1,4 @@
+//@require-annotations-for-level: ERROR
 use serde::{Deserialize, Serialize};
 use type_process_builder::builder::*;
 use type_process_builder::frunk::to_ref::ToRef;
@@ -33,4 +34,6 @@ impl Operation for ProduceDuplicateParam {
 
 fn main() {
   let _ = entry::<HList![DuplicateParam], Messages>().then(ProduceDuplicateParam);
+  //~^ ERROR: cannot overwrite parameter `DuplicateParam`: it was already produced by a previous step in this process flow
+  //~| NOTE: The step being added produces parameter `DuplicateParam`, but a parameter with the same UID has already been produced by a preceding step.
 }

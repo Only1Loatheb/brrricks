@@ -1,17 +1,32 @@
-use thiserror::Error;
+//@require-annotations-for-level: ERROR
+use std::fmt;
 use type_process_builder::builder::*;
 use type_process_builder::frunk::to_ref::ToRef;
 use type_process_builder::step::{Operation, OperationOutcome, ProcessMessages};
 use type_process_builder::{Coprod, HNil, impl_step_error};
 use typenum::*;
 
-#[derive(Error, Debug)]
-#[error("error A")]
+#[derive(Debug)]
 struct ErrorA;
 
-#[derive(Error, Debug)]
-#[error("error B")]
+impl fmt::Display for ErrorA {
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    f.write_str("error A")
+  }
+}
+
+impl std::error::Error for ErrorA {}
+
+#[derive(Debug)]
 struct ErrorB;
+
+impl fmt::Display for ErrorB {
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    f.write_str("error B")
+  }
+}
+
+impl std::error::Error for ErrorB {}
 
 // Separate invocations accidentally using the same UID `U0` for two distinct error types
 impl_step_error!(ErrorA => U0);
@@ -55,4 +70,7 @@ impl Operation for Step2 {
 
 fn main() {
   let _ = entry::<HNil, Messages>().then(Step1).then(Step2);
+  //~^ ERROR: cannot inject `ErrorB` into error coproduct
+  //~| ERROR: cannot inject `ErrorB` into error coproduct
+  //~| NOTE: If merging step errors across steps, ensure `ErrorB` does not share the same `StepError::UID` with a different error type
 }

@@ -1,3 +1,4 @@
+//@require-annotations-for-level: ERROR
 use serde::{Deserialize, Serialize};
 use type_process_builder::builder::*;
 use type_process_builder::frunk::to_ref::ToRef;
@@ -37,4 +38,5 @@ impl Operation for ConsumeMissingParam {
 
 fn main() {
   let _ = entry::<HList![ProducedParam], Messages>().then(ConsumeMissingParam);
+  //~^ ERROR: Extract<_, _>` is not satisfied
 }
