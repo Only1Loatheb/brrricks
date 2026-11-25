@@ -1,3 +1,5 @@
+pub mod subprocess_finalized_process;
+
 use crate::builder::IntoProcessError;
 use crate::builder::flowing_process::FlowingProcess;
 use crate::builder::runnable_process::RunnableProcess;

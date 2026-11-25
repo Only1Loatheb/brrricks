@@ -3058,6 +3058,213 @@ async fn test_flowing_split_case1_ending_with_form_resume() {
   test_process_messages(&process, messages).await;
 }
 
+fn reusable_retry_and_produce_case2() -> impl FlowingProcess<
+  EntryConsumes = HNil,
+  SubprocessConsumes = HNil,
+  Messages = Messages,
+  Produces = HList![Case2Param, CommonCaseParam],
+  EverProduced = HList![Case2Param, CommonCaseParam],
+  Errors = LibraryErrors,
+> {
+  entry::<HNil, Messages>().show(OneInputRetryForm).then(ProduceOnlyCase2Param)
+}
+
+fn reusable_back_inspection() -> impl FlowingProcess<
+  EntryConsumes = HNil,
+  SubprocessConsumes = HNil,
+  Messages = Messages,
+  Produces = HList![Case2Param, Case1Param],
+  EverProduced = HList![Case2Param, Case1Param],
+  Errors = LibraryErrors,
+> {
+  entry::<HNil, Messages>().show(BackTokenInspectionForm1).show(BackTokenInspectionForm2)
+}
+
+fn reusable_retry_and_end_case2() -> impl FinalizedProcess<
+  EntryConsumes = HList![Case2Param],
+  SubprocessConsumes = HList![Case2Param],
+  Messages = Messages,
+  EverProduced = HList![CommonCaseParam, Case2Param],
+  Errors = LibraryErrors,
+> {
+  entry::<HList![Case2Param], Messages>().show(OneInputRetryForm).end(FinalConsumeCase2Param)
+}
+
+fn reusable_end_no_consumes() -> impl FinalizedProcess<
+  EntryConsumes = HNil,
+  SubprocessConsumes = HNil,
+  Messages = Messages,
+  EverProduced = HNil,
+  Errors = LibraryErrors,
+> {
+  entry::<HNil, Messages>().end(FinalNoConsumes)
+}
+
+#[tokio::test]
+async fn test_then_via_form_retry_and_param_forwarding() {
+  let process = ExtractMsisdnOperatorAndShortcodeString
+    .then_via(reusable_retry_and_produce_case2())
+    .end(FinalConsumeCase2Param)
+    .build("", 0);
+
+  let messages = vec!["*123#", "This will be discarded", "10", "This will be accepted", "20", "I ate Case2Param"];
+  test_process_messages(&process, messages.clone()).await;
+
+  // Reuse the exact same extracted sub-process in a different parameter context.
+  let process_with_extra_param = ExtractMsisdnOperatorAndShortcodeString
+    .then(ProduceOnlyCase1Param)
+    .then_via(reusable_retry_and_produce_case2())
+    .end(FinalConsumeCase2Param)
+    .build("", 0);
+  test_process_messages(&process_with_extra_param, messages).await;
+
+  // Invalid step index past sub_end_index
+  let Err(err) = process.resume_run(session_init_value(), PreviousRunYieldedAt(999), String::new(), None, None).await
+  else {
+    panic!("expected invalid step index error");
+  };
+  assert!(err.to_string().contains("invalid step index: 999"));
+}
+
+#[tokio::test]
+async fn test_then_via_back_navigation_and_in_split() {
+  let process = ExtractMsisdnOperatorAndShortcodeString
+    .show(ChooseCaseForm)
+    .split(SplitByThreeCaseOption)
+    .case_via(Case1, |x| x.then_via(reusable_back_inspection()))
+    .case_via(Case2, |x| x.then(ProduceCaseParam2))
+    .case_via(Case3, |x| x.then(ProduceOnlyCase1Param))
+    .show(BackTokenInspectionForm3)
+    .end(FinalNoConsumes)
+    .build("", 0);
+
+  let messages = vec![
+    "*123#",
+    "Choose a case",
+    "1",
+    "Form1 back=true",
+    "next",
+    "Form2 back=true",
+    "next",
+    "Form3 back=true",
+    "0",
+    "Form2 back=true",
+    "0",
+    "Form1 back=true",
+    "0",
+    "Choose a case",
+    "1",
+    "Form1 back=true",
+    "next",
+    "Form2 back=true",
+    "next",
+    "Form3 back=true",
+    "next",
+    "Done",
+  ];
+  test_process_messages(&process, messages).await;
+}
+
+#[tokio::test]
+async fn test_then_via_early_outcomes() {
+  let p_finish_before = ExtractMsisdnOperatorAndShortcodeString
+    .then(FinishEarlyOperation)
+    .then_via(entry::<HNil, Messages>().show(OneInputRetryForm))
+    .end(FinalNoConsumes)
+    .build("", 0);
+  test_process_messages(&p_finish_before, vec!["*123#", "Operation finished"]).await;
+
+  let p_finish_inside = ExtractMsisdnOperatorAndShortcodeString
+    .then_via(entry::<HNil, Messages>().show(FinishAfterInput))
+    .show(OneInputRetryForm)
+    .end(FinalNoConsumes)
+    .build("", 0);
+  test_process_messages(&p_finish_inside, vec!["*123#", "Last number in the process", "10", "Always finish"]).await;
+
+  let p_retry_inside = ExtractMsisdnOperatorAndShortcodeString
+    .then_via(entry::<HNil, Messages>().show(OneInputRetryForm))
+    .end(FinalNoConsumes)
+    .build("", 0);
+  test_process_messages(
+    &p_retry_inside,
+    vec!["*123#", "This will be discarded", "10", "This will be accepted", "20", "Empty good bye"],
+  )
+  .await;
+}
+
+#[tokio::test]
+async fn test_then_end_form_retry_back_and_finish() {
+  // 1. Reusable finalized sub-process with param forwarding and form retry.
+  let p_sub = ExtractMsisdnOperatorAndShortcodeString
+    .then(ProduceOnlyCase2Param)
+    .then_end(reusable_retry_and_end_case2())
+    .build("", 0);
+  test_process_messages(
+    &p_sub,
+    vec!["*123#", "This will be discarded", "10", "This will be accepted", "20", "I ate Case2Param"],
+  )
+  .await;
+
+  // 2. InvalidStepIndex past sub_end_index.
+  let Err(err) = p_sub.resume_run(session_init_value(), PreviousRunYieldedAt(999), String::new(), None, None).await
+  else {
+    panic!("expected InvalidStepIndex error");
+  };
+  assert!(err.to_string().contains("invalid step index: 999"));
+
+  // 3. Back navigation from inside `then_end` back to a form before `then_end`, and then forward again.
+  let p_back = ExtractMsisdnOperatorAndShortcodeString
+    .show(BackTokenInspectionForm1)
+    .then_end(entry::<HNil, Messages>().show(BackTokenInspectionForm2).end(FinalNoConsumes))
+    .build("", 0);
+  test_process_messages(
+    &p_back,
+    vec![
+      "*123#",
+      "Form1 back=false",
+      "next",
+      "Form2 back=true",
+      "0",
+      "Form1 back=true",
+      "next",
+      "Form2 back=true",
+      "next",
+      "Empty good bye",
+    ],
+  )
+  .await;
+
+  // 4. Early Finish before `then_end`.
+  let p_finish_before = ExtractMsisdnOperatorAndShortcodeString
+    .then(FinishEarlyOperation)
+    .then_end(reusable_end_no_consumes())
+    .build("", 0);
+  test_process_messages(&p_finish_before, vec!["*123#", "Operation finished"]).await;
+
+  // 5. Extracted finalized sub-processes reused inside `split` `case_end` with different parameter contexts.
+  let p_in_split = ExtractMsisdnOperatorAndShortcodeString
+    .show(ChooseCaseForm)
+    .split(SplitByThreeCaseOption)
+    .case_end(Case1, |x| x.then_end(reusable_end_no_consumes()))
+    .case_end(Case2, |x| x.then(ProduceOnlyCase2Param).then_end(reusable_retry_and_end_case2()))
+    .case_end(Case3, |x| x.then_end(reusable_end_no_consumes()))
+    .build("", 0);
+  test_process_messages(
+    &p_in_split,
+    vec![
+      "*123#",
+      "Choose a case",
+      "2",
+      "This will be discarded",
+      "10",
+      "This will be accepted",
+      "20",
+      "I ate Case2Param",
+    ],
+  )
+  .await;
+}
+
 async fn test_process_messages(
   process: &RunnableProcess<impl FinalizedProcess<Messages = Messages>>,
   messages: Vec<&str>,

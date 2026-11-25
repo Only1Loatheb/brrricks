@@ -38,5 +38,5 @@ impl Operation for ConsumeMissingParam {
 
 fn main() {
   let _ = entry::<HList![ProducedParam], Messages>().then(ConsumeMissingParam);
-  //~^ ERROR: Extract<_, _>` is not satisfied
+  //~^ ERROR: Extract<
 }

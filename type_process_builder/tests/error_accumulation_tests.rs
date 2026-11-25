@@ -357,6 +357,50 @@ async fn test_split_branch_error_accumulation() {
 }
 
 #[tokio::test]
+async fn test_then_via_error_accumulation() {
+  let p_before = entry::<HNil, Messages>()
+    .then(FailOpA(true))
+    .then_via(entry::<HNil, Messages>().then(FailOpB(false)))
+    .end(FailFinal(false))
+    .build("p", 0);
+  let err = p_before
+    .resume_run(empty_ctx(), PreviousRunYieldedAt(StepIndex::MIN), String::new(), None, None)
+    .await
+    .unwrap_err();
+  assert_eq!(err.downcast_ref::<DbError>(), Some(&DbError("op_a")));
+
+  let p_sub = entry::<HNil, Messages>()
+    .then(FailOpA(false))
+    .then_via(entry::<HNil, Messages>().then(FailOpB(true)))
+    .end(FailFinal(false))
+    .build("p", 0);
+  let err =
+    p_sub.resume_run(empty_ctx(), PreviousRunYieldedAt(StepIndex::MIN), String::new(), None, None).await.unwrap_err();
+  assert!(err.downcast_ref::<NetworkError>().is_some());
+}
+
+#[tokio::test]
+async fn test_then_end_error_accumulation() {
+  let p_before = entry::<HNil, Messages>()
+    .then(FailOpA(true))
+    .then_end(entry::<HNil, Messages>().then(FailOpB(false)).end(FailFinal(false)))
+    .build("p", 0);
+  let err = p_before
+    .resume_run(empty_ctx(), PreviousRunYieldedAt(StepIndex::MIN), String::new(), None, None)
+    .await
+    .unwrap_err();
+  assert_eq!(err.downcast_ref::<DbError>(), Some(&DbError("op_a")));
+
+  let p_sub = entry::<HNil, Messages>()
+    .then(FailOpA(false))
+    .then_end(entry::<HNil, Messages>().then(FailOpB(true)).end(FailFinal(false)))
+    .build("p", 0);
+  let err =
+    p_sub.resume_run(empty_ctx(), PreviousRunYieldedAt(StepIndex::MIN), String::new(), None, None).await.unwrap_err();
+  assert!(err.downcast_ref::<NetworkError>().is_some());
+}
+
+#[tokio::test]
 async fn test_infallible_process_has_library_errors() {
   struct InfallibleFinal;
   impl Final for InfallibleFinal {

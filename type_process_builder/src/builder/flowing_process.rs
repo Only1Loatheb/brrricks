@@ -2,6 +2,7 @@ pub mod entry_flowing_process;
 pub mod form_flowing_process;
 pub mod operation_flowing_process;
 pub mod subprocess;
+pub mod subprocess_flowing_process;
 
 use crate::builder::borrow_just::BorrowJust;
 use crate::builder::finalized_process::{FinalizedProcess, FlowingFinalizedProcess};
@@ -9,6 +10,7 @@ use crate::builder::form_flowing_process::FormFlowingProcess;
 use crate::builder::operation_flowing_process::OperationFlowingProcess;
 use crate::builder::split_process_form_splitter::SplitProcessFormSplitter;
 use crate::builder::split_process_splitter::SplitProcessSplitter;
+use crate::builder::subprocess_flowing_process::SubprocessFlowingProcess;
 use crate::builder::{ProcessMessages, SplitProcess, WILL_BE_RENUMBERED};
 use crate::error_list::union::CoprodUnion;
 use crate::frunk::coproduct::Coproduct;
@@ -82,6 +84,48 @@ pub trait FlowingProcess: sealed::FlowingProcess {
     for<'a> &'a Self::Produces: BorrowJust<'a, OperationStep::Consumes, ProcessBeforeProducesToLastStepConsumesIndices>,
   {
     OperationFlowingProcess { process_before: self, last_step: step, phantom_data: Default::default() }
+  }
+
+  fn then_via<
+    Sub: FlowingProcess<Messages = Self::Messages>,
+    ProcessBeforeProducesToSubprocessConsumesIndices: Sync + Send,
+    SubProducesExtractIndices: Sync + Send,
+    SubEverProducedExtractIndices: Sync + Send,
+    ErrorUnionIndices: Sync + Send,
+  >(
+    self,
+    sub: Sub,
+  ) -> impl FlowingProcess<
+    EntryConsumes = Self::EntryConsumes,
+    ProcessBeforeProduces = Self::Produces,
+    Produces = <<Sub::Produces as Extract<Sub::SubprocessConsumes, SubProducesExtractIndices>>::Remainder as Concat<
+      Self::Produces,
+    >>::Concatenated,
+    SubprocessConsumes = Self::SubprocessConsumes,
+    Messages = Self::Messages,
+    EverProduced = <<Sub::EverProduced as Extract<
+      Sub::SubprocessConsumes,
+      SubEverProducedExtractIndices,
+    >>::Remainder as Concat<Self::EverProduced>>::Concatenated,
+    Errors = <Sub::Errors as CoprodUnion<Self::Errors, ErrorUnionIndices>>::Union,
+  >
+  where
+    Sub::Produces: Extract<Sub::SubprocessConsumes, SubProducesExtractIndices>,
+    <Sub::Produces as Extract<Sub::SubprocessConsumes, SubProducesExtractIndices>>::Remainder:
+      ParamList + Concat<Self::Produces>,
+    Sub::EverProduced: Extract<Sub::SubprocessConsumes, SubEverProducedExtractIndices>,
+    <Sub::EverProduced as Extract<Sub::SubprocessConsumes, SubEverProducedExtractIndices>>::Remainder:
+      ParamList + Concat<Self::EverProduced>,
+    Self::Produces: Extract<Sub::SubprocessConsumes, ProcessBeforeProducesToSubprocessConsumesIndices>,
+    Sub::Errors: CoprodUnion<Self::Errors, ErrorUnionIndices>,
+{
+    SubprocessFlowingProcess {
+      process_before: self,
+      sub_process: sub,
+      sub_start_index: WILL_BE_RENUMBERED,
+      sub_end_index: WILL_BE_RENUMBERED,
+      phantom_data: Default::default(),
+    }
   }
 
   fn show<
@@ -267,6 +311,41 @@ pub trait FlowingProcess: sealed::FlowingProcess {
     Self::Produces: Extract<FinalStep::Consumes, ProcessBeforeProducesToLastStepConsumesIndices>,
   {
     FlowingFinalizedProcess { process_before: self, final_step: step, phantom_data: Default::default() }
+  }
+
+  fn then_end<
+    Sub: FinalizedProcess<Messages = Self::Messages>,
+    ProcessBeforeProducesToSubprocessConsumesIndices: Sync + Send,
+    SubEverProducedExtractIndices: Sync + Send,
+    ErrorUnionIndices: Sync + Send,
+  >(
+    self,
+    sub: Sub,
+  ) -> impl FinalizedProcess<
+    EntryConsumes = Self::EntryConsumes,
+    ProcessBeforeProduces = Self::Produces,
+    SubprocessConsumes = Self::SubprocessConsumes,
+    Messages = Self::Messages,
+    EverProduced = <<Sub::EverProduced as Extract<
+      Sub::SubprocessConsumes,
+      SubEverProducedExtractIndices,
+    >>::Remainder as Concat<Self::EverProduced>>::Concatenated,
+    Errors = <Sub::Errors as CoprodUnion<Self::Errors, ErrorUnionIndices>>::Union,
+  >
+  where
+    Sub::EverProduced: Extract<Sub::SubprocessConsumes, SubEverProducedExtractIndices>,
+    <Sub::EverProduced as Extract<Sub::SubprocessConsumes, SubEverProducedExtractIndices>>::Remainder:
+      ParamList + Concat<Self::EverProduced>,
+    Self::Produces: Extract<Sub::SubprocessConsumes, ProcessBeforeProducesToSubprocessConsumesIndices>,
+    Sub::Errors: CoprodUnion<Self::Errors, ErrorUnionIndices>,
+{
+    crate::builder::finalized_process::subprocess_finalized_process::SubprocessFinalizedProcess {
+      process_before: self,
+      sub_process: sub,
+      sub_start_index: WILL_BE_RENUMBERED,
+      sub_end_index: WILL_BE_RENUMBERED,
+      phantom_data: Default::default(),
+    }
   }
 }
 
