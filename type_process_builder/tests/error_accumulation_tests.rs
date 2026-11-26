@@ -424,9 +424,9 @@ async fn test_infallible_process_has_library_errors() {
   let idx = idx_err.peel().unwrap_err().peel().unwrap_or_else(|cnil| cnil.absurd());
   assert_eq!(idx.0, 999);
 
-  let ser_err = type_process_builder::builder::SerializationError(postcard::Error::DeserializeUnexpectedEnd);
+  let ser_err = type_process_builder::builder::SerializationError::DeserializeUnexpectedEnd;
   assert!(ser_err.to_string().contains("failed to serialize or deserialize process state"));
-  assert!(ser_err.source().is_some());
+  assert!(ser_err.source().is_none());
 }
 
 #[cfg(all(test, target_pointer_width = "64"))]

@@ -39,5 +39,4 @@ impl Operation for ConsumeMissingParam {
 fn main() {
   let _ = entry::<HList![ProducedParam], Messages>().then(ConsumeMissingParam);
   //~^ ERROR: Extract<
-  //~| ERROR: type mismatch resolving
 }

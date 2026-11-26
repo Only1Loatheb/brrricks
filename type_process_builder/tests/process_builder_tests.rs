@@ -603,7 +603,7 @@ async fn test_return_error_on_param_missing_from_init_value(
     .resume_run(init_value, PreviousRunYieldedAt(StepIndex::MIN), messages[0].into(), None, None::<BackToken>)
     .await;
   assert!(run_outcome.is_err_and(|x| {
-    x.downcast_ref::<SerializationError>().is_some_and(|e| matches!(e.0, postcard::Error::DeserializeUnexpectedEnd))
+    x.downcast_ref::<SerializationError>().is_some_and(|e| matches!(e, SerializationError::DeserializeUnexpectedEnd))
   }));
 }
 
@@ -636,7 +636,8 @@ async fn test_return_error_on_param_missing_from_context(
         )
         .await;
       assert!(run_outcome.is_err_and(|x| {
-        x.downcast_ref::<SerializationError>().is_some_and(|e| matches!(e.0, postcard::Error::DeserializeUnexpectedEnd))
+        x.downcast_ref::<SerializationError>()
+          .is_some_and(|e| matches!(e, SerializationError::DeserializeUnexpectedEnd))
       }));
     },
     RunOutcome::RetryUserInput(msg, _context) => {

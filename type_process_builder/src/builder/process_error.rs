@@ -7,20 +7,78 @@ use std::marker::PhantomData;
 
 /// Failed to serialize or deserialize a [`crate::builder::SessionContext`] or
 /// [`crate::builder::FormContext`].
-#[derive(Debug)]
-pub struct SerializationError(pub postcard::Error);
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub enum SerializationError {
+  WontImplement,
+  NotYetImplemented,
+  SerializeBufferFull,
+  SerializeSeqLengthUnknown,
+  DeserializeUnexpectedEnd,
+  DeserializeBadVarint,
+  DeserializeBadBool,
+  DeserializeBadChar,
+  DeserializeBadUtf8,
+  DeserializeBadOption,
+  DeserializeBadEnum,
+  DeserializeBadEncoding,
+  DeserializeBadCrc,
+  SerdeSerCustom,
+  SerdeDeCustom,
+  CollectStrError,
+  Other(String),
+}
+
+impl SerializationError {
+  pub(crate) fn from_postcard(err: postcard::Error) -> Self {
+    match err {
+      postcard::Error::WontImplement => Self::WontImplement,
+      postcard::Error::NotYetImplemented => Self::NotYetImplemented,
+      postcard::Error::SerializeBufferFull => Self::SerializeBufferFull,
+      postcard::Error::SerializeSeqLengthUnknown => Self::SerializeSeqLengthUnknown,
+      postcard::Error::DeserializeUnexpectedEnd => Self::DeserializeUnexpectedEnd,
+      postcard::Error::DeserializeBadVarint => Self::DeserializeBadVarint,
+      postcard::Error::DeserializeBadBool => Self::DeserializeBadBool,
+      postcard::Error::DeserializeBadChar => Self::DeserializeBadChar,
+      postcard::Error::DeserializeBadUtf8 => Self::DeserializeBadUtf8,
+      postcard::Error::DeserializeBadOption => Self::DeserializeBadOption,
+      postcard::Error::DeserializeBadEnum => Self::DeserializeBadEnum,
+      postcard::Error::DeserializeBadEncoding => Self::DeserializeBadEncoding,
+      postcard::Error::DeserializeBadCrc => Self::DeserializeBadCrc,
+      postcard::Error::SerdeSerCustom => Self::SerdeSerCustom,
+      postcard::Error::SerdeDeCustom => Self::SerdeDeCustom,
+      postcard::Error::CollectStrError => Self::CollectStrError,
+      other => Self::Other(other.to_string()),
+    }
+  }
+}
 
 impl Display for SerializationError {
   fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-    write!(f, "failed to serialize or deserialize process state: {}", self.0)
+    let detail = match self {
+      Self::WontImplement => "unsupported feature",
+      Self::NotYetImplemented => "not yet implemented",
+      Self::SerializeBufferFull => "serialize buffer is full",
+      Self::SerializeSeqLengthUnknown => "sequence length must be known",
+      Self::DeserializeUnexpectedEnd => "unexpected end of buffer",
+      Self::DeserializeBadVarint => "bad varint",
+      Self::DeserializeBadBool => "bad bool discriminant",
+      Self::DeserializeBadChar => "invalid unicode char",
+      Self::DeserializeBadUtf8 => "invalid utf-8",
+      Self::DeserializeBadOption => "bad option discriminant",
+      Self::DeserializeBadEnum => "bad enum discriminant",
+      Self::DeserializeBadEncoding => "bad encoding",
+      Self::DeserializeBadCrc => "bad CRC",
+      Self::SerdeSerCustom => "serde serialization error",
+      Self::SerdeDeCustom => "serde deserialization error",
+      Self::CollectStrError => "collect_str error",
+      Self::Other(msg) => msg.as_str(),
+    };
+    write!(f, "failed to serialize or deserialize process state: {detail}")
   }
 }
 
-impl Error for SerializationError {
-  fn source(&self) -> Option<&(dyn Error + 'static)> {
-    Some(&self.0)
-  }
-}
+impl Error for SerializationError {}
 
 impl StepError for SerializationError {
   type UID = typenum::U0;
@@ -73,8 +131,8 @@ impl<StepErrors: ErrorCoproduct> Error for ProcessError<StepErrors> {
 
 impl<StepErrors: ErrorCoproduct> ProcessError<StepErrors> {
   #[inline(always)]
-  pub(crate) fn from_serialization(err: postcard::Error) -> Self {
-    Self { inner: anyhow::Error::new(SerializationError(err)), _marker: PhantomData }
+  pub(crate) fn from_serialization(err: SerializationError) -> Self {
+    Self { inner: anyhow::Error::new(err), _marker: PhantomData }
   }
 
   #[inline(always)]
@@ -159,9 +217,49 @@ impl<T, E: ErrorCoproduct> IntoProcessError<T> for Result<T, E> {
   }
 }
 
-impl<T> IntoProcessError<T> for Result<T, postcard::Error> {
+impl<T> IntoProcessError<T> for Result<T, SerializationError> {
   #[inline(always)]
   fn into_process_err<Next: ErrorCoproduct>(self) -> Result<T, ProcessError<Next>> {
     self.map_err(ProcessError::from_serialization)
+  }
+}
+
+impl<T> IntoProcessError<T> for Result<T, postcard::Error> {
+  #[inline(always)]
+  fn into_process_err<Next: ErrorCoproduct>(self) -> Result<T, ProcessError<Next>> {
+    self.map_err(|err| ProcessError::from_serialization(SerializationError::from_postcard(err)))
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::SerializationError;
+
+  #[test]
+  fn test_serialization_error_from_postcard_and_display() {
+    let postcard_errors = [
+      postcard::Error::WontImplement,
+      postcard::Error::NotYetImplemented,
+      postcard::Error::SerializeBufferFull,
+      postcard::Error::SerializeSeqLengthUnknown,
+      postcard::Error::DeserializeUnexpectedEnd,
+      postcard::Error::DeserializeBadVarint,
+      postcard::Error::DeserializeBadBool,
+      postcard::Error::DeserializeBadChar,
+      postcard::Error::DeserializeBadUtf8,
+      postcard::Error::DeserializeBadOption,
+      postcard::Error::DeserializeBadEnum,
+      postcard::Error::DeserializeBadEncoding,
+      postcard::Error::DeserializeBadCrc,
+      postcard::Error::SerdeSerCustom,
+      postcard::Error::SerdeDeCustom,
+      postcard::Error::CollectStrError,
+    ];
+    for err in postcard_errors {
+      let ser_err = SerializationError::from_postcard(err);
+      assert!(ser_err.to_string().starts_with("failed to serialize or deserialize process state: "));
+    }
+    let other = SerializationError::Other("custom".to_string());
+    assert_eq!(other.to_string(), "failed to serialize or deserialize process state: custom");
   }
 }
