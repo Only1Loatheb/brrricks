@@ -38,5 +38,6 @@ impl Operation for ConsumeMissingParam {
 
 fn main() {
   let _ = entry::<HList![ProducedParam], Messages>().then(ConsumeMissingParam);
-  //~^ ERROR: Extract<
+  //~^ ERROR: cannot extract required parameters
+  //~| NOTE: A step or sub-process requires parameters that have not been produced by preceding steps in this process flow.
 }

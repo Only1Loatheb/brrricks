@@ -209,11 +209,51 @@ To run the example process in your terminal, execute the following command:
 cargo run --example demo
 ```
 
-## Process-scoped error handling
+## Usage patterns
 
-Process-level errors are registered at by a step, deduplicated at compile time, and can be exhaustively handled at the process scope.
+### Parameters (`impl_param_value!`)
 
-## Typical USSD service interaction flow
+Parameters are serializable values (`#[derive(Serialize, Deserialize)]`) carried in `SessionContext` across steps and user turns. Each parameter type needs a unique type-level `UID` (via `impl_param_value!`) so the compiler can track identity across steps and branches; duplicate `UID`s are caught at compile time:
+
+```rust
+impl_param_value! {
+  ShortcodeString => U0,
+  Amount => U1,
+}
+```
+
+### Process-scoped error handling
+
+Process-scoped errors are registered per step, accumulated into a deduplicated coproduct `ProcessError<E>` at compile time, and handled at the process scope. Assign each step error type a unique type-level `UID` (`U0` and `U1` are reserved for `SerializationError` and `InvalidStepIndexError`):
+
+```rust
+impl_step_error! {
+  PaymentError => U2,
+}
+```
+
+At runtime, inspect them with `err.downcast_ref::<PaymentError>()`, `err.downcast::<PaymentError>()`, or `err.peel()` for exhaustive matching.
+
+### Reusing sub-processes (`then_via` and `then_end`)
+
+Define reusable sub-processes with `entry::<Consumes, Messages>()` and concrete `impl FlowingProcess<...>` or `impl FinalizedProcess<...>` return types:
+
+```rust
+fn confirm_amount() -> impl FlowingProcess<
+  EntryConsumes = HList![Amount],
+  SubprocessConsumes = HList![Amount],
+  Messages = Messages,
+  Produces = HList![Confirmed, Amount],
+  EverProduced = HList![Confirmed, Amount],
+  Errors = LibraryErrors,
+> {
+  entry::<HList![Amount], Messages>().show(ConfirmForm)
+}
+```
+
+Compose them into any flow that has produced `Amount` using `.then_via(confirm_amount())` or `.then_end(final_sub())` — `Amount` is extracted automatically and only `Confirmed` is merged back in.
+
+### Running a `RunnableProcess`
 
 ```mermaid
 sequenceDiagram
@@ -250,6 +290,15 @@ sequenceDiagram
     Platform --) User: Display USSD screen
 ```
 
+Start a session with `PreviousRunYieldedAt(StepIndex::MIN)` and serialized `Entry` parameters, then handle `RunOutcome`:
+
+- `RunOutcome::Yield(msg, session_ctx, yielded_at, form_ctx)`: display `msg` and persist `(session_ctx, yielded_at, form_ctx)` (plus a `BackToken` history stack if you support back navigation) for the next user turn.
+- `RunOutcome::RetryUserInput(msg, new_form_ctx)`: display `msg` and keep the same `session_ctx` and `yielded_at`, replacing `form_ctx` with `new_form_ctx`.
+- `RunOutcome::Back`: pop the previous step's saved `(session_ctx, yielded_at, form_ctx, back_token)` and call `resume_run` again.
+- `RunOutcome::Finish(msg)`: display `msg` and close the session.
+
+See [demo/main.rs](type_process_builder/examples/demo/main.rs) for a minimal CLI loop, or [qrios_api_process_runner](examples/qrios_api_process_runner/src/lib.rs) and [qrios_api_axum_server](examples/qrios_api_axum_server/src/lib.rs) for an HTTP + session-store implementation of the interaction flow shown above.
+
 ## Process builder states
 
 ```mermaid
@@ -271,26 +320,26 @@ flowchart TD
     Start:::hidden
     FinalizedSplitProcessSubgraph:::hidden
     subgraph FinalizedSplitProcessSubgraph
-        FinalizedSplitProcess(Finalized Split Process)
+        FinalizedSplitProcess(FinalizedSplitProcess)
         finalized_split_cases_final{are split cases<br>exhausted?}:::orangeNodeEdge
     end
     FlowingSplitProcessSubgraph:::hidden
     subgraph FlowingSplitProcessSubgraph
-        FlowingSplitProcess(Flowing Split Process)
+        FlowingSplitProcess(FlowingSplitProcess)
         flowing_split_cases{are split cases<br>exhausted?}:::orangeNodeEdge
     end
-    FinalizedProcess(Finalized Process) -- " build " --> RunnableProcess(Runnable Process)
-    Start -- " Entry Step " --> FlowingProcess(Flowing Process)
-    FlowingProcess -- " Final Step<br>or Finalized Process " --> FinalizedProcess
-    FlowingProcess -- " Splitter Step<br>or Form Splitter Step " --> FinalizedSplitProcess
+    FinalizedProcess(FinalizedProcess) -- " build() " --> RunnableProcess(RunnableProcess)
+    Start -- " entry() " --> FlowingProcess(FlowingProcess)
+    FlowingProcess -- " end(Final)<br>then_end(FinalizedProcess) " --> FinalizedProcess
+    FlowingProcess -- " split(Splitter)<br>show_split(FormSplitter) " --> FinalizedSplitProcess
     Loop:::noEdge
-    Loop(" Operation Step,<br>Form Step,<br>or Flowing Process ") --- FlowingProcess
+    Loop(" then(Operation)<br>show(Form)<br>then_via(FlowingProcess) ") --- FlowingProcess
     Loop --> FlowingProcess
-    FinalizedSplitProcess -- " Flowing Process " --> FlowingSplitProcess
-    FinalizedSplitProcess -- " Finalized Process " --> finalized_split_cases_final
+    FinalizedSplitProcess -- " case_via(FlowingProcess) " --> FlowingSplitProcess
+    FinalizedSplitProcess -- " case_end(FinalizedProcess) " --> finalized_split_cases_final
     finalized_split_cases_final -- " unhandled cases left " --> FinalizedSplitProcess
     finalized_split_cases_final -- " all cases addressed " --> FinalizedProcess
-    FlowingSplitProcess -- " Finalized Process<br>or Flowing Process " --> flowing_split_cases
+    FlowingSplitProcess -- " case_end(FinalizedProcess)<br>case_via(FlowingProcess) " --> flowing_split_cases
     flowing_split_cases -- " unhandled cases left " --> FlowingSplitProcess
     flowing_split_cases -- " all cases addressed " --> FlowingProcess
     Start ~~~ Loop
@@ -302,6 +351,8 @@ flowchart TD
 ```
 
 ## Plausible use cases
+
+Built for stateful, turn-based flows such as USSD services:
 
 [Africa's Talking API Reference](https://developers.africastalking.com/docs/ussd/handle_sessions)
 
@@ -319,12 +370,6 @@ cargo xtask
 ```
 
 Some integration tests require Docker to be running on your machine to start containers for external dependencies (e.g., Postgres).
-
-Bless the tests with:
-
-```shell
-TRYBUILD=overwrite cargo +nightly test -p type_process_builder --test dx
-```
 
 [//]: # (Redirect can be implemented with a Final step.)
 

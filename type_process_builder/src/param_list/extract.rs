@@ -3,6 +3,10 @@ use crate::frunk::plucker::Plucker;
 
 /// Trait for pulling out some subset of an `HList`, using type inference.
 /// Like `Sculptor`, but ignores the remainder.
+#[diagnostic::on_unimplemented(
+  message = "cannot extract required parameters `{Target}` from `{Self}`",
+  note = "A step or sub-process requires parameters that have not been produced by preceding steps in this process flow."
+)]
 pub trait Extract<Target, Indices>: crate::sealed::Sealed {
   type Remainder;
   fn extract(self) -> Target;

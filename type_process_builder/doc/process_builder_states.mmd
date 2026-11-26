@@ -16,26 +16,26 @@ flowchart TD
     Start:::hidden
     FinalizedSplitProcessSubgraph:::hidden
     subgraph FinalizedSplitProcessSubgraph
-        FinalizedSplitProcess(Finalized Split Process)
+        FinalizedSplitProcess(FinalizedSplitProcess)
         finalized_split_cases_final{are split cases<br>exhausted?}:::orangeNodeEdge
     end
     FlowingSplitProcessSubgraph:::hidden
     subgraph FlowingSplitProcessSubgraph
-        FlowingSplitProcess(Flowing Split Process)
+        FlowingSplitProcess(FlowingSplitProcess)
         flowing_split_cases{are split cases<br>exhausted?}:::orangeNodeEdge
     end
-    FinalizedProcess(Finalized Process) -- " build " --> RunnableProcess(Runnable Process)
-    Start -- " Entry Step " --> FlowingProcess(Flowing Process)
-    FlowingProcess -- " Final Step<br>or Finalized Process " --> FinalizedProcess
-    FlowingProcess -- " Splitter Step<br>or Form Splitter Step " --> FinalizedSplitProcess
+    FinalizedProcess(FinalizedProcess) -- " build() " --> RunnableProcess(RunnableProcess)
+    Start -- " entry() " --> FlowingProcess(FlowingProcess)
+    FlowingProcess -- " end(Final)<br>then_end(FinalizedProcess) " --> FinalizedProcess
+    FlowingProcess -- " split(Splitter)<br>show_split(FormSplitter) " --> FinalizedSplitProcess
     Loop:::noEdge
-    Loop(" Operation Step,<br>Form Step,<br>or Flowing Process ") --- FlowingProcess
+    Loop(" then(Operation)<br>show(Form)<br>then_via(FlowingProcess) ") --- FlowingProcess
     Loop --> FlowingProcess
-    FinalizedSplitProcess -- " Flowing Process " --> FlowingSplitProcess
-    FinalizedSplitProcess -- " Finalized Process " --> finalized_split_cases_final
+    FinalizedSplitProcess -- " case_via(FlowingProcess) " --> FlowingSplitProcess
+    FinalizedSplitProcess -- " case_end(FinalizedProcess) " --> finalized_split_cases_final
     finalized_split_cases_final -- " unhandled cases left " --> FinalizedSplitProcess
     finalized_split_cases_final -- " all cases addressed " --> FinalizedProcess
-    FlowingSplitProcess -- " Finalized Process<br>or Flowing Process " --> flowing_split_cases
+    FlowingSplitProcess -- " case_end(FinalizedProcess)<br>case_via(FlowingProcess) " --> flowing_split_cases
     flowing_split_cases -- " unhandled cases left " --> FlowingSplitProcess
     flowing_split_cases -- " all cases addressed " --> FlowingProcess
     Start ~~~ Loop

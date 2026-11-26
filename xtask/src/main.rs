@@ -40,7 +40,7 @@ fn update_readme(root: &Path) {
   update_diagram_in_readme(
     &root.join("type_process_builder/doc/brrricks_app_session_flow.mmd"),
     &root.join("README.md"),
-    "## Typical USSD service interaction flow",
+    "### Running a `RunnableProcess`",
   );
   update_diagram_in_readme(
     &root.join("type_process_builder/doc/process_builder_states.mmd"),
