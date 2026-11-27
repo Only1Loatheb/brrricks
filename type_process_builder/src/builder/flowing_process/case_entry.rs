@@ -8,7 +8,7 @@ use crate::step::BackToken;
 use crate::step::ProcessMessages;
 use std::marker::PhantomData;
 
-// maybe can use dependent types and a trait, but is okay for now
+/// Seeds a split branch with the parameters produced before the split plus the splitter's output for that case.
 pub struct CaseEntry<ProcessBeforeProduces, EverProduced, Messages> {
   pub(crate) phantom_data: PhantomData<(ProcessBeforeProduces, EverProduced, Messages)>,
 }

@@ -39,7 +39,11 @@ pub trait Operation: Send + Sync {
   ) -> impl Future<Output = Result<OperationOutcome<Self::Produces, Self::FinalMessage>, Self::Error>> + Send;
 }
 
-/// I could make it type safe, but I want to allow for backing up from process that was composed in a dynamic GUI editor
+/// Capability token passed to [`Form`] and [`FormSplitter`] steps when back-navigation is available
+/// (i.e. `None` on the first interactive step, `Some(BackToken)` on subsequent steps).
+///
+/// Kept as a runtime token rather than encoded in the type system so processes composed dynamically
+/// (e.g. in a GUI editor) can also support back-navigation.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct BackToken(pub(crate) ());
 

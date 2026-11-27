@@ -1,8 +1,7 @@
 use crate::frunk::hlist::{HCons, HNil};
 use crate::frunk::plucker::Plucker;
 
-/// Trait for pulling out some subset of an `HList`, using type inference.
-/// Like `Sculptor`, but ignores the remainder.
+/// Trait for pulling out some subset of an `HList` (and optionally its [`Remainder`](Self::Remainder)), using type inference.
 #[diagnostic::on_unimplemented(
   message = "cannot extract required parameters `{Target}` from `{Self}`",
   note = "A step or sub-process requires parameters that have not been produced by preceding steps in this process flow."

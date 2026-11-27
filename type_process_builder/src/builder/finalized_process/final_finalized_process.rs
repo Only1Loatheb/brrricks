@@ -43,7 +43,6 @@ where
   type Errors = <FinalStep::Error as CoprodUnion<ProcessBefore::Errors, ErrorUnionIndices>>::Union;
 
   async fn resume_run(
-    // check where to resume when copying and pasting to finalized proces with finalized process instead of last case
     &self,
     previous_run_produced: SessionContext,
     previous_run_yielded_at: PreviousRunYieldedAt,
@@ -88,8 +87,8 @@ where
     }
   }
 
+  /// Assigning an index is unnecessary because a process never yields at [`Final`] step
   fn enumerate_steps(&mut self, last_used_index: StepIndex) -> StepIndex {
-    // most likely not worth to assign an index to final steps, but maybe test
     self.process_before.enumerate_steps(last_used_index)
   }
 }
