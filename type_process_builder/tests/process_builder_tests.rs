@@ -1068,6 +1068,11 @@ async fn test_runnable_process_metadata() {
 
   assert_eq!(process.name(), "test_process");
   assert_eq!(process.version(), 123);
+  let outcome = process
+    .start_run(hlist!(EntryParam(Msisdn(2_340_000_000_000), Operator::MTN, ShortcodeString("*123#".to_string()))))
+    .await
+    .unwrap();
+  assert!(matches!(outcome, RunOutcome::Finish(msg) if msg == "Empty good bye"));
 }
 
 #[tokio::test]

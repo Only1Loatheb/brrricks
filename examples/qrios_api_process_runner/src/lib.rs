@@ -24,8 +24,8 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::{mpsc, oneshot};
 use type_process_builder::builder::{
-  CurrentRunYieldedAt, FinalizedProcess, FormContext, MaybeFormContext, ParamList, PreviousRunYieldedAt, RunOutcome,
-  RunnableProcess, SessionContext, StepIndex,
+  CurrentRunYieldedAt, FinalizedProcess, FormContext, MaybeFormContext, PreviousRunYieldedAt, RunOutcome,
+  RunnableProcess, SessionContext,
 };
 use type_process_builder::step::{BackToken, ProcessMessages};
 use type_process_builder::{HList, hlist};
@@ -590,16 +590,7 @@ impl<Process: FinalizedProcess<Messages = Messages, EntryConsumes = EntryConsume
       operator,
       ShortcodeString(shortcode_string.clone())
     ));
-    let run_result = self
-      .process
-      .resume_run(
-        entry_consumes.serialize_param_list().map_err(|_| ())?,
-        PreviousRunYieldedAt(StepIndex::MIN),
-        String::new(),
-        None::<FormContext>,
-        None::<BackToken>,
-      )
-      .await;
+    let run_result = self.process.start_run(entry_consumes).await;
     match run_result {
       Ok(RunOutcome::Yield(message, session_context, current_run_yielded_at, form_context)) => {
         let yielded_step = current_run_yielded_at.0;

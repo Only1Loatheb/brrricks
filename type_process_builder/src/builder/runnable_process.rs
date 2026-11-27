@@ -9,6 +9,13 @@ pub struct RunnableProcess<UnderlyingProcess: FinalizedProcess> {
 }
 
 impl<UnderlyingProcess: FinalizedProcess> RunnableProcess<UnderlyingProcess> {
+  pub async fn start_run(
+    &self,
+    entry_consumes: UnderlyingProcess::EntryConsumes,
+  ) -> RunResult<UnderlyingProcess::Messages, UnderlyingProcess::Errors> {
+    self.finalized_process.run_from_entry(entry_consumes, None).await
+  }
+
   pub async fn resume_run(
     &self,
     previous_run_produced: SessionContext,
