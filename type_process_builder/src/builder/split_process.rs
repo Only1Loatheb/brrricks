@@ -12,7 +12,7 @@ pub(crate) mod sealed {
   use crate::builder::{
     IntermediateFinalizedSplitResult, MaybeFormContext, ParamList, PreviousRunYieldedAt, SessionContext, StepIndex,
   };
-  use crate::error_list::ErrorCoproduct;
+  use crate::error_coproduct::ErrorCoproduct;
   use crate::frunk::coproduct::Coproduct;
   use crate::param_list::concat::Concat;
   use crate::step::{BackToken, ProcessMessages};

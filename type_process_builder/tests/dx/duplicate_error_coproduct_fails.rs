@@ -1,6 +1,6 @@
 //@require-annotations-for-level: ERROR
 use std::fmt;
-use type_process_builder::error_list::ErrorCoproduct;
+use type_process_builder::error_coproduct::ErrorCoproduct;
 use type_process_builder::{Coprod, impl_step_error};
 use typenum::*;
 

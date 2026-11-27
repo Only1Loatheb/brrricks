@@ -1,6 +1,6 @@
 use crate::builder::StepIndex;
-use crate::error_list::contains::CoprodContains;
-use crate::error_list::{ContainsError, ErrorCoproduct, PreventDuplicateErrorUidInCoproduct, StepError};
+use crate::error_coproduct::contains::CoprodContains;
+use crate::error_coproduct::{ContainsError, ErrorCoproduct, PreventDuplicateErrorUidInCoproduct, StepError};
 use std::error::Error;
 use std::fmt::{self, Debug, Display, Formatter};
 use std::marker::PhantomData;

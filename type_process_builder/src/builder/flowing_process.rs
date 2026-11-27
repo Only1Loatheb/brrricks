@@ -5,7 +5,8 @@ pub mod operation_flowing_process;
 pub mod subprocess_flowing_process;
 
 use crate::builder::borrow_just::BorrowJust;
-use crate::builder::finalized_process::{FinalizedProcess, FlowingFinalizedProcess};
+use crate::builder::final_finalized_process::FinalFinalizedProcess;
+use crate::builder::finalized_process::FinalizedProcess;
 use crate::builder::form_flowing_process::FormFlowingProcess;
 use crate::builder::operation_flowing_process::OperationFlowingProcess;
 use crate::builder::split_process_form_splitter::SplitProcessFormSplitter;
@@ -13,7 +14,7 @@ use crate::builder::split_process_splitter::SplitProcessSplitter;
 use crate::builder::subprocess_finalized_process::SubprocessFinalizedProcess;
 use crate::builder::subprocess_flowing_process::SubprocessFlowingProcess;
 use crate::builder::{ProcessMessages, SplitProcess, WILL_BE_RENUMBERED};
-use crate::error_list::union::CoprodUnion;
+use crate::error_coproduct::union::CoprodUnion;
 use crate::frunk::coproduct::Coproduct;
 use crate::param_list::ParamList;
 use crate::param_list::concat::Concat;
@@ -22,7 +23,7 @@ use crate::step::{Final, Form, FormSplitter, Operation, Splitter};
 
 pub(crate) mod sealed {
   use crate::builder::{IntermediateRunResult, MaybeFormContext, PreviousRunYieldedAt, SessionContext, StepIndex};
-  use crate::error_list::ErrorCoproduct;
+  use crate::error_coproduct::ErrorCoproduct;
   use crate::param_list::ParamList;
   use crate::step::{BackToken, ProcessMessages};
   use std::future::Future;
@@ -313,7 +314,7 @@ pub trait FlowingProcess: sealed::FlowingProcess {
     FinalStep::Error: CoprodUnion<Self::Errors, ErrorUnionIndices>,
     Self::Produces: Extract<FinalStep::Consumes, ProcessBeforeProducesToLastStepConsumesIndices>,
   {
-    FlowingFinalizedProcess { process_before: self, final_step: step, phantom_data: Default::default() }
+    FinalFinalizedProcess { process_before: self, final_step: step, phantom_data: Default::default() }
   }
 
   fn then_end<

@@ -4,7 +4,7 @@ use crate::builder::{
   FlowingProcess, IntermediateFinalizedSplitOutcome, IntermediateFinalizedSplitResult, IntermediateRunOutcome,
   MaybeFormContext, ParamList, PreviousRunYieldedAt, SessionContext, StepIndex,
 };
-use crate::error_list::union::CoprodUnion;
+use crate::error_coproduct::union::CoprodUnion;
 use crate::frunk::coproduct::Coproduct;
 use crate::param_list::borrow_just::BorrowJust;
 use crate::param_list::concat::Concat;

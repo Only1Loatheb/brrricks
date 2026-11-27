@@ -1,4 +1,4 @@
-use crate::error_list::StepError;
+use crate::error_coproduct::StepError;
 use crate::{CNil, Coproduct};
 use std::ops::BitOr;
 use typenum::{B0, Bit, IsEqual};

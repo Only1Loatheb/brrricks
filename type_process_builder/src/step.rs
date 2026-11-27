@@ -1,4 +1,4 @@
-use crate::error_list::ErrorCoproduct;
+use crate::error_coproduct::ErrorCoproduct;
 use crate::frunk::coproduct::Coproduct;
 use crate::frunk::to_ref::ToRef;
 use crate::param_list::ParamList;

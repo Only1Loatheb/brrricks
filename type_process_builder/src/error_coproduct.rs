@@ -1,4 +1,4 @@
-use crate::error_list::contains::CoprodContains;
+use crate::error_coproduct::contains::CoprodContains;
 use crate::{CNil, Coproduct};
 use std::error::Error;
 use typenum::{B0, Unsigned};
@@ -60,7 +60,7 @@ pub trait StepError: Error + Send + Sync + 'static {
 #[macro_export]
 macro_rules! impl_step_error {
   ($type:ty, $uid:ty) => {
-    impl $crate::error_list::StepError for $type {
+    impl $crate::error_coproduct::StepError for $type {
       type UID = <$uid as ::core::ops::Add<$crate::typenum::U2>>::Output;
     }
   };

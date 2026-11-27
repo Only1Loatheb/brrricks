@@ -15,8 +15,6 @@ pre-push:
         git add -A && git commit --amend --no-edit
         exit 1
       fi
-    - cargo +1.92.0 check -p type_process_builder
-    - cargo +nightly check -p type_process_builder
     - cargo +nightly check --all-targets -p type_process_builder -p in_memory_process_runner -p qrios_api_process_runner -p qrios_api_process_entry
     - cargo +nightly fmt -p type_process_builder -p in_memory_process_runner -p qrios_api_process_runner -p qrios_api_process_entry
     - |
@@ -49,3 +47,7 @@ pre-push:
         git add -A && git commit --amend --no-edit
         exit 1
       fi
+    - cargo +stable test -p type_process_builder --lib --test process_builder_tests --test error_accumulation_tests
+    - cargo +stable test -p type_process_builder --doc
+    - cargo +1.92.0 test -p type_process_builder --lib --test process_builder_tests --test error_accumulation_tests
+    - cargo +1.92.0 test -p type_process_builder --doc

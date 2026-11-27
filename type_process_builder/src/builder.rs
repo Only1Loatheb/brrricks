@@ -6,9 +6,9 @@ pub mod process_error;
 pub mod runnable_process;
 pub mod split_process;
 
-pub use crate::error_list::contains::CoprodContains;
-pub use crate::error_list::union::{CoprodUnion, IfNotKeepError};
-pub use crate::error_list::{ContainsError, ErrorCoproduct, PreventDuplicateErrorUidInCoproduct, StepError};
+pub use crate::error_coproduct::contains::CoprodContains;
+pub use crate::error_coproduct::union::{CoprodUnion, IfNotKeepError};
+pub use crate::error_coproduct::{ContainsError, ErrorCoproduct, PreventDuplicateErrorUidInCoproduct, StepError};
 pub use crate::param_list::*;
 use crate::step::ProcessMessages;
 pub use crate::step::{BackToken, Entry, entry};

@@ -3,7 +3,7 @@ use crate::builder::{
   FlowingProcess, IntermediateRunOutcome, IntermediateRunResult, IntoProcessError, MaybeFormContext, ParamList,
   PreviousRunYieldedAt, ProcessError, SessionContext, StepIndex,
 };
-use crate::error_list::union::CoprodUnion;
+use crate::error_coproduct::union::CoprodUnion;
 use crate::param_list::concat::Concat;
 use crate::param_list::extract::Extract;
 use crate::param_list::sealed::ParamList as _;

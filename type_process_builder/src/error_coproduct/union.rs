@@ -1,5 +1,5 @@
-use crate::error_list::contains::CoprodContains;
-use crate::error_list::{ErrorCoproduct, PreventDuplicateErrorUidInCoproduct, StepError};
+use crate::error_coproduct::contains::CoprodContains;
+use crate::error_coproduct::{ErrorCoproduct, PreventDuplicateErrorUidInCoproduct, StepError};
 use crate::{CNil, CoprodInjector, Coproduct};
 use typenum::{B0, B1};
 

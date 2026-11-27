@@ -7,7 +7,7 @@ use crate::builder::{
   IntermediateFlowingSplitOutcome, IntermediateFlowingSplitResult, IntermediateRunOutcome, IntermediateRunResult,
   MaybeFormContext, ParamList, PreviousRunYieldedAt, SessionContext, StepIndex, WILL_BE_RENUMBERED,
 };
-use crate::error_list::union::CoprodUnion;
+use crate::error_coproduct::union::CoprodUnion;
 use crate::frunk::coproduct::{CNil, Coproduct};
 use crate::param_list::concat::Concat;
 use crate::param_list::extract::Extract;
