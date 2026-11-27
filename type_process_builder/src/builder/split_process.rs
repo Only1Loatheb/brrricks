@@ -1,7 +1,7 @@
 pub mod split_process_form_splitter;
 pub mod split_process_splitter;
 
-use crate::builder::subprocess::{Subprocess, subprocess};
+use crate::builder::case_entry::{CaseEntry, case_entry};
 use crate::builder::{
   FinalizedProcess, FirstCaseOfFinalizedSplitProcess, FirstCaseOfFlowingSplitProcess, FlowingProcess,
   WILL_BE_RENUMBERED,
@@ -88,7 +88,7 @@ pub trait SplitProcess<SplitterProducesForOtherCases: Send + Sync>:
     self,
     _assumed_tag: Self::SplitterTagForFirstCase,
     create_case: impl FnOnce(
-      Subprocess<
+      CaseEntry<
         Self::EntryConsumes,
         <Self::SplitterProducesForFirstCase as Concat<Self::ProcessBeforeSplitProduces>>::Concatenated,
         <Self::SplitterProducesForFirstCase as Concat<Self::ProcessBeforeSplitEverProduced>>::Concatenated,
@@ -109,7 +109,7 @@ pub trait SplitProcess<SplitterProducesForOtherCases: Send + Sync>:
     FirstCaseOfFinalizedSplitProcess {
       split_process_before: self,
       case_index: WILL_BE_RENUMBERED,
-      this_case: create_case(subprocess::<
+      this_case: create_case(case_entry::<
         Self::EntryConsumes,
         <Self::SplitterProducesForFirstCase as Concat<Self::ProcessBeforeSplitProduces>>::Concatenated,
         <Self::SplitterProducesForFirstCase as Concat<Self::ProcessBeforeSplitEverProduced>>::Concatenated,
@@ -128,7 +128,7 @@ pub trait SplitProcess<SplitterProducesForOtherCases: Send + Sync>:
   >(
     self,
     _assumed_tag: Self::SplitterTagForFirstCase,
-    create_case: impl FnOnce(Subprocess<
+    create_case: impl FnOnce(CaseEntry<
       Self::EntryConsumes,
       <Self::SplitterProducesForFirstCase as Concat<Self::ProcessBeforeSplitProduces>>::Concatenated,
       <Self::SplitterProducesForFirstCase as Concat<Self::ProcessBeforeSplitEverProduced>>::Concatenated,
@@ -148,7 +148,7 @@ pub trait SplitProcess<SplitterProducesForOtherCases: Send + Sync>:
     FirstCaseOfFlowingSplitProcess {
       split_process_before: self,
       case_index: WILL_BE_RENUMBERED,
-      this_case: create_case(subprocess::<
+      this_case: create_case(case_entry::<
         Self::EntryConsumes,
         <Self::SplitterProducesForFirstCase as Concat<Self::ProcessBeforeSplitProduces>>::Concatenated,
         <Self::SplitterProducesForFirstCase as Concat<Self::ProcessBeforeSplitEverProduced>>::Concatenated,

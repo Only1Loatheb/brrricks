@@ -1898,9 +1898,9 @@ async fn test_direct_resume_run_step_index_outcomes() {
   // Valid form step indices in split_process:
   //   MIN     -> Entry
   //   MIN + 1 -> ChooseCaseForm
-  //   MIN + 2 -> Case1 boundary (Subprocess, invalid)
+  //   MIN + 2 -> Case1 boundary (CaseEntry, invalid)
   //   MIN + 3 -> Case1 NoOpForm
-  //   MIN + 4 -> Case2 boundary (Subprocess, invalid)
+  //   MIN + 4 -> Case2 boundary (CaseEntry, invalid)
   //   MIN + 5 -> Case2 NoOpForm
   //   >= MIN + 6 -> out of range (invalid)
   for offset in [2, 4, 6, 7, 10] {

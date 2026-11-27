@@ -9,12 +9,12 @@ use crate::step::ProcessMessages;
 use std::marker::PhantomData;
 
 // maybe can use dependent types and a trait, but is okay for now
-pub struct Subprocess<EntryConsumes, ProcessBeforeProduces, EverProduced, Messages> {
+pub struct CaseEntry<EntryConsumes, ProcessBeforeProduces, EverProduced, Messages> {
   pub(crate) phantom_data: PhantomData<(EntryConsumes, ProcessBeforeProduces, EverProduced, Messages)>,
 }
 
 impl<EntryConsumes: ParamList, ProcessBeforeProduces: ParamList, EverProduced: ParamList, Messages: ProcessMessages>
-  sealed::FlowingProcess for Subprocess<EntryConsumes, ProcessBeforeProduces, EverProduced, Messages>
+  sealed::FlowingProcess for CaseEntry<EntryConsumes, ProcessBeforeProduces, EverProduced, Messages>
 {
   type EntryConsumes = EntryConsumes;
   type ProcessBeforeProduces = ProcessBeforeProduces;
@@ -57,11 +57,11 @@ impl<EntryConsumes: ParamList, ProcessBeforeProduces: ParamList, EverProduced: P
 }
 
 #[must_use]
-pub(crate) fn subprocess<
+pub(crate) fn case_entry<
   EntryConsumes: ParamList,
   ProcessBeforeProduces: ParamList,
   EverProduced: ParamList,
   Messages: ProcessMessages,
->() -> Subprocess<EntryConsumes, ProcessBeforeProduces, EverProduced, Messages> {
-  Subprocess { phantom_data: Default::default() }
+>() -> CaseEntry<EntryConsumes, ProcessBeforeProduces, EverProduced, Messages> {
+  CaseEntry { phantom_data: Default::default() }
 }

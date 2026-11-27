@@ -1,6 +1,6 @@
 use crate::builder::IntoProcessError;
 use crate::builder::finalized_split_process::sealed;
-use crate::builder::subprocess::{Subprocess, subprocess};
+use crate::builder::case_entry::{CaseEntry, case_entry};
 use crate::builder::{
   FinalizedProcess, FlowingCaseOfFinalizedSplitProcess, FlowingProcess, IntermediateFinalizedSplitOutcome,
   IntermediateFinalizedSplitResult, MaybeFormContext, NextCaseOfFinalizedSplitProcess, ParamList, PreviousRunYieldedAt,
@@ -63,7 +63,7 @@ where
     self,
     _assumed_tag: NextTag,
     create_case: impl FnOnce(
-      Subprocess<
+      CaseEntry<
         ProcessBefore::EntryConsumes,
         <SplitterProducesForNextCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
         <SplitterProducesForNextCase as Concat<ProcessBefore::ProcessBeforeSplitEverProduced>>::Concatenated,
@@ -81,7 +81,7 @@ where
     NextCaseOfFinalizedSplitProcess {
       split_process_before: self,
       case_index: WILL_BE_RENUMBERED,
-      this_case: create_case(subprocess::<
+      this_case: create_case(case_entry::<
         ProcessBefore::EntryConsumes,
         <SplitterProducesForNextCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
         <SplitterProducesForNextCase as Concat<ProcessBefore::ProcessBeforeSplitEverProduced>>::Concatenated,
@@ -100,7 +100,7 @@ where
   >(
     self,
     _assumed_tag: NextTag,
-    create_case: impl FnOnce(Subprocess<
+    create_case: impl FnOnce(CaseEntry<
       ProcessBefore::EntryConsumes,
       <SplitterProducesForNextCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
       <SplitterProducesForNextCase as Concat<ProcessBefore::ProcessBeforeSplitEverProduced>>::Concatenated,
@@ -117,7 +117,7 @@ where
     FlowingCaseOfFinalizedSplitProcess {
       split_process_before: self,
       case_index: WILL_BE_RENUMBERED,
-      this_case: create_case(subprocess::<
+      this_case: create_case(case_entry::<
         ProcessBefore::EntryConsumes,
         <SplitterProducesForNextCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
         <SplitterProducesForNextCase as Concat<ProcessBefore::ProcessBeforeSplitEverProduced>>::Concatenated,
