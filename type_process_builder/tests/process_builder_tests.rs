@@ -272,7 +272,7 @@ impl Form for FinishEarlyForm {
   async fn handle_input(
     &self,
     _consumes: <Self::ValidateInputConsumes as ToRef<'_>>::Ref,
-    _user_input: String,
+    _user_input: &str,
     _form_context: Self::Context,
     _back_token: Option<BackToken>,
   ) -> Result<InputValidation<Self::Produces, Messages, Self::Context>, Self::Error> {
@@ -311,7 +311,7 @@ impl Form for CommonCaseParam1Form {
   async fn handle_input(
     &self,
     consumes: <Self::ValidateInputConsumes as ToRef<'_>>::Ref,
-    _user_input: String,
+    _user_input: &str,
     _form_context: Self::Context,
     _back_token: Option<BackToken>,
   ) -> Result<InputValidation<Self::Produces, Messages, Self::Context>, Self::Error> {
@@ -340,7 +340,7 @@ impl Form for CommonCaseParam2Form {
   async fn handle_input(
     &self,
     _consumes: <Self::ValidateInputConsumes as ToRef<'_>>::Ref,
-    _user_input: String,
+    _user_input: &str,
     _form_context: Self::Context,
     _back_token: Option<BackToken>,
   ) -> Result<InputValidation<Self::Produces, Messages, Self::Context>, Self::Error> {
@@ -368,7 +368,7 @@ impl Form for NoOpForm {
   async fn handle_input(
     &self,
     _consumes: <Self::ValidateInputConsumes as ToRef<'_>>::Ref,
-    _user_input: String,
+    _user_input: &str,
     _form_context: Self::Context,
     _back_token: Option<BackToken>,
   ) -> Result<InputValidation<Self::Produces, Messages, Self::Context>, Self::Error> {
@@ -396,7 +396,7 @@ impl Form for FinishAfterInput {
   async fn handle_input(
     &self,
     _consumes: <Self::ValidateInputConsumes as ToRef<'_>>::Ref,
-    _user_input: String,
+    _user_input: &str,
     _form_context: Self::Context,
     _back_token: Option<BackToken>,
   ) -> Result<InputValidation<Self::Produces, Messages, Self::Context>, Self::Error> {
@@ -424,7 +424,7 @@ impl Form for OneInputRetryForm {
   async fn handle_input(
     &self,
     _consumes: <Self::ValidateInputConsumes as ToRef<'_>>::Ref,
-    user_input: String,
+    user_input: &str,
     failed: Self::Context,
     back_token: Option<BackToken>,
   ) -> Result<InputValidation<Self::Produces, Messages, Self::Context>, Self::Error> {
@@ -460,7 +460,7 @@ impl Form for ChooseCaseForm {
   async fn handle_input(
     &self,
     _consumes: <Self::ValidateInputConsumes as ToRef<'_>>::Ref,
-    user_input: String,
+    user_input: &str,
     _form_context: Self::Context,
     _back_token: Option<BackToken>,
   ) -> Result<InputValidation<Self::Produces, Messages, Self::Context>, Self::Error> {
@@ -526,11 +526,11 @@ impl FormSplitter for TestFormSplitter {
   async fn handle_input(
     &self,
     _consumes: <Self::ValidateInputConsumes as ToRef<'_>>::Ref,
-    user_input: String,
+    user_input: &str,
     failed: Self::Context,
     back_token: Option<BackToken>,
   ) -> Result<InputValidation<Self::Produces, Messages, Self::Context>, Self::Error> {
-    match (user_input.as_str(), failed, back_token) {
+    match (user_input, failed, back_token) {
       ("0", _, Some(token)) => Ok(InputValidation::Back(token)),
       ("retry", 0, _) => Ok(InputValidation::Retry("retry again".into(), failed + 1)),
       ("finish", _, _) => Ok(InputValidation::Finish("finished early".into())),
@@ -560,11 +560,11 @@ impl FormSplitter for InnerFormSplitter {
   async fn handle_input(
     &self,
     _consumes: <Self::ValidateInputConsumes as ToRef<'_>>::Ref,
-    user_input: String,
+    user_input: &str,
     failed: Self::Context,
     _back_token: Option<BackToken>,
   ) -> Result<InputValidation<Self::Produces, Messages, Self::Context>, Self::Error> {
-    match (user_input.as_str(), failed) {
+    match (user_input, failed) {
       ("retry", 0) => Ok(InputValidation::Retry("retry again".into(), failed + 1)),
       ("finish", _) => Ok(InputValidation::Finish("finished early".into())),
       ("1", _) => Ok(InputValidation::Successful(Self::Produces::inject((Case1, hlist![InnerSplit1Param])))),
@@ -599,9 +599,8 @@ async fn test_return_error_on_param_missing_from_init_value(
 ) {
   let mut init_value = session_init_value();
   init_value.pop();
-  let run_outcome = process
-    .resume_run(&init_value, PreviousRunYieldedAt(StepIndex::MIN), messages[0].into(), None, None::<BackToken>)
-    .await;
+  let run_outcome =
+    process.resume_run(&init_value, PreviousRunYieldedAt(StepIndex::MIN), messages[0], None, None::<BackToken>).await;
   assert!(run_outcome.is_err_and(|x| {
     x.downcast_ref::<SerializationError>().is_some_and(|e| matches!(e, SerializationError::DeserializeUnexpectedEnd))
   }));
@@ -616,7 +615,7 @@ async fn test_return_error_on_param_missing_from_context(
     .resume_run(
       &session_init_value(),
       PreviousRunYieldedAt(StepIndex::MIN),
-      messages[messages_index].into(),
+      messages[messages_index],
       None,
       None::<BackToken>,
     )
@@ -630,7 +629,7 @@ async fn test_return_error_on_param_missing_from_context(
         .resume_run(
           &value,
           PreviousRunYieldedAt(yielded_at.0),
-          messages[messages_index].into(),
+          messages[messages_index],
           Some(&context),
           None::<BackToken>,
         )
@@ -990,7 +989,7 @@ impl Form for RetryOnceForm {
   async fn handle_input(
     &self,
     _consumes: <Self::ValidateInputConsumes as ToRef<'_>>::Ref,
-    user_input: String,
+    user_input: &str,
     _form_context: Self::Context,
     _back_token: Option<BackToken>,
   ) -> Result<InputValidation<Self::Produces, Messages, Self::Context>, Self::Error> {
@@ -1844,7 +1843,7 @@ async fn test_direct_resume_run_step_index_outcomes() {
   for invalid_idx in [0, 1, 2, 100] {
     assert!(
       process
-        .resume_run(&session_ctx, PreviousRunYieldedAt(invalid_idx), "*123#".into(), None, None::<BackToken>)
+        .resume_run(&session_ctx, PreviousRunYieldedAt(invalid_idx), "*123#", None, None::<BackToken>)
         .await
         .is_err()
     );
@@ -1853,7 +1852,7 @@ async fn test_direct_resume_run_step_index_outcomes() {
   let entry_only_process = ExtractMsisdnOperatorAndShortcodeString.end(FinalNoConsumes).build("", 0);
   assert!(
     entry_only_process
-      .resume_run(&session_ctx, PreviousRunYieldedAt(StepIndex::MIN + 1), "*123#".into(), None, None::<BackToken>,)
+      .resume_run(&session_ctx, PreviousRunYieldedAt(StepIndex::MIN + 1), "*123#", None, None::<BackToken>,)
       .await
       .is_err()
   );
@@ -1865,7 +1864,7 @@ async fn test_direct_resume_run_step_index_outcomes() {
     .build("", 0);
   assert!(
     form_splitter_process
-      .resume_run(&session_ctx, PreviousRunYieldedAt(StepIndex::MIN + 100), "*123#".into(), None, None::<BackToken>,)
+      .resume_run(&session_ctx, PreviousRunYieldedAt(StepIndex::MIN + 100), "*123#", None, None::<BackToken>,)
       .await
       .is_err()
   );
@@ -1902,7 +1901,7 @@ async fn test_direct_resume_run_step_index_outcomes() {
         .resume_run(
           &split_session_ctx,
           PreviousRunYieldedAt(StepIndex::MIN + offset),
-          "*123#".into(),
+          "*123#",
           None,
           None::<BackToken>,
         )
@@ -2919,7 +2918,7 @@ impl Form for BackTokenInspectionForm1 {
   async fn handle_input(
     &self,
     _consumes: <Self::ValidateInputConsumes as ToRef<'_>>::Ref,
-    user_input: String,
+    user_input: &str,
     _form_context: Self::Context,
     back_token: Option<BackToken>,
   ) -> Result<InputValidation<Self::Produces, Messages, Self::Context>, Self::Error> {
@@ -2953,7 +2952,7 @@ impl Form for BackTokenInspectionForm2 {
   async fn handle_input(
     &self,
     _consumes: <Self::ValidateInputConsumes as ToRef<'_>>::Ref,
-    user_input: String,
+    user_input: &str,
     _form_context: Self::Context,
     back_token: Option<BackToken>,
   ) -> Result<InputValidation<Self::Produces, Messages, Self::Context>, Self::Error> {
@@ -2986,7 +2985,7 @@ impl Form for BackTokenInspectionForm3 {
   async fn handle_input(
     &self,
     _consumes: <Self::ValidateInputConsumes as ToRef<'_>>::Ref,
-    user_input: String,
+    user_input: &str,
     _form_context: Self::Context,
     back_token: Option<BackToken>,
   ) -> Result<InputValidation<Self::Produces, Messages, Self::Context>, Self::Error> {
@@ -3105,8 +3104,7 @@ async fn test_then_via_form_retry_and_param_forwarding() {
   test_process_messages(&process_with_extra_param, messages).await;
 
   // Invalid step index past sub_end_index
-  let Err(err) = process.resume_run(&session_init_value(), PreviousRunYieldedAt(999), String::new(), None, None).await
-  else {
+  let Err(err) = process.resume_run(&session_init_value(), PreviousRunYieldedAt(999), "", None, None).await else {
     panic!("expected invalid step index error");
   };
   assert!(err.to_string().contains("invalid step index: 999"));
@@ -3192,8 +3190,7 @@ async fn test_then_end_form_retry_back_and_finish() {
   .await;
 
   // 2. InvalidStepIndex past sub_end_index.
-  let Err(err) = p_sub.resume_run(&session_init_value(), PreviousRunYieldedAt(999), String::new(), None, None).await
-  else {
+  let Err(err) = p_sub.resume_run(&session_init_value(), PreviousRunYieldedAt(999), "", None, None).await else {
     panic!("expected InvalidStepIndex error");
   };
   assert!(err.to_string().contains("invalid step index: 999"));

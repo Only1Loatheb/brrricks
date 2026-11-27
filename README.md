@@ -123,11 +123,11 @@ impl FormSplitter for SelectAmountSource {
   async fn handle_input(
     &self,
     _consumes: <Self::ValidateInputConsumes as ToRef<'_>>::Ref,
-    user_input: String,
+    user_input: &str,
     _form_context: Self::Context,
     back_token: Option<BackToken>,
   ) -> Result<InputValidation<Self::Produces, Messages, Self::Context>, Self::Error> {
-    Ok(match (user_input.as_str(), back_token) {
+    Ok(match (user_input, back_token) {
       ("0", Some(back_token)) => InputValidation::Back(back_token),
       ("1", _) => InputValidation::Successful(Self::Produces::inject((PredefinedAmount, hlist!(Amount(100))))),
       ("2", _) => InputValidation::Successful(Self::Produces::inject((CustomAmount, HNil))),
@@ -160,7 +160,7 @@ impl Form for AmountForm {
   async fn handle_input(
     &self,
     _consumes: <Self::ValidateInputConsumes as ToRef<'_>>::Ref,
-    user_input: String,
+    user_input: &str,
     _form_context: Self::Context,
     back_token: Option<BackToken>,
   ) -> Result<InputValidation<Self::Produces, Messages, Self::Context>, Self::Error> {
@@ -188,7 +188,6 @@ impl Final for DisplayAmount {
   }
 }
 
-#[must_use]
 pub fn build_demo_process()
 -> RunnableProcess<impl FinalizedProcess<Messages = Messages, EntryConsumes = HList![ShortcodeString]>> {
   entry()

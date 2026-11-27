@@ -19,13 +19,7 @@ pub async fn in_memory_process_runner<Messages: ProcessMessages<FinalMessage = S
     state.visited_form_steps.last().map_or((StepIndex::MIN, &[][..]), |(step, ctx)| (*step, ctx.as_slice()));
   let previous_run_yielded_at = PreviousRunYieldedAt(previous_step);
   let mut run_outcome = process
-    .resume_run(
-      active_session_context,
-      previous_run_yielded_at,
-      user_input.into(),
-      state.form_context.as_deref(),
-      back_token,
-    )
+    .resume_run(active_session_context, previous_run_yielded_at, user_input, state.form_context.as_deref(), back_token)
     .await
     .expect("Failed to resume process");
 
@@ -37,7 +31,7 @@ pub async fn in_memory_process_runner<Messages: ProcessMessages<FinalMessage = S
       state.visited_form_steps.last().map(|(step, ctx)| (*step, ctx.as_slice())).expect("Cannot go back further");
     let back_token = if state.visited_form_steps.len() > 1 { Some(BackToken::create()) } else { None };
     run_outcome = process
-      .resume_run(target_session_context, PreviousRunYieldedAt(target_step_index), String::new(), None, back_token)
+      .resume_run(target_session_context, PreviousRunYieldedAt(target_step_index), "", None, back_token)
       .await
       .expect("Failed to resume process");
   }

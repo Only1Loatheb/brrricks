@@ -91,7 +91,7 @@ impl Form for FailForm {
   async fn handle_input(
     &self,
     _: <Self::ValidateInputConsumes as ToRef<'_>>::Ref,
-    _: String,
+    _: &str,
     (): (),
     _: Option<BackToken>,
   ) -> Result<InputValidation<HNil, Messages, ()>, Self::Error> {
@@ -150,7 +150,7 @@ impl FormSplitter for FailFormSplitter {
   async fn handle_input(
     &self,
     _: <Self::ValidateInputConsumes as ToRef<'_>>::Ref,
-    _: String,
+    _: &str,
     (): (),
     _: Option<BackToken>,
   ) -> Result<InputValidation<Self::Produces, Messages, ()>, Self::Error> {
@@ -186,10 +186,7 @@ async fn test_linear_error_accumulation_and_deduplication() {
   // FailFinal -> [DbError]             => still [NetworkError, DbError]
   let process = entry::<HNil, Messages>().then(FailOpA(true)).then(FailOpB(false)).end(FailFinal(false)).build("p", 0);
 
-  let err = process
-    .resume_run(&empty_ctx(), PreviousRunYieldedAt(StepIndex::MIN), String::new(), None, None)
-    .await
-    .unwrap_err();
+  let err = process.resume_run(&empty_ctx(), PreviousRunYieldedAt(StepIndex::MIN), "", None, None).await.unwrap_err();
   // Targeted check via downcast_ref (type-checked against ErrorCoproduct)
   assert_eq!(err.downcast_ref::<DbError>(), Some(&DbError("op_a")));
   assert!(err.downcast_ref::<NetworkError>().is_none());
@@ -215,10 +212,8 @@ async fn test_linear_error_accumulation_and_deduplication() {
   // Trigger NetworkError (and check Display, Debug, Error::source(), and downcast)
   let process_b =
     entry::<HNil, Messages>().then(FailOpA(false)).then(FailOpB(true)).end(FailFinal(false)).build("p", 0);
-  let err_b = process_b
-    .resume_run(&empty_ctx(), PreviousRunYieldedAt(StepIndex::MIN), String::new(), None, None)
-    .await
-    .unwrap_err();
+  let err_b =
+    process_b.resume_run(&empty_ctx(), PreviousRunYieldedAt(StepIndex::MIN), "", None, None).await.unwrap_err();
   assert!(err_b.to_string().contains("network error"));
   assert!(format!("{err_b:?}").contains("network error"));
   assert!(err_b.downcast_ref::<NetworkError>().is_some());
@@ -230,10 +225,8 @@ async fn test_linear_error_accumulation_and_deduplication() {
   // Trigger FailFinal error
   let process_f =
     entry::<HNil, Messages>().then(FailOpA(false)).then(FailOpB(false)).end(FailFinal(true)).build("p", 0);
-  let err_f = process_f
-    .resume_run(&empty_ctx(), PreviousRunYieldedAt(StepIndex::MIN), String::new(), None, None)
-    .await
-    .unwrap_err();
+  let err_f =
+    process_f.resume_run(&empty_ctx(), PreviousRunYieldedAt(StepIndex::MIN), "", None, None).await.unwrap_err();
   assert!(err_f.to_string().contains("db error: final"));
   assert_eq!(err_f.downcast_ref::<DbError>(), Some(&DbError("final")));
 }
@@ -245,10 +238,7 @@ async fn test_form_and_form_splitter_errors() {
     .show(FailForm { fail_create: true, fail_input: false })
     .end(FailFinal(false))
     .build("p", 0);
-  let err = p_create
-    .resume_run(&empty_ctx(), PreviousRunYieldedAt(StepIndex::MIN), String::new(), None, None)
-    .await
-    .unwrap_err();
+  let err = p_create.resume_run(&empty_ctx(), PreviousRunYieldedAt(StepIndex::MIN), "", None, None).await.unwrap_err();
   assert!(err.to_string().contains("db error: form_create"));
 
   // Form handle_input error
@@ -257,12 +247,12 @@ async fn test_form_and_form_splitter_errors() {
     .end(FailFinal(false))
     .build("p", 0);
   let RunOutcome::Yield(_, ctx, yielded_at, form_ctx) =
-    p_input.resume_run(&empty_ctx(), PreviousRunYieldedAt(StepIndex::MIN), String::new(), None, None).await.unwrap()
+    p_input.resume_run(&empty_ctx(), PreviousRunYieldedAt(StepIndex::MIN), "", None, None).await.unwrap()
   else {
     panic!("expected yield");
   };
   let err =
-    p_input.resume_run(&ctx, PreviousRunYieldedAt(yielded_at.0), "hi".into(), Some(&form_ctx), None).await.unwrap_err();
+    p_input.resume_run(&ctx, PreviousRunYieldedAt(yielded_at.0), "hi", Some(&form_ctx), None).await.unwrap_err();
   assert!(err.to_string().contains("validation error"));
 
   // FormSplitter create_form error
@@ -271,10 +261,8 @@ async fn test_form_and_form_splitter_errors() {
     .case_end(Case1, |x| x.end(FailFinal(false)))
     .case_end(Case2, |x| x.end(FailFinal(false)))
     .build("p", 0);
-  let err = p_fs_create
-    .resume_run(&empty_ctx(), PreviousRunYieldedAt(StepIndex::MIN), String::new(), None, None)
-    .await
-    .unwrap_err();
+  let err =
+    p_fs_create.resume_run(&empty_ctx(), PreviousRunYieldedAt(StepIndex::MIN), "", None, None).await.unwrap_err();
   assert!(err.to_string().contains("validation error"));
 
   // FormSplitter handle_input error
@@ -284,14 +272,12 @@ async fn test_form_and_form_splitter_errors() {
     .case_end(Case2, |x| x.end(FailFinal(false)))
     .build("p", 0);
   let RunOutcome::Yield(_, ctx, yielded_at, form_ctx) =
-    p_fs_input.resume_run(&empty_ctx(), PreviousRunYieldedAt(StepIndex::MIN), String::new(), None, None).await.unwrap()
+    p_fs_input.resume_run(&empty_ctx(), PreviousRunYieldedAt(StepIndex::MIN), "", None, None).await.unwrap()
   else {
     panic!("expected yield");
   };
-  let err = p_fs_input
-    .resume_run(&ctx, PreviousRunYieldedAt(yielded_at.0), "1".into(), Some(&form_ctx), None)
-    .await
-    .unwrap_err();
+  let err =
+    p_fs_input.resume_run(&ctx, PreviousRunYieldedAt(yielded_at.0), "1", Some(&form_ctx), None).await.unwrap_err();
   assert!(err.to_string().contains("validation error"));
 }
 
@@ -304,10 +290,8 @@ async fn test_split_branch_error_accumulation() {
     .case_via(Case2, |x| x.show(FailForm { fail_create: false, fail_input: false }))
     .end(FailFinal(false))
     .build("p", 0);
-  let err = p_split_err
-    .resume_run(&empty_ctx(), PreviousRunYieldedAt(StepIndex::MIN), String::new(), None, None)
-    .await
-    .unwrap_err();
+  let err =
+    p_split_err.resume_run(&empty_ctx(), PreviousRunYieldedAt(StepIndex::MIN), "", None, None).await.unwrap_err();
   assert!(err.to_string().contains("db error: splitter"));
 
   // Error from Case1 (flowing split)
@@ -317,10 +301,8 @@ async fn test_split_branch_error_accumulation() {
     .case_via(Case2, |x| x.show(FailForm { fail_create: false, fail_input: false }))
     .end(FailFinal(false))
     .build("p", 0);
-  let err = p_case1_err
-    .resume_run(&empty_ctx(), PreviousRunYieldedAt(StepIndex::MIN), String::new(), None, None)
-    .await
-    .unwrap_err();
+  let err =
+    p_case1_err.resume_run(&empty_ctx(), PreviousRunYieldedAt(StepIndex::MIN), "", None, None).await.unwrap_err();
   assert!(err.to_string().contains("network error"));
 
   // Error from Case2 (flowing split)
@@ -330,10 +312,8 @@ async fn test_split_branch_error_accumulation() {
     .case_via(Case2, |x| x.show(FailForm { fail_create: true, fail_input: false }))
     .end(FailFinal(false))
     .build("p", 0);
-  let err = p_case2_err
-    .resume_run(&empty_ctx(), PreviousRunYieldedAt(StepIndex::MIN), String::new(), None, None)
-    .await
-    .unwrap_err();
+  let err =
+    p_case2_err.resume_run(&empty_ctx(), PreviousRunYieldedAt(StepIndex::MIN), "", None, None).await.unwrap_err();
   assert!(err.to_string().contains("db error: form_create"));
 
   // Error from finalized split Case1 and Case2
@@ -342,10 +322,8 @@ async fn test_split_branch_error_accumulation() {
     .case_end(Case1, |x| x.then(FailOpA(true)).end(FailFinal(false)))
     .case_end(Case2, |x| x.then(FailOpB(true)).end(FailFinal(false)))
     .build("p", 0);
-  let err = p_fin_case1
-    .resume_run(&empty_ctx(), PreviousRunYieldedAt(StepIndex::MIN), String::new(), None, None)
-    .await
-    .unwrap_err();
+  let err =
+    p_fin_case1.resume_run(&empty_ctx(), PreviousRunYieldedAt(StepIndex::MIN), "", None, None).await.unwrap_err();
   assert!(err.to_string().contains("db error: op_a"));
 
   let p_fin_case2 = entry::<HNil, Messages>()
@@ -353,10 +331,8 @@ async fn test_split_branch_error_accumulation() {
     .case_end(Case1, |x| x.then(FailOpA(true)).end(FailFinal(false)))
     .case_end(Case2, |x| x.then(FailOpB(true)).end(FailFinal(false)))
     .build("p", 0);
-  let err = p_fin_case2
-    .resume_run(&empty_ctx(), PreviousRunYieldedAt(StepIndex::MIN), String::new(), None, None)
-    .await
-    .unwrap_err();
+  let err =
+    p_fin_case2.resume_run(&empty_ctx(), PreviousRunYieldedAt(StepIndex::MIN), "", None, None).await.unwrap_err();
   assert!(err.to_string().contains("network error"));
 }
 
@@ -367,10 +343,7 @@ async fn test_then_via_error_accumulation() {
     .then_via(entry::<HNil, Messages>().then(FailOpB(false)))
     .end(FailFinal(false))
     .build("p", 0);
-  let err = p_before
-    .resume_run(&empty_ctx(), PreviousRunYieldedAt(StepIndex::MIN), String::new(), None, None)
-    .await
-    .unwrap_err();
+  let err = p_before.resume_run(&empty_ctx(), PreviousRunYieldedAt(StepIndex::MIN), "", None, None).await.unwrap_err();
   assert_eq!(err.downcast_ref::<DbError>(), Some(&DbError("op_a")));
 
   let p_sub = entry::<HNil, Messages>()
@@ -378,8 +351,7 @@ async fn test_then_via_error_accumulation() {
     .then_via(entry::<HNil, Messages>().then(FailOpB(true)))
     .end(FailFinal(false))
     .build("p", 0);
-  let err =
-    p_sub.resume_run(&empty_ctx(), PreviousRunYieldedAt(StepIndex::MIN), String::new(), None, None).await.unwrap_err();
+  let err = p_sub.resume_run(&empty_ctx(), PreviousRunYieldedAt(StepIndex::MIN), "", None, None).await.unwrap_err();
   assert!(err.downcast_ref::<NetworkError>().is_some());
 }
 
@@ -389,18 +361,14 @@ async fn test_then_end_error_accumulation() {
     .then(FailOpA(true))
     .then_end(entry::<HNil, Messages>().then(FailOpB(false)).end(FailFinal(false)))
     .build("p", 0);
-  let err = p_before
-    .resume_run(&empty_ctx(), PreviousRunYieldedAt(StepIndex::MIN), String::new(), None, None)
-    .await
-    .unwrap_err();
+  let err = p_before.resume_run(&empty_ctx(), PreviousRunYieldedAt(StepIndex::MIN), "", None, None).await.unwrap_err();
   assert_eq!(err.downcast_ref::<DbError>(), Some(&DbError("op_a")));
 
   let p_sub = entry::<HNil, Messages>()
     .then(FailOpA(false))
     .then_end(entry::<HNil, Messages>().then(FailOpB(true)).end(FailFinal(false)))
     .build("p", 0);
-  let err =
-    p_sub.resume_run(&empty_ctx(), PreviousRunYieldedAt(StepIndex::MIN), String::new(), None, None).await.unwrap_err();
+  let err = p_sub.resume_run(&empty_ctx(), PreviousRunYieldedAt(StepIndex::MIN), "", None, None).await.unwrap_err();
   assert!(err.downcast_ref::<NetworkError>().is_some());
 }
 
@@ -419,11 +387,10 @@ async fn test_infallible_process_has_library_errors() {
 
   let process = entry::<HNil, Messages>().end(InfallibleFinal).build("infallible", 0);
   let res: Result<RunOutcome<Messages>, ProcessError<type_process_builder::builder::LibraryErrors>> =
-    process.resume_run(&empty_ctx(), PreviousRunYieldedAt(StepIndex::MIN), String::new(), None, None).await;
+    process.resume_run(&empty_ctx(), PreviousRunYieldedAt(StepIndex::MIN), "", None, None).await;
   assert_eq!(res.unwrap(), RunOutcome::Finish("ok".into()));
 
-  let idx_err =
-    process.resume_run(&empty_ctx(), PreviousRunYieldedAt(999), String::new(), None, None).await.unwrap_err();
+  let idx_err = process.resume_run(&empty_ctx(), PreviousRunYieldedAt(999), "", None, None).await.unwrap_err();
   assert!(idx_err.to_string().contains("invalid step index: 999"));
   let idx = idx_err.peel().unwrap_err().peel().unwrap_or_else(|cnil| cnil.absurd());
   assert_eq!(idx.0, 999);

@@ -89,7 +89,7 @@ pub trait Form: Send + Sync {
   fn handle_input(
     &self,
     consumes: <Self::ValidateInputConsumes as ToRef<'_>>::Ref,
-    user_input: String,
+    user_input: &str,
     form_context: Self::Context,
     back_token: Option<BackToken>,
   ) -> impl Future<Output = Result<InputValidation<Self::Produces, Self::Messages, Self::Context>, Self::Error>> + Send;
@@ -137,7 +137,7 @@ pub trait FormSplitter: Send + Sync {
   fn handle_input(
     &self,
     consumes: <Self::ValidateInputConsumes as ToRef<'_>>::Ref,
-    user_input: String,
+    user_input: &str,
     form_context: Self::Context,
     back_token: Option<BackToken>,
   ) -> impl Future<Output = Result<InputValidation<Self::Produces, Self::Messages, Self::Context>, Self::Error>> + Send;

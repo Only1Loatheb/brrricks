@@ -53,7 +53,7 @@ impl Form for ChooseCaseForm {
   async fn handle_input(
     &self,
     _consumes: <Self::ValidateInputConsumes as ToRef<'_>>::Ref,
-    input: String,
+    input: &str,
     _context: (),
     _back_token: Option<BackToken>,
   ) -> Result<InputValidation<Self::Produces, Messages, ()>, Self::Error> {
@@ -129,7 +129,7 @@ impl Form for Branch1Form {
   async fn handle_input(
     &self,
     _consumes: <Self::ValidateInputConsumes as ToRef<'_>>::Ref,
-    input: String,
+    input: &str,
     _context: (),
     back_token: Option<BackToken>,
   ) -> Result<InputValidation<HNil, Messages, ()>, Self::Error> {
@@ -163,7 +163,7 @@ impl Form for PostMergeForm {
   async fn handle_input(
     &self,
     _consumes: <Self::ValidateInputConsumes as ToRef<'_>>::Ref,
-    input: String,
+    input: &str,
     _context: (),
     back_token: Option<BackToken>,
   ) -> Result<InputValidation<HNil, Messages, ()>, Self::Error> {

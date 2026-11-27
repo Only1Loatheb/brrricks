@@ -41,7 +41,7 @@ pub(crate) mod sealed {
       &self,
       previous_run_produced: &[u8],
       previous_run_yielded_at: PreviousRunYieldedAt,
-      user_input: String,
+      user_input: &str,
       form_context: Option<&[u8]>,
       back_token: Option<BackToken>,
     ) -> impl Future<Output = IntermediateRunResult<Self::Produces, Self::Messages, Self::Errors>> + Send;
@@ -232,13 +232,13 @@ pub trait FlowingProcess: sealed::FlowingProcess {
   /// # impl FormSplitter for SplitA {
   /// #   type CreateFormConsumes = HNil; type ValidateInputConsumes = HNil; type Produces = Coprod![(Case1, HNil), (Case2, HNil)]; type Context = (); type Messages = Msg; type Error = CNil;
   /// #   async fn create_form(&self, _: <Self::CreateFormConsumes as ToRef<'_>>::Ref, _: Option<BackToken>) -> Result<FormWithContext<String, ()>, CNil> { Ok(FormWithContext("".into(), ())) }
-  /// #   async fn handle_input(&self, _: <Self::ValidateInputConsumes as ToRef<'_>>::Ref, _: String, _: (), _: Option<BackToken>) -> Result<InputValidation<Self::Produces, Msg, ()>, CNil> { Ok(InputValidation::Successful(Self::Produces::inject((Case1, HNil)))) }
+  /// #   async fn handle_input(&self, _: <Self::ValidateInputConsumes as ToRef<'_>>::Ref, _: &str, _: (), _: Option<BackToken>) -> Result<InputValidation<Self::Produces, Msg, ()>, CNil> { Ok(InputValidation::Successful(Self::Produces::inject((Case1, HNil)))) }
   /// # }
   /// # struct FormA;
   /// # impl Form for FormA {
   /// #   type CreateFormConsumes = HNil; type ValidateInputConsumes = HNil; type Produces = HNil; type Context = (); type Messages = Msg; type Error = CNil;
   /// #   async fn create_form(&self, _: <Self::CreateFormConsumes as ToRef<'_>>::Ref, _: Option<BackToken>) -> Result<FormWithContext<String, ()>, CNil> { Ok(FormWithContext("".into(), ())) }
-  /// #   async fn handle_input(&self, _: <Self::ValidateInputConsumes as ToRef<'_>>::Ref, _: String, _: (), _: Option<BackToken>) -> Result<InputValidation<HNil, Msg, ()>, CNil> { Ok(InputValidation::Successful(HNil)) }
+  /// #   async fn handle_input(&self, _: <Self::ValidateInputConsumes as ToRef<'_>>::Ref, _: &str, _: (), _: Option<BackToken>) -> Result<InputValidation<HNil, Msg, ()>, CNil> { Ok(InputValidation::Successful(HNil)) }
   /// # }
   /// # struct FinalA;
   /// # impl Final for FinalA { type Consumes = HNil; type FinalMessage = String; type Error = CNil; async fn handle(&self, _: HNil) -> Result<String, CNil> { Ok("".into()) } }

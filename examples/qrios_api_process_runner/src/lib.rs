@@ -481,7 +481,7 @@ impl<Process: FinalizedProcess<Messages = Messages, EntryConsumes = EntryConsume
       let back_token = has_back.then(BackToken::create);
       self
         .process
-        .resume_run(&session_context, previous_run_yielded_at, user_input.clone(), form_context.as_deref(), back_token)
+        .resume_run(&session_context, previous_run_yielded_at, user_input, form_context.as_deref(), back_token)
         .await
     };
 
@@ -493,10 +493,8 @@ impl<Process: FinalizedProcess<Messages = Messages, EntryConsumes = EntryConsume
           .await
           .map_err(|_| ())?;
       let back_token = has_back_target.then(BackToken::create);
-      run_result = self
-        .process
-        .resume_run(&target_session_context, PreviousRunYieldedAt(target_step), String::new(), None, back_token)
-        .await;
+      run_result =
+        self.process.resume_run(&target_session_context, PreviousRunYieldedAt(target_step), "", None, back_token).await;
     }
 
     let (ussd_view, yielded_step) = match run_result {
@@ -695,7 +693,7 @@ mod tests {
       async fn handle_input(
         &self,
         _consumes: <Self::ValidateInputConsumes as ToRef<'_>>::Ref,
-        _user_input: String,
+        _user_input: &str,
         failed: Self::Context,
         _back_token: Option<BackToken>,
       ) -> Result<InputValidation<Self::Produces, Messages, Self::Context>, Self::Error> {
@@ -750,11 +748,11 @@ mod tests {
       async fn handle_input(
         &self,
         _consumes: <Self::ValidateInputConsumes as ToRef<'_>>::Ref,
-        user_input: String,
+        user_input: &str,
         failed: u16,
         _back_token: Option<BackToken>,
       ) -> Result<InputValidation<Self::Produces, Messages, Self::Context>, Self::Error> {
-        match (user_input.as_str(), failed) {
+        match (user_input, failed) {
           ("retry", 0) => Ok(InputValidation::Retry(Message("retry again".into()), failed + 1)),
           ("finish", _) => Ok(InputValidation::Finish(Message("finished early".into()))),
           ("1", _) => Ok(InputValidation::Successful(Self::Produces::inject((Case1, hlist![SplitCase1Output])))),
@@ -973,7 +971,7 @@ mod tests {
       async fn handle_input(
         &self,
         _consumes: <Self::ValidateInputConsumes as ToRef<'_>>::Ref,
-        input: String,
+        input: &str,
         _context: (),
         _back_token: Option<BackToken>,
       ) -> Result<InputValidation<Self::Produces, Messages, ()>, Self::Error> {
@@ -1049,7 +1047,7 @@ mod tests {
       async fn handle_input(
         &self,
         _consumes: <Self::ValidateInputConsumes as ToRef<'_>>::Ref,
-        input: String,
+        input: &str,
         _context: (),
         back_token: Option<BackToken>,
       ) -> Result<InputValidation<HNil, Messages, ()>, Self::Error> {
@@ -1083,7 +1081,7 @@ mod tests {
       async fn handle_input(
         &self,
         _consumes: <Self::ValidateInputConsumes as ToRef<'_>>::Ref,
-        input: String,
+        input: &str,
         _context: (),
         back_token: Option<BackToken>,
       ) -> Result<InputValidation<HNil, Messages, ()>, Self::Error> {

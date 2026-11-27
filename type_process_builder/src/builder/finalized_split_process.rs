@@ -25,7 +25,7 @@ pub(crate) mod sealed {
       &self,
       previous_run_produced: &[u8],
       previous_run_yielded_at: PreviousRunYieldedAt,
-      user_input: String,
+      user_input: &str,
       form_context: Option<&[u8]>,
       back_token: Option<BackToken>,
     ) -> impl Future<

@@ -19,7 +19,7 @@ impl<Produces: ParamList, Messages: ProcessMessages> sealed::FlowingProcess for 
     &self,
     previous_run_produced: &[u8],
     previous_run_yielded_at: PreviousRunYieldedAt,
-    _user_input: String,
+    _user_input: &str,
     _form_context: Option<&[u8]>,
     _back_token: Option<BackToken>,
   ) -> impl Future<Output = IntermediateRunResult<Self::Produces, Self::Messages, Self::Errors>> {
