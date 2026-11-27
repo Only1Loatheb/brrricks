@@ -92,15 +92,15 @@ where
     process_before_produces: Self::ProcessBeforeProduces,
     back_token: Option<BackToken>,
   ) -> RunResult<Self::Messages, Self::Errors> {
-    self.sub_process.run_subprocess(process_before_produces.extract(), back_token).await.into_process_err()
+    self.sub_process.run_from_entry(process_before_produces.extract(), back_token).await.into_process_err()
   }
 
-  async fn run_subprocess(
+  async fn run_from_entry(
     &self,
     entry_consumes: Self::EntryConsumes,
     back_token: Option<BackToken>,
   ) -> RunResult<Self::Messages, Self::Errors> {
-    let outcome = self.process_before.run_subprocess(entry_consumes, back_token).await.into_process_err()?;
+    let outcome = self.process_before.run_from_entry(entry_consumes, back_token).await.into_process_err()?;
     match outcome {
       IntermediateRunOutcome::Continue(val) => self.continue_run(val, back_token).await,
       IntermediateRunOutcome::Yield(a, b, c, d) => Ok(RunOutcome::Yield(a, b, c, d)),

@@ -245,7 +245,7 @@ where
     match splitter_produces_for_this_case_or_other_cases_consumes {
       Coproduct::Inl(splitter_produces_for_this_case) => {
         let this_case_consumes = splitter_produces_for_this_case.concat(process_before_split_produced);
-        match self.this_case.run_subprocess(this_case_consumes, back_token).await.into_process_err()? {
+        match self.this_case.run_from_entry(this_case_consumes, back_token).await.into_process_err()? {
           IntermediateRunOutcome::Continue(a) => Ok(IntermediateFlowingSplitOutcome::Continue(a.extract())),
           IntermediateRunOutcome::Yield(a, b, c, d) => Ok(IntermediateFlowingSplitOutcome::Yield(a, b, c, d)),
           IntermediateRunOutcome::Finish(a) => Ok(IntermediateFlowingSplitOutcome::Finish(a)),
@@ -260,11 +260,11 @@ where
     }
   }
 
-  async fn run_split_subprocess(&self, entry_consumes: Self::EntryConsumes, back_token: Option<BackToken>) ->
+  async fn run_split_from_entry(&self, entry_consumes: Self::EntryConsumes, back_token: Option<BackToken>) ->
   IntermediateFlowingSplitResult<Self::ProcessBeforeSplitProduces, SplitterProducesForOtherCases, Self::EveryFlowingCaseProduces, ProcessBefore::Messages, Self::Errors> {
     let process_before_output = self
       .split_process_before
-      .run_split_subprocess(entry_consumes, back_token)
+      .run_split_from_entry(entry_consumes, back_token)
       .await
       .into_process_err()?;
     match process_before_output {
@@ -352,7 +352,7 @@ where
         } => match splitter_produces_to_other_cases {
           Coproduct::Inl((_pd, produces_to_this_case)) => {
             let this_case_consumes = produces_to_this_case.concat(process_before_split_produced);
-            match self.this_case.run_subprocess(this_case_consumes, back_token).await.into_process_err()? {
+            match self.this_case.run_from_entry(this_case_consumes, back_token).await.into_process_err()? {
               IntermediateRunOutcome::Continue(this_case_produced) =>
                 Ok(IntermediateRunOutcome::Continue(this_case_produced.extract())),
               IntermediateRunOutcome::Yield(a, b, c, d) => Ok(IntermediateRunOutcome::Yield(a, b, c, d)),
@@ -393,12 +393,12 @@ where
 std::future::ready(unreachable!("continue_run from last case is unreachable. The process is always continued from SplitProcess"))
   }
 
-  async fn run_subprocess(&self, entry_consumes: Self::EntryConsumes, back_token: Option<BackToken>) ->
+  async fn run_from_entry(&self, entry_consumes: Self::EntryConsumes, back_token: Option<BackToken>) ->
   IntermediateRunResult<Self::Produces,
     ProcessBefore::Messages, Self::Errors> {
     let process_before_output = self
       .split_process_before
-      .run_split_subprocess(entry_consumes, back_token)
+      .run_split_from_entry(entry_consumes, back_token)
       .await
       .into_process_err()?;
     match process_before_output {
@@ -409,7 +409,7 @@ std::future::ready(unreachable!("continue_run from last case is unreachable. The
       } => match splitter_produces_to_other_cases {
         Coproduct::Inl((_pd, produces_to_this_case)) => {
           let this_case_consumes = produces_to_this_case.concat(process_before_split_produced);
-          match self.this_case.run_subprocess(this_case_consumes, back_token).await.into_process_err()? {
+          match self.this_case.run_from_entry(this_case_consumes, back_token).await.into_process_err()? {
             IntermediateRunOutcome::Continue(this_case_produced) =>
               Ok(IntermediateRunOutcome::Continue(this_case_produced.extract())),
             IntermediateRunOutcome::Yield(a, b, c, d) => Ok(IntermediateRunOutcome::Yield(a, b, c, d)),

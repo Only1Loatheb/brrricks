@@ -43,7 +43,7 @@ impl<Produces: ParamList, Messages: ProcessMessages> sealed::FlowingProcess for 
     std::future::ready(unreachable!("We never continue from entry step"))
   }
 
-  fn run_subprocess(
+  fn run_from_entry(
     &self,
     entry_consumes: Self::EntryConsumes,
     _back_token: Option<BackToken>,

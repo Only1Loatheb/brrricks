@@ -51,7 +51,7 @@ pub(crate) mod sealed {
       back_token: Option<BackToken>,
     ) -> impl Future<Output = IntermediateRunResult<Self::Produces, Self::Messages, Self::Errors>> + Send;
 
-    fn run_subprocess(
+    fn run_from_entry(
       &self,
       entry_consumes: Self::EntryConsumes,
       back_token: Option<BackToken>,

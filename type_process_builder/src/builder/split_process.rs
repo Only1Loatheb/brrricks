@@ -60,7 +60,7 @@ pub(crate) mod sealed {
       >,
     > + Send;
 
-    fn run_subprocess(
+    fn run_from_entry(
       &self,
       entry_consumes: Self::EntryConsumes,
       back_token: Option<BackToken>,

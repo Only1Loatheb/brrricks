@@ -65,7 +65,7 @@ pub(crate) mod sealed {
       >,
     > + Send;
 
-    fn run_split_subprocess(
+    fn run_split_from_entry(
       &self,
       entry_consumes: Self::EntryConsumes,
       back_token: Option<BackToken>,

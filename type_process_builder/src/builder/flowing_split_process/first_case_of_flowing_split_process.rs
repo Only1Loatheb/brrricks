@@ -232,7 +232,7 @@ where
     match splitter_produces_for_this_case_or_other_cases_consumes {
       Coproduct::Inl(splitter_produces_for_this_case) => {
         let this_case_consumes = splitter_produces_for_this_case.concat(process_before_split_produced);
-        match self.this_case.run_subprocess(this_case_consumes, back_token).await.into_process_err()? {
+        match self.this_case.run_from_entry(this_case_consumes, back_token).await.into_process_err()? {
           IntermediateRunOutcome::Continue(a) => Ok(IntermediateFlowingSplitOutcome::Continue(a)),
           IntermediateRunOutcome::Yield(a, b, c, d) => Ok(IntermediateFlowingSplitOutcome::Yield(a, b, c, d)),
           IntermediateRunOutcome::Finish(a) => Ok(IntermediateFlowingSplitOutcome::Finish(a)),
@@ -247,7 +247,7 @@ where
     }
   }
 
-  async fn run_split_subprocess(
+  async fn run_split_from_entry(
     &self,
     entry_consumes: Self::EntryConsumes,
     back_token: Option<BackToken>,
@@ -259,7 +259,7 @@ where
     Self::Errors,
   > {
     let process_before_output =
-      self.split_process_before.run_subprocess(entry_consumes, back_token).await.into_process_err()?;
+      self.split_process_before.run_from_entry(entry_consumes, back_token).await.into_process_err()?;
     match process_before_output {
       IntermediateFinalizedSplitOutcome::GoToCase {
         process_before_split_produced,

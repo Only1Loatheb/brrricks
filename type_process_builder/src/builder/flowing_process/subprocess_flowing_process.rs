@@ -129,7 +129,7 @@ where
     back_token: Option<BackToken>,
   ) -> IntermediateRunResult<Self::Produces, Self::Messages, Self::Errors> {
     let (sub_consumes, outer_remainder): (Sub::EntryConsumes, _) = process_before_produces.extract_with_remainder();
-    let outcome = self.sub_process.run_subprocess(sub_consumes, back_token).await.into_process_err()?;
+    let outcome = self.sub_process.run_from_entry(sub_consumes, back_token).await.into_process_err()?;
     match outcome {
       IntermediateRunOutcome::Continue(sub_produces) => {
         Ok(IntermediateRunOutcome::Continue(sub_produces.concat(outer_remainder)))
@@ -145,12 +145,12 @@ where
     }
   }
 
-  async fn run_subprocess(
+  async fn run_from_entry(
     &self,
     entry_consumes: Self::EntryConsumes,
     back_token: Option<BackToken>,
   ) -> IntermediateRunResult<Self::Produces, Self::Messages, Self::Errors> {
-    let outcome = self.process_before.run_subprocess(entry_consumes, back_token).await.into_process_err()?;
+    let outcome = self.process_before.run_from_entry(entry_consumes, back_token).await.into_process_err()?;
     match outcome {
       IntermediateRunOutcome::Continue(val) => self.continue_run(val, back_token).await,
       IntermediateRunOutcome::Yield(a, b, c, d) => Ok(IntermediateRunOutcome::Yield(a, b, c, d)),

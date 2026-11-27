@@ -229,7 +229,7 @@ where
     match splitter_produces_for_this_case_or_other_cases_consumes {
       Coproduct::Inl(splitter_produces_for_this_case) => {
         let this_case_consumes = splitter_produces_for_this_case.concat(process_before_split_produced);
-        match self.this_case.run_subprocess(this_case_consumes, back_token).await.into_process_err()? {
+        match self.this_case.run_from_entry(this_case_consumes, back_token).await.into_process_err()? {
           RunOutcome::Yield(a, b, c, d) => Ok(IntermediateFlowingSplitOutcome::Yield(a, b, c, d)),
           RunOutcome::Finish(a) => Ok(IntermediateFlowingSplitOutcome::Finish(a)),
           RunOutcome::RetryUserInput(a, b) => Ok(IntermediateFlowingSplitOutcome::RetryUserInput(a, b)),
@@ -243,11 +243,11 @@ where
     }
   }
 
-  async fn run_split_subprocess(&self, entry_consumes: Self::EntryConsumes, back_token: Option<BackToken>) ->
+  async fn run_split_from_entry(&self, entry_consumes: Self::EntryConsumes, back_token: Option<BackToken>) ->
   IntermediateFlowingSplitResult<Self::ProcessBeforeSplitProduces, SplitterProducesForOtherCases, Self::EveryFlowingCaseProduces, Self::Messages, Self::Errors> {
     let process_before_output = self
       .split_process_before
-      .run_split_subprocess(entry_consumes, back_token)
+      .run_split_from_entry(entry_consumes, back_token)
       .await
       .into_process_err()?;
     match process_before_output {
@@ -324,7 +324,7 @@ where
         } => match splitter_produces_to_other_cases {
           Coproduct::Inl((_pd, produces_to_this_case)) => {
             let this_case_consumes = produces_to_this_case.concat(process_before_split_produced);
-            match self.this_case.run_subprocess(this_case_consumes, back_token).await.into_process_err()? {
+            match self.this_case.run_from_entry(this_case_consumes, back_token).await.into_process_err()? {
               RunOutcome::Yield(a, b, c, d) => Ok(IntermediateRunOutcome::Yield(a, b, c, d)),
               RunOutcome::Finish(a) => Ok(IntermediateRunOutcome::Finish(a)),
               RunOutcome::RetryUserInput(a, b) => Ok(IntermediateRunOutcome::RetryUserInput(a, b)),
@@ -356,7 +356,7 @@ where
 
   async fn continue_run(&self, this_case_consumes: Self::ProcessBeforeProduces, back_token: Option<BackToken>) ->
   IntermediateRunResult<Self::Produces, Self::Messages, Self::Errors> {
-    match self.this_case.run_subprocess(this_case_consumes, back_token).await.into_process_err()? {
+    match self.this_case.run_from_entry(this_case_consumes, back_token).await.into_process_err()? {
       RunOutcome::Yield(a, b, c, d) => Ok(IntermediateRunOutcome::Yield(a, b, c, d)),
       RunOutcome::Finish(a) => Ok(IntermediateRunOutcome::Finish(a)),
       RunOutcome::RetryUserInput(a, b) => Ok(IntermediateRunOutcome::RetryUserInput(a, b)),
@@ -364,9 +364,9 @@ where
     }
   }
 
-  async fn run_subprocess(&self, entry_consumes: Self::EntryConsumes, back_token: Option<BackToken>) ->
+  async fn run_from_entry(&self, entry_consumes: Self::EntryConsumes, back_token: Option<BackToken>) ->
   IntermediateRunResult<Self::Produces, Self::Messages, Self::Errors> {
-    let process_before_output = self.run_split_subprocess(entry_consumes, back_token).await?;
+    let process_before_output = self.run_split_from_entry(entry_consumes, back_token).await?;
     match process_before_output {
       IntermediateFlowingSplitOutcome::Continue(a) => Ok(IntermediateRunOutcome::Continue(a)),
       IntermediateFlowingSplitOutcome::GoToCase {

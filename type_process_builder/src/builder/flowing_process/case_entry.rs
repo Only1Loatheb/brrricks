@@ -42,7 +42,7 @@ impl<ProcessBeforeProduces: ParamList, EverProduced: ParamList, Messages: Proces
     std::future::ready(Ok(IntermediateRunOutcome::Continue(process_before_produces)))
   }
 
-  async fn run_subprocess(
+  async fn run_from_entry(
     &self,
     entry_consumes: Self::EntryConsumes,
     back_token: Option<BackToken>,

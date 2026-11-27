@@ -106,7 +106,7 @@ where
     Ok(IntermediateFinalizedSplitOutcome::GoToCase { process_before_split_produced, splitter_produces_to_other_cases })
   }
 
-  async fn run_subprocess(
+  async fn run_from_entry(
     &self,
     entry_consumes: Self::EntryConsumes,
     back_token: Option<BackToken>,
@@ -117,7 +117,7 @@ where
     Self::Errors,
   > {
     let process_before_output =
-      self.process_before.run_subprocess(entry_consumes, back_token).await.into_process_err()?;
+      self.process_before.run_from_entry(entry_consumes, back_token).await.into_process_err()?;
     match process_before_output {
       IntermediateRunOutcome::Continue(process_before_split_produced) => {
         self.continue_run(process_before_split_produced, back_token).await
