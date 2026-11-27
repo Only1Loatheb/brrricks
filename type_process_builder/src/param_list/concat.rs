@@ -1,7 +1,6 @@
-use crate::builder::PreventDuplicateParamUidInParamList;
 use crate::frunk::hlist::{HCons, HNil};
 use crate::param_list::contains::Contains;
-use crate::param_list::{ParamList, ParamValue};
+use crate::param_list::{ParamList, ParamValue, PreventDuplicateParamUidInParamList};
 use typenum::B0;
 
 #[diagnostic::on_unimplemented(
