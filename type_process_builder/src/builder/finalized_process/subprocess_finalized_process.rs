@@ -1,8 +1,7 @@
 use crate::builder::finalized_process::{FinalizedProcess, sealed};
 use crate::builder::flowing_process::sealed::FlowingProcess;
 use crate::builder::{
-  IntermediateRunOutcome, IntoProcessError, ParamList, PreviousRunYieldedAt, ProcessError, RunOutcome, RunResult,
-  StepIndex,
+  IntermediateRunOutcome, IntoProcessError, ParamList, PreviousRunYieldedAt, RunOutcome, RunResult, StepIndex,
 };
 use crate::error_coproduct::union::CoprodUnion;
 use crate::param_list::concat::Concat;
@@ -20,7 +19,6 @@ pub struct SubprocessFinalizedProcess<
   pub(crate) process_before: ProcessBefore,
   pub(crate) sub_process: Sub,
   pub(crate) sub_start_index: StepIndex,
-  pub(crate) sub_end_index: StepIndex,
   pub(crate) phantom_data:
     PhantomData<(ProcessBeforeProducesToEntryConsumesIndices, SubEverProducedExtractIndices, ErrorUnionIndices)>,
 }
@@ -76,14 +74,12 @@ where
         IntermediateRunOutcome::RetryUserInput(a, b) => Ok(RunOutcome::RetryUserInput(a, b)),
         IntermediateRunOutcome::Back => Ok(RunOutcome::Back),
       }
-    } else if previous_run_yielded_at.0 <= self.sub_end_index {
+    } else {
       self
         .sub_process
         .resume_run(previous_run_produced, previous_run_yielded_at, user_input, form_context, back_token)
         .await
         .into_process_err()
-    } else {
-      Err(ProcessError::invalid_step_index(previous_run_yielded_at.0))
     }
   }
 
@@ -113,8 +109,6 @@ where
   fn enumerate_steps(&mut self, last_used_index: StepIndex) -> StepIndex {
     let last_used_index = self.process_before.enumerate_steps(last_used_index);
     self.sub_start_index = last_used_index;
-    let last_used_index = self.sub_process.enumerate_steps(last_used_index);
-    self.sub_end_index = last_used_index;
-    last_used_index
+    self.sub_process.enumerate_steps(last_used_index)
   }
 }

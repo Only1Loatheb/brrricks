@@ -346,7 +346,6 @@ pub trait FlowingProcess: sealed::FlowingProcess {
       process_before: self,
       sub_process: sub,
       sub_start_index: WILL_BE_RENUMBERED,
-      sub_end_index: WILL_BE_RENUMBERED,
       phantom_data: Default::default(),
     }
   }
