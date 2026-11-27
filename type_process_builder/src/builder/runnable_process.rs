@@ -1,7 +1,8 @@
 use crate::builder::finalized_process::FinalizedProcess;
-use crate::builder::{MaybeFormContext, PreviousRunYieldedAt, RunResult, SessionContext};
+use crate::builder::{PreviousRunYieldedAt, RunResult};
 use crate::step::BackToken;
 
+#[must_use]
 pub struct RunnableProcess<UnderlyingProcess: FinalizedProcess> {
   pub(crate) finalized_process: UnderlyingProcess,
   pub(crate) name: &'static str,
@@ -18,23 +19,25 @@ impl<UnderlyingProcess: FinalizedProcess> RunnableProcess<UnderlyingProcess> {
 
   pub async fn resume_run(
     &self,
-    previous_run_produced: SessionContext,
+    previous_run_produced: &[u8],
     previous_run_yielded_at: PreviousRunYieldedAt,
     user_input: String,
-    form_context: MaybeFormContext,
+    form_context: Option<&[u8]>,
     back_token: Option<BackToken>,
   ) -> RunResult<UnderlyingProcess::Messages, UnderlyingProcess::Errors> {
     self
       .finalized_process
-      .resume_run(&previous_run_produced, previous_run_yielded_at, user_input, form_context.as_deref(), back_token)
+      .resume_run(previous_run_produced, previous_run_yielded_at, user_input, form_context, back_token)
       .await
   }
 
-  pub fn name(&self) -> &'static str {
+  #[must_use]
+  pub const fn name(&self) -> &'static str {
     self.name
   }
 
-  pub fn version(&self) -> u32 {
+  #[must_use]
+  pub const fn version(&self) -> u32 {
     self.version
   }
 }

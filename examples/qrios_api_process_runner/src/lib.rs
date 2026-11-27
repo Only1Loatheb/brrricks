@@ -24,8 +24,8 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::{mpsc, oneshot};
 use type_process_builder::builder::{
-  CurrentRunYieldedAt, FinalizedProcess, FormContext, MaybeFormContext, PreviousRunYieldedAt, RunOutcome,
-  RunnableProcess, SessionContext,
+  CurrentRunYieldedAt, FinalizedProcess, MaybeFormContext, PreviousRunYieldedAt, RunOutcome, RunnableProcess,
+  SessionContext,
 };
 use type_process_builder::step::{BackToken, ProcessMessages};
 use type_process_builder::{HList, hlist};
@@ -481,7 +481,7 @@ impl<Process: FinalizedProcess<Messages = Messages, EntryConsumes = EntryConsume
       let back_token = has_back.then(BackToken::create);
       self
         .process
-        .resume_run(session_context, previous_run_yielded_at, user_input.clone(), form_context, back_token)
+        .resume_run(&session_context, previous_run_yielded_at, user_input.clone(), form_context.as_deref(), back_token)
         .await
     };
 
@@ -495,13 +495,7 @@ impl<Process: FinalizedProcess<Messages = Messages, EntryConsumes = EntryConsume
       let back_token = has_back_target.then(BackToken::create);
       run_result = self
         .process
-        .resume_run(
-          target_session_context,
-          PreviousRunYieldedAt(target_step),
-          String::new(),
-          None::<FormContext>,
-          back_token,
-        )
+        .resume_run(&target_session_context, PreviousRunYieldedAt(target_step), String::new(), None, back_token)
         .await;
     }
 

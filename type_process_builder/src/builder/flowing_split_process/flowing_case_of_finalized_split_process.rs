@@ -15,6 +15,7 @@ use crate::param_list::union::Union;
 use crate::step::BackToken;
 use std::marker::PhantomData;
 
+#[must_use]
 pub struct FlowingCaseOfFinalizedSplitProcess<
   ThisTag: Send + Sync,
   SplitterProducesForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,

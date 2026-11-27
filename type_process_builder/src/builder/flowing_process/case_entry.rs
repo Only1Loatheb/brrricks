@@ -8,6 +8,7 @@ use crate::step::ProcessMessages;
 use std::marker::PhantomData;
 
 /// Seeds a split branch with the parameters produced before the split plus the splitter's output for that case.
+#[must_use]
 pub struct CaseEntry<ProcessBeforeProduces, EverProduced, Messages> {
   pub(crate) phantom_data: PhantomData<(ProcessBeforeProduces, EverProduced, Messages)>,
 }
@@ -54,7 +55,6 @@ impl<ProcessBeforeProduces: ParamList, EverProduced: ParamList, Messages: Proces
   }
 }
 
-#[must_use]
 pub(crate) fn case_entry<ProcessBeforeProduces: ParamList, EverProduced: ParamList, Messages: ProcessMessages>()
 -> CaseEntry<ProcessBeforeProduces, EverProduced, Messages> {
   CaseEntry { phantom_data: Default::default() }

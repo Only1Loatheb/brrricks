@@ -116,7 +116,6 @@ impl Final for DisplayAmount {
   }
 }
 
-#[must_use]
 pub fn build_demo_process()
 -> RunnableProcess<impl FinalizedProcess<Messages = Messages, EntryConsumes = HList![ShortcodeString]>> {
   entry()

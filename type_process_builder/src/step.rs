@@ -22,6 +22,7 @@ pub const fn entry<Produces: ParamList, Messages: ProcessMessages>() -> Entry<Pr
   Entry { phantom_data: PhantomData }
 }
 
+#[must_use]
 #[derive(Debug, PartialEq, Eq)]
 pub enum OperationOutcome<Produced, FinalMessage: Send + Sync> {
   Successful(Produced),
@@ -44,6 +45,7 @@ pub trait Operation: Send + Sync {
 ///
 /// Kept as a runtime token rather than encoded in the type system so processes composed dynamically
 /// (e.g. in a GUI editor) can also support back-navigation.
+#[must_use]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct BackToken(pub(crate) ());
 
@@ -52,12 +54,12 @@ impl BackToken {
   ///
   /// Intended for process runner crates.
   #[cfg(feature = "process-runner-api")]
-  #[must_use]
-  pub fn create() -> Self {
+  pub const fn create() -> Self {
     Self(())
   }
 }
 
+#[must_use]
 #[derive(Debug, PartialEq, Eq)]
 pub enum InputValidation<Produced, Messages: ProcessMessages, FormContext: Serialize> {
   Successful(Produced),
@@ -66,6 +68,8 @@ pub enum InputValidation<Produced, Messages: ProcessMessages, FormContext: Seria
   Back(BackToken),
 }
 
+#[must_use]
+#[derive(Debug, PartialEq, Eq)]
 pub struct FormWithContext<FormMessage, FormContext>(pub FormMessage, pub FormContext);
 
 pub trait Form: Send + Sync {

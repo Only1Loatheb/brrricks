@@ -44,6 +44,7 @@ pub(crate) mod sealed {
   }
 }
 
+#[must_use]
 pub trait FinalizedProcess: sealed::FinalizedProcess {
   fn build(mut self, name: &'static str, version: u32) -> RunnableProcess<Self> {
     self.enumerate_steps(StepIndex::MIN);

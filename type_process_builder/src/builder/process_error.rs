@@ -86,7 +86,7 @@ impl StepError for SerializationError {
 
 /// The supplied [`crate::builder::PreviousRunYieldedAt`] does not match any valid resume point in
 /// the process.
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct InvalidStepIndexError(pub StepIndex);
 
 impl Display for InvalidStepIndexError {

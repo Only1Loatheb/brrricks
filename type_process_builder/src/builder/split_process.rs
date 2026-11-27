@@ -78,6 +78,7 @@ pub(crate) mod sealed {
 /// A process state immediately after `.split(...)` or `.show_split(...)`, awaiting the first branch.
 /// Splits require at least two cases (enforced by [`crate::step::SplitterOutput`]); the first case
 /// transitions into a split-case state and subsequent cases complete the split once all variants are handled.
+#[must_use]
 pub trait SplitProcess<SplitterProducesForOtherCases: Send + Sync>:
   sealed::SplitProcess<SplitterProducesForOtherCases>
 {

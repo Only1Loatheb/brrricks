@@ -16,14 +16,14 @@ pub async fn in_memory_process_runner<Messages: ProcessMessages<FinalMessage = S
 ) -> Result<String, String> {
   let back_token = if state.visited_form_steps.len() > 1 { Some(BackToken::create()) } else { None };
   let (previous_step, active_session_context) =
-    state.visited_form_steps.last().cloned().unwrap_or((StepIndex::MIN, SessionContext::default()));
+    state.visited_form_steps.last().map_or((StepIndex::MIN, &[][..]), |(step, ctx)| (*step, ctx.as_slice()));
   let previous_run_yielded_at = PreviousRunYieldedAt(previous_step);
   let mut run_outcome = process
     .resume_run(
       active_session_context,
       previous_run_yielded_at,
       user_input.into(),
-      state.form_context.clone(),
+      state.form_context.as_deref(),
       back_token,
     )
     .await
@@ -34,16 +34,10 @@ pub async fn in_memory_process_runner<Messages: ProcessMessages<FinalMessage = S
     was_backed = true;
     state.visited_form_steps.pop();
     let (target_step_index, target_session_context) =
-      state.visited_form_steps.last().cloned().expect("Cannot go back further");
+      state.visited_form_steps.last().map(|(step, ctx)| (*step, ctx.as_slice())).expect("Cannot go back further");
     let back_token = if state.visited_form_steps.len() > 1 { Some(BackToken::create()) } else { None };
     run_outcome = process
-      .resume_run(
-        target_session_context,
-        PreviousRunYieldedAt(target_step_index),
-        String::new(),
-        None::<FormContext>,
-        back_token,
-      )
+      .resume_run(target_session_context, PreviousRunYieldedAt(target_step_index), String::new(), None, back_token)
       .await
       .expect("Failed to resume process");
   }

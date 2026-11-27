@@ -62,6 +62,7 @@ pub(crate) mod sealed {
   }
 }
 
+#[must_use]
 pub trait FlowingProcess: sealed::FlowingProcess {
   fn then<
     OperationStep: Operation<FinalMessage = <Self::Messages as ProcessMessages>::FinalMessage>,

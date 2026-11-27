@@ -28,10 +28,10 @@ pub use split_process::SplitProcess;
 
 pub type StepIndex = i32;
 
-#[derive(PartialEq, Debug, Eq, Clone, PartialOrd, Ord, Hash)]
+#[derive(PartialEq, Debug, Eq, Clone, Copy, PartialOrd, Ord, Hash)]
 pub struct PreviousRunYieldedAt(pub StepIndex);
 
-#[derive(PartialEq, Debug, Eq, Clone, PartialOrd, Ord, Hash)]
+#[derive(PartialEq, Debug, Eq, Clone, Copy, PartialOrd, Ord, Hash)]
 pub struct CurrentRunYieldedAt(pub StepIndex);
 
 pub(crate) const WILL_BE_RENUMBERED: StepIndex = StepIndex::MAX;
@@ -118,6 +118,7 @@ pub(crate) mod sealed {
 }
 
 /// Outcome of a single [`RunnableProcess::resume_run`] call.
+#[must_use]
 #[derive(Debug, PartialEq, Eq)]
 pub enum RunOutcome<Messages: ProcessMessages> {
   /// Process paused at a form step; persist the returned context/step and present the form message.

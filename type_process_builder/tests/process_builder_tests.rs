@@ -600,7 +600,7 @@ async fn test_return_error_on_param_missing_from_init_value(
   let mut init_value = session_init_value();
   init_value.pop();
   let run_outcome = process
-    .resume_run(init_value, PreviousRunYieldedAt(StepIndex::MIN), messages[0].into(), None, None::<BackToken>)
+    .resume_run(&init_value, PreviousRunYieldedAt(StepIndex::MIN), messages[0].into(), None, None::<BackToken>)
     .await;
   assert!(run_outcome.is_err_and(|x| {
     x.downcast_ref::<SerializationError>().is_some_and(|e| matches!(e, SerializationError::DeserializeUnexpectedEnd))
@@ -614,7 +614,7 @@ async fn test_return_error_on_param_missing_from_context(
   let mut messages_index = 0;
   let run_outcome = process
     .resume_run(
-      session_init_value(),
+      &session_init_value(),
       PreviousRunYieldedAt(StepIndex::MIN),
       messages[messages_index].into(),
       None,
@@ -628,10 +628,10 @@ async fn test_return_error_on_param_missing_from_context(
       value.pop();
       let run_outcome = process
         .resume_run(
-          value,
+          &value,
           PreviousRunYieldedAt(yielded_at.0),
           messages[messages_index].into(),
-          Some(context),
+          Some(&context),
           None::<BackToken>,
         )
         .await;
@@ -1844,7 +1844,7 @@ async fn test_direct_resume_run_step_index_outcomes() {
   for invalid_idx in [0, 1, 2, 100] {
     assert!(
       process
-        .resume_run(session_ctx.clone(), PreviousRunYieldedAt(invalid_idx), "*123#".into(), None, None::<BackToken>)
+        .resume_run(&session_ctx, PreviousRunYieldedAt(invalid_idx), "*123#".into(), None, None::<BackToken>)
         .await
         .is_err()
     );
@@ -1853,13 +1853,7 @@ async fn test_direct_resume_run_step_index_outcomes() {
   let entry_only_process = ExtractMsisdnOperatorAndShortcodeString.end(FinalNoConsumes).build("", 0);
   assert!(
     entry_only_process
-      .resume_run(
-        session_ctx.clone(),
-        PreviousRunYieldedAt(StepIndex::MIN + 1),
-        "*123#".into(),
-        None,
-        None::<BackToken>,
-      )
+      .resume_run(&session_ctx, PreviousRunYieldedAt(StepIndex::MIN + 1), "*123#".into(), None, None::<BackToken>,)
       .await
       .is_err()
   );
@@ -1871,13 +1865,7 @@ async fn test_direct_resume_run_step_index_outcomes() {
     .build("", 0);
   assert!(
     form_splitter_process
-      .resume_run(
-        session_ctx.clone(),
-        PreviousRunYieldedAt(StepIndex::MIN + 100),
-        "*123#".into(),
-        None,
-        None::<BackToken>,
-      )
+      .resume_run(&session_ctx, PreviousRunYieldedAt(StepIndex::MIN + 100), "*123#".into(), None, None::<BackToken>,)
       .await
       .is_err()
   );
@@ -1912,7 +1900,7 @@ async fn test_direct_resume_run_step_index_outcomes() {
     assert!(
       split_process
         .resume_run(
-          split_session_ctx.clone(),
+          &split_session_ctx,
           PreviousRunYieldedAt(StepIndex::MIN + offset),
           "*123#".into(),
           None,
@@ -3117,7 +3105,7 @@ async fn test_then_via_form_retry_and_param_forwarding() {
   test_process_messages(&process_with_extra_param, messages).await;
 
   // Invalid step index past sub_end_index
-  let Err(err) = process.resume_run(session_init_value(), PreviousRunYieldedAt(999), String::new(), None, None).await
+  let Err(err) = process.resume_run(&session_init_value(), PreviousRunYieldedAt(999), String::new(), None, None).await
   else {
     panic!("expected invalid step index error");
   };
@@ -3204,7 +3192,7 @@ async fn test_then_end_form_retry_back_and_finish() {
   .await;
 
   // 2. InvalidStepIndex past sub_end_index.
-  let Err(err) = p_sub.resume_run(session_init_value(), PreviousRunYieldedAt(999), String::new(), None, None).await
+  let Err(err) = p_sub.resume_run(&session_init_value(), PreviousRunYieldedAt(999), String::new(), None, None).await
   else {
     panic!("expected InvalidStepIndex error");
   };
