@@ -21,7 +21,7 @@ pub struct FlowingCaseOfFlowingSplitProcess<
   SplitterProducesForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
   SplitterProducesForOtherCases: Send + Sync,
   ProcessBefore: FlowingSplitProcess<Coproduct<(ThisTag, SplitterProducesForThisCase), SplitterProducesForOtherCases>>,
-  ThisCase: FlowingProcess<SubprocessConsumes=<SplitterProducesForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated>,
+  ThisCase: FlowingProcess<EntryConsumes=<SplitterProducesForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated>,
   Indices: Sync + Send,
   ErrorUnionIndices: Sync + Send,
 >
@@ -46,7 +46,7 @@ impl<
   SplitterProducesForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
   SplitterProducesForNextCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces> + Concat<ProcessBefore::ProcessBeforeSplitEverProduced>,
   ThisCase: FlowingProcess<
-    SubprocessConsumes=<SplitterProducesForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
+    EntryConsumes=<SplitterProducesForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
     Messages = ProcessBefore::Messages,
   >,
   ThisIndices: Sync + Send,
@@ -68,7 +68,7 @@ where
 {
   pub fn case_end<
     NextCase: FinalizedProcess<
-      SubprocessConsumes=<SplitterProducesForNextCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
+      EntryConsumes=<SplitterProducesForNextCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
       Messages=ProcessBefore::Messages,
     >,
     NextErrorIndices: Sync + Send,
@@ -76,7 +76,6 @@ where
     self,
     _assumed_tag: NextTag,
     create_case: impl FnOnce(CaseEntry<
-      ProcessBefore::EntryConsumes,
       <SplitterProducesForNextCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
       <SplitterProducesForNextCase as Concat<ProcessBefore::ProcessBeforeSplitEverProduced>>::Concatenated,
       ProcessBefore::Messages
@@ -97,7 +96,6 @@ where
       split_process_before: self,
       case_index: WILL_BE_RENUMBERED,
       this_case: create_case(case_entry::<
-        ProcessBefore::EntryConsumes,
         <SplitterProducesForNextCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
         <SplitterProducesForNextCase as Concat<ProcessBefore::ProcessBeforeSplitEverProduced>>::Concatenated,
         ProcessBefore::Messages
@@ -108,7 +106,7 @@ where
 
   pub fn case_via<
     NextCase: FlowingProcess<
-      SubprocessConsumes=<SplitterProducesForNextCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
+      EntryConsumes=<SplitterProducesForNextCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
       Messages = ProcessBefore::Messages,
     >,
     NextIndices: Sync + Send,
@@ -117,7 +115,6 @@ where
     self,
     _assumed_tag: NextTag,
     create_case: impl FnOnce(CaseEntry<
-      ProcessBefore::EntryConsumes,
       <SplitterProducesForNextCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
       <SplitterProducesForNextCase as Concat<ProcessBefore::ProcessBeforeSplitEverProduced>>::Concatenated,
       ProcessBefore::Messages
@@ -139,7 +136,6 @@ where
       split_process_before: self,
       case_index: WILL_BE_RENUMBERED,
       this_case: create_case(case_entry::<
-        ProcessBefore::EntryConsumes,
         <SplitterProducesForNextCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
         <SplitterProducesForNextCase as Concat<ProcessBefore::ProcessBeforeSplitEverProduced>>::Concatenated,
         ProcessBefore::Messages
@@ -155,7 +151,7 @@ impl<
   SplitterProducesForOtherCases: Send + Sync,
   ProcessBefore: FlowingSplitProcess<Coproduct<(ThisTag, SplitterProducesForThisCase), SplitterProducesForOtherCases>>,
   ThisCase: FlowingProcess<
-    SubprocessConsumes=<SplitterProducesForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
+    EntryConsumes=<SplitterProducesForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
     Messages=ProcessBefore::Messages,
   >,
   Indices: Sync + Send,
@@ -182,7 +178,6 @@ where
   type ProcessBeforeSplitProduces = ProcessBefore::ProcessBeforeSplitProduces;
   type SplitterProducesForThisCase = SplitterProducesForThisCase;
   type EveryFlowingCaseProduces = <ProcessBefore::EveryFlowingCaseProduces as Intersect<ThisCase::Produces>>::Intersection;
-  type SubprocessConsumes = ProcessBefore::SubprocessConsumes;
   type Messages = ProcessBefore::Messages;
   type ProcessBeforeSplitEverProduced = ProcessBefore::ProcessBeforeSplitEverProduced;
   type EverProduced = <ThisCase::EverProduced as Union<ProcessBefore::EverProduced>>::Union;
@@ -265,11 +260,11 @@ where
     }
   }
 
-  async fn run_split_subprocess(&self, subprocess_consumes: Self::SubprocessConsumes, back_token: Option<BackToken>) ->
+  async fn run_split_subprocess(&self, entry_consumes: Self::EntryConsumes, back_token: Option<BackToken>) ->
   IntermediateFlowingSplitResult<Self::ProcessBeforeSplitProduces, SplitterProducesForOtherCases, Self::EveryFlowingCaseProduces, ProcessBefore::Messages, Self::Errors> {
     let process_before_output = self
       .split_process_before
-      .run_split_subprocess(subprocess_consumes, back_token)
+      .run_split_subprocess(entry_consumes, back_token)
       .await
       .into_process_err()?;
     match process_before_output {
@@ -304,7 +299,7 @@ impl<
   ThisTag: Send + Sync,
   SplitterProducesForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
   ProcessBefore: FlowingSplitProcess<Coproduct<(ThisTag, SplitterProducesForThisCase), CNil>>,
-  ThisCase: FlowingProcess<SubprocessConsumes=
+  ThisCase: FlowingProcess<EntryConsumes=
   <SplitterProducesForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
     Messages=ProcessBefore::Messages,
   >,
@@ -331,7 +326,6 @@ where
   type EntryConsumes = ProcessBefore::EntryConsumes;
   type ProcessBeforeProduces = ProcessBefore::ProcessBeforeSplitProduces;
   type Produces = <ProcessBefore::EveryFlowingCaseProduces as Intersect<ThisCase::Produces>>::Intersection;
-  type SubprocessConsumes = ProcessBefore::SubprocessConsumes;
   type Messages = ProcessBefore::Messages;
   type EverProduced = <ThisCase::EverProduced as Union<ProcessBefore::EverProduced>>::Union;
   type Errors = <ThisCase::Errors as CoprodUnion<ProcessBefore::Errors, ErrorUnionIndices>>::Union;
@@ -399,12 +393,12 @@ where
 std::future::ready(unreachable!("continue_run from last case is unreachable. The process is always continued from SplitProcess"))
   }
 
-  async fn run_subprocess(&self, subprocess_consumes: Self::SubprocessConsumes, back_token: Option<BackToken>) ->
+  async fn run_subprocess(&self, entry_consumes: Self::EntryConsumes, back_token: Option<BackToken>) ->
   IntermediateRunResult<Self::Produces,
     ProcessBefore::Messages, Self::Errors> {
     let process_before_output = self
       .split_process_before
-      .run_split_subprocess(subprocess_consumes, back_token)
+      .run_split_subprocess(entry_consumes, back_token)
       .await
       .into_process_err()?;
     match process_before_output {

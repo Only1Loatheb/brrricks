@@ -13,7 +13,7 @@ use std::marker::PhantomData;
 pub struct SubprocessFinalizedProcess<
   ProcessBefore: FlowingProcess,
   Sub: FinalizedProcess,
-  ProcessBeforeProducesToSubprocessConsumesIndices,
+  ProcessBeforeProducesToEntryConsumesIndices,
   SubEverProducedExtractIndices,
   ErrorUnionIndices,
 > {
@@ -22,36 +22,35 @@ pub struct SubprocessFinalizedProcess<
   pub(crate) sub_start_index: StepIndex,
   pub(crate) sub_end_index: StepIndex,
   pub(crate) phantom_data:
-    PhantomData<(ProcessBeforeProducesToSubprocessConsumesIndices, SubEverProducedExtractIndices, ErrorUnionIndices)>,
+    PhantomData<(ProcessBeforeProducesToEntryConsumesIndices, SubEverProducedExtractIndices, ErrorUnionIndices)>,
 }
 
 impl<
   ProcessBefore: FlowingProcess,
   Sub: FinalizedProcess<Messages = ProcessBefore::Messages>,
-  ProcessBeforeProducesToSubprocessConsumesIndices: Sync + Send,
+  ProcessBeforeProducesToEntryConsumesIndices: Sync + Send,
   SubEverProducedExtractIndices: Sync + Send,
   ErrorUnionIndices: Sync + Send,
 > sealed::FinalizedProcess
   for SubprocessFinalizedProcess<
     ProcessBefore,
     Sub,
-    ProcessBeforeProducesToSubprocessConsumesIndices,
+    ProcessBeforeProducesToEntryConsumesIndices,
     SubEverProducedExtractIndices,
     ErrorUnionIndices,
   >
 where
-  Sub::EverProduced: Extract<Sub::SubprocessConsumes, SubEverProducedExtractIndices>,
-  <Sub::EverProduced as Extract<Sub::SubprocessConsumes, SubEverProducedExtractIndices>>::Remainder:
+  Sub::EverProduced: Extract<Sub::EntryConsumes, SubEverProducedExtractIndices>,
+  <Sub::EverProduced as Extract<Sub::EntryConsumes, SubEverProducedExtractIndices>>::Remainder:
     ParamList + Concat<ProcessBefore::EverProduced>,
-  ProcessBefore::Produces: Extract<Sub::SubprocessConsumes, ProcessBeforeProducesToSubprocessConsumesIndices>,
+  ProcessBefore::Produces: Extract<Sub::EntryConsumes, ProcessBeforeProducesToEntryConsumesIndices>,
   Sub::Errors: CoprodUnion<ProcessBefore::Errors, ErrorUnionIndices>,
 {
   type EntryConsumes = ProcessBefore::EntryConsumes;
   type ProcessBeforeProduces = ProcessBefore::Produces;
-  type SubprocessConsumes = ProcessBefore::SubprocessConsumes;
   type Messages = ProcessBefore::Messages;
   type EverProduced =
-    <<Sub::EverProduced as Extract<Sub::SubprocessConsumes, SubEverProducedExtractIndices>>::Remainder as Concat<
+    <<Sub::EverProduced as Extract<Sub::EntryConsumes, SubEverProducedExtractIndices>>::Remainder as Concat<
       ProcessBefore::EverProduced,
     >>::Concatenated;
   type Errors = <Sub::Errors as CoprodUnion<ProcessBefore::Errors, ErrorUnionIndices>>::Union;
@@ -98,10 +97,10 @@ where
 
   async fn run_subprocess(
     &self,
-    subprocess_consumes: Self::SubprocessConsumes,
+    entry_consumes: Self::EntryConsumes,
     back_token: Option<BackToken>,
   ) -> RunResult<Self::Messages, Self::Errors> {
-    let outcome = self.process_before.run_subprocess(subprocess_consumes, back_token).await.into_process_err()?;
+    let outcome = self.process_before.run_subprocess(entry_consumes, back_token).await.into_process_err()?;
     match outcome {
       IntermediateRunOutcome::Continue(val) => self.continue_run(val, back_token).await,
       IntermediateRunOutcome::Yield(a, b, c, d) => Ok(RunOutcome::Yield(a, b, c, d)),

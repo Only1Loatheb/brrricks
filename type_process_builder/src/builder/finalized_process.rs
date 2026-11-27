@@ -23,7 +23,6 @@ pub(crate) mod sealed {
     // Please specify all associated types at the impl FinalizedProcess side for inference to work.
     type EntryConsumes: ParamList;
     type ProcessBeforeProduces: ParamList;
-    type SubprocessConsumes: ParamList;
     type Messages: ProcessMessages;
     type EverProduced: ParamList;
     type Errors: ErrorCoproduct;
@@ -45,7 +44,7 @@ pub(crate) mod sealed {
 
     fn run_subprocess(
       &self,
-      subprocess_consumes: Self::SubprocessConsumes,
+      entry_consumes: Self::EntryConsumes,
       back_token: Option<BackToken>,
     ) -> impl Future<Output = RunResult<Self::Messages, Self::Errors>> + Send;
 
@@ -91,7 +90,6 @@ where
 {
   type EntryConsumes = ProcessBefore::EntryConsumes;
   type ProcessBeforeProduces = ProcessBefore::Produces;
-  type SubprocessConsumes = ProcessBefore::SubprocessConsumes;
   type Messages = ProcessBefore::Messages;
   type EverProduced = ProcessBefore::EverProduced;
   type Errors = <FinalStep::Error as CoprodUnion<ProcessBefore::Errors, ErrorUnionIndices>>::Union;
@@ -129,10 +127,10 @@ where
 
   async fn run_subprocess(
     &self,
-    subprocess_consumes: Self::SubprocessConsumes,
+    entry_consumes: Self::EntryConsumes,
     back_token: Option<BackToken>,
   ) -> RunResult<Self::Messages, Self::Errors> {
-    let outcome = self.process_before.run_subprocess(subprocess_consumes, back_token).await.into_process_err()?;
+    let outcome = self.process_before.run_subprocess(entry_consumes, back_token).await.into_process_err()?;
     match outcome {
       IntermediateRunOutcome::Continue(val) => self.continue_run(val, back_token).await,
       IntermediateRunOutcome::Yield(a, b, c, d) => Ok(RunOutcome::Yield(a, b, c, d)),

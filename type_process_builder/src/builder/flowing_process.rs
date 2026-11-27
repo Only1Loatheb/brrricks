@@ -32,7 +32,6 @@ pub(crate) mod sealed {
     type EntryConsumes: ParamList;
     type ProcessBeforeProduces: ParamList;
     type Produces: ParamList;
-    type SubprocessConsumes: ParamList;
     type Messages: ProcessMessages;
     type EverProduced: ParamList;
     type Errors: ErrorCoproduct;
@@ -54,7 +53,7 @@ pub(crate) mod sealed {
 
     fn run_subprocess(
       &self,
-      subprocess_consumes: Self::SubprocessConsumes,
+      entry_consumes: Self::EntryConsumes,
       back_token: Option<BackToken>,
     ) -> impl Future<Output = IntermediateRunResult<Self::Produces, Self::Messages, Self::Errors>> + Send;
 
@@ -74,7 +73,6 @@ pub trait FlowingProcess: sealed::FlowingProcess {
     EntryConsumes = Self::EntryConsumes,
     ProcessBeforeProduces = Self::Produces,
     Produces = <OperationStep::Produces as Concat<Self::Produces>>::Concatenated,
-    SubprocessConsumes = Self::SubprocessConsumes,
     Messages = Self::Messages,
     EverProduced = <OperationStep::Produces as Concat<Self::EverProduced>>::Concatenated,
     Errors = <OperationStep::Error as CoprodUnion<Self::Errors, ErrorUnionIndices>>::Union,
@@ -89,7 +87,7 @@ pub trait FlowingProcess: sealed::FlowingProcess {
 
   fn then_via<
     Sub: FlowingProcess<Messages = Self::Messages>,
-    ProcessBeforeProducesToSubprocessConsumesIndices: Sync + Send,
+    ProcessBeforeProducesToEntryConsumesIndices: Sync + Send,
     SubEverProducedExtractIndices: Sync + Send,
     ErrorUnionIndices: Sync + Send,
   >(
@@ -100,32 +98,31 @@ pub trait FlowingProcess: sealed::FlowingProcess {
     ProcessBeforeProduces = Self::Produces,
     Produces = <Sub::Produces as Concat<
       <Self::Produces as Extract<
-        Sub::SubprocessConsumes,
-        ProcessBeforeProducesToSubprocessConsumesIndices,
+        Sub::EntryConsumes,
+        ProcessBeforeProducesToEntryConsumesIndices,
       >>::Remainder,
     >>::Concatenated,
-    SubprocessConsumes = Self::SubprocessConsumes,
     Messages = Self::Messages,
     EverProduced = <<Sub::EverProduced as Extract<
-      Sub::SubprocessConsumes,
+      Sub::EntryConsumes,
       SubEverProducedExtractIndices,
     >>::Remainder as Concat<Self::EverProduced>>::Concatenated,
     Errors = <Sub::Errors as CoprodUnion<Self::Errors, ErrorUnionIndices>>::Union,
   >
   where
-    Self::Produces: Extract<Sub::SubprocessConsumes, ProcessBeforeProducesToSubprocessConsumesIndices>,
+    Self::Produces: Extract<Sub::EntryConsumes, ProcessBeforeProducesToEntryConsumesIndices>,
     <Self::Produces as Extract<
-      Sub::SubprocessConsumes,
-      ProcessBeforeProducesToSubprocessConsumesIndices,
+      Sub::EntryConsumes,
+      ProcessBeforeProducesToEntryConsumesIndices,
     >>::Remainder: ParamList,
     Sub::Produces: Concat<
       <Self::Produces as Extract<
-        Sub::SubprocessConsumes,
-        ProcessBeforeProducesToSubprocessConsumesIndices,
+        Sub::EntryConsumes,
+        ProcessBeforeProducesToEntryConsumesIndices,
       >>::Remainder,
     >,
-    Sub::EverProduced: Extract<Sub::SubprocessConsumes, SubEverProducedExtractIndices>,
-    <Sub::EverProduced as Extract<Sub::SubprocessConsumes, SubEverProducedExtractIndices>>::Remainder:
+    Sub::EverProduced: Extract<Sub::EntryConsumes, SubEverProducedExtractIndices>,
+    <Sub::EverProduced as Extract<Sub::EntryConsumes, SubEverProducedExtractIndices>>::Remainder:
       ParamList + Concat<Self::EverProduced>,
     Sub::Errors: CoprodUnion<Self::Errors, ErrorUnionIndices>,
 {
@@ -150,7 +147,6 @@ pub trait FlowingProcess: sealed::FlowingProcess {
     EntryConsumes = Self::EntryConsumes,
     ProcessBeforeProduces = Self::Produces,
     Produces = <FormStep::Produces as Concat<Self::Produces>>::Concatenated,
-    SubprocessConsumes = Self::SubprocessConsumes,
     Messages = Self::Messages,
     EverProduced = <FormStep::Produces as Concat<Self::EverProduced>>::Concatenated,
     Errors = <FormStep::Error as CoprodUnion<Self::Errors, ErrorUnionIndices>>::Union,
@@ -187,7 +183,6 @@ pub trait FlowingProcess: sealed::FlowingProcess {
     ProcessBeforeSplitProduces = Self::Produces,
     SplitterProducesForFirstCase = SplitterProducesForFirstCase,
     SplitterTagForFirstCase = Tag,
-    SubprocessConsumes = Self::SubprocessConsumes,
     Messages = Self::Messages,
     ProcessBeforeSplitEverProduced = Self::EverProduced,
     EverProduced = Self::EverProduced,
@@ -271,7 +266,6 @@ pub trait FlowingProcess: sealed::FlowingProcess {
     ProcessBeforeSplitProduces = Self::Produces,
     SplitterProducesForFirstCase = SplitterProducesForFirstCase,
     SplitterTagForFirstCase = Tag,
-    SubprocessConsumes = Self::SubprocessConsumes,
     Messages = Self::Messages,
     ProcessBeforeSplitEverProduced = Self::EverProduced,
     EverProduced = Self::EverProduced,
@@ -311,7 +305,6 @@ pub trait FlowingProcess: sealed::FlowingProcess {
   ) -> impl FinalizedProcess<
     EntryConsumes = Self::EntryConsumes,
     ProcessBeforeProduces = Self::Produces,
-    SubprocessConsumes = Self::SubprocessConsumes,
     Messages = Self::Messages,
     EverProduced = Self::EverProduced,
     Errors = <FinalStep::Error as CoprodUnion<Self::Errors, ErrorUnionIndices>>::Union,
@@ -325,7 +318,7 @@ pub trait FlowingProcess: sealed::FlowingProcess {
 
   fn then_end<
     Sub: FinalizedProcess<Messages = Self::Messages>,
-    ProcessBeforeProducesToSubprocessConsumesIndices: Sync + Send,
+    ProcessBeforeProducesToEntryConsumesIndices: Sync + Send,
     SubEverProducedExtractIndices: Sync + Send,
     ErrorUnionIndices: Sync + Send,
   >(
@@ -334,19 +327,18 @@ pub trait FlowingProcess: sealed::FlowingProcess {
   ) -> impl FinalizedProcess<
     EntryConsumes = Self::EntryConsumes,
     ProcessBeforeProduces = Self::Produces,
-    SubprocessConsumes = Self::SubprocessConsumes,
     Messages = Self::Messages,
     EverProduced = <<Sub::EverProduced as Extract<
-      Sub::SubprocessConsumes,
+      Sub::EntryConsumes,
       SubEverProducedExtractIndices,
     >>::Remainder as Concat<Self::EverProduced>>::Concatenated,
     Errors = <Sub::Errors as CoprodUnion<Self::Errors, ErrorUnionIndices>>::Union,
   >
   where
-    Sub::EverProduced: Extract<Sub::SubprocessConsumes, SubEverProducedExtractIndices>,
-    <Sub::EverProduced as Extract<Sub::SubprocessConsumes, SubEverProducedExtractIndices>>::Remainder:
+    Sub::EverProduced: Extract<Sub::EntryConsumes, SubEverProducedExtractIndices>,
+    <Sub::EverProduced as Extract<Sub::EntryConsumes, SubEverProducedExtractIndices>>::Remainder:
       ParamList + Concat<Self::EverProduced>,
-    Self::Produces: Extract<Sub::SubprocessConsumes, ProcessBeforeProducesToSubprocessConsumesIndices>,
+    Self::Produces: Extract<Sub::EntryConsumes, ProcessBeforeProducesToEntryConsumesIndices>,
     Sub::Errors: CoprodUnion<Self::Errors, ErrorUnionIndices>,
 {
     SubprocessFinalizedProcess {

@@ -20,7 +20,6 @@ pub(crate) mod sealed {
     type ProcessBeforeSplitProduces: ParamList;
     type SplitterProducesForThisCase: ParamList + Concat<Self::ProcessBeforeSplitProduces>;
     type EveryFlowingCaseProduces: ParamList; // already includes ProcessBeforeSplitProduces;
-    type SubprocessConsumes: ParamList;
     type Messages: ProcessMessages;
     type ProcessBeforeSplitEverProduced: ParamList;
     type EverProduced: ParamList;
@@ -68,7 +67,7 @@ pub(crate) mod sealed {
 
     fn run_split_subprocess(
       &self,
-      subprocess_consumes: Self::SubprocessConsumes,
+      entry_consumes: Self::EntryConsumes,
       back_token: Option<BackToken>,
     ) -> impl Future<
       Output = IntermediateFlowingSplitResult<

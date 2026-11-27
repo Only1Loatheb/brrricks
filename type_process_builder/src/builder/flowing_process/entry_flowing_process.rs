@@ -12,7 +12,6 @@ impl<Produces: ParamList, Messages: ProcessMessages> sealed::FlowingProcess for 
   type EntryConsumes = Produces;
   type ProcessBeforeProduces = HNil;
   type Produces = Produces;
-  type SubprocessConsumes = Produces;
   type Messages = Messages;
   type EverProduced = Produces;
   type Errors = LibraryErrors;
@@ -46,10 +45,10 @@ impl<Produces: ParamList, Messages: ProcessMessages> sealed::FlowingProcess for 
 
   fn run_subprocess(
     &self,
-    subprocess_consumes: Self::SubprocessConsumes,
+    entry_consumes: Self::EntryConsumes,
     _back_token: Option<BackToken>,
   ) -> impl Future<Output = IntermediateRunResult<Self::Produces, Self::Messages, Self::Errors>> {
-    std::future::ready(Ok(IntermediateRunOutcome::Continue(subprocess_consumes)))
+    std::future::ready(Ok(IntermediateRunOutcome::Continue(entry_consumes)))
   }
 
   fn enumerate_steps(&mut self, last_used_index: StepIndex) -> StepIndex {

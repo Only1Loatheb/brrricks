@@ -241,7 +241,6 @@ Define reusable sub-processes with `entry::<Consumes, Messages>()` and concrete 
 ```rust
 fn confirm_amount() -> impl FlowingProcess<
   EntryConsumes = HList![Amount],
-  SubprocessConsumes = HList![Amount],
   Messages = Messages,
   Produces = HList![Confirmed, Amount],
   EverProduced = HList![Confirmed, Amount],

@@ -9,17 +9,16 @@ use crate::step::ProcessMessages;
 use std::marker::PhantomData;
 
 // maybe can use dependent types and a trait, but is okay for now
-pub struct CaseEntry<EntryConsumes, ProcessBeforeProduces, EverProduced, Messages> {
-  pub(crate) phantom_data: PhantomData<(EntryConsumes, ProcessBeforeProduces, EverProduced, Messages)>,
+pub struct CaseEntry<ProcessBeforeProduces, EverProduced, Messages> {
+  pub(crate) phantom_data: PhantomData<(ProcessBeforeProduces, EverProduced, Messages)>,
 }
 
-impl<EntryConsumes: ParamList, ProcessBeforeProduces: ParamList, EverProduced: ParamList, Messages: ProcessMessages>
-  sealed::FlowingProcess for CaseEntry<EntryConsumes, ProcessBeforeProduces, EverProduced, Messages>
+impl<ProcessBeforeProduces: ParamList, EverProduced: ParamList, Messages: ProcessMessages>
+  sealed::FlowingProcess for CaseEntry<ProcessBeforeProduces, EverProduced, Messages>
 {
-  type EntryConsumes = EntryConsumes;
+  type EntryConsumes = ProcessBeforeProduces;
   type ProcessBeforeProduces = ProcessBeforeProduces;
   type Produces = ProcessBeforeProduces;
-  type SubprocessConsumes = ProcessBeforeProduces;
   type Messages = Messages;
   type EverProduced = EverProduced; // Includes params produced specific for this case in split
   type Errors = CNil;
@@ -45,10 +44,10 @@ impl<EntryConsumes: ParamList, ProcessBeforeProduces: ParamList, EverProduced: P
 
   async fn run_subprocess(
     &self,
-    subprocess_consumes: Self::SubprocessConsumes,
+    entry_consumes: Self::EntryConsumes,
     back_token: Option<BackToken>,
   ) -> IntermediateRunResult<Self::Produces, Self::Messages, Self::Errors> {
-    self.continue_run(subprocess_consumes, back_token).await
+    self.continue_run(entry_consumes, back_token).await
   }
 
   fn enumerate_steps(&mut self, last_used_index: StepIndex) -> StepIndex {
@@ -58,10 +57,9 @@ impl<EntryConsumes: ParamList, ProcessBeforeProduces: ParamList, EverProduced: P
 
 #[must_use]
 pub(crate) fn case_entry<
-  EntryConsumes: ParamList,
   ProcessBeforeProduces: ParamList,
   EverProduced: ParamList,
   Messages: ProcessMessages,
->() -> CaseEntry<EntryConsumes, ProcessBeforeProduces, EverProduced, Messages> {
+>() -> CaseEntry<ProcessBeforeProduces, EverProduced, Messages> {
   CaseEntry { phantom_data: Default::default() }
 }

@@ -3061,7 +3061,6 @@ async fn test_flowing_split_case1_ending_with_form_resume() {
 
 fn reusable_retry_and_produce_case2() -> impl FlowingProcess<
   EntryConsumes = HNil,
-  SubprocessConsumes = HNil,
   Messages = Messages,
   Produces = HList![Case2Param, CommonCaseParam],
   EverProduced = HList![Case2Param, CommonCaseParam],
@@ -3072,7 +3071,6 @@ fn reusable_retry_and_produce_case2() -> impl FlowingProcess<
 
 fn reusable_back_inspection() -> impl FlowingProcess<
   EntryConsumes = HNil,
-  SubprocessConsumes = HNil,
   Messages = Messages,
   Produces = HList![Case2Param, Case1Param],
   EverProduced = HList![Case2Param, Case1Param],
@@ -3083,7 +3081,6 @@ fn reusable_back_inspection() -> impl FlowingProcess<
 
 fn reusable_retry_and_end_case2() -> impl FinalizedProcess<
   EntryConsumes = HList![Case2Param],
-  SubprocessConsumes = HList![Case2Param],
   Messages = Messages,
   EverProduced = HList![CommonCaseParam, Case2Param],
   Errors = LibraryErrors,
@@ -3093,7 +3090,6 @@ fn reusable_retry_and_end_case2() -> impl FinalizedProcess<
 
 fn reusable_end_no_consumes() -> impl FinalizedProcess<
   EntryConsumes = HNil,
-  SubprocessConsumes = HNil,
   Messages = Messages,
   EverProduced = HNil,
   Errors = LibraryErrors,

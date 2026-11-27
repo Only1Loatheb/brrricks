@@ -54,7 +54,6 @@ where
   type EntryConsumes = ProcessBefore::EntryConsumes;
   type ProcessBeforeProduces = ProcessBefore::Produces;
   type Produces = <FormStep::Produces as Concat<ProcessBefore::Produces>>::Concatenated;
-  type SubprocessConsumes = ProcessBefore::SubprocessConsumes;
   type Messages = ProcessBefore::Messages;
   type EverProduced = <FormStep::Produces as Concat<ProcessBefore::EverProduced>>::Concatenated;
   type Errors = <FormStep::Error as CoprodUnion<ProcessBefore::Errors, ErrorUnionIndices>>::Union;
@@ -127,11 +126,11 @@ where
 
   async fn run_subprocess(
     &self,
-    subprocess_consumes: Self::SubprocessConsumes,
+    entry_consumes: Self::EntryConsumes,
     back_token: Option<BackToken>,
   ) -> IntermediateRunResult<Self::Produces, Self::Messages, Self::Errors> {
     let process_before_output =
-      self.process_before.run_subprocess(subprocess_consumes, back_token).await.into_process_err()?;
+      self.process_before.run_subprocess(entry_consumes, back_token).await.into_process_err()?;
     match process_before_output {
       IntermediateRunOutcome::Continue(process_before_produces) => {
         self.continue_run(process_before_produces, back_token).await

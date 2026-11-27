@@ -67,7 +67,6 @@ where
   type ProcessBeforeSplitProduces = ProcessBefore::Produces;
   type SplitterProducesForFirstCase = SplitterProducesForFirstCase;
   type SplitterTagForFirstCase = Tag;
-  type SubprocessConsumes = ProcessBefore::SubprocessConsumes;
   type Messages = ProcessBefore::Messages;
   type ProcessBeforeSplitEverProduced = ProcessBefore::EverProduced;
   type EverProduced = ProcessBefore::EverProduced; // SplitterProducesForFirstCase is included in first case produces when handing first case
@@ -161,7 +160,7 @@ where
 
   async fn run_subprocess(
     &self,
-    subprocess_consumes: Self::SubprocessConsumes,
+    entry_consumes: Self::EntryConsumes,
     back_token: Option<BackToken>,
   ) -> IntermediateFinalizedSplitResult<
     Self::ProcessBeforeSplitProduces,
@@ -170,7 +169,7 @@ where
     Self::Errors,
   > {
     let process_before_output =
-      self.process_before.run_subprocess(subprocess_consumes, back_token).await.into_process_err()?;
+      self.process_before.run_subprocess(entry_consumes, back_token).await.into_process_err()?;
     match process_before_output {
       IntermediateRunOutcome::Continue(process_before_split_produced) => {
         self.continue_run(process_before_split_produced, back_token).await
