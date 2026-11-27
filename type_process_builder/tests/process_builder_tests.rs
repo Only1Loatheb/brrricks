@@ -3088,12 +3088,8 @@ fn reusable_retry_and_end_case2() -> impl FinalizedProcess<
   entry::<HList![Case2Param], Messages>().show(OneInputRetryForm).end(FinalConsumeCase2Param)
 }
 
-fn reusable_end_no_consumes() -> impl FinalizedProcess<
-  EntryConsumes = HNil,
-  Messages = Messages,
-  EverProduced = HNil,
-  Errors = LibraryErrors,
-> {
+fn reusable_end_no_consumes()
+-> impl FinalizedProcess<EntryConsumes = HNil, Messages = Messages, EverProduced = HNil, Errors = LibraryErrors> {
   entry::<HNil, Messages>().end(FinalNoConsumes)
 }
 

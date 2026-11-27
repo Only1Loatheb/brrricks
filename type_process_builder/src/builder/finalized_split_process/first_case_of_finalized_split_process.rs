@@ -1,6 +1,6 @@
 use crate::builder::IntoProcessError;
-use crate::builder::finalized_split_process::sealed;
 use crate::builder::case_entry::{CaseEntry, case_entry};
+use crate::builder::finalized_split_process::sealed;
 use crate::builder::{
   FinalizedProcess, FlowingCaseOfFinalizedSplitProcess, FlowingProcess, IntermediateFinalizedSplitOutcome,
   IntermediateFinalizedSplitResult, MaybeFormContext, NextCaseOfFinalizedSplitProcess, ParamList, PreviousRunYieldedAt,
@@ -18,7 +18,9 @@ pub struct FirstCaseOfFinalizedSplitProcess<
   SplitterProducesForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
   SplitterProducesForOtherCases: Send + Sync,
   ProcessBefore: SplitProcess<SplitterProducesForOtherCases>,
-  ThisCase: FinalizedProcess,
+  ThisCase: FinalizedProcess<
+    EntryConsumes = <SplitterProducesForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
+  >,
   ErrorUnionIndices: Sync + Send,
 > {
   pub(crate) split_process_before: ProcessBefore,

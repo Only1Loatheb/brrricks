@@ -1,7 +1,7 @@
+pub mod case_entry;
 pub mod entry_flowing_process;
 pub mod form_flowing_process;
 pub mod operation_flowing_process;
-pub mod case_entry;
 pub mod subprocess_flowing_process;
 
 use crate::builder::borrow_just::BorrowJust;
@@ -212,8 +212,8 @@ pub trait FlowingProcess: sealed::FlowingProcess {
   /// `FlowingProcess::continue_run` method to avoid excessive nesting:
   /// ```compile_fail,E0425
   /// let _ = entry::<HNil, Msg>()
-  ///   .show_split(SplitA, |subprocess|
-  ///     subprocess
+  ///   .show_split(SplitA, |case_entry|
+  ///     case_entry
   ///       .case_via(Case1, |x| x)
   ///       .case_via(Case2, |x| x.show(FormA))
   ///   )

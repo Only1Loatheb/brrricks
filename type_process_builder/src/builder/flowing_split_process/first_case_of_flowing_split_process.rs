@@ -1,6 +1,6 @@
 use crate::builder::IntoProcessError;
-use crate::builder::flowing_split_process::sealed;
 use crate::builder::case_entry::{CaseEntry, case_entry};
+use crate::builder::flowing_split_process::sealed;
 use crate::builder::{
   FinalizedCaseOfFlowingSplitProcess, FinalizedProcess, FlowingCaseOfFlowingSplitProcess, FlowingProcess,
   IntermediateFinalizedSplitOutcome, IntermediateFlowingSplitOutcome, IntermediateFlowingSplitResult,
@@ -19,18 +19,16 @@ pub struct FirstCaseOfFlowingSplitProcess<
   SplitterProducesForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
   SplitterProducesForOtherCases: Send + Sync,
   ProcessBefore: SplitProcess<SplitterProducesForOtherCases>,
-  ThisCase: FlowingProcess<EntryConsumes=<SplitterProducesForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated>,
+  ThisCase: FlowingProcess<
+    EntryConsumes = <SplitterProducesForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
+  >,
   ErrorUnionIndices: Sync + Send,
 > {
   pub(crate) split_process_before: ProcessBefore,
   pub(crate) case_index: StepIndex,
   pub(crate) this_case: ThisCase,
-  pub(crate) phantom_data: PhantomData<(
-    ThisTag,
-    SplitterProducesForThisCase,
-    SplitterProducesForOtherCases,
-    ErrorUnionIndices,
-  )>,
+  pub(crate) phantom_data:
+    PhantomData<(ThisTag, SplitterProducesForThisCase, SplitterProducesForOtherCases, ErrorUnionIndices)>,
 }
 
 impl<

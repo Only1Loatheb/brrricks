@@ -83,7 +83,13 @@ pub(crate) mod sealed {
 pub trait SplitProcess<SplitterProducesForOtherCases: Send + Sync>:
   sealed::SplitProcess<SplitterProducesForOtherCases>
 {
-  fn case_end<ThisCase: FinalizedProcess<Messages = Self::Messages>, ErrorUnionIndices: Sync + Send>(
+  fn case_end<
+    ThisCase: FinalizedProcess<
+        EntryConsumes = <Self::SplitterProducesForFirstCase as Concat<Self::ProcessBeforeSplitProduces>>::Concatenated,
+        Messages = Self::Messages,
+      >,
+    ErrorUnionIndices: Sync + Send,
+  >(
     self,
     _assumed_tag: Self::SplitterTagForFirstCase,
     create_case: impl FnOnce(
@@ -118,18 +124,20 @@ pub trait SplitProcess<SplitterProducesForOtherCases: Send + Sync>:
 
   fn case_via<
     ThisCase: FlowingProcess<
-      EntryConsumes=<Self::SplitterProducesForFirstCase as Concat<Self::ProcessBeforeSplitProduces>>::Concatenated,
-      Messages = Self::Messages,
-    >,
+        EntryConsumes = <Self::SplitterProducesForFirstCase as Concat<Self::ProcessBeforeSplitProduces>>::Concatenated,
+        Messages = Self::Messages,
+      >,
     ErrorUnionIndices: Sync + Send,
   >(
     self,
     _assumed_tag: Self::SplitterTagForFirstCase,
-    create_case: impl FnOnce(CaseEntry<
-      <Self::SplitterProducesForFirstCase as Concat<Self::ProcessBeforeSplitProduces>>::Concatenated,
-      <Self::SplitterProducesForFirstCase as Concat<Self::ProcessBeforeSplitEverProduced>>::Concatenated,
-      Self::Messages,
-    >) -> ThisCase,
+    create_case: impl FnOnce(
+      CaseEntry<
+        <Self::SplitterProducesForFirstCase as Concat<Self::ProcessBeforeSplitProduces>>::Concatenated,
+        <Self::SplitterProducesForFirstCase as Concat<Self::ProcessBeforeSplitEverProduced>>::Concatenated,
+        Self::Messages,
+      >,
+    ) -> ThisCase,
   ) -> FirstCaseOfFlowingSplitProcess<
     Self::SplitterTagForFirstCase,
     Self::SplitterProducesForFirstCase,
@@ -140,7 +148,7 @@ pub trait SplitProcess<SplitterProducesForOtherCases: Send + Sync>:
   >
   where
     Self::SplitterProducesForFirstCase: Concat<Self::ProcessBeforeSplitProduces>,
-{
+  {
     FirstCaseOfFlowingSplitProcess {
       split_process_before: self,
       case_index: WILL_BE_RENUMBERED,

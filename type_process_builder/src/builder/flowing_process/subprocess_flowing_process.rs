@@ -41,15 +41,10 @@ impl<
   >
 where
   ProcessBefore::Produces: Extract<Sub::EntryConsumes, ProcessBeforeProducesToEntryConsumesIndices>,
-  <ProcessBefore::Produces as Extract<
-    Sub::EntryConsumes,
-    ProcessBeforeProducesToEntryConsumesIndices,
-  >>::Remainder: ParamList,
+  <ProcessBefore::Produces as Extract<Sub::EntryConsumes, ProcessBeforeProducesToEntryConsumesIndices>>::Remainder:
+    ParamList,
   Sub::Produces: Concat<
-    <ProcessBefore::Produces as Extract<
-      Sub::EntryConsumes,
-      ProcessBeforeProducesToEntryConsumesIndices,
-    >>::Remainder,
+    <ProcessBefore::Produces as Extract<Sub::EntryConsumes, ProcessBeforeProducesToEntryConsumesIndices>>::Remainder,
   >,
   Sub::EverProduced: Extract<Sub::EntryConsumes, SubEverProducedExtractIndices>,
   <Sub::EverProduced as Extract<Sub::EntryConsumes, SubEverProducedExtractIndices>>::Remainder:
@@ -59,10 +54,7 @@ where
   type EntryConsumes = ProcessBefore::EntryConsumes;
   type ProcessBeforeProduces = ProcessBefore::Produces;
   type Produces = <Sub::Produces as Concat<
-    <ProcessBefore::Produces as Extract<
-      Sub::EntryConsumes,
-      ProcessBeforeProducesToEntryConsumesIndices,
-    >>::Remainder,
+    <ProcessBefore::Produces as Extract<Sub::EntryConsumes, ProcessBeforeProducesToEntryConsumesIndices>>::Remainder,
   >>::Concatenated;
   type Messages = ProcessBefore::Messages;
   type EverProduced =
@@ -102,12 +94,11 @@ where
         .into_process_err()?;
       match outcome {
         IntermediateRunOutcome::Continue(sub_produces) => {
-          let outer_remainder =
-            <ProcessBefore::Produces as Extract<
-              Sub::EntryConsumes,
-              ProcessBeforeProducesToEntryConsumesIndices,
-            >>::Remainder::deserialize_param_list(outer_ctx)
-            .into_process_err()?;
+          let outer_remainder = <ProcessBefore::Produces as Extract<
+            Sub::EntryConsumes,
+            ProcessBeforeProducesToEntryConsumesIndices,
+          >>::Remainder::deserialize_param_list(outer_ctx)
+          .into_process_err()?;
           Ok(IntermediateRunOutcome::Continue(sub_produces.concat(outer_remainder)))
         },
         IntermediateRunOutcome::Yield(msg, new_sub_ctx, yielded_at, form_ctx) => {

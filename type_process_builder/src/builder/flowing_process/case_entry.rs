@@ -13,8 +13,8 @@ pub struct CaseEntry<ProcessBeforeProduces, EverProduced, Messages> {
   pub(crate) phantom_data: PhantomData<(ProcessBeforeProduces, EverProduced, Messages)>,
 }
 
-impl<ProcessBeforeProduces: ParamList, EverProduced: ParamList, Messages: ProcessMessages>
-  sealed::FlowingProcess for CaseEntry<ProcessBeforeProduces, EverProduced, Messages>
+impl<ProcessBeforeProduces: ParamList, EverProduced: ParamList, Messages: ProcessMessages> sealed::FlowingProcess
+  for CaseEntry<ProcessBeforeProduces, EverProduced, Messages>
 {
   type EntryConsumes = ProcessBeforeProduces;
   type ProcessBeforeProduces = ProcessBeforeProduces;
@@ -56,10 +56,7 @@ impl<ProcessBeforeProduces: ParamList, EverProduced: ParamList, Messages: Proces
 }
 
 #[must_use]
-pub(crate) fn case_entry<
-  ProcessBeforeProduces: ParamList,
-  EverProduced: ParamList,
-  Messages: ProcessMessages,
->() -> CaseEntry<ProcessBeforeProduces, EverProduced, Messages> {
+pub(crate) fn case_entry<ProcessBeforeProduces: ParamList, EverProduced: ParamList, Messages: ProcessMessages>()
+-> CaseEntry<ProcessBeforeProduces, EverProduced, Messages> {
   CaseEntry { phantom_data: Default::default() }
 }
