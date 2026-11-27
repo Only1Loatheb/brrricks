@@ -2,7 +2,7 @@ use crate::builder::IntoProcessError;
 use crate::builder::split_process::sealed;
 use crate::builder::{
   FlowingProcess, IntermediateFinalizedSplitOutcome, IntermediateFinalizedSplitResult, IntermediateRunOutcome,
-  MaybeFormContext, ParamList, PreviousRunYieldedAt, SessionContext, StepIndex,
+  ParamList, PreviousRunYieldedAt, StepIndex,
 };
 use crate::error_coproduct::union::CoprodUnion;
 use crate::frunk::coproduct::Coproduct;
@@ -55,15 +55,15 @@ where
   type SplitterTagForFirstCase = Tag;
   type Messages = ProcessBefore::Messages;
   type ProcessBeforeSplitEverProduced = ProcessBefore::EverProduced;
-  type EverProduced = ProcessBefore::EverProduced; // SplitterProducesForFirstCase is included in first case produces when handing first case
+  type EverProduced = ProcessBefore::EverProduced; // SplitterProducesForFirstCase is included in first case produces when handling first case
   type Errors = <SplitterStep::Error as CoprodUnion<ProcessBefore::Errors, ErrorUnionIndices>>::Union;
 
   async fn resume_run(
     &self,
-    previous_run_produced: SessionContext,
+    previous_run_produced: &[u8],
     previous_run_yielded_at: PreviousRunYieldedAt,
     user_input: String,
-    form_context: MaybeFormContext,
+    form_context: Option<&[u8]>,
     back_token: Option<BackToken>,
   ) -> IntermediateFinalizedSplitResult<
     Self::ProcessBeforeSplitProduces,

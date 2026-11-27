@@ -19,7 +19,7 @@ impl<UnderlyingProcess: FinalizedProcess> RunnableProcess<UnderlyingProcess> {
   ) -> RunResult<UnderlyingProcess::Messages, UnderlyingProcess::Errors> {
     self
       .finalized_process
-      .resume_run(previous_run_produced, previous_run_yielded_at, user_input, form_context, back_token)
+      .resume_run(&previous_run_produced, previous_run_yielded_at, user_input, form_context.as_deref(), back_token)
       .await
   }
 

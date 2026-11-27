@@ -1,8 +1,8 @@
 use crate::builder::IntoProcessError;
 use crate::builder::flowing_process::sealed;
 use crate::builder::{
-  CurrentRunYieldedAt, FlowingProcess, IntermediateRunOutcome, IntermediateRunResult, MaybeFormContext, ParamList,
-  PreviousRunYieldedAt, ProcessError, SessionContext, StepIndex,
+  CurrentRunYieldedAt, FlowingProcess, IntermediateRunOutcome, IntermediateRunResult, ParamList, PreviousRunYieldedAt,
+  ProcessError, StepIndex,
 };
 use crate::error_coproduct::union::CoprodUnion;
 use crate::param_list::borrow_just::BorrowJust;
@@ -60,10 +60,10 @@ where
 
   async fn resume_run(
     &self,
-    previous_run_produced: SessionContext,
+    previous_run_produced: &[u8],
     previous_run_yielded_at: PreviousRunYieldedAt,
     user_input: String,
-    form_context: MaybeFormContext,
+    form_context: Option<&[u8]>,
     back_token: Option<BackToken>,
   ) -> IntermediateRunResult<Self::Produces, Self::Messages, Self::Errors> {
     if previous_run_yielded_at.0 < self.step_index {
@@ -90,7 +90,7 @@ where
         <&ProcessBefore::Produces as BorrowJust<'_, FormStep::ValidateInputConsumes, _>>::borrow_just(
           &process_before_produces,
         );
-      let context: FormStep::Context = postcard::from_bytes(&form_context).into_process_err()?;
+      let context: FormStep::Context = postcard::from_bytes(form_context).into_process_err()?;
       match self.form_step.handle_input(last_step_consumes, user_input, context, back_token).await.into_process_err()? {
         InputValidation::Successful(a) => Ok(IntermediateRunOutcome::Continue(a.concat(process_before_produces))),
         InputValidation::Retry(a, b) => {

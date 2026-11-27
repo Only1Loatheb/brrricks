@@ -25,7 +25,7 @@ impl HList for HNil {}
 /// [`crate::builder::RunOutcome::Back`] navigation without storing UID for every [`crate::param_list::ParamValue`] in
 /// `SessionContext` or storing `SessionContext` for every form in the session.
 ///
-/// We don't use this property now because we delete items form `ParamList` when merging [`crate::param_list::intersect`]
+/// We don't use this property now because we delete items from [`crate::param_list::ParamList`] when merging [`crate::param_list::intersect`].
 #[derive(PartialEq, Debug, Eq, Clone, Copy, PartialOrd, Ord, Hash, Default, serde::Serialize, serde::Deserialize)]
 pub struct HCons<H, T> {
   pub tail: T,

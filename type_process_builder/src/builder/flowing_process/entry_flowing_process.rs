@@ -1,7 +1,6 @@
 use crate::builder::flowing_process::sealed;
 use crate::builder::{
-  IntermediateRunOutcome, IntermediateRunResult, LibraryErrors, MaybeFormContext, PreviousRunYieldedAt, ProcessError,
-  SessionContext, StepIndex,
+  IntermediateRunOutcome, IntermediateRunResult, LibraryErrors, PreviousRunYieldedAt, ProcessError, StepIndex,
 };
 use crate::frunk::hlist::HNil;
 use crate::param_list::ParamList;
@@ -18,10 +17,10 @@ impl<Produces: ParamList, Messages: ProcessMessages> sealed::FlowingProcess for 
 
   fn resume_run(
     &self,
-    previous_run_produced: SessionContext,
+    previous_run_produced: &[u8],
     previous_run_yielded_at: PreviousRunYieldedAt,
     _user_input: String,
-    _form_context: MaybeFormContext,
+    _form_context: Option<&[u8]>,
     _back_token: Option<BackToken>,
   ) -> impl Future<Output = IntermediateRunResult<Self::Produces, Self::Messages, Self::Errors>> {
     let result = if previous_run_yielded_at.0 == StepIndex::MIN {

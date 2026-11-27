@@ -33,7 +33,7 @@ impl<Source: crate::sealed::Sealed> Extract<HNil, HNil> for Source {
 ///
 /// Indices are `HCons`<`IndexHead`, `IndexTail`> here because the compiler is being asked to figure out the
 /// Index for Plucking the first item of type `THead` out of Self and the rest (`IndexTail`) is for the
-/// Plucker's remainder induce.
+/// Plucker's remainder indices.
 impl<TargetHead, TargetTail, SourceHead, SourceTail, IndexHead, IndexTail>
   Extract<HCons<TargetHead, TargetTail>, HCons<IndexHead, IndexTail>> for HCons<SourceHead, SourceTail>
 where

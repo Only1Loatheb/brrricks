@@ -5,7 +5,7 @@ use crate::builder::StepIndex;
 use crate::builder::runnable_process::RunnableProcess;
 
 pub(crate) mod sealed {
-  use crate::builder::{MaybeFormContext, PreviousRunYieldedAt, RunResult, SessionContext, StepIndex};
+  use crate::builder::{PreviousRunYieldedAt, RunResult, StepIndex};
   use crate::error_coproduct::ErrorCoproduct;
   use crate::param_list::ParamList;
   use crate::step::{BackToken, ProcessMessages};
@@ -21,10 +21,10 @@ pub(crate) mod sealed {
 
     fn resume_run(
       &self,
-      previous_run_produced: SessionContext,
+      previous_run_produced: &[u8],
       previous_run_yielded_at: PreviousRunYieldedAt,
       user_input: String,
-      form_context: MaybeFormContext,
+      form_context: Option<&[u8]>,
       back_token: Option<BackToken>,
     ) -> impl Future<Output = RunResult<Self::Messages, Self::Errors>> + Send;
 

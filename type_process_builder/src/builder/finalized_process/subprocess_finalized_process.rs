@@ -1,8 +1,8 @@
 use crate::builder::finalized_process::{FinalizedProcess, sealed};
 use crate::builder::flowing_process::sealed::FlowingProcess;
 use crate::builder::{
-  IntermediateRunOutcome, IntoProcessError, MaybeFormContext, ParamList, PreviousRunYieldedAt, ProcessError,
-  RunOutcome, RunResult, SessionContext, StepIndex,
+  IntermediateRunOutcome, IntoProcessError, ParamList, PreviousRunYieldedAt, ProcessError, RunOutcome, RunResult,
+  StepIndex,
 };
 use crate::error_coproduct::union::CoprodUnion;
 use crate::param_list::concat::Concat;
@@ -57,10 +57,10 @@ where
 
   async fn resume_run(
     &self,
-    previous_run_produced: SessionContext,
+    previous_run_produced: &[u8],
     previous_run_yielded_at: PreviousRunYieldedAt,
     user_input: String,
-    form_context: MaybeFormContext,
+    form_context: Option<&[u8]>,
     back_token: Option<BackToken>,
   ) -> RunResult<Self::Messages, Self::Errors> {
     if previous_run_yielded_at.0 <= self.sub_start_index {

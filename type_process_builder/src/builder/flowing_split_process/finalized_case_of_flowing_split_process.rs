@@ -5,7 +5,7 @@ use crate::builder::flowing_split_process::sealed;
 use crate::builder::{
   FinalizedProcess, FlowingCaseOfFlowingSplitProcess, FlowingProcess, FlowingSplitProcess,
   IntermediateFlowingSplitOutcome, IntermediateFlowingSplitResult, IntermediateRunOutcome, IntermediateRunResult,
-  MaybeFormContext, ParamList, PreviousRunYieldedAt, RunOutcome, SessionContext, StepIndex, WILL_BE_RENUMBERED,
+  ParamList, PreviousRunYieldedAt, RunOutcome, StepIndex, WILL_BE_RENUMBERED,
 };
 use crate::error_coproduct::union::CoprodUnion;
 use crate::frunk::coproduct::{CNil, Coproduct};
@@ -170,10 +170,10 @@ where
 
   async fn resume_run(
     &self,
-    previous_run_produced: SessionContext,
+    previous_run_produced: &[u8],
     previous_run_yielded_at: PreviousRunYieldedAt,
     user_input: String,
-    form_context: MaybeFormContext,
+    form_context: Option<&[u8]>,
     back_token: Option<BackToken>,
   ) -> IntermediateFlowingSplitResult<
     Self::ProcessBeforeSplitProduces,
@@ -327,10 +327,10 @@ where
 
   async fn resume_run(
     &self,
-    previous_run_produced: SessionContext,
+    previous_run_produced: &[u8],
     previous_run_yielded_at: PreviousRunYieldedAt,
     user_input: String,
-    form_context: MaybeFormContext,
+    form_context: Option<&[u8]>,
     back_token: Option<BackToken>,
   ) -> IntermediateRunResult<Self::Produces, Self::Messages, Self::Errors> {
     if previous_run_yielded_at.0 < self.case_index {

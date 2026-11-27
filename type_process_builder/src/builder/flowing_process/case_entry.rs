@@ -1,7 +1,6 @@
 use crate::builder::flowing_process::sealed;
 use crate::builder::{
-  IntermediateRunOutcome, IntermediateRunResult, MaybeFormContext, ParamList, PreviousRunYieldedAt, ProcessError,
-  SessionContext, StepIndex,
+  IntermediateRunOutcome, IntermediateRunResult, ParamList, PreviousRunYieldedAt, ProcessError, StepIndex,
 };
 use crate::frunk::coproduct::CNil;
 use crate::step::BackToken;
@@ -25,10 +24,10 @@ impl<ProcessBeforeProduces: ParamList, EverProduced: ParamList, Messages: Proces
 
   fn resume_run(
     &self,
-    _previous_run_produced: SessionContext,
+    _previous_run_produced: &[u8],
     previous_run_yielded_at: PreviousRunYieldedAt,
     _user_input: String,
-    _form_context: MaybeFormContext,
+    _form_context: Option<&[u8]>,
     _back_token: Option<BackToken>,
   ) -> impl Future<Output = IntermediateRunResult<Self::Produces, Self::Messages, Self::Errors>> {
     std::future::ready(Err(ProcessError::invalid_step_index(previous_run_yielded_at.0)))

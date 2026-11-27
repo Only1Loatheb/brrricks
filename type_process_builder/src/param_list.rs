@@ -81,14 +81,13 @@ macro_rules! impl_param_value {
 }
 
 pub(crate) mod sealed {
-  use super::SessionContext;
   use crate::builder::SerializationError;
   use serde::Serialize;
   use serde::de::DeserializeOwned;
 
   pub trait ParamList: Serialize + DeserializeOwned + Send + Sync {
-    fn deserialize_param_list(session_context: SessionContext) -> Result<Self, SerializationError> {
-      postcard::from_bytes(&session_context).map_err(SerializationError::from_postcard)
+    fn deserialize_param_list(session_context: &[u8]) -> Result<Self, SerializationError> {
+      postcard::from_bytes(session_context).map_err(SerializationError::from_postcard)
     }
   }
 

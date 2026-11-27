@@ -4,8 +4,8 @@ use crate::builder::finalized_process;
 use crate::builder::finalized_split_process::sealed;
 use crate::builder::{
   FinalizedProcess, FinalizedSplitProcess, FlowingCaseOfFinalizedSplitProcess, FlowingProcess,
-  IntermediateFinalizedSplitOutcome, IntermediateFinalizedSplitResult, MaybeFormContext, ParamList,
-  PreviousRunYieldedAt, RunOutcome, RunResult, SessionContext, StepIndex, WILL_BE_RENUMBERED,
+  IntermediateFinalizedSplitOutcome, IntermediateFinalizedSplitResult, ParamList, PreviousRunYieldedAt, RunOutcome,
+  RunResult, StepIndex, WILL_BE_RENUMBERED,
 };
 use crate::error_coproduct::union::CoprodUnion;
 use crate::frunk::coproduct::{CNil, Coproduct};
@@ -162,10 +162,10 @@ where
 
   async fn resume_run(
     &self,
-    previous_run_produced: SessionContext,
+    previous_run_produced: &[u8],
     previous_run_yielded_at: PreviousRunYieldedAt,
     user_input: String,
-    form_context: MaybeFormContext,
+    form_context: Option<&[u8]>,
     back_token: Option<BackToken>,
   ) -> IntermediateFinalizedSplitResult<
     Self::ProcessBeforeSplitProduces,
@@ -318,10 +318,10 @@ where
 
   async fn resume_run(
     &self,
-    previous_run_produced: SessionContext,
+    previous_run_produced: &[u8],
     previous_run_yielded_at: PreviousRunYieldedAt,
     user_input: String,
-    form_context: MaybeFormContext,
+    form_context: Option<&[u8]>,
     back_token: Option<BackToken>,
   ) -> RunResult<Self::Messages, Self::Errors> {
     if previous_run_yielded_at.0 < self.case_index {
