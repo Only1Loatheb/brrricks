@@ -84,7 +84,7 @@ where
         IntermediateRunOutcome::Back => Ok(IntermediateRunOutcome::Back),
       }
     } else if previous_run_yielded_at.0 <= self.sub_end_index {
-      let (outer_ctx, sub_ctx): (&[u8], &[u8]) = postcard::from_bytes(previous_run_produced).into_process_err()?;
+      let (sub_ctx, outer_ctx): (&[u8], &[u8]) = postcard::take_from_bytes(previous_run_produced).into_process_err()?;
       let outcome = self
         .sub_process
         .resume_run(sub_ctx, previous_run_yielded_at, user_input, form_context, back_token)
@@ -100,7 +100,12 @@ where
           Ok(IntermediateRunOutcome::Continue(sub_produces.concat(outer_remainder)))
         },
         IntermediateRunOutcome::Yield(msg, new_sub_ctx, yielded_at, form_ctx) => {
-          let packed = postcard::to_allocvec(&(outer_ctx, new_sub_ctx.as_slice())).into_process_err()?;
+          // `postcard` encodes `&[u8]` with a LEB128 varint length prefix (7 payload bits/byte),
+          // which is at most ceil(64 / 7) = 10 bytes for a 64-bit `usize`.
+          let mut packed =
+            postcard::to_extend(&new_sub_ctx.as_slice(), Vec::with_capacity(new_sub_ctx.len() + outer_ctx.len() + 10))
+              .into_process_err()?;
+          packed.extend_from_slice(outer_ctx);
           Ok(IntermediateRunOutcome::Yield(msg, packed, yielded_at, form_ctx))
         },
         IntermediateRunOutcome::Finish(a) => Ok(IntermediateRunOutcome::Finish(a)),
@@ -176,8 +181,10 @@ where
         Ok(IntermediateStartOutcome::Continue(sub_produces.concat(outer_remainder)))
       },
       IntermediateStartOutcome::Yield(msg, sub_ctx, yielded_at, form_ctx) => {
-        let outer_ctx = outer_remainder.serialize_param_list().into_process_err()?;
-        let packed = postcard::to_allocvec(&(outer_ctx, sub_ctx)).into_process_err()?;
+        // 10 bytes max for the `sub_ctx` LEB128 varint length prefix + 6 bytes headroom for small `outer_remainder`s.
+        let packed =
+          postcard::to_extend(&sub_ctx.as_slice(), Vec::with_capacity(sub_ctx.len() + 16)).into_process_err()?;
+        let packed = postcard::to_extend(&outer_remainder, packed).into_process_err()?;
         Ok(IntermediateStartOutcome::Yield(msg, packed, yielded_at, form_ctx))
       },
       IntermediateStartOutcome::Finish(a) => Ok(IntermediateStartOutcome::Finish(a)),

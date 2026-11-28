@@ -101,8 +101,23 @@ pub trait ParamList: sealed::ParamList + HList + Serialize + DeserializeOwned + 
   }
 }
 
-impl sealed::ParamList for HNil {}
-impl ParamList for HNil {}
+impl sealed::ParamList for HNil {
+  #[inline(always)]
+  fn deserialize_param_list(session_context: &[u8]) -> Result<Self, SerializationError> {
+    if session_context.is_empty() {
+      Ok(HNil)
+    } else {
+      postcard::from_bytes(session_context).map_err(SerializationError::from_postcard)
+    }
+  }
+}
+
+impl ParamList for HNil {
+  #[inline(always)]
+  fn serialize_param_list(&self) -> Result<SessionContext, SerializationError> {
+    Ok(Vec::new())
+  }
+}
 
 #[diagnostic::on_unimplemented(
   message = "cannot include parameter: duplicate parameter UID for `{Param}` found in ParamList",
