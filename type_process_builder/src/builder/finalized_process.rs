@@ -5,7 +5,7 @@ use crate::builder::StepIndex;
 use crate::builder::runnable_process::RunnableProcess;
 
 pub(crate) mod sealed {
-  use crate::builder::{PreviousRunYieldedAt, RunResult, StepIndex};
+  use crate::builder::{PreviousRunYieldedAt, RunResult, StartRunResult, StepIndex};
   use crate::error_coproduct::ErrorCoproduct;
   use crate::param_list::ParamList;
   use crate::step::{BackToken, ProcessMessages};
@@ -31,7 +31,7 @@ pub(crate) mod sealed {
       &self,
       entry_consumes: Self::EntryConsumes,
       back_token: Option<BackToken>,
-    ) -> impl Future<Output = RunResult<Self::Messages, Self::Errors>> + Send;
+    ) -> impl Future<Output = StartRunResult<Self::Messages, Self::Errors>> + Send;
 
     fn enumerate_steps(&mut self, last_used_index: StepIndex) -> StepIndex;
   }

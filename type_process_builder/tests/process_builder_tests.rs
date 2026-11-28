@@ -3252,41 +3252,52 @@ async fn test_then_end_form_retry_back_and_finish() {
 
 #[tokio::test]
 async fn test_start_run_outcomes() {
-  let entry_param = || hlist!(EntryParam(Msisdn(2_340_000_000_000), Operator::MTN, ShortcodeString("*123#".to_string())));
+  let entry_param =
+    || hlist!(EntryParam(Msisdn(2_340_000_000_000), Operator::MTN, ShortcodeString("*123#".to_string())));
 
   let p_form_yield =
     ExtractMsisdnOperatorAndShortcodeString.show(OneInputRetryForm).show(NoOpForm).end(FinalNoConsumes).build("", 0);
-  assert!(matches!(p_form_yield.start_run(entry_param()).await.unwrap(), RunOutcome::Yield(msg, ..) if msg == "This will be discarded"));
+  assert!(
+    matches!(p_form_yield.start_run(entry_param()).await.unwrap(), RunOutcome::Yield(msg, ..) if msg == "This will be discarded")
+  );
 
   let p_form_finish =
     ExtractMsisdnOperatorAndShortcodeString.then(FinishEarlyOperation).show(NoOpForm).end(FinalNoConsumes).build("", 0);
-  assert!(matches!(p_form_finish.start_run(entry_param()).await.unwrap(), RunOutcome::Finish(msg) if msg == "Operation finished"));
+  assert!(
+    matches!(p_form_finish.start_run(entry_param()).await.unwrap(), RunOutcome::Finish(msg) if msg == "Operation finished")
+  );
 
   let p_then_via_yield = ExtractMsisdnOperatorAndShortcodeString
     .show(NoOpForm)
     .then_via(entry::<HNil, Messages>().show(OneInputRetryForm))
     .end(FinalNoConsumes)
     .build("", 0);
-  assert!(matches!(p_then_via_yield.start_run(entry_param()).await.unwrap(), RunOutcome::Yield(msg, ..) if msg == "Straight to trash"));
+  assert!(
+    matches!(p_then_via_yield.start_run(entry_param()).await.unwrap(), RunOutcome::Yield(msg, ..) if msg == "Straight to trash")
+  );
 
   let p_then_via_finish = ExtractMsisdnOperatorAndShortcodeString
     .then(FinishEarlyOperation)
     .then_via(entry::<HNil, Messages>().show(NoOpForm))
     .end(FinalNoConsumes)
     .build("", 0);
-  assert!(matches!(p_then_via_finish.start_run(entry_param()).await.unwrap(), RunOutcome::Finish(msg) if msg == "Operation finished"));
+  assert!(
+    matches!(p_then_via_finish.start_run(entry_param()).await.unwrap(), RunOutcome::Finish(msg) if msg == "Operation finished")
+  );
 
-  let p_then_end_yield = ExtractMsisdnOperatorAndShortcodeString
-    .show(NoOpForm)
-    .then_end(reusable_end_no_consumes())
-    .build("", 0);
-  assert!(matches!(p_then_end_yield.start_run(entry_param()).await.unwrap(), RunOutcome::Yield(msg, ..) if msg == "Straight to trash"));
+  let p_then_end_yield =
+    ExtractMsisdnOperatorAndShortcodeString.show(NoOpForm).then_end(reusable_end_no_consumes()).build("", 0);
+  assert!(
+    matches!(p_then_end_yield.start_run(entry_param()).await.unwrap(), RunOutcome::Yield(msg, ..) if msg == "Straight to trash")
+  );
 
   let p_then_end_finish = ExtractMsisdnOperatorAndShortcodeString
     .then(FinishEarlyOperation)
     .then_end(reusable_end_no_consumes())
     .build("", 0);
-  assert!(matches!(p_then_end_finish.start_run(entry_param()).await.unwrap(), RunOutcome::Finish(msg) if msg == "Operation finished"));
+  assert!(
+    matches!(p_then_end_finish.start_run(entry_param()).await.unwrap(), RunOutcome::Finish(msg) if msg == "Operation finished")
+  );
 
   let p_form_splitter_finish = ExtractMsisdnOperatorAndShortcodeString
     .then(FinishEarlyOperation)
@@ -3294,7 +3305,9 @@ async fn test_start_run_outcomes() {
     .case_end(Case1, |x| x.end(FinalNoConsumes))
     .case_end(Case2, |x| x.end(FinalNoConsumes))
     .build("", 0);
-  assert!(matches!(p_form_splitter_finish.start_run(entry_param()).await.unwrap(), RunOutcome::Finish(msg) if msg == "Operation finished"));
+  assert!(
+    matches!(p_form_splitter_finish.start_run(entry_param()).await.unwrap(), RunOutcome::Finish(msg) if msg == "Operation finished")
+  );
 
   let p_splitter_finish = ExtractMsisdnOperatorAndShortcodeString
     .then(FinishEarlyOperation)
@@ -3303,7 +3316,9 @@ async fn test_start_run_outcomes() {
     .case_end(Case1, |x| x.end(FinalNoConsumes))
     .case_end(Case2, |x| x.end(FinalNoConsumes))
     .build("", 0);
-  assert!(matches!(p_splitter_finish.start_run(entry_param()).await.unwrap(), RunOutcome::Finish(msg) if msg == "Operation finished"));
+  assert!(
+    matches!(p_splitter_finish.start_run(entry_param()).await.unwrap(), RunOutcome::Finish(msg) if msg == "Operation finished")
+  );
 }
 
 #[tokio::test]
@@ -3331,7 +3346,18 @@ async fn test_then_via_sync_and_before_outcomes() {
     .build("", 0);
   test_process_messages(
     &p_before_yield_retry,
-    vec!["*123#", "This will be discarded", "10", "This will be accepted", "20", "Straight to trash", "x", "Straight to trash", "y", "Empty good bye"],
+    vec![
+      "*123#",
+      "This will be discarded",
+      "10",
+      "This will be accepted",
+      "20",
+      "Straight to trash",
+      "x",
+      "Straight to trash",
+      "y",
+      "Empty good bye",
+    ],
   )
   .await;
 
@@ -3341,8 +3367,10 @@ async fn test_then_via_sync_and_before_outcomes() {
     .then_via(entry::<HNil, Messages>().show(NoOpForm))
     .end(FinalNoConsumes)
     .build("", 0);
-  let RunOutcome::Yield(_, val, yielded_at, ctx) =
-    p_before_back.resume_run(&session_init_value(), PreviousRunYieldedAt(StepIndex::MIN), "*123#", None, None).await.unwrap()
+  let RunOutcome::Yield(_, val, yielded_at, ctx) = p_before_back
+    .resume_run(&session_init_value(), PreviousRunYieldedAt(StepIndex::MIN), "*123#", None, None)
+    .await
+    .unwrap()
   else {
     panic!("expected Yield");
   };
@@ -3361,24 +3389,22 @@ async fn test_back_and_finish_before_split_and_then_end() {
     .show(BackTokenInspectionForm1)
     .then_end(reusable_end_no_consumes())
     .build("", 0);
-  let RunOutcome::Yield(_, val1, y1, ctx1) =
-    p_then_end_before.resume_run(&session_init_value(), PreviousRunYieldedAt(StepIndex::MIN), "*123#", None, None).await.unwrap()
+  let RunOutcome::Yield(_, val1, y1, ctx1) = p_then_end_before
+    .resume_run(&session_init_value(), PreviousRunYieldedAt(StepIndex::MIN), "*123#", None, None)
+    .await
+    .unwrap()
   else {
     panic!("expected Yield 1");
   };
-  let RunOutcome::RetryUserInput(msg, retry_ctx) = p_then_end_before
-    .resume_run(&val1, PreviousRunYieldedAt(y1.0), "10", Some(&ctx1), None)
-    .await
-    .unwrap()
+  let RunOutcome::RetryUserInput(msg, retry_ctx) =
+    p_then_end_before.resume_run(&val1, PreviousRunYieldedAt(y1.0), "10", Some(&ctx1), None).await.unwrap()
   else {
     panic!("expected RetryUserInput");
   };
   assert_eq!(msg, "This will be accepted");
 
-  let RunOutcome::Yield(_, val2, y2, ctx2) = p_then_end_before
-    .resume_run(&val1, PreviousRunYieldedAt(y1.0), "20", Some(&retry_ctx), None)
-    .await
-    .unwrap()
+  let RunOutcome::Yield(_, val2, y2, ctx2) =
+    p_then_end_before.resume_run(&val1, PreviousRunYieldedAt(y1.0), "20", Some(&retry_ctx), None).await.unwrap()
   else {
     panic!("expected Yield 2");
   };
@@ -3427,12 +3453,16 @@ async fn test_flowing_split_start_run_and_back_outcomes() {
     type Produces = HList![CaseOptionParam];
     type FinalMessage = String;
     type Error = CNil;
-    async fn handle(&self, _: <Self::Consumes as ToRef<'_>>::Ref) -> Result<OperationOutcome<Self::Produces, String>, CNil> {
+    async fn handle(
+      &self,
+      _: <Self::Consumes as ToRef<'_>>::Ref,
+    ) -> Result<OperationOutcome<Self::Produces, String>, CNil> {
       Ok(OperationOutcome::Successful(hlist![CaseOptionParam(1)]))
     }
   }
 
-  let entry_param = || hlist!(EntryParam(Msisdn(2_340_000_000_000), Operator::MTN, ShortcodeString("*123#".to_string())));
+  let entry_param =
+    || hlist!(EntryParam(Msisdn(2_340_000_000_000), Operator::MTN, ShortcodeString("*123#".to_string())));
 
   // 3-case all-flowing split: Case1 sync Continue via start_run
   let p_all_flowing_sync = ExtractMsisdnOperatorAndShortcodeString
@@ -3443,7 +3473,9 @@ async fn test_flowing_split_start_run_and_back_outcomes() {
     .case_via(Case3, |x| x.then(ProduceOnlyCase1Param))
     .end(FinalNoConsumes)
     .build("", 0);
-  assert!(matches!(p_all_flowing_sync.start_run(entry_param()).await.unwrap(), RunOutcome::Finish(msg) if msg == "Empty good bye"));
+  assert!(
+    matches!(p_all_flowing_sync.start_run(entry_param()).await.unwrap(), RunOutcome::Finish(msg) if msg == "Empty good bye")
+  );
 
   // 3-case all-flowing split: process_before Finish via start_run
   let p_all_flowing_finish = ExtractMsisdnOperatorAndShortcodeString
@@ -3455,7 +3487,9 @@ async fn test_flowing_split_start_run_and_back_outcomes() {
     .case_via(Case3, |x| x.then(ProduceOnlyCase1Param))
     .end(FinalNoConsumes)
     .build("", 0);
-  assert!(matches!(p_all_flowing_finish.start_run(entry_param()).await.unwrap(), RunOutcome::Finish(msg) if msg == "Operation finished"));
+  assert!(
+    matches!(p_all_flowing_finish.start_run(entry_param()).await.unwrap(), RunOutcome::Finish(msg) if msg == "Operation finished")
+  );
 
   // 3-case mixed split (case_via -> case_end -> case_end): Case1 sync Continue via start_run
   let p_mixed_sync = ExtractMsisdnOperatorAndShortcodeString
@@ -3466,7 +3500,9 @@ async fn test_flowing_split_start_run_and_back_outcomes() {
     .case_end(Case3, |x| x.end(FinalNoConsumes))
     .end(FinalNoConsumes)
     .build("", 0);
-  assert!(matches!(p_mixed_sync.start_run(entry_param()).await.unwrap(), RunOutcome::Finish(msg) if msg == "Empty good bye"));
+  assert!(
+    matches!(p_mixed_sync.start_run(entry_param()).await.unwrap(), RunOutcome::Finish(msg) if msg == "Empty good bye")
+  );
 
   // 3-case mixed split (case_via -> case_end -> case_end): process_before Finish via start_run
   let p_mixed_finish = ExtractMsisdnOperatorAndShortcodeString
@@ -3478,7 +3514,9 @@ async fn test_flowing_split_start_run_and_back_outcomes() {
     .case_end(Case3, |x| x.end(FinalNoConsumes))
     .end(FinalNoConsumes)
     .build("", 0);
-  assert!(matches!(p_mixed_finish.start_run(entry_param()).await.unwrap(), RunOutcome::Finish(msg) if msg == "Operation finished"));
+  assert!(
+    matches!(p_mixed_finish.start_run(entry_param()).await.unwrap(), RunOutcome::Finish(msg) if msg == "Operation finished")
+  );
 
   // 3-case mixed split (case_via -> case_end -> case_end): Back from Case1 during resume_run
   let p_mixed_back = ExtractMsisdnOperatorAndShortcodeString

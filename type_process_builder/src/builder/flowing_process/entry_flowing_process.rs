@@ -1,6 +1,7 @@
 use crate::builder::flowing_process::sealed;
 use crate::builder::{
-  IntermediateRunOutcome, IntermediateRunResult, LibraryErrors, PreviousRunYieldedAt, ProcessError, StepIndex,
+  IntermediateRunOutcome, IntermediateRunResult, IntermediateStartOutcome, IntermediateStartResult, LibraryErrors,
+  PreviousRunYieldedAt, ProcessError, StepIndex,
 };
 use crate::param_list::ParamList;
 use crate::step::{BackToken, Entry, ProcessMessages};
@@ -35,8 +36,8 @@ impl<Produces: ParamList, Messages: ProcessMessages> sealed::FlowingProcess for 
     &self,
     entry_consumes: Self::EntryConsumes,
     _back_token: Option<BackToken>,
-  ) -> impl Future<Output = IntermediateRunResult<Self::Produces, Self::Messages, Self::Errors>> {
-    std::future::ready(Ok(IntermediateRunOutcome::Continue(entry_consumes)))
+  ) -> impl Future<Output = IntermediateStartResult<Self::Produces, Self::Messages, Self::Errors>> {
+    std::future::ready(Ok(IntermediateStartOutcome::Continue(entry_consumes)))
   }
 
   fn enumerate_steps(&mut self, last_used_index: StepIndex) -> StepIndex {

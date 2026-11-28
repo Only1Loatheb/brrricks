@@ -1,7 +1,8 @@
 use crate::builder::finalized_process::{FinalizedProcess, sealed};
 use crate::builder::flowing_process::sealed::FlowingProcess;
 use crate::builder::{
-  IntermediateRunOutcome, IntoProcessError, ParamList, PreviousRunYieldedAt, RunOutcome, RunResult, StepIndex,
+  IntermediateRunOutcome, IntermediateStartOutcome, IntoProcessError, ParamList, PreviousRunYieldedAt, RunOutcome,
+  RunResult, StartRunOutcome, StartRunResult, StepIndex,
 };
 use crate::error_coproduct::union::CoprodUnion;
 use crate::param_list::concat::Concat;
@@ -67,7 +68,7 @@ where
         .await
         .into_process_err()?;
       match outcome {
-        IntermediateRunOutcome::Continue(val) => self.continue_run(val, back_token).await,
+        IntermediateRunOutcome::Continue(val) => self.continue_run(val, back_token).await.map(Into::into),
         IntermediateRunOutcome::Yield(a, b, c, d) => Ok(RunOutcome::Yield(a, b, c, d)),
         IntermediateRunOutcome::Finish(a) => Ok(RunOutcome::Finish(a)),
         IntermediateRunOutcome::RetryUserInput(a, b) => Ok(RunOutcome::RetryUserInput(a, b)),
@@ -86,14 +87,12 @@ where
     &self,
     entry_consumes: Self::EntryConsumes,
     back_token: Option<BackToken>,
-  ) -> RunResult<Self::Messages, Self::Errors> {
+  ) -> StartRunResult<Self::Messages, Self::Errors> {
     let outcome = self.process_before.run_from_entry(entry_consumes, back_token).await.into_process_err()?;
     match outcome {
-      IntermediateRunOutcome::Continue(val) => self.continue_run(val, back_token).await,
-      IntermediateRunOutcome::Yield(a, b, c, d) => Ok(RunOutcome::Yield(a, b, c, d)),
-      IntermediateRunOutcome::Finish(a) => Ok(RunOutcome::Finish(a)),
-      IntermediateRunOutcome::RetryUserInput(a, b) => Ok(RunOutcome::RetryUserInput(a, b)),
-      IntermediateRunOutcome::Back => Ok(RunOutcome::Back),
+      IntermediateStartOutcome::Continue(val) => self.continue_run(val, back_token).await,
+      IntermediateStartOutcome::Yield(a, b, c, d) => Ok(StartRunOutcome::Yield(a, b, c, d)),
+      IntermediateStartOutcome::Finish(a) => Ok(StartRunOutcome::Finish(a)),
     }
   }
 
@@ -129,7 +128,7 @@ where
     &self,
     process_before_produces: ProcessBefore::Produces,
     back_token: Option<BackToken>,
-  ) -> RunResult<ProcessBefore::Messages, <Self as sealed::FinalizedProcess>::Errors> {
+  ) -> StartRunResult<ProcessBefore::Messages, <Self as sealed::FinalizedProcess>::Errors> {
     self.sub_process.run_from_entry(process_before_produces.extract(), back_token).await.into_process_err()
   }
 }

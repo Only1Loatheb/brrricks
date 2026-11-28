@@ -14,7 +14,7 @@ impl<UnderlyingProcess: FinalizedProcess> RunnableProcess<UnderlyingProcess> {
     &self,
     entry_consumes: UnderlyingProcess::EntryConsumes,
   ) -> RunResult<UnderlyingProcess::Messages, UnderlyingProcess::Errors> {
-    self.finalized_process.run_from_entry(entry_consumes, None).await
+    self.finalized_process.run_from_entry(entry_consumes, None).await.map(Into::into)
   }
 
   pub async fn resume_run(

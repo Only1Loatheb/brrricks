@@ -2,7 +2,8 @@ use crate::builder::IntoProcessError;
 use crate::builder::split_process::sealed;
 use crate::builder::{
   CurrentRunYieldedAt, FlowingProcess, IntermediateFinalizedSplitOutcome, IntermediateFinalizedSplitResult,
-  IntermediateRunOutcome, ParamList, PreviousRunYieldedAt, ProcessError, StepIndex,
+  IntermediateFinalizedSplitStartOutcome, IntermediateFinalizedSplitStartResult, IntermediateRunOutcome,
+  IntermediateStartOutcome, ParamList, PreviousRunYieldedAt, ProcessError, StepIndex,
 };
 use crate::error_coproduct::union::CoprodUnion;
 use crate::frunk::coproduct::Coproduct;
@@ -93,7 +94,7 @@ where
         .into_process_err()?;
       match process_before_output {
         IntermediateRunOutcome::Continue(process_before_split_produced) => {
-          self.continue_run(process_before_split_produced, back_token).await
+          self.continue_run(process_before_split_produced, back_token).await.map(Into::into)
         },
         IntermediateRunOutcome::Yield(a, b, c, d) => Ok(IntermediateFinalizedSplitOutcome::Yield(a, b, c, d)),
         IntermediateRunOutcome::Finish(a) => Ok(IntermediateFinalizedSplitOutcome::Finish(a)),
@@ -130,7 +131,7 @@ where
     } else {
       let process_before_split_produced =
         ProcessBefore::Produces::deserialize_param_list(previous_run_produced).into_process_err()?;
-      self.continue_run(process_before_split_produced, back_token).await
+      self.continue_run(process_before_split_produced, back_token).await.map(Into::into)
     }
   }
 
@@ -138,7 +139,7 @@ where
     &self,
     entry_consumes: Self::EntryConsumes,
     back_token: Option<BackToken>,
-  ) -> IntermediateFinalizedSplitResult<
+  ) -> IntermediateFinalizedSplitStartResult<
     Self::ProcessBeforeSplitProduces,
     Coproduct<Self::SplitterProducesForFirstCase, SplitterProducesForOtherCases>,
     Self::Messages,
@@ -147,13 +148,11 @@ where
     let process_before_output =
       self.process_before.run_from_entry(entry_consumes, back_token).await.into_process_err()?;
     match process_before_output {
-      IntermediateRunOutcome::Continue(process_before_split_produced) => {
+      IntermediateStartOutcome::Continue(process_before_split_produced) => {
         self.continue_run(process_before_split_produced, back_token).await
       },
-      IntermediateRunOutcome::Yield(a, b, c, d) => Ok(IntermediateFinalizedSplitOutcome::Yield(a, b, c, d)),
-      IntermediateRunOutcome::Finish(a) => Ok(IntermediateFinalizedSplitOutcome::Finish(a)),
-      IntermediateRunOutcome::RetryUserInput(a, b) => Ok(IntermediateFinalizedSplitOutcome::RetryUserInput(a, b)),
-      IntermediateRunOutcome::Back => Ok(IntermediateFinalizedSplitOutcome::Back),
+      IntermediateStartOutcome::Yield(a, b, c, d) => Ok(IntermediateFinalizedSplitStartOutcome::Yield(a, b, c, d)),
+      IntermediateStartOutcome::Finish(a) => Ok(IntermediateFinalizedSplitStartOutcome::Finish(a)),
     }
   }
 
@@ -198,7 +197,7 @@ where
     &self,
     process_before_split_produced: ProcessBefore::Produces,
     back_token: Option<BackToken>,
-  ) -> IntermediateFinalizedSplitResult<
+  ) -> IntermediateFinalizedSplitStartResult<
     ProcessBefore::Produces,
     Coproduct<SplitterProducesForFirstCase, SplitterProducesForOtherCases>,
     ProcessBefore::Messages,
@@ -210,7 +209,7 @@ where
       );
     let FormWithContext(form, form_context) =
       self.splitter.create_form(splitter_step_consumes, back_token).await.into_process_err()?;
-    Ok(IntermediateFinalizedSplitOutcome::Yield(
+    Ok(IntermediateFinalizedSplitStartOutcome::Yield(
       form,
       process_before_split_produced.serialize_param_list().into_process_err()?,
       CurrentRunYieldedAt(self.step_index),

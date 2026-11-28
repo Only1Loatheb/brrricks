@@ -22,7 +22,7 @@ use crate::param_list::extract::Extract;
 use crate::step::{Final, Form, FormSplitter, Operation, Splitter};
 
 pub(crate) mod sealed {
-  use crate::builder::{IntermediateRunResult, PreviousRunYieldedAt, StepIndex};
+  use crate::builder::{IntermediateRunResult, IntermediateStartResult, PreviousRunYieldedAt, StepIndex};
   use crate::error_coproduct::ErrorCoproduct;
   use crate::param_list::ParamList;
   use crate::step::{BackToken, ProcessMessages};
@@ -49,7 +49,7 @@ pub(crate) mod sealed {
       &self,
       entry_consumes: Self::EntryConsumes,
       back_token: Option<BackToken>,
-    ) -> impl Future<Output = IntermediateRunResult<Self::Produces, Self::Messages, Self::Errors>> + Send;
+    ) -> impl Future<Output = IntermediateStartResult<Self::Produces, Self::Messages, Self::Errors>> + Send;
 
     fn enumerate_steps(&mut self, last_used_index: StepIndex) -> StepIndex;
   }

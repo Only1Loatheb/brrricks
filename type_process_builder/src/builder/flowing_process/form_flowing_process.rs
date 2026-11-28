@@ -1,8 +1,8 @@
 use crate::builder::IntoProcessError;
 use crate::builder::flowing_process::sealed;
 use crate::builder::{
-  CurrentRunYieldedAt, FlowingProcess, IntermediateRunOutcome, IntermediateRunResult, ParamList, PreviousRunYieldedAt,
-  ProcessError, StepIndex,
+  CurrentRunYieldedAt, FlowingProcess, IntermediateRunOutcome, IntermediateRunResult, IntermediateStartOutcome,
+  IntermediateStartResult, ParamList, PreviousRunYieldedAt, ProcessError, StepIndex,
 };
 use crate::error_coproduct::union::CoprodUnion;
 use crate::param_list::borrow_just::BorrowJust;
@@ -73,7 +73,7 @@ where
         .into_process_err()?;
       match process_before_output {
         IntermediateRunOutcome::Continue(process_before_produces) => {
-          self.continue_run(process_before_produces, back_token).await
+          self.continue_run(process_before_produces, back_token).await.map(Into::into)
         },
         IntermediateRunOutcome::Yield(a, b, c, d) => Ok(IntermediateRunOutcome::Yield(a, b, c, d)),
         IntermediateRunOutcome::Finish(a) => Ok(IntermediateRunOutcome::Finish(a)),
@@ -101,7 +101,7 @@ where
     } else {
       let process_before_produces =
         ProcessBefore::Produces::deserialize_param_list(previous_run_produced).into_process_err()?;
-      self.continue_run(process_before_produces, back_token).await
+      self.continue_run(process_before_produces, back_token).await.map(Into::into)
     }
   }
 
@@ -109,17 +109,15 @@ where
     &self,
     entry_consumes: Self::EntryConsumes,
     back_token: Option<BackToken>,
-  ) -> IntermediateRunResult<Self::Produces, Self::Messages, Self::Errors> {
+  ) -> IntermediateStartResult<Self::Produces, Self::Messages, Self::Errors> {
     let process_before_output =
       self.process_before.run_from_entry(entry_consumes, back_token).await.into_process_err()?;
     match process_before_output {
-      IntermediateRunOutcome::Continue(process_before_produces) => {
+      IntermediateStartOutcome::Continue(process_before_produces) => {
         self.continue_run(process_before_produces, back_token).await
       },
-      IntermediateRunOutcome::Yield(a, b, c, d) => Ok(IntermediateRunOutcome::Yield(a, b, c, d)),
-      IntermediateRunOutcome::Finish(a) => Ok(IntermediateRunOutcome::Finish(a)),
-      IntermediateRunOutcome::RetryUserInput(a, b) => Ok(IntermediateRunOutcome::RetryUserInput(a, b)),
-      IntermediateRunOutcome::Back => Ok(IntermediateRunOutcome::Back),
+      IntermediateStartOutcome::Yield(a, b, c, d) => Ok(IntermediateStartOutcome::Yield(a, b, c, d)),
+      IntermediateStartOutcome::Finish(a) => Ok(IntermediateStartOutcome::Finish(a)),
     }
   }
 
@@ -156,7 +154,7 @@ where
     &self,
     process_before_produces: ProcessBefore::Produces,
     back_token: Option<BackToken>,
-  ) -> IntermediateRunResult<
+  ) -> IntermediateStartResult<
     <Self as sealed::FlowingProcess>::Produces,
     ProcessBefore::Messages,
     <Self as sealed::FlowingProcess>::Errors,
@@ -166,7 +164,7 @@ where
     );
     let FormWithContext(form, form_context) =
       self.form_step.create_form(last_step_consumes, back_token).await.into_process_err()?;
-    Ok(IntermediateRunOutcome::Yield(
+    Ok(IntermediateStartOutcome::Yield(
       form,
       process_before_produces.serialize_param_list().into_process_err()?,
       CurrentRunYieldedAt(self.step_index),

@@ -45,6 +45,29 @@ pub(crate) mod sealed {
   use super::{CurrentRunYieldedAt, FormContext, ParamList, ProcessError, ProcessMessages, SessionContext};
 
   #[derive(Debug, PartialEq, Eq)]
+  pub enum IntermediateStartOutcome<Produced: ParamList, Messages: ProcessMessages> {
+    Continue(Produced),
+    Yield(Messages::FormMessage, SessionContext, CurrentRunYieldedAt, FormContext),
+    Finish(Messages::FinalMessage),
+  }
+
+  pub type IntermediateStartResult<Produced, Messages, StepErrors> =
+    Result<IntermediateStartOutcome<Produced, Messages>, ProcessError<StepErrors>>;
+
+  impl<Produced: ParamList, Messages: ProcessMessages> From<IntermediateStartOutcome<Produced, Messages>>
+    for IntermediateRunOutcome<Produced, Messages>
+  {
+    #[inline(always)]
+    fn from(outcome: IntermediateStartOutcome<Produced, Messages>) -> Self {
+      match outcome {
+        IntermediateStartOutcome::Continue(a) => Self::Continue(a),
+        IntermediateStartOutcome::Yield(a, b, c, d) => Self::Yield(a, b, c, d),
+        IntermediateStartOutcome::Finish(a) => Self::Finish(a),
+      }
+    }
+  }
+
+  #[derive(Debug, PartialEq, Eq)]
   pub enum IntermediateRunOutcome<Produced: ParamList, Messages: ProcessMessages> {
     Continue(Produced),
     Yield(Messages::FormMessage, SessionContext, CurrentRunYieldedAt, FormContext),
@@ -55,6 +78,53 @@ pub(crate) mod sealed {
 
   pub type IntermediateRunResult<Produced, Messages, StepErrors> =
     Result<IntermediateRunOutcome<Produced, Messages>, ProcessError<StepErrors>>;
+
+  #[derive(Debug, PartialEq, Eq)]
+  pub enum IntermediateFinalizedSplitStartOutcome<
+    ProcessBeforeSplitProduced: ParamList,
+    SplitterProducesForOtherCases,
+    Messages: ProcessMessages,
+  > {
+    GoToCase {
+      process_before_split_produced: ProcessBeforeSplitProduced,
+      splitter_produces_to_other_cases: SplitterProducesForOtherCases,
+    },
+    Yield(Messages::FormMessage, SessionContext, CurrentRunYieldedAt, FormContext),
+    Finish(Messages::FinalMessage),
+  }
+
+  pub type IntermediateFinalizedSplitStartResult<
+    ProcessBeforeSplitProduced,
+    SplitterProducesForOtherCases,
+    Messages,
+    StepErrors,
+  > = Result<
+    IntermediateFinalizedSplitStartOutcome<ProcessBeforeSplitProduced, SplitterProducesForOtherCases, Messages>,
+    ProcessError<StepErrors>,
+  >;
+
+  impl<ProcessBeforeSplitProduced: ParamList, SplitterProducesForOtherCases, Messages: ProcessMessages>
+    From<IntermediateFinalizedSplitStartOutcome<ProcessBeforeSplitProduced, SplitterProducesForOtherCases, Messages>>
+    for IntermediateFinalizedSplitOutcome<ProcessBeforeSplitProduced, SplitterProducesForOtherCases, Messages>
+  {
+    #[inline(always)]
+    fn from(
+      outcome: IntermediateFinalizedSplitStartOutcome<
+        ProcessBeforeSplitProduced,
+        SplitterProducesForOtherCases,
+        Messages,
+      >,
+    ) -> Self {
+      match outcome {
+        IntermediateFinalizedSplitStartOutcome::GoToCase {
+          process_before_split_produced,
+          splitter_produces_to_other_cases,
+        } => Self::GoToCase { process_before_split_produced, splitter_produces_to_other_cases },
+        IntermediateFinalizedSplitStartOutcome::Yield(a, b, c, d) => Self::Yield(a, b, c, d),
+        IntermediateFinalizedSplitStartOutcome::Finish(a) => Self::Finish(a),
+      }
+    }
+  }
 
   #[derive(Debug, PartialEq, Eq)]
   pub enum IntermediateFinalizedSplitOutcome<
@@ -81,6 +151,80 @@ pub(crate) mod sealed {
     IntermediateFinalizedSplitOutcome<ProcessBeforeSplitProduced, SplitterProducesForOtherCases, Messages>,
     ProcessError<StepErrors>,
   >;
+
+  #[derive(Debug, PartialEq, Eq)]
+  pub enum IntermediateFlowingSplitStartOutcome<
+    ProcessBeforeSplitProduced: ParamList,
+    SplitterProducesForOtherCases,
+    FlowingCaseProduced: ParamList,
+    Messages: ProcessMessages,
+  > {
+    Continue(FlowingCaseProduced),
+    GoToCase {
+      process_before_split_produced: ProcessBeforeSplitProduced,
+      splitter_produces_to_other_cases: SplitterProducesForOtherCases,
+    },
+    Yield(Messages::FormMessage, SessionContext, CurrentRunYieldedAt, FormContext),
+    Finish(Messages::FinalMessage),
+  }
+
+  pub type IntermediateFlowingSplitStartResult<
+    ProcessBeforeSplitProduced,
+    SplitterProducesForOtherCases,
+    FlowingCaseProduced,
+    Messages,
+    StepErrors,
+  > = Result<
+    IntermediateFlowingSplitStartOutcome<
+      ProcessBeforeSplitProduced,
+      SplitterProducesForOtherCases,
+      FlowingCaseProduced,
+      Messages,
+    >,
+    ProcessError<StepErrors>,
+  >;
+
+  impl<
+    ProcessBeforeSplitProduced: ParamList,
+    SplitterProducesForOtherCases,
+    FlowingCaseProduced: ParamList,
+    Messages: ProcessMessages,
+  >
+    From<
+      IntermediateFlowingSplitStartOutcome<
+        ProcessBeforeSplitProduced,
+        SplitterProducesForOtherCases,
+        FlowingCaseProduced,
+        Messages,
+      >,
+    >
+    for IntermediateFlowingSplitOutcome<
+      ProcessBeforeSplitProduced,
+      SplitterProducesForOtherCases,
+      FlowingCaseProduced,
+      Messages,
+    >
+  {
+    #[inline(always)]
+    fn from(
+      outcome: IntermediateFlowingSplitStartOutcome<
+        ProcessBeforeSplitProduced,
+        SplitterProducesForOtherCases,
+        FlowingCaseProduced,
+        Messages,
+      >,
+    ) -> Self {
+      match outcome {
+        IntermediateFlowingSplitStartOutcome::Continue(a) => Self::Continue(a),
+        IntermediateFlowingSplitStartOutcome::GoToCase {
+          process_before_split_produced,
+          splitter_produces_to_other_cases,
+        } => Self::GoToCase { process_before_split_produced, splitter_produces_to_other_cases },
+        IntermediateFlowingSplitStartOutcome::Yield(a, b, c, d) => Self::Yield(a, b, c, d),
+        IntermediateFlowingSplitStartOutcome::Finish(a) => Self::Finish(a),
+      }
+    }
+  }
 
   #[derive(Debug, PartialEq, Eq)]
   pub enum IntermediateFlowingSplitOutcome<
@@ -115,6 +259,24 @@ pub(crate) mod sealed {
     >,
     ProcessError<StepErrors>,
   >;
+
+  #[derive(Debug, PartialEq, Eq)]
+  pub enum StartRunOutcome<Messages: ProcessMessages> {
+    Yield(Messages::FormMessage, SessionContext, CurrentRunYieldedAt, FormContext),
+    Finish(Messages::FinalMessage),
+  }
+
+  pub type StartRunResult<Messages, StepErrors> = Result<StartRunOutcome<Messages>, ProcessError<StepErrors>>;
+
+  impl<Messages: ProcessMessages> From<StartRunOutcome<Messages>> for super::RunOutcome<Messages> {
+    #[inline(always)]
+    fn from(outcome: StartRunOutcome<Messages>) -> Self {
+      match outcome {
+        StartRunOutcome::Yield(a, b, c, d) => Self::Yield(a, b, c, d),
+        StartRunOutcome::Finish(a) => Self::Finish(a),
+      }
+    }
+  }
 }
 
 /// Outcome of a single [`RunnableProcess::resume_run`] call.

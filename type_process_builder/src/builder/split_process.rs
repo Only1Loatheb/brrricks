@@ -9,7 +9,9 @@ use crate::builder::{
 use crate::param_list::concat::Concat;
 
 pub(crate) mod sealed {
-  use crate::builder::{IntermediateFinalizedSplitResult, ParamList, PreviousRunYieldedAt, StepIndex};
+  use crate::builder::{
+    IntermediateFinalizedSplitResult, IntermediateFinalizedSplitStartResult, ParamList, PreviousRunYieldedAt, StepIndex,
+  };
   use crate::error_coproduct::ErrorCoproduct;
   use crate::frunk::coproduct::Coproduct;
   use crate::param_list::concat::Concat;
@@ -50,7 +52,7 @@ pub(crate) mod sealed {
       entry_consumes: Self::EntryConsumes,
       back_token: Option<BackToken>,
     ) -> impl Future<
-      Output = IntermediateFinalizedSplitResult<
+      Output = IntermediateFinalizedSplitStartResult<
         Self::ProcessBeforeSplitProduces,
         Coproduct<Self::SplitterProducesForFirstCase, SplitterProducesForOtherCases>,
         Self::Messages,

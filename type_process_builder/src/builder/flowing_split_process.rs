@@ -4,7 +4,9 @@ pub mod flowing_case_of_finalized_split_process;
 pub mod flowing_case_of_flowing_split_process;
 
 pub(crate) mod sealed {
-  use crate::builder::{IntermediateFlowingSplitResult, PreviousRunYieldedAt, StepIndex};
+  use crate::builder::{
+    IntermediateFlowingSplitResult, IntermediateFlowingSplitStartResult, PreviousRunYieldedAt, StepIndex,
+  };
   use crate::error_coproduct::ErrorCoproduct;
   use crate::param_list::ParamList;
   use crate::param_list::concat::Concat;
@@ -44,7 +46,7 @@ pub(crate) mod sealed {
       entry_consumes: Self::EntryConsumes,
       back_token: Option<BackToken>,
     ) -> impl Future<
-      Output = IntermediateFlowingSplitResult<
+      Output = IntermediateFlowingSplitStartResult<
         Self::ProcessBeforeSplitProduces,
         SplitterProducesForOtherCases,
         Self::EveryFlowingCaseProduces,

@@ -3,8 +3,10 @@ use crate::builder::case_entry::{CaseEntry, case_entry};
 use crate::builder::flowing_split_process::sealed;
 use crate::builder::{
   FinalizedCaseOfFlowingSplitProcess, FinalizedProcess, FlowingCaseOfFlowingSplitProcess, FlowingProcess,
-  IntermediateFinalizedSplitOutcome, IntermediateFlowingSplitOutcome, IntermediateFlowingSplitResult,
-  IntermediateRunOutcome, ParamList, PreviousRunYieldedAt, SplitProcess, StepIndex, WILL_BE_RENUMBERED,
+  IntermediateFinalizedSplitOutcome, IntermediateFinalizedSplitStartOutcome, IntermediateFlowingSplitOutcome,
+  IntermediateFlowingSplitResult, IntermediateFlowingSplitStartOutcome, IntermediateFlowingSplitStartResult,
+  IntermediateRunOutcome, IntermediateStartOutcome, ParamList, PreviousRunYieldedAt, SplitProcess, StepIndex,
+  WILL_BE_RENUMBERED,
 };
 use crate::error_coproduct::union::CoprodUnion;
 use crate::frunk::coproduct::Coproduct;
@@ -188,7 +190,10 @@ where
         IntermediateFinalizedSplitOutcome::GoToCase {
           process_before_split_produced,
           splitter_produces_to_other_cases,
-        } => self.continue_run(process_before_split_produced, splitter_produces_to_other_cases, back_token).await,
+        } => self
+          .continue_run(process_before_split_produced, splitter_produces_to_other_cases, back_token)
+          .await
+          .map(Into::into),
         IntermediateFinalizedSplitOutcome::Yield(a, b, c, d) => Ok(IntermediateFlowingSplitOutcome::Yield(a, b, c, d)),
         IntermediateFinalizedSplitOutcome::Finish(a) => Ok(IntermediateFlowingSplitOutcome::Finish(a)),
         IntermediateFinalizedSplitOutcome::RetryUserInput(a, b) => {
@@ -216,7 +221,7 @@ where
     &self,
     entry_consumes: Self::EntryConsumes,
     back_token: Option<BackToken>,
-  ) -> IntermediateFlowingSplitResult<
+  ) -> IntermediateFlowingSplitStartResult<
     Self::ProcessBeforeSplitProduces,
     SplitterProducesForOtherCases,
     Self::EveryFlowingCaseProduces,
@@ -226,16 +231,14 @@ where
     let process_before_output =
       self.split_process_before.run_from_entry(entry_consumes, back_token).await.into_process_err()?;
     match process_before_output {
-      IntermediateFinalizedSplitOutcome::GoToCase {
+      IntermediateFinalizedSplitStartOutcome::GoToCase {
         process_before_split_produced,
         splitter_produces_to_other_cases,
       } => self.continue_run(process_before_split_produced, splitter_produces_to_other_cases, back_token).await,
-      IntermediateFinalizedSplitOutcome::Yield(a, b, c, d) => Ok(IntermediateFlowingSplitOutcome::Yield(a, b, c, d)),
-      IntermediateFinalizedSplitOutcome::Finish(a) => Ok(IntermediateFlowingSplitOutcome::Finish(a)),
-      IntermediateFinalizedSplitOutcome::RetryUserInput(a, b) => {
-        Ok(IntermediateFlowingSplitOutcome::RetryUserInput(a, b))
+      IntermediateFinalizedSplitStartOutcome::Yield(a, b, c, d) => {
+        Ok(IntermediateFlowingSplitStartOutcome::Yield(a, b, c, d))
       },
-      IntermediateFinalizedSplitOutcome::Back => Ok(IntermediateFlowingSplitOutcome::Back),
+      IntermediateFinalizedSplitStartOutcome::Finish(a) => Ok(IntermediateFlowingSplitStartOutcome::Finish(a)),
     }
   }
 
@@ -279,7 +282,7 @@ where
       SplitterProducesForOtherCases,
     >,
     back_token: Option<BackToken>,
-  ) -> IntermediateFlowingSplitResult<
+  ) -> IntermediateFlowingSplitStartResult<
     ProcessBefore::ProcessBeforeSplitProduces,
     SplitterProducesForOtherCases,
     ThisCase::Produces,
@@ -290,14 +293,12 @@ where
       Coproduct::Inl(splitter_produces_for_this_case) => {
         let this_case_consumes = splitter_produces_for_this_case.concat(process_before_split_produced);
         match self.this_case.run_from_entry(this_case_consumes, back_token).await.into_process_err()? {
-          IntermediateRunOutcome::Continue(a) => Ok(IntermediateFlowingSplitOutcome::Continue(a)),
-          IntermediateRunOutcome::Yield(a, b, c, d) => Ok(IntermediateFlowingSplitOutcome::Yield(a, b, c, d)),
-          IntermediateRunOutcome::Finish(a) => Ok(IntermediateFlowingSplitOutcome::Finish(a)),
-          IntermediateRunOutcome::RetryUserInput(a, b) => Ok(IntermediateFlowingSplitOutcome::RetryUserInput(a, b)),
-          IntermediateRunOutcome::Back => Ok(IntermediateFlowingSplitOutcome::Back),
+          IntermediateStartOutcome::Continue(a) => Ok(IntermediateFlowingSplitStartOutcome::Continue(a)),
+          IntermediateStartOutcome::Yield(a, b, c, d) => Ok(IntermediateFlowingSplitStartOutcome::Yield(a, b, c, d)),
+          IntermediateStartOutcome::Finish(a) => Ok(IntermediateFlowingSplitStartOutcome::Finish(a)),
         }
       },
-      Coproduct::Inr(splitter_produces_to_other_cases) => Ok(IntermediateFlowingSplitOutcome::GoToCase {
+      Coproduct::Inr(splitter_produces_to_other_cases) => Ok(IntermediateFlowingSplitStartOutcome::GoToCase {
         process_before_split_produced,
         splitter_produces_to_other_cases,
       }),

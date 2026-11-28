@@ -1,7 +1,7 @@
 use crate::builder::flowing_process::sealed;
 use crate::builder::{
-  FlowingProcess, IntermediateRunOutcome, IntermediateRunResult, IntoProcessError, ParamList, PreviousRunYieldedAt,
-  ProcessError, StepIndex,
+  FlowingProcess, IntermediateRunOutcome, IntermediateRunResult, IntermediateStartOutcome, IntermediateStartResult,
+  IntoProcessError, ParamList, PreviousRunYieldedAt, ProcessError, StepIndex,
 };
 use crate::error_coproduct::union::CoprodUnion;
 use crate::param_list::concat::Concat;
@@ -77,7 +77,7 @@ where
         .await
         .into_process_err()?;
       match outcome {
-        IntermediateRunOutcome::Continue(val) => self.continue_run(val, back_token).await,
+        IntermediateRunOutcome::Continue(val) => self.continue_run(val, back_token).await.map(Into::into),
         IntermediateRunOutcome::Yield(a, b, c, d) => Ok(IntermediateRunOutcome::Yield(a, b, c, d)),
         IntermediateRunOutcome::Finish(a) => Ok(IntermediateRunOutcome::Finish(a)),
         IntermediateRunOutcome::RetryUserInput(a, b) => Ok(IntermediateRunOutcome::RetryUserInput(a, b)),
@@ -116,14 +116,12 @@ where
     &self,
     entry_consumes: Self::EntryConsumes,
     back_token: Option<BackToken>,
-  ) -> IntermediateRunResult<Self::Produces, Self::Messages, Self::Errors> {
+  ) -> IntermediateStartResult<Self::Produces, Self::Messages, Self::Errors> {
     let outcome = self.process_before.run_from_entry(entry_consumes, back_token).await.into_process_err()?;
     match outcome {
-      IntermediateRunOutcome::Continue(val) => self.continue_run(val, back_token).await,
-      IntermediateRunOutcome::Yield(a, b, c, d) => Ok(IntermediateRunOutcome::Yield(a, b, c, d)),
-      IntermediateRunOutcome::Finish(a) => Ok(IntermediateRunOutcome::Finish(a)),
-      IntermediateRunOutcome::RetryUserInput(a, b) => Ok(IntermediateRunOutcome::RetryUserInput(a, b)),
-      IntermediateRunOutcome::Back => Ok(IntermediateRunOutcome::Back),
+      IntermediateStartOutcome::Continue(val) => self.continue_run(val, back_token).await,
+      IntermediateStartOutcome::Yield(a, b, c, d) => Ok(IntermediateStartOutcome::Yield(a, b, c, d)),
+      IntermediateStartOutcome::Finish(a) => Ok(IntermediateStartOutcome::Finish(a)),
     }
   }
 
@@ -166,7 +164,7 @@ where
     &self,
     process_before_produces: ProcessBefore::Produces,
     back_token: Option<BackToken>,
-  ) -> IntermediateRunResult<
+  ) -> IntermediateStartResult<
     <Self as sealed::FlowingProcess>::Produces,
     ProcessBefore::Messages,
     <Self as sealed::FlowingProcess>::Errors,
@@ -174,17 +172,15 @@ where
     let (sub_consumes, outer_remainder): (Sub::EntryConsumes, _) = process_before_produces.extract_with_remainder();
     let outcome = self.sub_process.run_from_entry(sub_consumes, back_token).await.into_process_err()?;
     match outcome {
-      IntermediateRunOutcome::Continue(sub_produces) => {
-        Ok(IntermediateRunOutcome::Continue(sub_produces.concat(outer_remainder)))
+      IntermediateStartOutcome::Continue(sub_produces) => {
+        Ok(IntermediateStartOutcome::Continue(sub_produces.concat(outer_remainder)))
       },
-      IntermediateRunOutcome::Yield(msg, sub_ctx, yielded_at, form_ctx) => {
+      IntermediateStartOutcome::Yield(msg, sub_ctx, yielded_at, form_ctx) => {
         let outer_ctx = outer_remainder.serialize_param_list().into_process_err()?;
         let packed = postcard::to_allocvec(&(outer_ctx, sub_ctx)).into_process_err()?;
-        Ok(IntermediateRunOutcome::Yield(msg, packed, yielded_at, form_ctx))
+        Ok(IntermediateStartOutcome::Yield(msg, packed, yielded_at, form_ctx))
       },
-      IntermediateRunOutcome::Finish(a) => Ok(IntermediateRunOutcome::Finish(a)),
-      IntermediateRunOutcome::RetryUserInput(a, b) => Ok(IntermediateRunOutcome::RetryUserInput(a, b)),
-      IntermediateRunOutcome::Back => Ok(IntermediateRunOutcome::Back),
+      IntermediateStartOutcome::Finish(a) => Ok(IntermediateStartOutcome::Finish(a)),
     }
   }
 }
