@@ -215,37 +215,6 @@ where
     }
   }
 
-  async fn continue_run(
-    &self,
-    process_before_split_produced: Self::ProcessBeforeSplitProduces,
-    splitter_produces_for_this_case_or_other_cases_consumes: Coproduct<
-      Self::SplitterProducesForThisCase,
-      SplitterProducesForOtherCases,
-    >,
-    back_token: Option<BackToken>,
-  ) -> IntermediateFinalizedSplitResult<
-    Self::ProcessBeforeSplitProduces,
-    SplitterProducesForOtherCases,
-    Self::Messages,
-    Self::Errors,
-  > {
-    match splitter_produces_for_this_case_or_other_cases_consumes {
-      Coproduct::Inl(splitter_produces_for_this_case) => {
-        let this_case_consumes = splitter_produces_for_this_case.concat(process_before_split_produced);
-        match self.this_case.run_from_entry(this_case_consumes, back_token).await.into_process_err()? {
-          RunOutcome::Yield(a, b, c, d) => Ok(IntermediateFinalizedSplitOutcome::Yield(a, b, c, d)),
-          RunOutcome::Finish(a) => Ok(IntermediateFinalizedSplitOutcome::Finish(a)),
-          RunOutcome::RetryUserInput(a, b) => Ok(IntermediateFinalizedSplitOutcome::RetryUserInput(a, b)),
-          RunOutcome::Back => Ok(IntermediateFinalizedSplitOutcome::Back),
-        }
-      },
-      Coproduct::Inr(splitter_produces_to_other_cases) => Ok(IntermediateFinalizedSplitOutcome::GoToCase {
-        process_before_split_produced,
-        splitter_produces_to_other_cases,
-      }),
-    }
-  }
-
   async fn run_split_from_entry(
     &self,
     entry_consumes: Self::EntryConsumes,
@@ -285,6 +254,62 @@ where
   }
 }
 
+impl<
+  ThisTag: Send + Sync,
+  SplitterProducesForThisCase: ParamList + Concat<ProcessBefore::ProcessBeforeSplitProduces>,
+  SplitterProducesForOtherCases: Send + Sync,
+  ProcessBefore: FinalizedSplitProcess<Coproduct<(ThisTag, SplitterProducesForThisCase), SplitterProducesForOtherCases>>,
+  ThisCase: FinalizedProcess<
+      EntryConsumes = <SplitterProducesForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated,
+      Messages = ProcessBefore::Messages,
+    >,
+  ErrorUnionIndices: Sync + Send,
+>
+  NextCaseOfFinalizedSplitProcess<
+    ThisTag,
+    SplitterProducesForThisCase,
+    SplitterProducesForOtherCases,
+    ProcessBefore,
+    ThisCase,
+    ErrorUnionIndices,
+  >
+where
+  ThisCase::EverProduced: Union<ProcessBefore::EverProduced>,
+  <ThisCase::EverProduced as Union<ProcessBefore::EverProduced>>::Union: ParamList,
+  ThisCase::Errors: CoprodUnion<ProcessBefore::Errors, ErrorUnionIndices>,
+{
+  async fn continue_run(
+    &self,
+    process_before_split_produced: ProcessBefore::ProcessBeforeSplitProduces,
+    splitter_produces_for_this_case_or_other_cases_consumes: Coproduct<
+      SplitterProducesForThisCase,
+      SplitterProducesForOtherCases,
+    >,
+    back_token: Option<BackToken>,
+  ) -> IntermediateFinalizedSplitResult<
+    ProcessBefore::ProcessBeforeSplitProduces,
+    SplitterProducesForOtherCases,
+    ProcessBefore::Messages,
+    <ThisCase::Errors as CoprodUnion<ProcessBefore::Errors, ErrorUnionIndices>>::Union,
+  > {
+    match splitter_produces_for_this_case_or_other_cases_consumes {
+      Coproduct::Inl(splitter_produces_for_this_case) => {
+        let this_case_consumes = splitter_produces_for_this_case.concat(process_before_split_produced);
+        match self.this_case.run_from_entry(this_case_consumes, back_token).await.into_process_err()? {
+          RunOutcome::Yield(a, b, c, d) => Ok(IntermediateFinalizedSplitOutcome::Yield(a, b, c, d)),
+          RunOutcome::Finish(a) => Ok(IntermediateFinalizedSplitOutcome::Finish(a)),
+          RunOutcome::RetryUserInput(a, b) => Ok(IntermediateFinalizedSplitOutcome::RetryUserInput(a, b)),
+          RunOutcome::Back => Ok(IntermediateFinalizedSplitOutcome::Back),
+        }
+      },
+      Coproduct::Inr(splitter_produces_to_other_cases) => Ok(IntermediateFinalizedSplitOutcome::GoToCase {
+        process_before_split_produced,
+        splitter_produces_to_other_cases,
+      }),
+    }
+  }
+}
+
 /// Implementation for the last branch in the [`crate::builder::SplitProcess`].
 /// The only thing left from [`crate::step::SplitterOutput`] is [`CNil`].
 impl<
@@ -311,8 +336,6 @@ where
   ThisCase::Errors: CoprodUnion<ProcessBefore::Errors, ErrorUnionIndices>,
 {
   type EntryConsumes = ProcessBefore::EntryConsumes;
-  type ProcessBeforeProduces =
-    <SplitterProducesForThisCase as Concat<ProcessBefore::ProcessBeforeSplitProduces>>::Concatenated;
   type Messages = ProcessBefore::Messages;
   type EverProduced = <ThisCase::EverProduced as Union<ProcessBefore::EverProduced>>::Union;
   type Errors = <ThisCase::Errors as CoprodUnion<ProcessBefore::Errors, ErrorUnionIndices>>::Union;
@@ -360,14 +383,6 @@ where
         RunOutcome::Back => Ok(RunOutcome::Back),
       }
     }
-  }
-
-  async fn continue_run(
-    &self,
-    this_case_consumes: Self::ProcessBeforeProduces,
-    back_token: Option<BackToken>,
-  ) -> RunResult<Self::Messages, Self::Errors> {
-    self.this_case.run_from_entry(this_case_consumes, back_token).await.into_process_err()
   }
 
   async fn run_from_entry(

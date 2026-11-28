@@ -201,7 +201,7 @@ async fn test_back_into_branch_after_implicit_merge_purge() {
 
   test_process_messages(
     &process,
-    session_init_value(),
+    hlist!(EntryParam(123)).serialize_param_list().unwrap(),
     vec![
       "",
       "Choose a case",
@@ -214,8 +214,4 @@ async fn test_back_into_branch_after_implicit_merge_purge() {
     ],
   )
   .await;
-}
-
-fn session_init_value() -> SessionContext {
-  hlist!(EntryParam(123)).serialize_param_list().unwrap()
 }

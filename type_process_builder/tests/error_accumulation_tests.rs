@@ -175,6 +175,7 @@ impl Final for FailFinal {
   }
 }
 
+#[cfg(test)]
 fn empty_ctx() -> Vec<u8> {
   postcard::to_allocvec(&HNil).unwrap()
 }

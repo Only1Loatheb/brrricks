@@ -2,6 +2,7 @@ use in_memory_process_runner::{SessionState, in_memory_process_runner};
 use type_process_builder::builder::{FinalizedProcess, RunnableProcess, SessionContext, StepIndex};
 use type_process_builder::step::ProcessMessages;
 
+#[cfg(test)]
 pub async fn test_process_messages<Messages: ProcessMessages<FinalMessage = String, FormMessage = String>>(
   process: &RunnableProcess<impl FinalizedProcess<Messages = Messages>>,
   initial_session_context: SessionContext,

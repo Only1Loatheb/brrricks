@@ -208,37 +208,6 @@ where
     }
   }
 
-  async fn continue_run(
-    &self,
-    process_before_split_produced: Self::ProcessBeforeSplitProduces,
-    splitter_produces_for_this_case_or_other_cases_consumes: Coproduct<
-      Self::SplitterProducesForThisCase,
-      SplitterProducesForOtherCases,
-    >,
-    back_token: Option<BackToken>,
-  ) -> IntermediateFinalizedSplitResult<
-    Self::ProcessBeforeSplitProduces,
-    SplitterProducesForOtherCases,
-    Self::Messages,
-    Self::Errors,
-  > {
-    match splitter_produces_for_this_case_or_other_cases_consumes {
-      Coproduct::Inl(splitter_produces_for_this_case) => {
-        let this_case_consumes = splitter_produces_for_this_case.concat(process_before_split_produced);
-        match self.this_case.run_from_entry(this_case_consumes, back_token).await.into_process_err()? {
-          RunOutcome::Yield(a, b, c, d) => Ok(IntermediateFinalizedSplitOutcome::Yield(a, b, c, d)),
-          RunOutcome::Finish(a) => Ok(IntermediateFinalizedSplitOutcome::Finish(a)),
-          RunOutcome::RetryUserInput(a, b) => Ok(IntermediateFinalizedSplitOutcome::RetryUserInput(a, b)),
-          RunOutcome::Back => Ok(IntermediateFinalizedSplitOutcome::Back),
-        }
-      },
-      Coproduct::Inr(splitter_produces_to_other_cases) => Ok(IntermediateFinalizedSplitOutcome::GoToCase {
-        process_before_split_produced,
-        splitter_produces_to_other_cases,
-      }),
-    }
-  }
-
   async fn run_split_from_entry(
     &self,
     entry_consumes: Self::EntryConsumes,
@@ -269,5 +238,61 @@ where
     let used_index = self.split_process_before.enumerate_steps(last_used_index);
     self.case_index = used_index + 1;
     self.this_case.enumerate_steps(self.case_index)
+  }
+}
+
+impl<
+  SplitterProducesForOtherCases: Send + Sync,
+  ProcessBefore: SplitProcess<SplitterProducesForOtherCases>,
+  ThisCase: FinalizedProcess<
+      EntryConsumes = <ProcessBefore::SplitterProducesForFirstCase as Concat<
+        <ProcessBefore>::ProcessBeforeSplitProduces,
+      >>::Concatenated,
+      Messages = ProcessBefore::Messages,
+    >,
+  ErrorUnionIndices: Sync + Send,
+>
+  FirstCaseOfFinalizedSplitProcess<
+    ProcessBefore::SplitterTagForFirstCase,
+    ProcessBefore::SplitterProducesForFirstCase,
+    SplitterProducesForOtherCases,
+    ProcessBefore,
+    ThisCase,
+    ErrorUnionIndices,
+  >
+where
+  ThisCase::EverProduced: Union<ProcessBefore::EverProduced>,
+  <ThisCase::EverProduced as Union<ProcessBefore::EverProduced>>::Union: ParamList,
+  ThisCase::Errors: CoprodUnion<ProcessBefore::Errors, ErrorUnionIndices>,
+{
+  async fn continue_run(
+    &self,
+    process_before_split_produced: ProcessBefore::ProcessBeforeSplitProduces,
+    splitter_produces_for_this_case_or_other_cases_consumes: Coproduct<
+      ProcessBefore::SplitterProducesForFirstCase,
+      SplitterProducesForOtherCases,
+    >,
+    back_token: Option<BackToken>,
+  ) -> IntermediateFinalizedSplitResult<
+    ProcessBefore::ProcessBeforeSplitProduces,
+    SplitterProducesForOtherCases,
+    ProcessBefore::Messages,
+    <ThisCase::Errors as CoprodUnion<ProcessBefore::Errors, ErrorUnionIndices>>::Union,
+  > {
+    match splitter_produces_for_this_case_or_other_cases_consumes {
+      Coproduct::Inl(splitter_produces_for_this_case) => {
+        let this_case_consumes = splitter_produces_for_this_case.concat(process_before_split_produced);
+        match self.this_case.run_from_entry(this_case_consumes, back_token).await.into_process_err()? {
+          RunOutcome::Yield(a, b, c, d) => Ok(IntermediateFinalizedSplitOutcome::Yield(a, b, c, d)),
+          RunOutcome::Finish(a) => Ok(IntermediateFinalizedSplitOutcome::Finish(a)),
+          RunOutcome::RetryUserInput(a, b) => Ok(IntermediateFinalizedSplitOutcome::RetryUserInput(a, b)),
+          RunOutcome::Back => Ok(IntermediateFinalizedSplitOutcome::Back),
+        }
+      },
+      Coproduct::Inr(splitter_produces_to_other_cases) => Ok(IntermediateFinalizedSplitOutcome::GoToCase {
+        process_before_split_produced,
+        splitter_produces_to_other_cases,
+      }),
+    }
   }
 }

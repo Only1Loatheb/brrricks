@@ -45,19 +45,6 @@ pub(crate) mod sealed {
       >,
     > + Send;
 
-    fn continue_run(
-      &self,
-      process_before_split_produced: Self::ProcessBeforeSplitProduces,
-      back_token: Option<BackToken>,
-    ) -> impl Future<
-      Output = IntermediateFinalizedSplitResult<
-        Self::ProcessBeforeSplitProduces,
-        Coproduct<Self::SplitterProducesForFirstCase, SplitterProducesForOtherCases>,
-        Self::Messages,
-        Self::Errors,
-      >,
-    > + Send;
-
     fn run_from_entry(
       &self,
       entry_consumes: Self::EntryConsumes,

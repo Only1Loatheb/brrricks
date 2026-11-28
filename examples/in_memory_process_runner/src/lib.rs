@@ -8,7 +8,7 @@ pub struct SessionState {
   pub visited_form_steps: Vec<(StepIndex, SessionContext)>,
 }
 
-#[allow(clippy::missing_panics_doc)]
+#[allow(clippy::missing_errors_doc, clippy::missing_panics_doc)]
 pub async fn in_memory_process_runner<Messages: ProcessMessages<FinalMessage = String, FormMessage = String>>(
   process: &RunnableProcess<impl FinalizedProcess<Messages = Messages>>,
   state: &mut SessionState,
@@ -35,6 +35,7 @@ pub async fn in_memory_process_runner<Messages: ProcessMessages<FinalMessage = S
       .await
       .expect("Failed to resume process");
   }
+  #[allow(clippy::unreachable)]
   match run_outcome {
     RunOutcome::Yield(msg, value, yielded_at, context) => {
       state.form_context = Some(context);

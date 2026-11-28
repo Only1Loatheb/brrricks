@@ -31,7 +31,6 @@ pub(crate) mod sealed {
   pub trait FlowingProcess: Sized + Send + Sync {
     // Please specify all associated types at the impl FlowingProcess side for inference to work.
     type EntryConsumes: ParamList;
-    type ProcessBeforeProduces: ParamList;
     type Produces: ParamList;
     type Messages: ProcessMessages;
     type EverProduced: ParamList;
@@ -43,12 +42,6 @@ pub(crate) mod sealed {
       previous_run_yielded_at: PreviousRunYieldedAt,
       user_input: &str,
       form_context: Option<&[u8]>,
-      back_token: Option<BackToken>,
-    ) -> impl Future<Output = IntermediateRunResult<Self::Produces, Self::Messages, Self::Errors>> + Send;
-
-    fn continue_run(
-      &self,
-      process_before_produces: Self::ProcessBeforeProduces,
       back_token: Option<BackToken>,
     ) -> impl Future<Output = IntermediateRunResult<Self::Produces, Self::Messages, Self::Errors>> + Send;
 
@@ -73,7 +66,6 @@ pub trait FlowingProcess: sealed::FlowingProcess {
     step: OperationStep,
   ) -> impl FlowingProcess<
     EntryConsumes = Self::EntryConsumes,
-    ProcessBeforeProduces = Self::Produces,
     Produces = <OperationStep::Produces as Concat<Self::Produces>>::Concatenated,
     Messages = Self::Messages,
     EverProduced = <OperationStep::Produces as Concat<Self::EverProduced>>::Concatenated,
@@ -97,7 +89,6 @@ pub trait FlowingProcess: sealed::FlowingProcess {
     sub: Sub,
   ) -> impl FlowingProcess<
     EntryConsumes = Self::EntryConsumes,
-    ProcessBeforeProduces = Self::Produces,
     Produces = <Sub::Produces as Concat<
       <Self::Produces as Extract<
         Sub::EntryConsumes,
@@ -147,7 +138,6 @@ pub trait FlowingProcess: sealed::FlowingProcess {
     step: FormStep,
   ) -> impl FlowingProcess<
     EntryConsumes = Self::EntryConsumes,
-    ProcessBeforeProduces = Self::Produces,
     Produces = <FormStep::Produces as Concat<Self::Produces>>::Concatenated,
     Messages = Self::Messages,
     EverProduced = <FormStep::Produces as Concat<Self::EverProduced>>::Concatenated,
@@ -306,7 +296,6 @@ pub trait FlowingProcess: sealed::FlowingProcess {
     step: FinalStep,
   ) -> impl FinalizedProcess<
     EntryConsumes = Self::EntryConsumes,
-    ProcessBeforeProduces = Self::Produces,
     Messages = Self::Messages,
     EverProduced = Self::EverProduced,
     Errors = <FinalStep::Error as CoprodUnion<Self::Errors, ErrorUnionIndices>>::Union,
@@ -328,7 +317,6 @@ pub trait FlowingProcess: sealed::FlowingProcess {
     sub: Sub,
   ) -> impl FinalizedProcess<
     EntryConsumes = Self::EntryConsumes,
-    ProcessBeforeProduces = Self::Produces,
     Messages = Self::Messages,
     EverProduced = <<Sub::EverProduced as Extract<
       Sub::EntryConsumes,

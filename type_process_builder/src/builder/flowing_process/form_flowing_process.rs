@@ -52,7 +52,6 @@ where
     BorrowJust<'a, FormStep::ValidateInputConsumes, ProcessBeforeProducesToValidateInputConsumesIndices>,
 {
   type EntryConsumes = ProcessBefore::EntryConsumes;
-  type ProcessBeforeProduces = ProcessBefore::Produces;
   type Produces = <FormStep::Produces as Concat<ProcessBefore::Produces>>::Concatenated;
   type Messages = ProcessBefore::Messages;
   type EverProduced = <FormStep::Produces as Concat<ProcessBefore::EverProduced>>::Concatenated;
@@ -106,24 +105,6 @@ where
     }
   }
 
-  async fn continue_run(
-    &self,
-    process_before_produces: Self::ProcessBeforeProduces,
-    back_token: Option<BackToken>,
-  ) -> IntermediateRunResult<Self::Produces, Self::Messages, Self::Errors> {
-    let last_step_consumes = <&ProcessBefore::Produces as BorrowJust<'_, FormStep::CreateFormConsumes, _>>::borrow_just(
-      &process_before_produces,
-    );
-    let FormWithContext(form, form_context) =
-      self.form_step.create_form(last_step_consumes, back_token).await.into_process_err()?;
-    Ok(IntermediateRunOutcome::Yield(
-      form,
-      process_before_produces.serialize_param_list().into_process_err()?,
-      CurrentRunYieldedAt(self.step_index),
-      postcard::to_allocvec(&form_context).into_process_err()?,
-    ))
-  }
-
   async fn run_from_entry(
     &self,
     entry_consumes: Self::EntryConsumes,
@@ -146,5 +127,50 @@ where
     let used_index = self.process_before.enumerate_steps(last_used_index);
     self.step_index = used_index + 1;
     self.step_index
+  }
+}
+
+impl<
+  ProcessBefore: FlowingProcess,
+  FormStep: Form<Messages = ProcessBefore::Messages>,
+  ProcessBeforeProducesToCreateFormConsumesIndices: Sync + Send,
+  ProcessBeforeProducesToValidateInputConsumesIndices: Sync + Send,
+  ErrorUnionIndices: Sync + Send,
+>
+  FormFlowingProcess<
+    ProcessBefore,
+    FormStep,
+    ProcessBeforeProducesToCreateFormConsumesIndices,
+    ProcessBeforeProducesToValidateInputConsumesIndices,
+    ErrorUnionIndices,
+  >
+where
+  FormStep::Produces: Concat<ProcessBefore::Produces> + Concat<ProcessBefore::EverProduced>,
+  FormStep::Error: CoprodUnion<ProcessBefore::Errors, ErrorUnionIndices>,
+  for<'a> &'a ProcessBefore::Produces:
+    BorrowJust<'a, FormStep::CreateFormConsumes, ProcessBeforeProducesToCreateFormConsumesIndices>,
+  for<'a> &'a ProcessBefore::Produces:
+    BorrowJust<'a, FormStep::ValidateInputConsumes, ProcessBeforeProducesToValidateInputConsumesIndices>,
+{
+  async fn continue_run(
+    &self,
+    process_before_produces: ProcessBefore::Produces,
+    back_token: Option<BackToken>,
+  ) -> IntermediateRunResult<
+    <Self as sealed::FlowingProcess>::Produces,
+    ProcessBefore::Messages,
+    <Self as sealed::FlowingProcess>::Errors,
+  > {
+    let last_step_consumes = <&ProcessBefore::Produces as BorrowJust<'_, FormStep::CreateFormConsumes, _>>::borrow_just(
+      &process_before_produces,
+    );
+    let FormWithContext(form, form_context) =
+      self.form_step.create_form(last_step_consumes, back_token).await.into_process_err()?;
+    Ok(IntermediateRunOutcome::Yield(
+      form,
+      process_before_produces.serialize_param_list().into_process_err()?,
+      CurrentRunYieldedAt(self.step_index),
+      postcard::to_allocvec(&form_context).into_process_err()?,
+    ))
   }
 }

@@ -28,6 +28,7 @@ async fn standard_io_process_runner(
     let user_input = input.trim();
     if state.visited_form_steps.is_empty() {
       let entry_consumes: EntryConsumes = hlist!(ShortcodeString(user_input.to_string()));
+      #[allow(clippy::expect_used)]
       let init_context = entry_consumes.serialize_param_list().expect("Failed to serialize session context");
       state.visited_form_steps.push((StepIndex::MIN, init_context));
     }

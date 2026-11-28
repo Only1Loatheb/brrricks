@@ -134,30 +134,6 @@ where
     }
   }
 
-  async fn continue_run(
-    &self,
-    process_before_split_produced: Self::ProcessBeforeSplitProduces,
-    back_token: Option<BackToken>,
-  ) -> IntermediateFinalizedSplitResult<
-    Self::ProcessBeforeSplitProduces,
-    Coproduct<Self::SplitterProducesForFirstCase, SplitterProducesForOtherCases>,
-    Self::Messages,
-    Self::Errors,
-  > {
-    let splitter_step_consumes =
-      <&ProcessBefore::Produces as BorrowJust<'_, SplitterStep::CreateFormConsumes, _>>::borrow_just(
-        &process_before_split_produced,
-      );
-    let FormWithContext(form, form_context) =
-      self.splitter.create_form(splitter_step_consumes, back_token).await.into_process_err()?;
-    Ok(IntermediateFinalizedSplitOutcome::Yield(
-      form,
-      process_before_split_produced.serialize_param_list().into_process_err()?,
-      CurrentRunYieldedAt(self.step_index),
-      postcard::to_allocvec(&form_context).into_process_err()?,
-    ))
-  }
-
   async fn run_from_entry(
     &self,
     entry_consumes: Self::EntryConsumes,
@@ -185,5 +161,60 @@ where
     let used_index = self.process_before.enumerate_steps(last_used_index);
     self.step_index = used_index + 1;
     self.step_index
+  }
+}
+
+impl<
+  Tag: Send + Sync,
+  ProcessBefore: FlowingProcess,
+  SplitterProducesForFirstCase: ParamList + Concat<ProcessBefore::Produces> + Concat<ProcessBefore::EverProduced>,
+  SplitterProducesForOtherCases: Send + Sync,
+  SplitterStep: FormSplitter<
+      Produces = Coproduct<(Tag, SplitterProducesForFirstCase), SplitterProducesForOtherCases>,
+      Messages = ProcessBefore::Messages,
+    >,
+  ProcessBeforeProducesToCreateFormConsumesIndices: Sync + Send,
+  ProcessBeforeProducesToValidateInputConsumesIndices: Sync + Send,
+  ErrorUnionIndices: Sync + Send,
+>
+  SplitProcessFormSplitter<
+    Tag,
+    ProcessBefore,
+    SplitterProducesForFirstCase,
+    SplitterProducesForOtherCases,
+    SplitterStep,
+    ProcessBeforeProducesToCreateFormConsumesIndices,
+    ProcessBeforeProducesToValidateInputConsumesIndices,
+    ErrorUnionIndices,
+  >
+where
+  SplitterStep::Error: CoprodUnion<ProcessBefore::Errors, ErrorUnionIndices>,
+  for<'a> &'a ProcessBefore::Produces:
+    BorrowJust<'a, SplitterStep::CreateFormConsumes, ProcessBeforeProducesToCreateFormConsumesIndices>,
+  for<'a> &'a ProcessBefore::Produces:
+    BorrowJust<'a, SplitterStep::ValidateInputConsumes, ProcessBeforeProducesToValidateInputConsumesIndices>,
+{
+  async fn continue_run(
+    &self,
+    process_before_split_produced: ProcessBefore::Produces,
+    back_token: Option<BackToken>,
+  ) -> IntermediateFinalizedSplitResult<
+    ProcessBefore::Produces,
+    Coproduct<SplitterProducesForFirstCase, SplitterProducesForOtherCases>,
+    ProcessBefore::Messages,
+    <Self as sealed::SplitProcess<SplitterProducesForOtherCases>>::Errors,
+  > {
+    let splitter_step_consumes =
+      <&ProcessBefore::Produces as BorrowJust<'_, SplitterStep::CreateFormConsumes, _>>::borrow_just(
+        &process_before_split_produced,
+      );
+    let FormWithContext(form, form_context) =
+      self.splitter.create_form(splitter_step_consumes, back_token).await.into_process_err()?;
+    Ok(IntermediateFinalizedSplitOutcome::Yield(
+      form,
+      process_before_split_produced.serialize_param_list().into_process_err()?,
+      CurrentRunYieldedAt(self.step_index),
+      postcard::to_allocvec(&form_context).into_process_err()?,
+    ))
   }
 }

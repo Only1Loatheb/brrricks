@@ -78,32 +78,13 @@ where
       .into_process_err()?;
     match process_before_output {
       IntermediateRunOutcome::Continue(process_before_split_produced) => {
-        self.continue_run(process_before_split_produced, back_token).await
+        self.continue_run(process_before_split_produced).await
       },
       IntermediateRunOutcome::Yield(a, b, c, d) => Ok(IntermediateFinalizedSplitOutcome::Yield(a, b, c, d)),
       IntermediateRunOutcome::Finish(a) => Ok(IntermediateFinalizedSplitOutcome::Finish(a)),
       IntermediateRunOutcome::RetryUserInput(a, b) => Ok(IntermediateFinalizedSplitOutcome::RetryUserInput(a, b)),
       IntermediateRunOutcome::Back => Ok(IntermediateFinalizedSplitOutcome::Back),
     }
-  }
-
-  async fn continue_run(
-    &self,
-    process_before_split_produced: Self::ProcessBeforeSplitProduces,
-    _back_token: Option<BackToken>,
-  ) -> IntermediateFinalizedSplitResult<
-    Self::ProcessBeforeSplitProduces,
-    Coproduct<Self::SplitterProducesForFirstCase, SplitterProducesForOtherCases>,
-    Self::Messages,
-    Self::Errors,
-  > {
-    let splitter_step_consumes = (&process_before_split_produced).borrow_just();
-    let splitter_produces_to_other_cases =
-      match self.splitter.handle(splitter_step_consumes).await.into_process_err()? {
-        Coproduct::Inl(a) => Coproduct::Inl(a.1),
-        Coproduct::Inr(b) => Coproduct::Inr(b),
-      };
-    Ok(IntermediateFinalizedSplitOutcome::GoToCase { process_before_split_produced, splitter_produces_to_other_cases })
   }
 
   async fn run_from_entry(
@@ -120,7 +101,7 @@ where
       self.process_before.run_from_entry(entry_consumes, back_token).await.into_process_err()?;
     match process_before_output {
       IntermediateRunOutcome::Continue(process_before_split_produced) => {
-        self.continue_run(process_before_split_produced, back_token).await
+        self.continue_run(process_before_split_produced).await
       },
       IntermediateRunOutcome::Yield(a, b, c, d) => Ok(IntermediateFinalizedSplitOutcome::Yield(a, b, c, d)),
       IntermediateRunOutcome::Finish(a) => Ok(IntermediateFinalizedSplitOutcome::Finish(a)),
@@ -132,5 +113,47 @@ where
   /// Assigning an index is unnecessary because a process never yields at [`Splitter`] step
   fn enumerate_steps(&mut self, last_used_index: StepIndex) -> StepIndex {
     self.process_before.enumerate_steps(last_used_index)
+  }
+}
+
+impl<
+  Tag: Send + Sync,
+  ProcessBefore: FlowingProcess,
+  SplitterProducesForFirstCase: ParamList + Concat<ProcessBefore::Produces> + Concat<ProcessBefore::EverProduced>,
+  SplitterProducesForOtherCases: Send + Sync,
+  SplitterStep: Splitter<Produces = Coproduct<(Tag, SplitterProducesForFirstCase), SplitterProducesForOtherCases>>,
+  ProcessBeforeProducesToSplitterStepConsumesIndices: Sync + Send,
+  ErrorUnionIndices: Sync + Send,
+>
+  SplitProcessSplitter<
+    Tag,
+    ProcessBefore,
+    SplitterProducesForFirstCase,
+    SplitterProducesForOtherCases,
+    SplitterStep,
+    ProcessBeforeProducesToSplitterStepConsumesIndices,
+    ErrorUnionIndices,
+  >
+where
+  SplitterStep::Error: CoprodUnion<ProcessBefore::Errors, ErrorUnionIndices>,
+  for<'a> &'a ProcessBefore::Produces:
+    BorrowJust<'a, SplitterStep::Consumes, ProcessBeforeProducesToSplitterStepConsumesIndices>,
+{
+  async fn continue_run(
+    &self,
+    process_before_split_produced: ProcessBefore::Produces,
+  ) -> IntermediateFinalizedSplitResult<
+    ProcessBefore::Produces,
+    Coproduct<SplitterProducesForFirstCase, SplitterProducesForOtherCases>,
+    ProcessBefore::Messages,
+    <Self as sealed::SplitProcess<SplitterProducesForOtherCases>>::Errors,
+  > {
+    let splitter_step_consumes = (&process_before_split_produced).borrow_just();
+    let splitter_produces_to_other_cases =
+      match self.splitter.handle(splitter_step_consumes).await.into_process_err()? {
+        Coproduct::Inl(a) => Coproduct::Inl(a.1),
+        Coproduct::Inr(b) => Coproduct::Inr(b),
+      };
+    Ok(IntermediateFinalizedSplitOutcome::GoToCase { process_before_split_produced, splitter_produces_to_other_cases })
   }
 }

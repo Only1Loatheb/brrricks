@@ -593,6 +593,7 @@ async fn test_split() {
   test_process_messages(&process, vec!["*123#", "Choose a case", "2", "Good bye"]).await;
 }
 
+#[cfg(test)]
 async fn test_return_error_on_param_missing_from_init_value(
   process: &RunnableProcess<impl FinalizedProcess<Messages = Messages, Errors: ContainsError<SerializationError>>>,
   messages: Vec<&str>,
@@ -606,6 +607,7 @@ async fn test_return_error_on_param_missing_from_init_value(
   }));
 }
 
+#[cfg(test)]
 async fn test_return_error_on_param_missing_from_context(
   process: &RunnableProcess<impl FinalizedProcess<Messages = Messages, Errors: ContainsError<SerializationError>>>,
   messages: Vec<&str>,
@@ -3248,6 +3250,7 @@ async fn test_then_end_form_retry_back_and_finish() {
   .await;
 }
 
+#[cfg(test)]
 async fn test_process_messages(
   process: &RunnableProcess<impl FinalizedProcess<Messages = Messages>>,
   messages: Vec<&str>,
@@ -3255,6 +3258,7 @@ async fn test_process_messages(
   unit::test_process_messages(process, session_init_value(), messages).await;
 }
 
+#[cfg(test)]
 fn session_init_value() -> SessionContext {
   hlist!(EntryParam(Msisdn(2_340_000_000_000), Operator::MTN, ShortcodeString("*123#".to_string())))
     .serialize_param_list()

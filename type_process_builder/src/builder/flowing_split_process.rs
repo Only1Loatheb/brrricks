@@ -6,7 +6,6 @@ pub mod flowing_case_of_flowing_split_process;
 pub(crate) mod sealed {
   use crate::builder::{IntermediateFlowingSplitResult, PreviousRunYieldedAt, StepIndex};
   use crate::error_coproduct::ErrorCoproduct;
-  use crate::frunk::coproduct::Coproduct;
   use crate::param_list::ParamList;
   use crate::param_list::concat::Concat;
   use crate::step::{BackToken, ProcessMessages};
@@ -29,29 +28,6 @@ pub(crate) mod sealed {
       previous_run_yielded_at: PreviousRunYieldedAt,
       user_input: &str,
       form_context: Option<&[u8]>,
-      back_token: Option<BackToken>,
-    ) -> impl Future<
-      Output = IntermediateFlowingSplitResult<
-        Self::ProcessBeforeSplitProduces,
-        SplitterProducesForOtherCases,
-        Self::EveryFlowingCaseProduces,
-        Self::Messages,
-        Self::Errors,
-      >,
-    > + Send;
-
-    /// When a [`crate::builder::flowing_process::FlowingProcess`] is added to handle split case
-    /// the top level process has to pass to the case what process before split produces and what splitter produced for it
-    /// The [`crate::builder::flowing_process::FlowingProcess::then`] concatenates params produced in the step with all
-    /// the consumes.
-    /// We can extract what process before split produced from case outcome
-    fn continue_run(
-      &self,
-      process_before_split_produced: Self::ProcessBeforeSplitProduces,
-      splitter_produces_for_this_case_or_other_cases_consumes: Coproduct<
-        Self::SplitterProducesForThisCase,
-        SplitterProducesForOtherCases,
-      >,
       back_token: Option<BackToken>,
     ) -> impl Future<
       Output = IntermediateFlowingSplitResult<

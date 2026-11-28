@@ -1,3 +1,4 @@
+use crate::CNil;
 use crate::builder::StepIndex;
 use crate::error_coproduct::contains::CoprodContains;
 use crate::error_coproduct::{ContainsError, ErrorCoproduct, PreventDuplicateErrorUidInCoproduct, StepError};
@@ -188,12 +189,13 @@ where
   }
 }
 
-impl ProcessError<crate::CNil> {
+impl ProcessError<CNil> {
   /// Proves at compile time that all error variants have been exhaustively handled.
   ///
   /// Because `ProcessError<CNil>` cannot be constructed, reaching this method means every
   /// possible error in the process's [`ErrorCoproduct`] has been peeled off. If a new error
   /// is added to or removed from the process, the compiler will reject the caller's code.
+  #[allow(clippy::unreachable)]
   pub fn absurd(self) -> ! {
     unreachable!("ProcessError<CNil> is uninhabited: {}", self.inner)
   }

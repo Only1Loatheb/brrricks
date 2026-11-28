@@ -2,14 +2,12 @@ use crate::builder::flowing_process::sealed;
 use crate::builder::{
   IntermediateRunOutcome, IntermediateRunResult, LibraryErrors, PreviousRunYieldedAt, ProcessError, StepIndex,
 };
-use crate::frunk::hlist::HNil;
 use crate::param_list::ParamList;
 use crate::step::{BackToken, Entry, ProcessMessages};
 use std::future::Future;
 
 impl<Produces: ParamList, Messages: ProcessMessages> sealed::FlowingProcess for Entry<Produces, Messages> {
   type EntryConsumes = Produces;
-  type ProcessBeforeProduces = HNil;
   type Produces = Produces;
   type Messages = Messages;
   type EverProduced = Produces;
@@ -31,15 +29,6 @@ impl<Produces: ParamList, Messages: ProcessMessages> sealed::FlowingProcess for 
       Err(ProcessError::invalid_step_index(previous_run_yielded_at.0))
     };
     std::future::ready(result)
-  }
-
-  fn continue_run(
-    &self,
-    _: Self::ProcessBeforeProduces,
-    _back_token: Option<BackToken>,
-  ) -> impl Future<Output = IntermediateRunResult<Self::Produces, Self::Messages, Self::Errors>> {
-    #[allow(unreachable_code)]
-    std::future::ready(unreachable!("We never continue from entry step"))
   }
 
   fn run_from_entry(

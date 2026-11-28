@@ -14,7 +14,6 @@ pub(crate) mod sealed {
   pub trait FinalizedProcess: Sized + Send + Sync {
     // Please specify all associated types at the impl FinalizedProcess side for inference to work.
     type EntryConsumes: ParamList;
-    type ProcessBeforeProduces: ParamList;
     type Messages: ProcessMessages;
     type EverProduced: ParamList;
     type Errors: ErrorCoproduct;
@@ -25,12 +24,6 @@ pub(crate) mod sealed {
       previous_run_yielded_at: PreviousRunYieldedAt,
       user_input: &str,
       form_context: Option<&[u8]>,
-      back_token: Option<BackToken>,
-    ) -> impl Future<Output = RunResult<Self::Messages, Self::Errors>> + Send;
-
-    fn continue_run(
-      &self,
-      process_before_produces: Self::ProcessBeforeProduces,
       back_token: Option<BackToken>,
     ) -> impl Future<Output = RunResult<Self::Messages, Self::Errors>> + Send;
 

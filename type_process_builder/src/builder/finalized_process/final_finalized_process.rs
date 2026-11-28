@@ -35,7 +35,6 @@ where
   ProcessBefore::Produces: Extract<FinalStep::Consumes, ProcessBeforeProducesTransformToFinalConsumesIndices>,
 {
   type EntryConsumes = ProcessBefore::EntryConsumes;
-  type ProcessBeforeProduces = ProcessBefore::Produces;
   type Messages = ProcessBefore::Messages;
   type EverProduced = ProcessBefore::EverProduced;
   type Errors = <FinalStep::Error as CoprodUnion<ProcessBefore::Errors, ErrorUnionIndices>>::Union;
@@ -54,20 +53,12 @@ where
       .await
       .into_process_err()?;
     match outcome {
-      IntermediateRunOutcome::Continue(val) => self.continue_run(val, back_token).await,
+      IntermediateRunOutcome::Continue(val) => self.continue_run(val).await,
       IntermediateRunOutcome::Yield(a, b, c, d) => Ok(RunOutcome::Yield(a, b, c, d)),
       IntermediateRunOutcome::Finish(a) => Ok(RunOutcome::Finish(a)),
       IntermediateRunOutcome::RetryUserInput(a, b) => Ok(RunOutcome::RetryUserInput(a, b)),
       IntermediateRunOutcome::Back => Ok(RunOutcome::Back),
     }
-  }
-
-  async fn continue_run(
-    &self,
-    process_before_produces: Self::ProcessBeforeProduces,
-    _back_token: Option<BackToken>,
-  ) -> RunResult<Self::Messages, Self::Errors> {
-    Ok(RunOutcome::Finish(self.final_step.handle(process_before_produces.extract()).await.into_process_err()?))
   }
 
   async fn run_from_entry(
@@ -77,7 +68,7 @@ where
   ) -> RunResult<Self::Messages, Self::Errors> {
     let outcome = self.process_before.run_from_entry(entry_consumes, back_token).await.into_process_err()?;
     match outcome {
-      IntermediateRunOutcome::Continue(val) => self.continue_run(val, back_token).await,
+      IntermediateRunOutcome::Continue(val) => self.continue_run(val).await,
       IntermediateRunOutcome::Yield(a, b, c, d) => Ok(RunOutcome::Yield(a, b, c, d)),
       IntermediateRunOutcome::Finish(a) => Ok(RunOutcome::Finish(a)),
       IntermediateRunOutcome::RetryUserInput(a, b) => Ok(RunOutcome::RetryUserInput(a, b)),
@@ -88,5 +79,29 @@ where
   /// Assigning an index is unnecessary because a process never yields at [`Final`] step
   fn enumerate_steps(&mut self, last_used_index: StepIndex) -> StepIndex {
     self.process_before.enumerate_steps(last_used_index)
+  }
+}
+
+impl<
+  ProcessBefore: FlowingProcess,
+  FinalStep: Final<FinalMessage = <ProcessBefore::Messages as ProcessMessages>::FinalMessage>,
+  ProcessBeforeProducesTransformToFinalConsumesIndices: Sync + Send,
+  ErrorUnionIndices: Sync + Send,
+>
+  FinalFinalizedProcess<
+    ProcessBefore,
+    FinalStep,
+    ProcessBeforeProducesTransformToFinalConsumesIndices,
+    ErrorUnionIndices,
+  >
+where
+  FinalStep::Error: CoprodUnion<ProcessBefore::Errors, ErrorUnionIndices>,
+  ProcessBefore::Produces: Extract<FinalStep::Consumes, ProcessBeforeProducesTransformToFinalConsumesIndices>,
+{
+  async fn continue_run(
+    &self,
+    process_before_produces: ProcessBefore::Produces,
+  ) -> RunResult<ProcessBefore::Messages, <Self as sealed::FinalizedProcess>::Errors> {
+    Ok(RunOutcome::Finish(self.final_step.handle(process_before_produces.extract()).await.into_process_err()?))
   }
 }

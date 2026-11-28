@@ -45,7 +45,6 @@ where
   Sub::Errors: CoprodUnion<ProcessBefore::Errors, ErrorUnionIndices>,
 {
   type EntryConsumes = ProcessBefore::EntryConsumes;
-  type ProcessBeforeProduces = ProcessBefore::Produces;
   type Messages = ProcessBefore::Messages;
   type EverProduced =
     <<Sub::EverProduced as Extract<Sub::EntryConsumes, SubEverProducedExtractIndices>>::Remainder as Concat<
@@ -83,14 +82,6 @@ where
     }
   }
 
-  async fn continue_run(
-    &self,
-    process_before_produces: Self::ProcessBeforeProduces,
-    back_token: Option<BackToken>,
-  ) -> RunResult<Self::Messages, Self::Errors> {
-    self.sub_process.run_from_entry(process_before_produces.extract(), back_token).await.into_process_err()
-  }
-
   async fn run_from_entry(
     &self,
     entry_consumes: Self::EntryConsumes,
@@ -110,5 +101,35 @@ where
     let last_used_index = self.process_before.enumerate_steps(last_used_index);
     self.sub_start_index = last_used_index;
     self.sub_process.enumerate_steps(last_used_index)
+  }
+}
+
+impl<
+  ProcessBefore: FlowingProcess,
+  Sub: FinalizedProcess<Messages = ProcessBefore::Messages>,
+  ProcessBeforeProducesToEntryConsumesIndices: Sync + Send,
+  SubEverProducedExtractIndices: Sync + Send,
+  ErrorUnionIndices: Sync + Send,
+>
+  SubprocessFinalizedProcess<
+    ProcessBefore,
+    Sub,
+    ProcessBeforeProducesToEntryConsumesIndices,
+    SubEverProducedExtractIndices,
+    ErrorUnionIndices,
+  >
+where
+  Sub::EverProduced: Extract<Sub::EntryConsumes, SubEverProducedExtractIndices>,
+  <Sub::EverProduced as Extract<Sub::EntryConsumes, SubEverProducedExtractIndices>>::Remainder:
+    ParamList + Concat<ProcessBefore::EverProduced>,
+  ProcessBefore::Produces: Extract<Sub::EntryConsumes, ProcessBeforeProducesToEntryConsumesIndices>,
+  Sub::Errors: CoprodUnion<ProcessBefore::Errors, ErrorUnionIndices>,
+{
+  async fn continue_run(
+    &self,
+    process_before_produces: ProcessBefore::Produces,
+    back_token: Option<BackToken>,
+  ) -> RunResult<ProcessBefore::Messages, <Self as sealed::FinalizedProcess>::Errors> {
+    self.sub_process.run_from_entry(process_before_produces.extract(), back_token).await.into_process_err()
   }
 }

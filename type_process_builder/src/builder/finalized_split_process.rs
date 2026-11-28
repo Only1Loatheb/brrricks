@@ -4,7 +4,6 @@ pub mod next_case_of_finalized_split_process;
 pub(crate) mod sealed {
   use crate::builder::{IntermediateFinalizedSplitResult, PreviousRunYieldedAt, StepIndex};
   use crate::error_coproduct::ErrorCoproduct;
-  use crate::frunk::coproduct::Coproduct;
   use crate::param_list::ParamList;
   use crate::param_list::concat::Concat;
   use crate::step::{BackToken, ProcessMessages};
@@ -27,23 +26,6 @@ pub(crate) mod sealed {
       previous_run_yielded_at: PreviousRunYieldedAt,
       user_input: &str,
       form_context: Option<&[u8]>,
-      back_token: Option<BackToken>,
-    ) -> impl Future<
-      Output = IntermediateFinalizedSplitResult<
-        Self::ProcessBeforeSplitProduces,
-        SplitterProducesForOtherCases,
-        Self::Messages,
-        Self::Errors,
-      >,
-    > + Send;
-
-    fn continue_run(
-      &self,
-      process_before_split_produced: Self::ProcessBeforeSplitProduces,
-      splitter_produces_for_this_case_or_other_cases_consumes: Coproduct<
-        Self::SplitterProducesForThisCase,
-        SplitterProducesForOtherCases,
-      >,
       back_token: Option<BackToken>,
     ) -> impl Future<
       Output = IntermediateFinalizedSplitResult<

@@ -30,8 +30,9 @@ fn test_exposed_crates_in_public_api() {
           i += 1;
         }
         if bytes[i..].starts_with(b"::") {
-          let root = &line[start..i];
-          if root.chars().next().is_some_and(|c| c.is_ascii_lowercase()) && !matches!(root, "self" | "super" | "crate")
+          if let Some(root) = line.get(start..i)
+            && root.chars().next().is_some_and(|c| c.is_ascii_lowercase())
+            && !matches!(root, "self" | "super" | "crate")
           {
             exposed_root_crates.insert(root);
           }

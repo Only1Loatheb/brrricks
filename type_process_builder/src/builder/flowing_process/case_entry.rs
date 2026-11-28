@@ -17,7 +17,6 @@ impl<ProcessBeforeProduces: ParamList, EverProduced: ParamList, Messages: Proces
   for CaseEntry<ProcessBeforeProduces, EverProduced, Messages>
 {
   type EntryConsumes = ProcessBeforeProduces;
-  type ProcessBeforeProduces = ProcessBeforeProduces;
   type Produces = ProcessBeforeProduces;
   type Messages = Messages;
   type EverProduced = EverProduced; // Includes params produced specific for this case in split
@@ -34,20 +33,12 @@ impl<ProcessBeforeProduces: ParamList, EverProduced: ParamList, Messages: Proces
     std::future::ready(Err(ProcessError::invalid_step_index(previous_run_yielded_at.0)))
   }
 
-  fn continue_run(
-    &self,
-    process_before_produces: Self::ProcessBeforeProduces,
-    _back_token: Option<BackToken>,
-  ) -> impl Future<Output = IntermediateRunResult<Self::Produces, Self::Messages, Self::Errors>> {
-    std::future::ready(Ok(IntermediateRunOutcome::Continue(process_before_produces)))
-  }
-
-  async fn run_from_entry(
+  fn run_from_entry(
     &self,
     entry_consumes: Self::EntryConsumes,
-    back_token: Option<BackToken>,
-  ) -> IntermediateRunResult<Self::Produces, Self::Messages, Self::Errors> {
-    self.continue_run(entry_consumes, back_token).await
+    _back_token: Option<BackToken>,
+  ) -> impl Future<Output = IntermediateRunResult<Self::Produces, Self::Messages, Self::Errors>> {
+    std::future::ready(Ok(IntermediateRunOutcome::Continue(entry_consumes)))
   }
 
   fn enumerate_steps(&mut self, last_used_index: StepIndex) -> StepIndex {

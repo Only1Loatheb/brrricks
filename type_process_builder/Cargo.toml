@@ -11,9 +11,6 @@ keywords = ["type-state", "process", "workflow", "ussd", "builder"]
 categories = ["asynchronous", "rust-patterns"]
 exclude = ["examples/", "tests/"]
 
-[lints]
-workspace = true
-
 [features]
 docs = ["dep:simple-mermaid"]
 process-runner-api = []
@@ -36,3 +33,24 @@ type_process_builder = { path = ".", features = ["docs", "process-runner-api"] }
 ui_test = "0.30"
 public-api = { version = "0.52", default-features = false }
 rustdoc-json = "0.9"
+
+[lints.clippy]
+all = { level = "deny", priority = -1 }
+pedantic = { level = "deny", priority = -1 }
+inline_always = "allow" # I hope the frunk guys done the measurements
+missing_errors_doc = "allow"
+default_trait_access = "allow" # Denying it causes repetitive code in phantom data initialisation
+type_complexity = "allow" # sorry for complex types
+unwrap_used = "deny"
+expect_used = "deny"
+indexing_slicing = "deny"
+#arithmetic_side_effects = "deny"
+unreachable = "deny"
+unimplemented = "deny"
+unchecked_time_subtraction = "deny"
+todo = "deny"
+string_slice = "deny"
+panic_in_result_fn = "deny"
+panic = "deny"
+exit = "deny"
+as_conversions = "deny"
