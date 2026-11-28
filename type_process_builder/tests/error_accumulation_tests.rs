@@ -354,6 +354,22 @@ async fn test_then_via_error_accumulation() {
     .build("p", 0);
   let err = p_sub.resume_run(&empty_ctx(), PreviousRunYieldedAt(StepIndex::MIN), "", None, None).await.unwrap_err();
   assert!(err.downcast_ref::<NetworkError>().is_some());
+
+  let p_sub_form_input = entry::<HNil, Messages>()
+    .then(FailOpA(false))
+    .then_via(entry::<HNil, Messages>().show(FailForm { fail_create: false, fail_input: true }))
+    .end(FailFinal(false))
+    .build("p", 0);
+  let RunOutcome::Yield(_, ctx, yielded_at, form_ctx) =
+    p_sub_form_input.resume_run(&empty_ctx(), PreviousRunYieldedAt(StepIndex::MIN), "", None, None).await.unwrap()
+  else {
+    panic!("expected yield");
+  };
+  let err = p_sub_form_input
+    .resume_run(&ctx, PreviousRunYieldedAt(yielded_at.0), "hi", Some(&form_ctx), None)
+    .await
+    .unwrap_err();
+  assert_eq!(err.downcast_ref::<ValidationError>(), Some(&ValidationError));
 }
 
 #[tokio::test]

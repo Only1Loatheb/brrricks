@@ -3250,6 +3250,175 @@ async fn test_then_end_form_retry_back_and_finish() {
   .await;
 }
 
+#[tokio::test]
+async fn test_start_run_outcomes() {
+  let entry_param = || hlist!(EntryParam(Msisdn(2_340_000_000_000), Operator::MTN, ShortcodeString("*123#".to_string())));
+
+  let p_form_yield =
+    ExtractMsisdnOperatorAndShortcodeString.show(OneInputRetryForm).show(NoOpForm).end(FinalNoConsumes).build("", 0);
+  assert!(matches!(p_form_yield.start_run(entry_param()).await.unwrap(), RunOutcome::Yield(msg, ..) if msg == "This will be discarded"));
+
+  let p_form_finish =
+    ExtractMsisdnOperatorAndShortcodeString.then(FinishEarlyOperation).show(NoOpForm).end(FinalNoConsumes).build("", 0);
+  assert!(matches!(p_form_finish.start_run(entry_param()).await.unwrap(), RunOutcome::Finish(msg) if msg == "Operation finished"));
+
+  let p_then_via_yield = ExtractMsisdnOperatorAndShortcodeString
+    .show(NoOpForm)
+    .then_via(entry::<HNil, Messages>().show(OneInputRetryForm))
+    .end(FinalNoConsumes)
+    .build("", 0);
+  assert!(matches!(p_then_via_yield.start_run(entry_param()).await.unwrap(), RunOutcome::Yield(msg, ..) if msg == "Straight to trash"));
+
+  let p_then_via_finish = ExtractMsisdnOperatorAndShortcodeString
+    .then(FinishEarlyOperation)
+    .then_via(entry::<HNil, Messages>().show(NoOpForm))
+    .end(FinalNoConsumes)
+    .build("", 0);
+  assert!(matches!(p_then_via_finish.start_run(entry_param()).await.unwrap(), RunOutcome::Finish(msg) if msg == "Operation finished"));
+
+  let p_then_end_yield = ExtractMsisdnOperatorAndShortcodeString
+    .show(NoOpForm)
+    .then_end(reusable_end_no_consumes())
+    .build("", 0);
+  assert!(matches!(p_then_end_yield.start_run(entry_param()).await.unwrap(), RunOutcome::Yield(msg, ..) if msg == "Straight to trash"));
+
+  let p_then_end_finish = ExtractMsisdnOperatorAndShortcodeString
+    .then(FinishEarlyOperation)
+    .then_end(reusable_end_no_consumes())
+    .build("", 0);
+  assert!(matches!(p_then_end_finish.start_run(entry_param()).await.unwrap(), RunOutcome::Finish(msg) if msg == "Operation finished"));
+
+  let p_form_splitter_finish = ExtractMsisdnOperatorAndShortcodeString
+    .then(FinishEarlyOperation)
+    .show_split(TestFormSplitter)
+    .case_end(Case1, |x| x.end(FinalNoConsumes))
+    .case_end(Case2, |x| x.end(FinalNoConsumes))
+    .build("", 0);
+  assert!(matches!(p_form_splitter_finish.start_run(entry_param()).await.unwrap(), RunOutcome::Finish(msg) if msg == "Operation finished"));
+
+  let p_splitter_finish = ExtractMsisdnOperatorAndShortcodeString
+    .then(FinishEarlyOperation)
+    .show(ChooseCaseForm)
+    .split(SplitByTwoCaseOption)
+    .case_end(Case1, |x| x.end(FinalNoConsumes))
+    .case_end(Case2, |x| x.end(FinalNoConsumes))
+    .build("", 0);
+  assert!(matches!(p_splitter_finish.start_run(entry_param()).await.unwrap(), RunOutcome::Finish(msg) if msg == "Operation finished"));
+}
+
+#[tokio::test]
+async fn test_then_via_sync_and_before_outcomes() {
+  // Synchronous (Operation-only) subprocess returning Continue
+  let p_sync = ExtractMsisdnOperatorAndShortcodeString
+    .then_via(entry::<HNil, Messages>().then(ProduceOnlyCase2Param))
+    .end(FinalConsumeCase2Param)
+    .build("", 0);
+  test_process_messages(&p_sync, vec!["*123#", "I ate Case2Param"]).await;
+
+  // Subprocess returning Finish synchronously
+  let p_finish_sync = ExtractMsisdnOperatorAndShortcodeString
+    .then_via(entry::<HNil, Messages>().then(FinishEarlyOperation))
+    .end(FinalNoConsumes)
+    .build("", 0);
+  test_process_messages(&p_finish_sync, vec!["*123#", "Operation finished"]).await;
+
+  // process_before yielding and retrying before then_via
+  let p_before_yield_retry = ExtractMsisdnOperatorAndShortcodeString
+    .show(OneInputRetryForm)
+    .show(NoOpForm)
+    .then_via(entry::<HNil, Messages>().show(NoOpForm))
+    .end(FinalNoConsumes)
+    .build("", 0);
+  test_process_messages(
+    &p_before_yield_retry,
+    vec!["*123#", "This will be discarded", "10", "This will be accepted", "20", "Straight to trash", "x", "Straight to trash", "y", "Empty good bye"],
+  )
+  .await;
+
+  // process_before returning Back while resuming before then_via
+  let p_before_back = ExtractMsisdnOperatorAndShortcodeString
+    .show(BackTokenInspectionForm1)
+    .then_via(entry::<HNil, Messages>().show(NoOpForm))
+    .end(FinalNoConsumes)
+    .build("", 0);
+  let RunOutcome::Yield(_, val, yielded_at, ctx) =
+    p_before_back.resume_run(&session_init_value(), PreviousRunYieldedAt(StepIndex::MIN), "*123#", None, None).await.unwrap()
+  else {
+    panic!("expected Yield");
+  };
+  let back_outcome = p_before_back
+    .resume_run(&val, PreviousRunYieldedAt(yielded_at.0), "0", Some(&ctx), Some(BackToken::create()))
+    .await
+    .unwrap();
+  assert!(matches!(back_outcome, RunOutcome::Back));
+}
+
+#[tokio::test]
+async fn test_back_and_finish_before_split_and_then_end() {
+  // Retry and Back before then_end
+  let p_then_end_before = ExtractMsisdnOperatorAndShortcodeString
+    .show(OneInputRetryForm)
+    .show(BackTokenInspectionForm1)
+    .then_end(reusable_end_no_consumes())
+    .build("", 0);
+  let RunOutcome::Yield(_, val1, y1, ctx1) =
+    p_then_end_before.resume_run(&session_init_value(), PreviousRunYieldedAt(StepIndex::MIN), "*123#", None, None).await.unwrap()
+  else {
+    panic!("expected Yield 1");
+  };
+  let RunOutcome::RetryUserInput(msg, retry_ctx) = p_then_end_before
+    .resume_run(&val1, PreviousRunYieldedAt(y1.0), "10", Some(&ctx1), None)
+    .await
+    .unwrap()
+  else {
+    panic!("expected RetryUserInput");
+  };
+  assert_eq!(msg, "This will be accepted");
+
+  let RunOutcome::Yield(_, val2, y2, ctx2) = p_then_end_before
+    .resume_run(&val1, PreviousRunYieldedAt(y1.0), "20", Some(&retry_ctx), None)
+    .await
+    .unwrap()
+  else {
+    panic!("expected Yield 2");
+  };
+  let back_outcome = p_then_end_before
+    .resume_run(&val2, PreviousRunYieldedAt(y2.0), "0", Some(&ctx2), Some(BackToken::create()))
+    .await
+    .unwrap();
+  assert!(matches!(back_outcome, RunOutcome::Back));
+
+  // Back from process_before in show_split
+  let p_form_splitter_back = ExtractMsisdnOperatorAndShortcodeString
+    .show(BackTokenInspectionForm1)
+    .show_split(TestFormSplitter)
+    .case_end(Case1, |x| x.end(FinalNoConsumes))
+    .case_end(Case2, |x| x.end(FinalNoConsumes))
+    .build("", 0);
+  let RunOutcome::Yield(_, val, y, ctx) = p_form_splitter_back
+    .resume_run(&session_init_value(), PreviousRunYieldedAt(StepIndex::MIN), "*123#", None, None)
+    .await
+    .unwrap()
+  else {
+    panic!("expected Yield");
+  };
+  let back_outcome = p_form_splitter_back
+    .resume_run(&val, PreviousRunYieldedAt(y.0), "0", Some(&ctx), Some(BackToken::create()))
+    .await
+    .unwrap();
+  assert!(matches!(back_outcome, RunOutcome::Back));
+
+  // Finish from process_before during resume_run in split
+  let p_splitter_finish = ExtractMsisdnOperatorAndShortcodeString
+    .show(FinishAfterInput)
+    .show(ChooseCaseForm)
+    .split(SplitByTwoCaseOption)
+    .case_end(Case1, |x| x.end(FinalNoConsumes))
+    .case_end(Case2, |x| x.end(FinalNoConsumes))
+    .build("", 0);
+  test_process_messages(&p_splitter_finish, vec!["*123#", "Last number in the process", "10", "Always finish"]).await;
+}
+
 #[cfg(test)]
 async fn test_process_messages(
   process: &RunnableProcess<impl FinalizedProcess<Messages = Messages>>,
