@@ -373,6 +373,76 @@ async fn test_then_via_error_accumulation() {
 }
 
 #[tokio::test]
+async fn test_three_case_split_resume_errors() {
+  struct Case3;
+  struct PickThreeSplitter(u8);
+  impl Splitter for PickThreeSplitter {
+    type Consumes = HNil;
+    type Produces = Coprod![(Case1, HNil), (Case2, HNil), (Case3, HNil)];
+    type Error = CNil;
+
+    async fn handle(&self, _: <Self::Consumes as ToRef<'_>>::Ref) -> Result<Self::Produces, Self::Error> {
+      Ok(match self.0 {
+        1 => Self::Produces::inject((Case1, HNil)),
+        2 => Self::Produces::inject((Case2, HNil)),
+        _ => Self::Produces::inject((Case3, HNil)),
+      })
+    }
+  }
+
+  // Error in process_before.resume_run before show_split
+  let p_before_fs = entry::<HNil, Messages>()
+    .show(FailForm { fail_create: false, fail_input: true })
+    .show_split(FailFormSplitter { fail_create: false, fail_input: false, pick_case1: true })
+    .case_end(Case1, |x| x.end(FailFinal(false)))
+    .case_end(Case2, |x| x.end(FailFinal(false)))
+    .build("p", 0);
+  let RunOutcome::Yield(_, ctx, y, fctx) =
+    p_before_fs.resume_run(&empty_ctx(), PreviousRunYieldedAt(StepIndex::MIN), "", None, None).await.unwrap()
+  else {
+    panic!("expected yield");
+  };
+  let err = p_before_fs.resume_run(&ctx, PreviousRunYieldedAt(y.0), "hi", Some(&fctx), None).await.unwrap_err();
+  assert_eq!(err.downcast_ref::<ValidationError>(), Some(&ValidationError));
+
+  // 3-case all-flowing split: errors in Case1 (via split_process_before) and Case2 (via this_case)
+  for case_num in [1u8, 2] {
+    let p = entry::<HNil, Messages>()
+      .split(PickThreeSplitter(case_num))
+      .case_via(Case1, |x| x.show(FailForm { fail_create: false, fail_input: true }))
+      .case_via(Case2, |x| x.show(FailForm { fail_create: false, fail_input: true }))
+      .case_via(Case3, |x| x.show(FailForm { fail_create: false, fail_input: false }))
+      .end(FailFinal(false))
+      .build("p", 0);
+    let RunOutcome::Yield(_, ctx, y, fctx) =
+      p.resume_run(&empty_ctx(), PreviousRunYieldedAt(StepIndex::MIN), "", None, None).await.unwrap()
+    else {
+      panic!("expected yield");
+    };
+    let err = p.resume_run(&ctx, PreviousRunYieldedAt(y.0), "hi", Some(&fctx), None).await.unwrap_err();
+    assert_eq!(err.downcast_ref::<ValidationError>(), Some(&ValidationError));
+  }
+
+  // 3-case mixed split (case_via -> case_end -> case_end): errors in Case1, Case2, and Case3
+  for case_num in [1u8, 2, 3] {
+    let p = entry::<HNil, Messages>()
+      .split(PickThreeSplitter(case_num))
+      .case_via(Case1, |x| x.show(FailForm { fail_create: false, fail_input: true }))
+      .case_end(Case2, |x| x.show(FailForm { fail_create: false, fail_input: true }).end(FailFinal(false)))
+      .case_end(Case3, |x| x.show(FailForm { fail_create: false, fail_input: true }).end(FailFinal(false)))
+      .end(FailFinal(false))
+      .build("p", 0);
+    let RunOutcome::Yield(_, ctx, y, fctx) =
+      p.resume_run(&empty_ctx(), PreviousRunYieldedAt(StepIndex::MIN), "", None, None).await.unwrap()
+    else {
+      panic!("expected yield");
+    };
+    let err = p.resume_run(&ctx, PreviousRunYieldedAt(y.0), "hi", Some(&fctx), None).await.unwrap_err();
+    assert_eq!(err.downcast_ref::<ValidationError>(), Some(&ValidationError));
+  }
+}
+
+#[tokio::test]
 async fn test_then_end_error_accumulation() {
   let p_before = entry::<HNil, Messages>()
     .then(FailOpA(true))

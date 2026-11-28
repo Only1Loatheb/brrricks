@@ -3419,6 +3419,83 @@ async fn test_back_and_finish_before_split_and_then_end() {
   test_process_messages(&p_splitter_finish, vec!["*123#", "Last number in the process", "10", "Always finish"]).await;
 }
 
+#[tokio::test]
+async fn test_flowing_split_start_run_and_back_outcomes() {
+  struct ProduceCase1Option;
+  impl Operation for ProduceCase1Option {
+    type Consumes = HNil;
+    type Produces = HList![CaseOptionParam];
+    type FinalMessage = String;
+    type Error = CNil;
+    async fn handle(&self, _: <Self::Consumes as ToRef<'_>>::Ref) -> Result<OperationOutcome<Self::Produces, String>, CNil> {
+      Ok(OperationOutcome::Successful(hlist![CaseOptionParam(1)]))
+    }
+  }
+
+  let entry_param = || hlist!(EntryParam(Msisdn(2_340_000_000_000), Operator::MTN, ShortcodeString("*123#".to_string())));
+
+  // 3-case all-flowing split: Case1 sync Continue via start_run
+  let p_all_flowing_sync = ExtractMsisdnOperatorAndShortcodeString
+    .then(ProduceCase1Option)
+    .split(SplitByThreeCaseOption)
+    .case_via(Case1, |x| x.then(ProduceOnlyCase1Param))
+    .case_via(Case2, |x| x.then(ProduceOnlyCase1Param))
+    .case_via(Case3, |x| x.then(ProduceOnlyCase1Param))
+    .end(FinalNoConsumes)
+    .build("", 0);
+  assert!(matches!(p_all_flowing_sync.start_run(entry_param()).await.unwrap(), RunOutcome::Finish(msg) if msg == "Empty good bye"));
+
+  // 3-case all-flowing split: process_before Finish via start_run
+  let p_all_flowing_finish = ExtractMsisdnOperatorAndShortcodeString
+    .then(FinishEarlyOperation)
+    .then(ProduceCase1Option)
+    .split(SplitByThreeCaseOption)
+    .case_via(Case1, |x| x.then(ProduceOnlyCase1Param))
+    .case_via(Case2, |x| x.then(ProduceOnlyCase1Param))
+    .case_via(Case3, |x| x.then(ProduceOnlyCase1Param))
+    .end(FinalNoConsumes)
+    .build("", 0);
+  assert!(matches!(p_all_flowing_finish.start_run(entry_param()).await.unwrap(), RunOutcome::Finish(msg) if msg == "Operation finished"));
+
+  // 3-case mixed split (case_via -> case_end -> case_end): Case1 sync Continue via start_run
+  let p_mixed_sync = ExtractMsisdnOperatorAndShortcodeString
+    .then(ProduceCase1Option)
+    .split(SplitByThreeCaseOption)
+    .case_via(Case1, |x| x.then(NoOpOperation))
+    .case_end(Case2, |x| x.end(FinalNoConsumes))
+    .case_end(Case3, |x| x.end(FinalNoConsumes))
+    .end(FinalNoConsumes)
+    .build("", 0);
+  assert!(matches!(p_mixed_sync.start_run(entry_param()).await.unwrap(), RunOutcome::Finish(msg) if msg == "Empty good bye"));
+
+  // 3-case mixed split (case_via -> case_end -> case_end): process_before Finish via start_run
+  let p_mixed_finish = ExtractMsisdnOperatorAndShortcodeString
+    .then(FinishEarlyOperation)
+    .then(ProduceCase1Option)
+    .split(SplitByThreeCaseOption)
+    .case_via(Case1, |x| x.then(NoOpOperation))
+    .case_end(Case2, |x| x.end(FinalNoConsumes))
+    .case_end(Case3, |x| x.end(FinalNoConsumes))
+    .end(FinalNoConsumes)
+    .build("", 0);
+  assert!(matches!(p_mixed_finish.start_run(entry_param()).await.unwrap(), RunOutcome::Finish(msg) if msg == "Operation finished"));
+
+  // 3-case mixed split (case_via -> case_end -> case_end): Back from Case1 during resume_run
+  let p_mixed_back = ExtractMsisdnOperatorAndShortcodeString
+    .show(ChooseCaseForm)
+    .split(SplitByThreeCaseOption)
+    .case_via(Case1, |x| x.show(BackTokenInspectionForm1))
+    .case_end(Case2, |x| x.end(FinalNoConsumes))
+    .case_end(Case3, |x| x.end(FinalNoConsumes))
+    .end(FinalNoConsumes)
+    .build("", 0);
+  test_process_messages(
+    &p_mixed_back,
+    vec!["*123#", "Choose a case", "1", "Form1 back=true", "0", "Choose a case", "2", "Empty good bye"],
+  )
+  .await;
+}
+
 #[cfg(test)]
 async fn test_process_messages(
   process: &RunnableProcess<impl FinalizedProcess<Messages = Messages>>,
